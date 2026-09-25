@@ -120,7 +120,7 @@ class AuthService
                 );
         } catch (\Throwable $e) {
             // Retain the pending record: a timeout does not prove delivery failed.
-            \Log::error('Registration OTP email delivery was not confirmed.');
+            \Log::error('Registration OTP email delivery was not confirmed.', $this->mailFailureContext($e));
 
             throw new \App\Exceptions\RegistrationDeliveryException(
                 'Email delivery was not confirmed. Your registration is pending. Enter your code if received, or use Resend verification code to try again.'
@@ -171,7 +171,8 @@ class AuthService
                 );
         } catch (\Throwable $e) {
             \Log::error(
-                'Registration resend OTP email failed.'
+                'Registration resend OTP email failed.',
+                $this->mailFailureContext($e)
             );
 
             throw new \Exception(
@@ -390,7 +391,8 @@ class AuthService
                 );
         } catch (\Throwable $e) {
             \Log::error(
-                'Password reset email failed.'
+                'Password reset email failed.',
+                $this->mailFailureContext($e)
             );
 
             $reset->update([
@@ -594,5 +596,14 @@ class AuthService
             'qr_code_hash' => $hash,
             'is_active' => true,
         ]);
+    }
+
+    // Transport errors explain SMTP failures; email addresses are redacted from the log.
+    private function mailFailureContext(\Throwable $e): array
+    {
+        return [
+            'exception_class' => get_class($e),
+            'error' => preg_replace('/[^\s<>"\']+@[^\s<>"\']+/', '[email]', mb_substr($e->getMessage(), 0, 300)),
+        ];
     }
 }
