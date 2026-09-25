@@ -7,7 +7,7 @@ use App\Models\User;
 use App\Models\StudentProfile;
 use App\Models\HealthProfile;
 use App\Models\Appointment;
-use App\Models\QrCode;
+use App\Models\QRCode;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
@@ -85,7 +85,7 @@ class CareLinkSeeder extends Seeder
         );
 
         // QR code used by the kiosk check-in system
-        $qr = QrCode::updateOrCreate(
+        $qr = QRCode::updateOrCreate(
             ['user_id' => $user->id],
             [
                 'qr_code_hash' => (string) Str::uuid(),
