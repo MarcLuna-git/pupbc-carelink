@@ -50,6 +50,9 @@ return [
             'prefix_indexes' => true,
             'schema' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Reuse the connection per PHP worker: a new SSL connection to the Supabase
+            // session pooler costs ~3s from Render Singapore. Session mode (5432) only.
+            'options' => [PDO::ATTR_PERSISTENT => (bool) env('DB_PERSISTENT', false)],
         ],
 
         'sqlsrv' => [
