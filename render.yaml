@@ -1,0 +1,126 @@
+services:
+  # Backend: Laravel sa Docker (walang native PHP runtime ang Render).
+  - type: web
+    name: pupbc-carelink-api
+    runtime: docker
+    region: singapore # pinakamalapit na Render region sa Supabase (Sydney)
+    plan: free
+    # Relative sa repo root ang mga path na ito.
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/health
+    envVars:
+      - key: APP_NAME
+        value: "PUPBC CareLink"
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        # Format: base64:xxxx (tingnan ang docs/RENDER_DEPLOYMENT.md).
+        sync: false
+      - key: APP_URL
+        value: https://pupbc-carelink-api.onrender.com
+      - key: FRONTEND_URL
+        value: https://pupbc-carelink.onrender.com
+      - key: LOG_CHANNEL
+        value: stderr
+
+      # Supabase session pooler (port 5432). Iwas sa prepared-statement errors ng 6543.
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        value: aws-0-ap-southeast-2.pooler.supabase.com
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_DATABASE
+        value: postgres
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_TTL
+        value: "1440"
+      - key: KIOSK_DEVICE_TOKEN
+        # Makikita sa Render dashboard; ito ang ilalagay sa kiosk device.
+        generateValue: true
+
+      # Brevo SMTP. Bina-block ng Render free ang 25/465/587, kaya 2525.
+      - key: MAIL_MAILER
+        value: smtp
+      - key: MAIL_HOST
+        value: smtp-relay.brevo.com
+      - key: MAIL_PORT
+        value: "2525"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_ENCRYPTION
+        value: tls
+      - key: MAIL_FROM_ADDRESS
+        value: pupbinancarelink@gmail.com
+      - key: MAIL_FROM_NAME
+        value: "PUPBC CareLink"
+      - key: MAIL_TIMEOUT
+        value: "10"
+      # Staging switch: kapag true, lahat ng email ay napupunta sa test recipient.
+      - key: EMAIL_TEST_MODE
+        value: "false"
+
+      - key: CACHE_DRIVER
+        value: file
+      - key: SESSION_DRIVER
+        value: file
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: FILESYSTEM_DRIVER
+        value: local
+
+      - key: SANCTUM_STATEFUL_DOMAINS
+        value: pupbc-carelink.onrender.com
+
+      - key: SEED_NURSE_PASSWORD
+        sync: false
+
+      - key: SLOT_MAX
+        value: "10"
+      - key: CLINIC_OPEN_TIME
+        value: "08:00"
+      - key: CLINIC_CLOSE_TIME
+        value: "17:00"
+      - key: LUNCH_START
+        value: "12:00"
+      - key: LUNCH_END
+        value: "13:00"
+
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "60"
+      - key: KIOSK_RATE_LIMIT
+        value: "30"
+      - key: AUTH_RATE_LIMIT
+        value: "10"
+
+  # Frontend: React/Vite bilang static site (libre, hindi natutulog, global CDN).
+  - type: web
+    name: pupbc-carelink
+    runtime: static
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: ./frontend/dist
+    routes:
+      # SPA: lahat ng path ay ibigay sa index.html para gumana ang React Router.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_VERSION # Vite 8 needs Node 20.19+ / 22.12+
+        value: "22"
+      - key: VITE_API_URL
+        value: https://pupbc-carelink-api.onrender.com/api
+      - key: VITE_APP_NAME
+        value: "PUPBC CareLink"

@@ -1,0 +1,18 @@
+# Never copy local credentials, dependencies, or cached configuration into an image.
+.env
+.env.*
+vendor/
+node_modules/
+bootstrap/cache/*.php
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/*
+storage/*.key
+public/storage
+.git/
+.phpunit.result.cache
+coverage/
+tests/
+postgres-audit.txt

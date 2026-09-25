@@ -1,0 +1,6 @@
+﻿
+
+Path       : C:\Users\lunan\Downloads\PUPBC-CareLink-V3.1.0\PUPBC-CareLink-V3.1-main\backend\app\Providers\AppServiceProvider.php
+LineNumber : 22
+Line       :         // Iwas sa MySQL/MariaDB index-length error.
+
