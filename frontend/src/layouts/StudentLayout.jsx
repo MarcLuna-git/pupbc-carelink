@@ -107,6 +107,9 @@ const StudentLayout = ({ children }) => {
     setUnreadCount,
   ] = useState(0);
 
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
+
   const [
     avatarFailed,
     setAvatarFailed,
@@ -438,9 +441,13 @@ const StudentLayout = ({ children }) => {
    * ------------------------------------------------
    */
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     setProfileMenuOpen(false);
+    setShowLogoutConfirm(true);
+  };
 
+  const confirmLogout = async () => {
+    setLogoutLoading(true);
     await authService.logout();
 
     document.documentElement.classList.remove(
@@ -1037,6 +1044,19 @@ const StudentLayout = ({ children }) => {
           )}
         </div>
       </nav>
+
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" role="presentation">
+          <section role="dialog" aria-modal="true" aria-labelledby="student-logout-title" className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+            <h2 id="student-logout-title" className="text-lg font-bold text-gray-900 dark:text-white">Sign out?</h2>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Are you sure you want to end your student session?</p>
+            <div className="mt-6 flex gap-3">
+              <button type="button" onClick={() => setShowLogoutConfirm(false)} disabled={logoutLoading} className="flex-1 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-semibold text-gray-700 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-200">Cancel</button>
+              <button type="button" onClick={confirmLogout} disabled={logoutLoading} className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{logoutLoading ? 'Signing out...' : 'Sign Out'}</button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 };

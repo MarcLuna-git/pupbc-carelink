@@ -8,6 +8,7 @@ use App\Models\AppointmentCheckin;
 use App\Models\AppointmentSlot;
 use App\Models\Notification;
 use App\Models\QRCode;
+use App\Models\User;
 use App\Services\ClinicQueue;
 use App\Services\StudentAppointmentMail;
 use Carbon\Carbon;
@@ -267,6 +268,23 @@ class AppointmentController extends Controller
                 ],
                 'read' => false,
             ]);
+            foreach (User::where('role', 'nurse')->get(['id']) as $nurse) {
+                Notification::create([
+                    'user_id' => $nurse->id,
+                    'type' => 'appointment_booked',
+                    'title' => 'New appointment booked',
+                    'message' => $user->first_name . ' ' . $user->last_name . ' booked an appointment for '
+                        . $appointment->appointment_date->format('M j, Y') . ' at ' . $appointment->time_slot . '.',
+                    'data' => [
+                        'appointment_id' => $appointment->id,
+                        'reference_number' => $appointment->reference_number,
+                        'appointment_date' => $appointment->appointment_date->toDateString(),
+                        'time_slot' => $appointment->time_slot,
+                        'status' => 'pending',
+                    ],
+                    'read' => false,
+                ]);
+            }
             app(StudentAppointmentMail::class)->afterCommit($appointment);
 
             Cache::forget(
@@ -617,6 +635,24 @@ class AppointmentController extends Controller
                     ],
                     'read' => false,
                 ]);
+                $student = auth()->user();
+                foreach (User::where('role', 'nurse')->get(['id']) as $nurse) {
+                    Notification::create([
+                        'user_id' => $nurse->id,
+                        'type' => 'appointment_cancelled_by_student',
+                        'title' => 'Student cancelled an appointment',
+                        'message' => $student->first_name . ' ' . $student->last_name . ' cancelled an appointment for '
+                            . $appointment->appointment_date->format('M j, Y') . ' at ' . $appointment->time_slot . '.',
+                        'data' => [
+                            'appointment_id' => $appointment->id,
+                            'reference_number' => $appointment->reference_number,
+                            'appointment_date' => $appointment->appointment_date->toDateString(),
+                            'time_slot' => $appointment->time_slot,
+                            'status' => 'cancelled',
+                        ],
+                        'read' => false,
+                    ]);
+                }
                 app(StudentAppointmentMail::class)->afterCommit($appointment);
 
                 Cache::forget(

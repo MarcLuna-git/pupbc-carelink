@@ -79,6 +79,18 @@ class AuthController extends Controller
             $this->normalizeRegistrationInput($request);
 
             $selectedYear = $request->input('year');
+            $today = now('Asia/Manila');
+            $minimumDate = \Carbon\Carbon::create(
+                $today->year - 17,
+                $today->month,
+                1,
+                0,
+                0,
+                0,
+                'Asia/Manila'
+            );
+            $minimumDate->day(min($today->day, $minimumDate->daysInMonth));
+            $minimumBirthday = $minimumDate->toDateString();
 
             $allowedSections =
                 self::SECTIONS_BY_YEAR[$selectedYear] ?? [];
@@ -123,13 +135,18 @@ class AuthController extends Controller
                         'required',
                         'string',
                         'min:8',
-                        'confirmed',
+                    ],
+
+                    'password_confirmation' => [
+                        'required',
+                        'string',
+                        'same:password',
                     ],
 
                     'birthday' => [
                         'required',
                         'date_format:Y-m-d',
-                        'before_or_equal:today',
+                        'before_or_equal:' . $minimumBirthday,
                     ],
 
                     'gender' => [
@@ -213,8 +230,11 @@ class AuthController extends Controller
                     'password.min' =>
                         'Password must be at least 8 characters.',
 
-                    'password.confirmed' =>
+                    'password_confirmation.same' =>
                         'Password confirmation does not match.',
+
+                    'password_confirmation.required' =>
+                        'Confirm Password is required.',
 
                     'birthday.required' =>
                         'Birthday is required.',
@@ -223,7 +243,7 @@ class AuthController extends Controller
                         'Birthday format is invalid.',
 
                     'birthday.before_or_equal' =>
-                        'Birthday cannot be in the future.',
+                        'You must be at least 17 years old to register.',
 
                     'gender.required' =>
                         'Gender is required.',
@@ -601,6 +621,10 @@ public function login(Request $request): JsonResponse
                         'email',
                         'max:255',
                     ],
+                    'account_type' => [
+                        'nullable',
+                        Rule::in(['student', 'nurse']),
+                    ],
                 ],
                 [
                     'email.required' =>
@@ -634,6 +658,39 @@ public function login(Request $request): JsonResponse
         }
     }
 
+    public function verifyPasswordResetOtp(Request $request): JsonResponse
+    {
+        try {
+            $this->normalizeEmailInput($request);
+            $data = $request->validate([
+                'email' => ['required', 'email', 'max:255'],
+                'otp' => ['required', 'string', 'size:6', 'regex:/^\d{6}$/'],
+                'account_type' => ['nullable', Rule::in(['student', 'nurse'])],
+            ], [
+                'otp.required' => 'Verification code is required.',
+                'otp.size' => 'Verification code must contain 6 digits.',
+                'otp.regex' => 'Verification code must contain numbers only.',
+            ]);
+
+            $result = $this->authService->verifyPasswordResetOtp($data);
+            return response()->json([
+                'success' => true,
+                'message' => $result['message'],
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
     public function resetPassword(
         Request $request
     ): JsonResponse {
@@ -659,7 +716,15 @@ public function login(Request $request): JsonResponse
                         'required',
                         'string',
                         'min:8',
-                        'confirmed',
+                    ],
+                    'password_confirmation' => [
+                        'required',
+                        'string',
+                        'same:password',
+                    ],
+                    'account_type' => [
+                        'nullable',
+                        Rule::in(['student', 'nurse']),
                     ],
                 ],
                 [
@@ -684,7 +749,10 @@ public function login(Request $request): JsonResponse
                     'password.min' =>
                         'Password must be at least 8 characters.',
 
-                    'password.confirmed' =>
+                    'password_confirmation.required' =>
+                        'Confirm Password is required.',
+
+                    'password_confirmation.same' =>
                         'Password confirmation does not match.',
                 ]
             );

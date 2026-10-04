@@ -3,12 +3,16 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, Calendar, Users, FileText, Bell, LogOut, QrCode, Settings, Menu, X, Stethoscope, Activity, Sun, Moon, Pill, Megaphone, BookOpen } from 'lucide-react';
+import api from '../services/api';
 
 const AdminLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
 
   useEffect(() => {
@@ -34,6 +38,28 @@ const AdminLayout = ({ children }) => {
     return () => window.removeEventListener('darkModeChange', handleDarkModeChange);
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await api.get('/notifications');
+        if (active && response.data?.success) {
+          setUnreadNotificationCount(Math.max(0, Number(response.data.unread_count) || 0));
+        }
+      } catch (error) {
+        console.error('Nurse notification count could not be refreshed.', error);
+      }
+    };
+    fetchUnreadCount();
+    const interval = window.setInterval(fetchUnreadCount, 10000);
+    window.addEventListener('focus', fetchUnreadCount);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.removeEventListener('focus', fetchUnreadCount);
+    };
+  }, []);
+
   const toggleDarkMode = () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
@@ -46,7 +72,10 @@ const AdminLayout = ({ children }) => {
     window.dispatchEvent(new Event('darkModeChange'));
   };
 
-  const handleLogout = async () => {
+  const handleLogout = () => setShowLogoutConfirm(true);
+
+  const confirmLogout = async () => {
+    setLogoutLoading(true);
     await authService.logout();
     document.documentElement.classList.remove('dark');
     navigate('/carelink-portal');
@@ -109,6 +138,11 @@ const AdminLayout = ({ children }) => {
                 }`}>
                 <item.icon className="w-5 h-5" />
                 <span>{item.label}</span>
+                {item.path === '/nurse/notifications' && unreadNotificationCount > 0 && (
+                  <span className="ml-auto min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
+                    {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+                  </span>
+                )}
               </Link>
             ))}
           </nav>
@@ -150,6 +184,7 @@ const AdminLayout = ({ children }) => {
           <div className="flex items-center space-x-1">
             <Link to="/nurse/notifications" className="p-2.5 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition relative">
               <Bell className="w-5 h-5" />
+              {unreadNotificationCount > 0 && <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-red-500 px-1 text-center text-[9px] font-bold leading-4 text-white">{unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}</span>}
             </Link>
             <button onClick={toggleDarkMode} className="p-2.5 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
               {darkMode ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5" />}
@@ -185,6 +220,11 @@ const AdminLayout = ({ children }) => {
                   : darkMode ? 'text-gray-400 hover:bg-white/5 hover:text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'
               }`}>
               <item.icon className="w-5 h-5" /><span>{item.label}</span>
+              {item.path === '/nurse/notifications' && unreadNotificationCount > 0 && (
+                <span className="ml-auto min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
+                  {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+                </span>
+              )}
             </Link>
           ))}
         </nav>
@@ -197,6 +237,19 @@ const AdminLayout = ({ children }) => {
           </button>
         </div>
       </aside>
+
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" role="presentation">
+          <section role="dialog" aria-modal="true" aria-labelledby="nurse-logout-title" className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+            <h2 id="nurse-logout-title" className="text-lg font-bold text-gray-900 dark:text-white">Sign out?</h2>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Are you sure you want to end your nurse session?</p>
+            <div className="mt-6 flex gap-3">
+              <button type="button" onClick={() => setShowLogoutConfirm(false)} disabled={logoutLoading} className="flex-1 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-semibold text-gray-700 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-200">Cancel</button>
+              <button type="button" onClick={confirmLogout} disabled={logoutLoading} className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{logoutLoading ? 'Signing out...' : 'Sign Out'}</button>
+            </div>
+          </section>
+        </div>
+      )}
 
     </div>
   );

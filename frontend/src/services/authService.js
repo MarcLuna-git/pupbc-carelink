@@ -90,11 +90,12 @@ const authService = {
   },
 
 
-  async forgotPassword(email) {
+  async forgotPassword(email, account_type = 'student') {
     const response = await api.post(
       '/auth/forgot-password',
       {
         email,
+        account_type,
       }
     );
 
@@ -102,14 +103,24 @@ const authService = {
   },
 
   // Gamit ulit ang forgot-password endpoint; papalitan nito ang dating OTP.
-  async resendPasswordResetOtp(email) {
+  async resendPasswordResetOtp(email, account_type = 'student') {
     const response = await api.post(
       '/auth/forgot-password',
       {
         email,
+        account_type,
       }
     );
 
+    return response.data;
+  },
+
+  async verifyPasswordResetOtp(email, otp, account_type = 'student') {
+    const response = await api.post('/auth/verify-password-reset-otp', {
+      email,
+      otp,
+      account_type,
+    });
     return response.data;
   },
 
@@ -117,7 +128,8 @@ const authService = {
     email,
     otp,
     password,
-    password_confirmation
+    password_confirmation,
+    account_type = 'student'
   ) {
     const response = await api.post(
       '/auth/reset-password',
@@ -126,6 +138,7 @@ const authService = {
         otp,
         password,
         password_confirmation,
+        account_type,
       }
     );
 

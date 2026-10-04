@@ -55,8 +55,12 @@ const ProfileEdit = () => {
   });
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setFieldErrors((current) => ({ ...current, [e.target.name]: undefined }));
+    const { name, value } = e.target;
+    const nextValue = ['mobile_number', 'guardian_contact'].includes(name)
+      ? value.replace(/[^\d+]/g, '').slice(0, 13)
+      : value;
+    setForm({ ...form, [name]: nextValue });
+    setFieldErrors((current) => ({ ...current, [name]: undefined }));
   };
 
   const handleImageChange = (e) => {
@@ -271,7 +275,7 @@ const ProfileEdit = () => {
                 <label className={labelClass}>Mobile Number</label>
                 <div className="relative">
                   <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input className={`${inputClass} pl-10`} type="tel" name="mobile_number" value={form.mobile_number} onChange={handleChange} placeholder="09XXXXXXXXX" disabled={!editing} aria-invalid={Boolean(fieldErrors.mobile_number)} />
+                  <input className={`${inputClass} pl-10`} type="tel" name="mobile_number" value={form.mobile_number} onChange={handleChange} placeholder="09XXXXXXXXX or +639XXXXXXXXX" disabled={!editing} required aria-invalid={Boolean(fieldErrors.mobile_number)} />
                 </div>
                 {fieldErrors.mobile_number && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{fieldErrors.mobile_number[0]}</p>}
               </div>
@@ -311,7 +315,7 @@ const ProfileEdit = () => {
                 <label className={labelClass}>Guardian Contact</label>
                 <div className="relative">
                   <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input className={`${inputClass} pl-10`} type="tel" name="guardian_contact" value={form.guardian_contact} onChange={handleChange} placeholder="Guardian phone" disabled={!editing} />
+                  <input className={`${inputClass} pl-10`} type="tel" name="guardian_contact" value={form.guardian_contact} onChange={handleChange} placeholder="09XXXXXXXXX or +639XXXXXXXXX" disabled={!editing} required aria-invalid={Boolean(fieldErrors.guardian_contact)} />
                 </div>
                 {fieldErrors.guardian_contact && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{fieldErrors.guardian_contact[0]}</p>}
               </div>

@@ -20,6 +20,14 @@ import campusPhoto from '../../assets/pup-binan-hero.jpg';
 const REMEMBER_LOGIN_KEY = 'carelink.student.remember-login';
 const LOCK_KEY_PREFIX = 'carelink.student.login-lock.';
 
+const getMinimumBirthday = () => {
+  const today = new Date();
+  const year = today.getFullYear() - 17;
+  const month = today.getMonth() + 1;
+  const day = Math.min(today.getDate(), new Date(Date.UTC(year, month, 0)).getUTCDate());
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+};
+
 const MONTHS = [
   'January',
   'February',
@@ -150,8 +158,8 @@ const Login = () => {
   const birthYears = useMemo(
     () =>
       Array.from(
-        { length: 100 },
-        (_, index) => currentYear - index
+        { length: 83 },
+        (_, index) => currentYear - 17 - index
       ),
     [currentYear]
   );
@@ -261,9 +269,11 @@ const Login = () => {
       if (!correctDate) {
         nextErrors.birthday =
           'Please enter a valid birthday';
-      } else if (actual.getTime() > Date.now()) {
-        nextErrors.birthday =
-          'Birthday cannot be in the future';
+      } else {
+        if (getBirthdayValue() > getMinimumBirthday()) {
+          nextErrors.birthday =
+            'You must be at least 17 years old to sign in.';
+        }
       }
     }
 

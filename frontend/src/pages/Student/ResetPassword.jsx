@@ -31,6 +31,12 @@ const ResetPassword = () => {
   const initialEmail =
     location.state?.email?.trim() || '';
 
+  const accountType =
+    location.state?.accountType === 'nurse' ||
+    new URLSearchParams(location.search).get('portal') === 'nurse'
+      ? 'nurse'
+      : 'student';
+
   const initialOtpSent = Boolean(
     location.state?.otpSent
   );
@@ -49,6 +55,9 @@ const ResetPassword = () => {
     useState('');
 
   const [loading, setLoading] =
+    useState(false);
+
+  const [otpVerified, setOtpVerified] =
     useState(false);
 
   const [
@@ -79,7 +88,9 @@ const ResetPassword = () => {
   useEffect(() => {
     if (!initialEmail) {
       navigate(
-        '/forgot-password',
+        accountType === 'nurse'
+          ? '/forgot-password?portal=nurse'
+          : '/forgot-password',
         {
           replace: true,
         }
@@ -87,6 +98,7 @@ const ResetPassword = () => {
     }
   }, [
     initialEmail,
+    accountType,
     navigate,
   ]);
 
@@ -139,6 +151,7 @@ const ResetPassword = () => {
       nextValue = value
         .replace(/\D/g, '')
         .slice(0, 6);
+      setOtpVerified(false);
     }
 
     setForm(
@@ -196,14 +209,18 @@ const ResetPassword = () => {
         (previous) => ({
           ...previous,
           otp: '',
+          password: '',
+          password_confirmation: '',
         })
       );
+      setOtpVerified(false);
 
       try {
         const res =
           await authService
             .resendPasswordResetOtp(
-              email
+              email,
+              accountType
             );
 
         if (res.success) {
@@ -294,6 +311,28 @@ const ResetPassword = () => {
         return;
       }
 
+      if (!otpVerified) {
+        setLoading(true);
+        setMessage('');
+        setMessageType('');
+        try {
+          const res = await authService.verifyPasswordResetOtp(
+            email,
+            otp,
+            accountType
+          );
+          setOtpVerified(true);
+          setMessageType('success');
+          setMessage(res.message || 'OTP verified. You may now choose a new password.');
+        } catch (err) {
+          setMessageType('error');
+          setMessage(err.response?.data?.message || 'OTP verification failed. Please try again.');
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+
       if (
         form.password.length <
         8
@@ -309,10 +348,13 @@ const ResetPassword = () => {
         return;
       }
 
-      if (
-        form.password !==
-        form.password_confirmation
-      ) {
+      if (!form.password_confirmation.trim()) {
+        setMessageType('error');
+        setMessage('Confirm Password is required.');
+        return;
+      }
+
+      if (form.password !== form.password_confirmation) {
         setMessageType(
           'error'
         );
@@ -335,7 +377,8 @@ const ResetPassword = () => {
               email,
               otp,
               form.password,
-              form.password_confirmation
+              form.password_confirmation,
+              accountType
             );
 
         if (res.success) {
@@ -351,7 +394,9 @@ const ResetPassword = () => {
           window.setTimeout(
             () => {
               navigate(
-                '/login',
+                accountType === 'nurse'
+                  ? '/nurse/login'
+                  : '/login',
                 {
                   replace:
                     true,
@@ -521,6 +566,8 @@ const ResetPassword = () => {
             </div>
           </div>
 
+          {otpVerified && (
+            <>
           <div>
             <label className="font-semibold text-sm text-gray-700 pb-1 block">
               New Password
@@ -630,6 +677,8 @@ const ResetPassword = () => {
                 Passwords match.
               </p>
             )}
+            </>
+          )}
 
           <button
             className="w-full py-3 bg-gradient-to-r from-maroon-800 to-maroon-900 hover:from-maroon-900 hover:to-maroon-950 text-white font-semibold rounded-xl flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition"
@@ -647,15 +696,15 @@ const ResetPassword = () => {
 
             <span>
               {loading
-                ? 'Resetting...'
-                : 'Reset Password'}
+                ? otpVerified ? 'Resetting...' : 'Verifying...'
+                : otpVerified ? 'Reset Password' : 'Verify OTP'}
             </span>
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <Link
-            to="/login"
+            to={accountType === 'nurse' ? '/nurse/login' : '/login'}
             className="text-sm text-gray-500 hover:text-maroon-800 hover:underline inline-flex items-center space-x-1"
           >
             <ArrowLeft className="w-4 h-4" />

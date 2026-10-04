@@ -11,6 +11,7 @@ use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class MedicineController extends Controller
 {
@@ -38,12 +39,18 @@ class MedicineController extends Controller
             $query->expiringSoon();
         }
 
+        if ($request->boolean('expired')) {
+            $query->expired();
+        }
+
         $medicines = $query->orderBy('name')->paginate(20);
 
         $medicines->getCollection()->transform(function ($medicine) {
             $medicine->is_low_stock = $medicine->quantity <= $medicine->minimum_stock;
-            $medicine->is_expiring_soon = $medicine->expiry_date && $medicine->expiry_date <= now()->addMonths(3);
-            $medicine->is_expired = $medicine->expiry_date && $medicine->expiry_date < now();
+            $medicine->is_expired = $medicine->expiry_date && $medicine->expiry_date->isBefore(today());
+            $medicine->is_expiring_soon = $medicine->expiry_date
+                && !$medicine->is_expired
+                && $medicine->expiry_date->lessThanOrEqualTo(now()->addMonths(3));
             $medicine->status = $medicine->is_expired ? 'expired' : ($medicine->is_low_stock ? 'low_stock' : ($medicine->is_expiring_soon ? 'expiring_soon' : 'ok'));
             return $medicine;
         });
@@ -60,13 +67,15 @@ class MedicineController extends Controller
             'name' => 'required|string|max:255',
             'generic_name' => 'nullable|string|max:255',
             'category' => 'nullable|string|max:100',
-            'quantity' => 'required|integer|min:0',
+            'quantity' => 'required|integer|min:1',
             'minimum_stock' => 'nullable|integer|min:0',
             'unit' => 'nullable|string|max:50',
             'dosage' => 'nullable|string|max:100',
-            'expiry_date' => 'nullable|date',
+            'expiry_date' => 'nullable|date|after_or_equal:today',
             'description' => 'nullable|string',
         ]);
+
+        $this->ensureUniqueName($request->name);
 
         $medicine = Medicine::create([
             ...$request->all(),
@@ -97,7 +106,7 @@ class MedicineController extends Controller
     public function movements(Request $request, $id)
     {
         Medicine::findOrFail($id);
-        return response()->json(['success' => true, 'data' => MedicineStockMovement::with(['batch', 'performer:id,first_name,last_name'])->where('medicine_id', $id)->latest()->paginate(50)]);
+        return response()->json(['success' => true, 'data' => MedicineStockMovement::with(['batch', 'performer:id,first_name,last_name', 'student:id,student_id,first_name,last_name'])->where('medicine_id', $id)->latest()->paginate(50)]);
     }
 
     public function receiveBatch(Request $request, $id)
@@ -105,7 +114,7 @@ class MedicineController extends Controller
         $data = $request->validate([
             'lot_number' => 'required|string|max:100',
             'quantity' => 'required|integer|min:1',
-            'expiry_date' => 'nullable|date',
+            'expiry_date' => 'nullable|date|after_or_equal:today',
             'received_at' => 'nullable|date',
             'supplier' => 'nullable|string|max:150',
             'reference' => 'nullable|string|max:150',
@@ -134,10 +143,18 @@ class MedicineController extends Controller
             'quantity' => 'required|integer|min:1',
             'batch_id' => 'bail|nullable|uuid|exists:medicine_batches,id',
             'reason' => 'required|string|max:500',
+            'student_id' => 'required_if:movement_type,dispensed|nullable|string|exists:users,student_id',
         ]);
 
         return DB::transaction(function () use ($data, $id) {
             $medicine = Medicine::lockForUpdate()->findOrFail($id);
+            $student = null;
+            if (!empty($data['student_id'])) {
+                $student = User::where('student_id', $data['student_id'])
+                    ->where('role', 'student')
+                    ->first();
+                abort_unless($student, 422, 'Student ID does not match a student account.');
+            }
             $batch = null;
             if (!empty($data['batch_id'])) {
                 $batch = MedicineBatch::where('medicine_id', $medicine->id)->lockForUpdate()->findOrFail($data['batch_id']);
@@ -146,13 +163,13 @@ class MedicineController extends Controller
             }
             abort_if($medicine->quantity < $data['quantity'], 422, 'Insufficient medicine stock.');
             $medicine->decrement('quantity', $data['quantity']);
-            $this->recordMovement($medicine, $batch, $data['movement_type'], $data['quantity'], $data['reason']);
+            $this->recordMovement($medicine, $batch, $data['movement_type'], $data['quantity'], $data['reason'], $student);
             $this->notifyIfLowStock($medicine->fresh());
             return response()->json(['success' => true, 'data' => $medicine->fresh()]);
         }, 3);
     }
 
-    private function recordMovement(Medicine $medicine, $batch, $type, $quantity, $reason = null)
+    private function recordMovement(Medicine $medicine, $batch, $type, $quantity, $reason = null, ?User $student = null)
     {
         return MedicineStockMovement::create([
             'medicine_id' => $medicine->id,
@@ -161,11 +178,25 @@ class MedicineController extends Controller
             'quantity' => $quantity,
             'reason' => $reason,
             'performed_by' => auth()->id(),
+            'student_user_id' => $student ? $student->id : null,
         ]);
     }
 
     private function notifyIfLowStock(Medicine $medicine)
     {
+        if ($medicine->quantity === 0) {
+            foreach (User::where('role', 'nurse')->get(['id']) as $nurse) {
+                Notification::create([
+                    'user_id' => $nurse->id,
+                    'type' => 'medicine_out_of_stock',
+                    'title' => 'Medicine Out of Stock',
+                    'message' => $medicine->name . ' is out of stock.',
+                    'data' => ['medicine_id' => $medicine->id, 'quantity' => 0],
+                ]);
+            }
+            return;
+        }
+
         if ($medicine->quantity > $medicine->minimum_stock) {
             return;
         }
@@ -184,25 +215,41 @@ class MedicineController extends Controller
     {
         $medicine = Medicine::findOrFail($id);
 
-        $request->validate([
+        $data = $request->validate([
             'name' => 'sometimes|string|max:255',
             'generic_name' => 'nullable|string|max:255',
             'category' => 'nullable|string|max:100',
-            'quantity' => 'sometimes|integer|min:0',
             'minimum_stock' => 'nullable|integer|min:0',
             'unit' => 'nullable|string|max:50',
             'dosage' => 'nullable|string|max:100',
-            'expiry_date' => 'nullable|date',
+            'expiry_date' => 'nullable|date|after_or_equal:today',
             'description' => 'nullable|string',
         ]);
 
-        $medicine->update($request->all());
+        if (isset($data['name'])) {
+            $this->ensureUniqueName($data['name'], $medicine->id);
+        }
+
+        $medicine->update($data);
 
         return response()->json([
             'success' => true,
             'message' => 'Medicine updated successfully.',
             'data' => $medicine->fresh()
         ]);
+    }
+
+    private function ensureUniqueName(string $name, ?string $ignoreId = null): void
+    {
+        $query = Medicine::whereRaw('LOWER(name) = ?', [strtolower(trim($name))]);
+        if ($ignoreId) {
+            $query->where('id', '!=', $ignoreId);
+        }
+        if ($query->exists()) {
+            throw ValidationException::withMessages([
+                'name' => 'A medicine with this name already exists.',
+            ]);
+        }
     }
 
     public function addStock(Request $request, $id)

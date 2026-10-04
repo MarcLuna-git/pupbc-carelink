@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Key, Lock, Save, Loader2, Eye, EyeOff, User, Mail, Shield, Bell, Building, CheckCircle, AlertTriangle } from 'lucide-react';
 import api from '../../../services/api';
 import authService from '../../../services/authService';
@@ -8,6 +8,8 @@ const NurseSettings = () => {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
   const [loading, setLoading] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
   const [showCurrentPass, setShowCurrentPass] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
   
@@ -22,6 +24,7 @@ const NurseSettings = () => {
     last_name: user.last_name || '',
     email: user.email || '',
   });
+  const [profileErrors, setProfileErrors] = useState({});
 
   const getPasswordStrength = (password) => {
     let score = 0;
@@ -95,6 +98,15 @@ const NurseSettings = () => {
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
+    setMessage('');
+    const errors = {};
+    if (!profile.first_name.trim()) errors.first_name = 'First name is required.';
+    else if (profile.first_name.length > 100) errors.first_name = 'First name must be 100 characters or fewer.';
+    if (!profile.last_name.trim()) errors.last_name = 'Last name is required.';
+    else if (profile.last_name.length > 100) errors.last_name = 'Last name must be 100 characters or fewer.';
+    setProfileErrors(errors);
+    if (Object.keys(errors).length) return;
+
     setLoading(true);
     setMessage('');
     
@@ -118,7 +130,10 @@ const NurseSettings = () => {
     }
   };
 
-  const handleLogout = async () => {
+  const handleLogout = () => setShowLogoutConfirm(true);
+
+  const confirmLogout = async () => {
+    setLogoutLoading(true);
     try {
       await authService.logout();
       window.location.href = '/carelink-portal';
@@ -126,6 +141,8 @@ const NurseSettings = () => {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/carelink-portal';
+    } finally {
+      setLogoutLoading(false);
     }
   };
 
@@ -162,20 +179,32 @@ const NurseSettings = () => {
               <input 
                 className={inputClass}
                 type="text" 
+                maxLength={100}
                 value={profile.first_name} 
-                onChange={(e) => setProfile({...profile, first_name: e.target.value})} 
+                onChange={(e) => {
+                  const first_name = e.target.value.replace(/[^\p{L}\s\-'.]/gu, '');
+                  setProfile({...profile, first_name});
+                  setProfileErrors((current) => ({ ...current, first_name: '' }));
+                }}
                 placeholder="First Name" 
               />
+              {profileErrors.first_name && <p role="alert" className="mt-1 text-xs text-red-600">{profileErrors.first_name}</p>}
             </div>
             <div>
               <label className={labelClass}>Last Name</label>
               <input 
                 className={inputClass}
                 type="text" 
+                maxLength={100}
                 value={profile.last_name} 
-                onChange={(e) => setProfile({...profile, last_name: e.target.value})} 
+                onChange={(e) => {
+                  const last_name = e.target.value.replace(/[^\p{L}\s\-'.]/gu, '');
+                  setProfile({...profile, last_name});
+                  setProfileErrors((current) => ({ ...current, last_name: '' }));
+                }}
                 placeholder="Last Name" 
               />
+              {profileErrors.last_name && <p role="alert" className="mt-1 text-xs text-red-600">{profileErrors.last_name}</p>}
             </div>
           </div>
           <div>
@@ -353,6 +382,19 @@ const NurseSettings = () => {
         <Shield className="w-4 h-4" />
         <span>Sign Out</span>
       </button>
+
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" role="presentation">
+          <section role="dialog" aria-modal="true" aria-labelledby="settings-logout-title" className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+            <h2 id="settings-logout-title" className="text-lg font-bold text-gray-900 dark:text-white">Sign out?</h2>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Are you sure you want to end your nurse session?</p>
+            <div className="mt-6 flex gap-3">
+              <button type="button" onClick={() => setShowLogoutConfirm(false)} disabled={logoutLoading} className="flex-1 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-semibold text-gray-700 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-200">Cancel</button>
+              <button type="button" onClick={confirmLogout} disabled={logoutLoading} className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{logoutLoading ? 'Signing out...' : 'Sign Out'}</button>
+            </div>
+          </section>
+        </div>
+      )}
 
       <p className="text-center text-xs text-gray-400 pb-8">
         PUPBC CareLink v{systemInfo.version} • PUP Biñan Campus Clinic

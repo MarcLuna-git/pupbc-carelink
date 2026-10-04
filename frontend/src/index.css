@@ -2,6 +2,11 @@
 
 @variant dark (&:where(.dark, .dark *));
 
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
 @theme {
   --color-maroon-50: #fdf2f2;
   --color-maroon-100: #fde8e8;

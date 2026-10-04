@@ -28,11 +28,16 @@ class ProfileController extends Controller
         $user = auth()->user();
 
         $data = $request->validate([
-            'mobile_number' => 'nullable|string|max:20',
+            'mobile_number' => ['required', 'string', 'max:20', 'regex:/^(?:09\d{9}|\+639\d{9})$/'],
             'address' => 'nullable|string|max:1000',
             'guardian_name' => 'nullable|string|max:255',
             'guardian_relationship' => 'nullable|string|max:100',
-            'guardian_contact' => 'nullable|string|max:20',
+            'guardian_contact' => ['required', 'string', 'max:20', 'regex:/^(?:09\d{9}|\+639\d{9})$/'],
+        ], [
+            'mobile_number.required' => 'Mobile number is required.',
+            'mobile_number.regex' => 'Use 09XXXXXXXXX or +639XXXXXXXXX for your mobile number.',
+            'guardian_contact.required' => 'Guardian contact is required.',
+            'guardian_contact.regex' => 'Use 09XXXXXXXXX or +639XXXXXXXXX for the guardian contact.',
         ]);
 
         $user->update([

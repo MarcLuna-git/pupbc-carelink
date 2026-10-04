@@ -45,6 +45,12 @@ function getManilaDate() {
   const part = (name) => parts.find((item) => item.type === name)?.value;
   return `${part('year')}-${part('month')}-${part('day')}`;
 }
+function getMinimumBirthday() {
+  const [year, month, day] = getManilaDate().split('-').map(Number);
+  const minimumYear = year - 17;
+  const minimumDay = Math.min(day, new Date(Date.UTC(minimumYear, month, 0)).getUTCDate());
+  return `${minimumYear}-${String(month).padStart(2, '0')}-${String(minimumDay).padStart(2, '0')}`;
+}
 function birthdayOf(form) {
   return form.dobYear && form.dobMonth && form.dobDay
     ? `${form.dobYear}-${form.dobMonth}-${form.dobDay}` : '';
@@ -55,11 +61,28 @@ function isValidBirthday(year, month, day) {
     date.getUTCMonth() === +month - 1 && date.getUTCDate() === +day;
 }
 function formatStudentId(value) {
-  const clean = String(value).toUpperCase().replace(/[^0-9BN]/g, '').slice(0, 12);
-  if (clean.length <= 4) return clean;
-  if (clean.length <= 9) return `${clean.slice(0, 4)}-${clean.slice(4)}`;
-  if (clean.length <= 11) return `${clean.slice(0, 4)}-${clean.slice(4, 9)}-${clean.slice(9)}`;
-  return `${clean.slice(0, 4)}-${clean.slice(4, 9)}-${clean.slice(9, 11)}-${clean.slice(11)}`;
+  let digits = '';
+  let suffix = '';
+  let finalDigit = '';
+  const input = String(value).toUpperCase();
+
+  for (const char of input) {
+    if (/\d/.test(char)) {
+      if (digits.length < 9) digits += char;
+      else if (suffix === 'BN' && /^[01]$/.test(char)) finalDigit = char;
+    } else if (digits.length === 9 && /^[BN]$/.test(char) && suffix.length < 2) {
+      const expected = suffix.length === 0 ? 'B' : 'N';
+      if (char === expected) suffix += char;
+    }
+  }
+
+  const year = digits.slice(0, 4);
+  const studentNumber = digits.slice(4);
+  let formatted = year;
+  if (studentNumber) formatted += `-${studentNumber}`;
+  if (suffix) formatted += `-${suffix}`;
+  if (finalDigit) formatted += `-${finalDigit}`;
+  return formatted;
 }
 // Only Philippine mobile prefixes can be entered. Accept both 09... and +639...
 // A typed 639... is displayed as +639... automatically.
@@ -140,7 +163,7 @@ export default function Register() {
 
   const years = useMemo(() => {
     const current = Number(getManilaDate().slice(0, 4));
-    return Array.from({ length: 80 }, (_, index) => current - index);
+    return Array.from({ length: 83 }, (_, index) => current - 17 - index);
   }, []);
   const passwordStrength = getPasswordStrength(form.password);
   const dayCount = form.dobYear && form.dobMonth
@@ -170,7 +193,13 @@ export default function Register() {
       if (formatted === null) return; // Reject non-PH prefixes and extra digits as typed.
       next = formatted;
     }
-    if (name === 'section') next = value.toUpperCase().replace(/[^A-Z0-9\s\-]/g, '').slice(0, 30);
+    if (name === 'section') {
+      const digits = value.replace(/\D/g, '').slice(0, 2);
+      next = digits.length > 1 ? `${digits[0]}-${digits[1]}` : digits;
+    }
+    if (name === 'year') {
+      setErrors((previous) => ({ ...previous, section: '' }));
+    }
     setForm((previous) => {
       const updated = { ...previous, [name]: next };
       if (['dobMonth', 'dobYear'].includes(name) && updated.dobYear && updated.dobMonth && updated.dobDay) {
@@ -180,7 +209,12 @@ export default function Register() {
       }
       return updated;
     });
-    setErrors((previous) => ({ ...previous, [name]: '', ...(name.startsWith('dob') ? { birthday: '' } : {}) }));
+    setErrors((previous) => ({
+      ...previous,
+      [name]: '',
+      ...(name === 'password' ? { password_confirmation: '' } : {}),
+      ...(name.startsWith('dob') ? { birthday: '' } : {}),
+    }));
     setMessage('');
   };
 
@@ -197,7 +231,9 @@ export default function Register() {
     if (!/^\d{4}-\d{5}-BN-[01]$/.test(form.student_id)) next.student_id = 'Use the format 2023-00000-BN-0.';
     if (!form.dobMonth || !form.dobDay || !form.dobYear) next.birthday = 'Birthday is required.';
     else if (!isValidBirthday(form.dobYear, form.dobMonth, form.dobDay)) next.birthday = 'Enter a valid birthday.';
-    else if (birthdayOf(form) > getManilaDate()) next.birthday = 'Birthday cannot be in the future.';
+    else {
+      if (birthdayOf(form) > getMinimumBirthday()) next.birthday = 'You must be at least 17 years old to register.';
+    }
     if (!['male', 'female', 'other'].includes(form.gender)) next.gender = 'Select your gender.';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email.trim())) next.email = 'Enter a valid email address.';
     if (!/^09\d{9}$/.test(form.mobile_number) && !/^\+639\d{9}$/.test(form.mobile_number)) {
@@ -205,10 +241,17 @@ export default function Register() {
     }
     if (!COURSES.some(([code]) => code === form.course)) next.course = 'Select your course.';
     if (!YEARS.includes(form.year)) next.year = 'Select your year level.';
-    if (!/^[A-Z0-9][A-Z0-9\s\-]{0,29}$/.test(form.section.trim())) next.section = 'Enter your section (e.g. 1-2).';
+    const sectionsByYear = {
+      '1st Year': ['1-1', '1-2', '1-3', '1-4', '1-5'],
+      '2nd Year': ['2-1', '2-2', '2-3', '2-4', '2-5'],
+      '3rd Year': ['3-1', '3-2', '3-3', '3-4', '3-5'],
+      '4th Year': ['4-1', '4-2', '4-3', '4-4', '4-5'],
+    };
+    if (!sectionsByYear[form.year]?.includes(form.section.trim())) next.section = 'Enter a valid section for your year (e.g. 1-2).';
     if (form.password.length < 8) next.password = 'Password must have at least 8 characters.';
     else if (!/[\d\W_]/.test(form.password)) next.password = 'Include at least one number or special character.';
-    if (!form.password_confirmation || form.password_confirmation !== form.password) next.password_confirmation = 'Passwords must match.';
+    if (!form.password_confirmation.trim()) next.password_confirmation = 'Confirm Password is required.';
+    else if (form.password_confirmation !== form.password) next.password_confirmation = 'Passwords must match.';
     if (!form.agree_terms) next.agree_terms = 'Please agree to the Terms of Service and Privacy Policy.';
     setErrors(next);
     const first = Object.keys(next)[0];
@@ -287,13 +330,14 @@ export default function Register() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
       setMessageType('error');
-      setMessage(apiMessage(error, 'Unable to register. Please check your details.'));
+      const validationErrors = error.response?.status === 422 ? error.response.data?.errors : null;
+      setMessage(validationErrors ? '' : apiMessage(error, 'Unable to register. Please check your details.'));
       if (error.response?.data?.registration_pending) {
         setOtpStep(true);
         setOtp('');
         setCooldown(60);
       }
-      if (error.response?.status === 422 && error.response.data?.errors) setErrors(error.response.data.errors);
+      if (validationErrors) setErrors(validationErrors);
     } finally {
       submitRef.current = false;
       setLoading(false);
@@ -496,9 +540,9 @@ export default function Register() {
                       </select>
                     </Field>
                     <Field id="section" label="Section" error={errors.section}>
-                      <input id="section" name="section" type="text" value={form.section} onChange={change} disabled={loading || !form.year} maxLength={30} placeholder={form.year ? 'Type your section, e.g. 1-2' : 'Select year level first'} autoComplete="off" className={`${INPUT} ${errors.section ? INVALID : ''}`} />
+                      <input id="section" name="section" type="text" value={form.section} onChange={change} disabled={loading || !form.year} maxLength={3} inputMode="numeric" placeholder={form.year ? 'Type your section, e.g. 1-2' : 'Select year level first'} autoComplete="off" className={`${INPUT} ${errors.section ? INVALID : ''}`} />
                     </Field>
-                    <p className="text-xs leading-5 text-slate-500">Enter the section shown in your current class schedule. Sections are typed manually because they may change each school year.</p>
+                    <p className="text-xs leading-5 text-slate-500">Enter your one-digit year and section (for example, 1-2).</p>
                   </div>
                 </section>
 
@@ -577,7 +621,7 @@ export default function Register() {
                     </Field>
 
                     {/* Live match result directly underneath Confirm Password */}
-                    {form.password_confirmation && (
+                    {form.password_confirmation && (!errors.password_confirmation || form.password_confirmation === form.password) && (
                       <p
                         className={`flex items-center gap-1.5 text-xs font-semibold ${form.password_confirmation === form.password ? 'text-green-700' : 'text-red-600'}`}
                         role="status"

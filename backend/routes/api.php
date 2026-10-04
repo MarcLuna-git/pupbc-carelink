@@ -130,6 +130,11 @@ Route::prefix('auth')
         );
 
         Route::post(
+            '/verify-password-reset-otp',
+            [AuthController::class, 'verifyPasswordResetOtp']
+        );
+
+        Route::post(
             '/reset-password',
             [AuthController::class, 'resetPassword']
         );
@@ -223,6 +228,10 @@ Route::middleware([
                     return response()->json([
                         'success' => true,
                         'data' => $notifications,
+                        'unread_count' => \App\Models\Notification::where(
+                            'user_id',
+                            auth()->id()
+                        )->where('read', false)->count(),
                     ]);
                 });
 
@@ -264,6 +273,25 @@ Route::middleware([
                         return response()->json([
                             'success' => true,
                             'message' => 'All marked as read',
+                        ]);
+                    }
+                );
+
+                Route::delete(
+                    '/{id}',
+                    function ($id) {
+                        $notification = \App\Models\Notification::where('id', $id)
+                            ->where('user_id', auth()->id())
+                            ->firstOrFail();
+                        $notification->delete();
+
+                        return response()->json([
+                            'success' => true,
+                            'message' => 'Notification deleted.',
+                            'unread_count' => \App\Models\Notification::where(
+                                'user_id',
+                                auth()->id()
+                            )->where('read', false)->count(),
                         ]);
                     }
                 );

@@ -65,6 +65,6 @@ class Medicine extends Model
     public function scopeExpired($query)
     {
         return $query->whereNotNull('expiry_date')
-            ->where('expiry_date', '<', now());
+            ->whereDate('expiry_date', '<', today());
     }
 }

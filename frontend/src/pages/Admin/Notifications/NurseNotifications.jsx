@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Bell, Calendar, Loader2, CheckCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, Calendar, Loader2, CheckCheck, Trash2 } from 'lucide-react';
 import api from '../../../services/api';
 
 const NurseNotifications = () => {
+  const navigate = useNavigate();
   const [notifs, setNotifs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [actionLoading, setActionLoading] = useState(null);
 
   useEffect(() => {
     fetchNotifications();
@@ -29,6 +32,7 @@ const NurseNotifications = () => {
           time: formatTimeAgo(n.created_at),
           read: n.read || false,
           type: n.type || 'info',
+          data: n.data || {},
         }));
         setNotifs(formatted);
       }
@@ -42,13 +46,35 @@ const NurseNotifications = () => {
 
   const markAsRead = async (id) => {
     try {
-      const token = localStorage.getItem('token');
       await api.patch(`/notifications/${id}/read`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+      return true;
     } catch (err) {
-      console.log('Mark read error:', err);
+      console.error('Mark read error:', err);
+      setError('Could not mark the notification as read.');
+      return false;
+    }
+  };
+
+  const openNotification = async (notification) => {
+    if (!notification.read && !(await markAsRead(notification.id))) return;
+    if (notification.type.startsWith('appointment_')) navigate('/nurse/appointments');
+    else if (notification.type.startsWith('medicine_')) navigate('/nurse/medicines');
+    else navigate('/nurse/notifications');
+  };
+
+  const deleteNotification = async (id) => {
+    setActionLoading(id);
+    try {
+      await api.delete(`/notifications/${id}`);
+      setNotifs((current) => current.filter((notification) => notification.id !== id));
+    } catch (err) {
+      console.error('Delete notification error:', err);
+      setError(err.response?.data?.message || 'Could not delete the notification.');
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -122,9 +148,12 @@ const NurseNotifications = () => {
       ) : (
         <div className="space-y-2">
           {notifs.map(n => (
-            <div 
+            <div
               key={n.id} 
-              onClick={() => !n.read && markAsRead(n.id)}
+              onClick={() => openNotification(n)}
+              onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) openNotification(n); }}
+              role="button"
+              tabIndex={0}
               className={`bg-white dark:bg-gray-800 rounded-2xl border p-4 cursor-pointer transition hover:shadow-md ${
                 !n.read 
                   ? 'border-l-4 border-l-maroon-800 bg-maroon-50/30 dark:bg-maroon-900/10' 
@@ -133,13 +162,18 @@ const NurseNotifications = () => {
               <div className="flex items-start space-x-3">
                 <Bell className={`w-5 h-5 mt-0.5 flex-shrink-0 ${n.read ? 'text-gray-400' : 'text-maroon-800 dark:text-maroon-400'}`} />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-3">
                     <h3 className={`text-sm ${n.read ? 'font-medium text-gray-500 dark:text-gray-400' : 'font-bold text-gray-900 dark:text-white'}`}>
                       {n.title}
                     </h3>
-                    {!n.read && (
-                      <span className="w-2 h-2 bg-maroon-600 rounded-full flex-shrink-0 ml-2"></span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {!n.read && <span className="w-2 h-2 bg-maroon-600 rounded-full flex-shrink-0" />}
+                      <button type="button" onClick={(event) => { event.stopPropagation(); deleteNotification(n.id); }}
+                        disabled={actionLoading === n.id} aria-label="Delete notification"
+                        className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50">
+                        {actionLoading === n.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{n.message}</p>
                   <p className="text-xs text-gray-400 mt-1.5 flex items-center">

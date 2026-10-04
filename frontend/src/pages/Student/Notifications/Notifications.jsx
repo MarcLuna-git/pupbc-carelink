@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Check, Trash2, Calendar, Clock, CheckCircle, XCircle, Info, Loader2 } from 'lucide-react';
 import api from '../../../services/api';
@@ -8,6 +9,7 @@ const Skeleton = ({ className = '' }) => (
 );
 
 const Notifications = () => {
+  const navigate = useNavigate();
   // Do not cache medical/appointment notifications in localStorage: another
   // student could sign in on the same browser and see the previous account's data.
   const [notifications, setNotifications] = useState([]);
@@ -32,6 +34,7 @@ const Notifications = () => {
           type: n.type || getTypeFromStatus(n),
           date: n.created_at || new Date().toISOString(),
           read: n.read || false,
+          data: n.data || {},
         }));
         setNotifications(normalized);
       }
@@ -121,6 +124,14 @@ const Notifications = () => {
     } finally {
       setActionLoading(null);
     }
+  };
+
+  const openNotification = async (notification) => {
+    if (!notification.read) await markAsRead(notification.id);
+    if (notification.type.startsWith('appointment_')) navigate('/student/appointments');
+    else if (notification.type === 'consultation_completed') navigate('/student/health-records');
+    else if (notification.data?.announcement_id) navigate('/student/announcements');
+    else navigate('/student/alerts');
   };
 
   const showMessage = (msg) => {
@@ -240,6 +251,10 @@ const Notifications = () => {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -20 }}
+                onClick={() => openNotification(notif)}
+                onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) openNotification(notif); }}
+                role="button"
+                tabIndex={0}
                 className={`bg-white dark:bg-gray-800 rounded-2xl border p-4 sm:p-5 hover:shadow-md transition-all ${
                   notif.read 
                     ? 'border-gray-100 dark:border-gray-700/50' 
@@ -271,7 +286,7 @@ const Notifications = () => {
                       <div className="flex items-center gap-1 flex-shrink-0">
                         {!notif.read && (
                           <button 
-                            onClick={() => markAsRead(notif.id)}
+                            onClick={(event) => { event.stopPropagation(); markAsRead(notif.id); }}
                             disabled={actionLoading === notif.id}
                             className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-green-500 transition"
                             title="Mark as read">
@@ -279,7 +294,7 @@ const Notifications = () => {
                           </button>
                         )}
                         <button 
-                          onClick={() => deleteNotification(notif.id)}
+                          onClick={(event) => { event.stopPropagation(); deleteNotification(notif.id); }}
                           disabled={actionLoading === notif.id}
                           className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-red-500 transition"
                           title="Delete">

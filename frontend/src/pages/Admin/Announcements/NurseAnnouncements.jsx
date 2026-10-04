@@ -7,9 +7,12 @@ const NurseAnnouncements = () => {
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('success');
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState({ title: '', content: '', category: 'General', target_audience: 'all' });
+  const [form, setForm] = useState({ title: '', content: '', category: 'General' });
   const [search, setSearch] = useState('');
 
   const fetchAnnouncements = async () => {
@@ -44,6 +47,7 @@ const NurseAnnouncements = () => {
     e.preventDefault();
     if (!form.title.trim() || !form.content.trim()) return;
 
+    setSaving(true);
     try {
       const token = localStorage.getItem('token');
       if (editingId) {
@@ -51,43 +55,53 @@ const NurseAnnouncements = () => {
           headers: { Authorization: `Bearer ${token}` },
           timeout: 120000
         });
+        setMessageType('success');
         setMessage('Announcement updated!');
       } else {
         await api.post('/nurse/announcements', form, {
           headers: { Authorization: `Bearer ${token}` },
           timeout: 120000
         });
+        setMessageType('success');
         setMessage('Announcement posted!');
       }
       setShowForm(false);
       setEditingId(null);
-      setForm({ title: '', content: '', category: 'General', target_audience: 'all' });
-      fetchAnnouncements();
+      setForm({ title: '', content: '', category: 'General' });
+      await fetchAnnouncements();
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       console.error('Save announcement failed:', err?.response?.status, err?.response?.data || err);
+      setMessageType('error');
       setMessage(`Failed to save announcement. ${getErrorDetail(err, 'Please try again.')}`);
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleEdit = (ann) => {
-    setForm({ title: ann.title, content: ann.content, category: ann.category || 'General', target_audience: ann.target_audience || 'all' });
+    setForm({ title: ann.title, content: ann.content, category: ann.category || 'General' });
     setEditingId(ann.id);
     setShowForm(true);
   };
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this announcement?')) return;
+    setDeletingId(id);
     try {
       const token = localStorage.getItem('token');
       await api.delete(`/nurse/announcements/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessage('Announcement deleted.');
-      fetchAnnouncements();
+      setMessageType('success');
+      await fetchAnnouncements();
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
+      setMessageType('error');
       setMessage('Failed to delete.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -113,7 +127,7 @@ const NurseAnnouncements = () => {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Announcements</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Post clinic and school announcements</p>
         </div>
-        <button onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ title: '', content: '', category: 'General', target_audience: 'all' }); }}
+        <button onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ title: '', content: '', category: 'General' }); }}
           className={`flex items-center space-x-2 px-5 py-2.5 rounded-2xl font-semibold text-sm transition ${
             showForm ? 'bg-gray-200 dark:bg-gray-700' : 'bg-maroon-800 text-white shadow-lg hover:bg-maroon-900'
           }`}>
@@ -123,7 +137,7 @@ const NurseAnnouncements = () => {
       </div>
 
       {message && (
-        <div className="p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-2xl text-sm text-center">{message}</div>
+        <div className={`p-3 rounded-2xl text-sm text-center ${messageType === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'}`} role="status">{message}</div>
       )}
 
       <AnimatePresence>
@@ -142,28 +156,17 @@ const NurseAnnouncements = () => {
                 <textarea className="w-full border rounded-2xl px-4 py-3 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:ring-2 focus:ring-maroon-500" rows={4}
                   value={form.content} onChange={(e) => setForm({...form, content: e.target.value})} required />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div>
                   <label className="text-xs font-semibold text-gray-500 block mb-1.5">Category</label>
                   <select className="w-full border rounded-2xl px-4 py-3 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
                     value={form.category} onChange={(e) => setForm({...form, category: e.target.value})}>
                     {categories.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-500 block mb-1.5">Audience</label>
-                  <select className="w-full border rounded-2xl px-4 py-3 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                    value={form.target_audience} onChange={(e) => setForm({...form, target_audience: e.target.value})}>
-                    <option value="all">All</option>
-                    <option value="students">Students</option>
-                    <option value="nurses">Nurses</option>
-                  </select>
-                </div>
               </div>
-              <button type="submit"
-                className="w-full py-3 bg-maroon-800 text-white font-semibold rounded-2xl hover:bg-maroon-900 transition flex items-center justify-center space-x-2">
-                <Send className="w-4 h-4" />
-                <span>{editingId ? 'Update' : 'Post'} Announcement</span>
+              <button type="submit" disabled={saving}
+                className="w-full py-3 bg-maroon-800 text-white font-semibold rounded-2xl hover:bg-maroon-900 transition flex items-center justify-center space-x-2 disabled:opacity-60">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                <span>{saving ? 'Saving...' : editingId ? 'Update' : 'Post'} Announcement</span>
               </button>
             </form>
           </motion.div>
@@ -191,15 +194,14 @@ const NurseAnnouncements = () => {
                   <p className="text-sm text-gray-500 mt-1 line-clamp-2">{ann.content}</p>
                   <div className="flex gap-2 mt-2">
                     <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">{ann.category}</span>
-                    <span className="text-xs text-gray-400">{ann.target_audience || 'all'}</span>
                   </div>
                 </div>
                 <div className="flex items-center space-x-1 ml-4">
                   <button onClick={() => handleEdit(ann)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-400 hover:text-blue-500">
                     <Edit2 className="w-4 h-4" />
                   </button>
-                  <button onClick={() => handleDelete(ann.id)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-400 hover:text-red-500">
-                    <Trash2 className="w-4 h-4" />
+                  <button onClick={() => handleDelete(ann.id)} disabled={deletingId === ann.id} aria-label="Delete announcement" className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-400 hover:text-red-500 disabled:opacity-50">
+                    {deletingId === ann.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                   </button>
                 </div>
               </div>

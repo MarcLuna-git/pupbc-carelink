@@ -12,7 +12,7 @@ class MedicineStockMovement extends Model
 
     protected $keyType = 'string';
     public $incrementing = false;
-    protected $fillable = ['medicine_id', 'medicine_batch_id', 'movement_type', 'quantity', 'reason', 'performed_by'];
+    protected $fillable = ['medicine_id', 'medicine_batch_id', 'movement_type', 'quantity', 'reason', 'performed_by', 'student_user_id'];
     protected $casts = ['quantity' => 'integer'];
 
     protected static function boot()
@@ -38,5 +38,10 @@ class MedicineStockMovement extends Model
     public function performer()
     {
         return $this->belongsTo(User::class, 'performed_by');
+    }
+
+    public function student()
+    {
+        return $this->belongsTo(User::class, 'student_user_id');
     }
 }

@@ -9,7 +9,7 @@ Your verification code is:
 # **{{ $otp }}**
 @endcomponent
 
-This code will expire in **5 minutes**.
+This code will expire in **10 minutes**.
 
 If you did not create an account, no further action is required.
 

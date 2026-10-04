@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthService
@@ -65,18 +66,21 @@ class AuthService
             })
             ->delete();
 
+        if (User::where('email', $data['email'])->exists()) {
+            throw ValidationException::withMessages([
+                'email' => 'This email is already registered.',
+            ]);
+        }
+
         if (
-            User::where('email', $data['email'])
-                ->orWhere('student_id', $data['student_id'])
-                ->exists()
-            ||
+            User::where('student_id', $data['student_id'])->exists() ||
             PendingRegistration::where('email', '!=', $data['email'])
                 ->where('student_id', $data['student_id'])
                 ->exists()
         ) {
-            throw new \Exception(
-                'This email or Student ID is already registered.'
-            );
+            throw ValidationException::withMessages([
+                'student_id' => 'This Student ID is already registered.',
+            ]);
         }
 
         if (PendingRegistration::where('email', $data['email'])->exists()) {
@@ -219,17 +223,16 @@ class AuthService
                 );
             }
 
-            if (
-                User::where('email', $email)
-                    ->orWhere(
-                        'student_id',
-                        $pending->student_id
-                    )
-                    ->exists()
-            ) {
-                throw new \Exception(
-                    'This email or Student ID is already registered.'
-                );
+            if (User::where('email', $email)->exists()) {
+                throw ValidationException::withMessages([
+                    'email' => 'This email is already registered.',
+                ]);
+            }
+
+            if (User::where('student_id', $pending->student_id)->exists()) {
+                throw ValidationException::withMessages([
+                    'student_id' => 'This Student ID is already registered.',
+                ]);
             }
 
             $user = $this->register(
@@ -351,7 +354,7 @@ class AuthService
                 $data['email']
             );
 
-        if (!$user) {
+        if (!$user || (isset($data['account_type']) && $user->role !== $data['account_type'])) {
             throw new \Exception(
                 'Email not found.'
             );
@@ -412,6 +415,29 @@ class AuthService
         ];
     }
 
+    public function verifyPasswordResetOtp(array $data): array
+    {
+        $user = $this->userRepository->findByEmail($data['email']);
+        if (!$user || (isset($data['account_type']) && $user->role !== $data['account_type'])) {
+            throw new \Exception('Email not found.');
+        }
+
+        $reset = PasswordReset::where('user_id', $user->id)
+            ->where('is_used', false)
+            ->latest('created_at')
+            ->first();
+
+        if (!$reset || !$reset->expires_at || !$reset->expires_at->isFuture()) {
+            throw new \Exception('Password reset code has expired. Please request a new OTP.');
+        }
+
+        if (!Hash::check($data['otp'], $reset->otp_hash)) {
+            throw new \Exception('Invalid password reset code.');
+        }
+
+        return ['message' => 'OTP verified. You may now choose a new password.'];
+    }
+
     public function resetPassword(array $data): array
     {
         return DB::transaction(function () use ($data) {
@@ -424,6 +450,10 @@ class AuthService
                 throw new \Exception(
                     'Email not found.'
                 );
+            }
+
+            if (isset($data['account_type']) && $user->role !== $data['account_type']) {
+                throw new \Exception('Email not found.');
             }
 
             $pr = PasswordReset::where(

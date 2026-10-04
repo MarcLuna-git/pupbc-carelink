@@ -9,7 +9,7 @@ Your password reset code is:
 # **{{ $otp }}**
 @endcomponent
 
-This code will expire in **5 minutes**.
+This code will expire in **10 minutes**.
 
 If you did not request a password reset, no further action is required.
 

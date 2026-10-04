@@ -4,6 +4,7 @@ import {
 
 import {
   Link,
+  useLocation,
   useNavigate,
 } from 'react-router-dom';
 
@@ -17,6 +18,10 @@ import {
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const accountType = new URLSearchParams(location.search).get('portal') === 'nurse'
+    ? 'nurse'
+    : 'student';
 
   const [email, setEmail] =
     useState('');
@@ -49,7 +54,8 @@ const ForgotPassword = () => {
         const res =
           await authService
             .forgotPassword(
-              cleanEmail
+              cleanEmail,
+              accountType
             );
 
         if (res.success) {
@@ -69,6 +75,7 @@ const ForgotPassword = () => {
                       cleanEmail,
 
                     otpSent: true,
+                    accountType,
                   },
                 }
               );
@@ -184,7 +191,7 @@ const ForgotPassword = () => {
         <div className="mt-6 text-center">
 
           <Link
-            to="/login"
+            to={accountType === 'nurse' ? '/nurse/login' : '/login'}
             className="text-sm text-maroon-800 hover:text-maroon-900 hover:underline inline-flex items-center space-x-1"
           >
             <ArrowLeft className="w-4 h-4" />

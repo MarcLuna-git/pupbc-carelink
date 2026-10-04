@@ -21,6 +21,7 @@ const Announcements = () => {
   const [filterCategory, setFilterCategory] = useState('all');
   const [expandedId, setExpandedId] = useState(null);
   const [announcements, setAnnouncements] = useState(getCachedAnnouncements);
+  const [announcementCount, setAnnouncementCount] = useState(() => getCachedAnnouncements().length);
   const [loading, setLoading] = useState(() => getCachedAnnouncements().length === 0);
   const [error, setError] = useState('');
 
@@ -33,6 +34,7 @@ const Announcements = () => {
       if (response.data.success) {
         const data = response.data.data;
         const items = Array.isArray(data) ? data : (data?.data || []);
+        setAnnouncementCount(Number(data?.total) || items.length);
         const normalizedAnnouncements = items.map(a => ({
           id: a.id,
           title: a.title || 'Announcement',
@@ -104,6 +106,10 @@ const Announcements = () => {
     const matchesCategory = filterCategory === 'all' || a.category === filterCategory;
     return matchesSearch && matchesCategory;
   });
+  const newAnnouncements = announcements.filter((announcement) => {
+    const age = Date.now() - new Date(announcement.date).getTime();
+    return Number.isFinite(age) && age >= 0 && age <= 7 * 24 * 60 * 60 * 1000;
+  });
 
   if (loading) {
     return (
@@ -153,9 +159,14 @@ const Announcements = () => {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Announcements</h1>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            {announcements.length} announcement{announcements.length !== 1 ? 's' : ''}
+            {announcementCount} announcement{announcementCount !== 1 ? 's' : ''}
           </p>
         </div>
+        {newAnnouncements.length > 0 && (
+          <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700 dark:bg-red-900/30 dark:text-red-300">
+            {newAnnouncements.length} new
+          </span>
+        )}
         <button 
           onClick={fetchAnnouncements} 
           className="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -231,6 +242,9 @@ const Announcements = () => {
                           {ann.title}
                         </h3>
                         <div className="flex flex-wrap items-center gap-2 mt-2">
+                          {newAnnouncements.some((item) => item.id === ann.id) && (
+                            <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase text-red-700 dark:bg-red-900/30 dark:text-red-300">New</span>
+                          )}
                           <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${config.bg}`}>
                             {ann.category}
                           </span>

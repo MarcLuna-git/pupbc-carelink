@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Eye, EyeOff, Loader2, Lock, Mail, Stethoscope, 
   Heart, CalendarCheck, QrCode, ShieldCheck, ClipboardList,
@@ -293,12 +293,12 @@ const NurseLogin = () => {
                   />
                   <span className="text-sm text-gray-600">Remember me</span>
                 </label>
-                <button
-                  type="button"
+                <Link
+                  to="/forgot-password?portal=nurse"
                   className="text-sm font-medium text-maroon-700 hover:text-maroon-900 transition-colors"
                 >
                   Forgot password?
-                </button>
+                </Link>
               </div>
 
               <motion.button
