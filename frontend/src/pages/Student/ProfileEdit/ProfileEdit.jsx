@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, MapPin, Users, Camera, Save, Loader2, Hash, GraduationCap, Calendar, X, Shield, ArrowLeft } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Camera, Save, Loader2, Hash, GraduationCap, Calendar, X, ArrowLeft } from 'lucide-react';
 import api from '../../../services/api';
 
 const Skeleton = ({ className = '' }) => (
@@ -34,9 +34,6 @@ const ProfileEdit = () => {
           const savedForm = {
             mobile_number: profile.mobile_number ?? returnedUser.mobile_number ?? '',
             address: profile.address || '',
-            guardian_name: profile.guardian_name || '',
-            guardian_relationship: profile.guardian_relationship || '',
-            guardian_contact: profile.guardian_contact || '',
           };
           savedFormRef.current = savedForm;
           setForm(savedForm);
@@ -50,14 +47,11 @@ const ProfileEdit = () => {
   const [form, setForm] = useState({
     mobile_number: user.mobile_number || '',
     address: user.profile?.address || '',
-    guardian_name: '',
-    guardian_relationship: '',
-    guardian_contact: '',
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const nextValue = ['mobile_number', 'guardian_contact'].includes(name)
+    const nextValue = name === 'mobile_number'
       ? value.replace(/[^\d+]/g, '').slice(0, 13)
       : value;
     setForm({ ...form, [name]: nextValue });
@@ -87,9 +81,6 @@ const ProfileEdit = () => {
       const response = detailsChanged || !avatarFile ? await api.put('/student/profile', {
         mobile_number: form.mobile_number,
         address: form.address,
-        guardian_name: form.guardian_name,
-        guardian_relationship: form.guardian_relationship,
-        guardian_contact: form.guardian_contact,
       }, { headers: { Authorization: `Bearer ${token}` } }) : null;
 
       let avatarUrl = loadedProfile.profile_picture || user.profile?.profile_picture || null;
@@ -133,9 +124,6 @@ const ProfileEdit = () => {
     setForm({
       mobile_number: loadedProfile.mobile_number ?? user.mobile_number ?? '',
       address: loadedProfile.address || '',
-      guardian_name: loadedProfile.guardian_name || '',
-      guardian_relationship: loadedProfile.guardian_relationship || '',
-      guardian_contact: loadedProfile.guardian_contact || '',
     });
     setMessage('');
     setFieldErrors({});
@@ -290,38 +278,12 @@ const ProfileEdit = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-red-500" />Guardian Information
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className={labelClass}>Guardian Name</label>
-                <div className="relative">
-                  <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input className={`${inputClass} pl-10`} type="text" name="guardian_name" value={form.guardian_name} onChange={handleChange} placeholder="Guardian name" disabled={loading} />
-                </div>
-                {fieldErrors.guardian_name && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{fieldErrors.guardian_name[0]}</p>}
-              </div>
-              <div>
-                <label className={labelClass}>Relationship</label>
-                <div className="relative">
-                  <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input className={`${inputClass} pl-10`} type="text" name="guardian_relationship" value={form.guardian_relationship} onChange={handleChange} placeholder="Relationship" disabled={loading} />
-                </div>
-                {fieldErrors.guardian_relationship && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{fieldErrors.guardian_relationship[0]}</p>}
-              </div>
-              <div>
-                <label className={labelClass}>Guardian Contact <span className="font-normal">(optional)</span></label>
-                <div className="relative">
-                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input className={`${inputClass} pl-10`} type="tel" name="guardian_contact" value={form.guardian_contact} onChange={handleChange} placeholder="09XXXXXXXXX or +639XXXXXXXXX" disabled={loading} aria-invalid={Boolean(fieldErrors.guardian_contact)} />
-                </div>
-                {fieldErrors.guardian_contact && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{fieldErrors.guardian_contact[0]}</p>}
-              </div>
-            </div>
+          <div className="rounded-3xl border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+            <h3 className="font-semibold text-gray-900 dark:text-white">Email address</h3>
+            <p className="mt-2 break-all text-sm text-gray-600 dark:text-gray-300">{user.email}</p>
+            <Link to="/student/settings?tab=email" className="mt-3 inline-flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-maroon-800 dark:text-maroon-300">Change email</Link>
           </div>
-
+          <p className="text-sm text-gray-500 dark:text-gray-400">Your emergency contact is saved in your Health Profile. Update it there when needed.</p>
           <Link to="/student/health-profile" className="block w-full text-center py-3 bg-maroon-50 dark:bg-maroon-900/20 text-maroon-700 dark:text-maroon-400 rounded-2xl font-semibold text-sm hover:bg-maroon-100 dark:hover:bg-maroon-900/30 transition">
             Update Full Health Profile →
           </Link>

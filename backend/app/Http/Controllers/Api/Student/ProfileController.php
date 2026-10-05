@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\StudentProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ProfileController extends Controller
 {
@@ -19,6 +22,7 @@ class ProfileController extends Controller
             'data' => [
                 'user' => $user,
                 'profile' => $profile,
+                'emergency_contact' => $this->emergencyContact($user),
             ],
         ]);
     }
@@ -90,6 +94,33 @@ class ProfileController extends Controller
                 'profile_picture' => Storage::disk('public')->url($path),
             ],
         ]);
+    }
+
+    public function updateEmail(Request $request)
+    {
+        $user = auth()->user();
+        $request->merge(['email' => strtolower(trim((string) $request->input('email')))]);
+        $data = $request->validate([
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'password' => ['required', 'string'],
+        ]);
+        if (!Hash::check($data['password'], $user->password)) {
+            throw ValidationException::withMessages(['password' => ['Your current password is incorrect.']]);
+        }
+        $user->update(['email' => $data['email']]);
+        return response()->json(['success' => true, 'message' => 'Email updated successfully.', 'data' => ['email' => $user->email]]);
+    }
+
+    private function emergencyContact($user): array
+    {
+        $health = $user->healthProfile()->first(['emergency_name', 'emergency_relationship', 'emergency_phone']);
+        if ($health) {
+            return ['name' => $health->emergency_name, 'relationship' => $health->emergency_relationship,
+                'phone' => $health->emergency_phone, 'source' => 'health_profile'];
+        }
+        // Preserve older contacts for accounts that have no health profile yet.
+        return ['name' => $user->profile->guardian_name ?? null, 'relationship' => $user->profile->guardian_relationship ?? null,
+            'phone' => $user->profile->guardian_contact ?? null, 'source' => 'legacy'];
     }
 
     private function profileData(?StudentProfile $profile): ?array

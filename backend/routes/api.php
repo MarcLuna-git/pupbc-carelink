@@ -468,6 +468,8 @@ Route::middleware([
                     [ProfileController::class, 'uploadAvatar']
                 );
 
+                Route::patch('/profile/email', [ProfileController::class, 'updateEmail']);
+
 
                 /*
                 |--------------------------------------------------------------------------

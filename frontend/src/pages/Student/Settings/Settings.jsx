@@ -1,11 +1,13 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Key, Mail, Shield, Eye, EyeOff, Loader2, Save, Check, Moon, Sun, Lock } from 'lucide-react';
 import api from '../../../services/api';
 
 const Settings = () => {
+  const [params] = useSearchParams();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const [activeTab, setActiveTab] = useState('password');
+  const [activeTab, setActiveTab] = useState(params.get('tab') === 'email' ? 'email' : 'password');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
   const [loading, setLoading] = useState(false);
@@ -66,13 +68,16 @@ const Settings = () => {
     e.preventDefault();
     setLoading(true); setMessage('');
     try {
-      // Wala pang email-change API call dito.
+      const response = await api.patch('/student/profile/email', { email: emailForm.new_email, password: emailForm.password });
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      localStorage.setItem('user', JSON.stringify({ ...storedUser, email: response.data.data.email }));
+      window.dispatchEvent(new Event('studentProfileUpdated'));
       setMessageType('success');
-      setMessage('Email update request sent. Check your inbox.');
+      setMessage('Email updated successfully. Use your updated email the next time you log in.');
       setEmailForm({ new_email: '', password: '' });
     } catch (err) {
       setMessageType('error');
-      setMessage(err.response?.data?.message || 'Failed to update email.');
+      setMessage(Object.values(err.response?.data?.errors || {}).flat().join(' ') || err.response?.data?.message || 'Failed to update email.');
     } finally {
       setLoading(false);
       setTimeout(() => setMessage(''), 4000);
