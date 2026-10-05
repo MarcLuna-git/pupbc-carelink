@@ -35,6 +35,7 @@ import {
 import authService from '../services/authService';
 import api from '../services/api';
 import clinicLogo from '../assets/clinic logo.jpg';
+import campusBackground from '../assets/pup-binan-hero.jpg';
 
 const getStoredUser = () => {
   try {
@@ -492,12 +493,13 @@ const StudentLayout = ({ children }) => {
     .join(' • ');
 
   return (
-    <div className="min-h-screen bg-[#f7f7f8] text-gray-900 transition-colors duration-300 dark:bg-gray-950 dark:text-gray-100">
+    <div className="student-portal min-h-screen bg-[#f7f7f8] text-gray-900 transition-colors duration-300 dark:bg-gray-950 dark:text-gray-100">
       {/* ==================================================
           DESKTOP SIDEBAR
       ================================================== */}
 
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col overflow-hidden border-r border-maroon-950/10 bg-gradient-to-b from-[#65111f] via-[#751426] to-[#4f0d18] shadow-2xl shadow-black/10 lg:flex">
+        <img src={campusBackground} alt="" aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-28 h-72 w-full object-cover opacity-15" />
         {/* Brand */}
         <div className="border-b border-white/10 px-5 py-5">
           <Link
@@ -517,7 +519,7 @@ const StudentLayout = ({ children }) => {
                 PUPBC CareLink
               </p>
 
-              <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">
+              <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">
                 Student Portal
               </p>
             </div>
@@ -525,9 +527,9 @@ const StudentLayout = ({ children }) => {
         </div>
 
         {/* Main links */}
-        <nav className="flex-1 space-y-2 overflow-y-auto px-3 py-6">
-          <p className="px-4 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">
-            Clinic Services
+        <nav className="relative flex-1 space-y-2 overflow-y-auto px-3 py-6">
+          <p className="px-4 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/70">
+            Main Menu
           </p>
 
           {desktopNavItems.map(
@@ -569,7 +571,9 @@ const StudentLayout = ({ children }) => {
             }
           )}
         </nav>
-
+        <div className="px-7 pb-8 text-xs leading-relaxed text-white/80">
+          Your Health. Our Care.<br />A Healthier PUPBC Community.
+        </div>
       </aside>
 
       {/* ==================================================
@@ -578,7 +582,7 @@ const StudentLayout = ({ children }) => {
 
       <div className="flex min-w-0 min-h-screen flex-col lg:ml-64">
         {/* Header */}
-        <header className="sticky top-0 z-30 border-b border-gray-200/80 bg-white/95 shadow-sm shadow-black/[0.02] backdrop-blur-xl dark:border-gray-800 dark:bg-gray-900/95">
+        <header className="sticky top-0 z-30 border-b border-gray-200/80 bg-maroon-800 shadow-sm shadow-black/[0.02] dark:border-gray-800 dark:bg-maroon-950 lg:bg-white lg:dark:bg-gray-900">
           <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-5 lg:px-7">
             {/* Mobile brand */}
             <div className="flex min-w-0 items-center gap-2.5 lg:hidden">
@@ -591,11 +595,11 @@ const StudentLayout = ({ children }) => {
               </div>
 
               <div className="min-w-0">
-                <p className="truncate text-sm font-bold leading-tight text-maroon-900 dark:text-maroon-200">
+                <p className="truncate text-sm font-bold leading-tight text-white">
                   PUPBC CareLink
                 </p>
 
-                <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
+                <p className="text-[10px] font-medium text-white/80">
                   Student Portal
                 </p>
               </div>
@@ -603,11 +607,10 @@ const StudentLayout = ({ children }) => {
 
             {/* Desktop greeting */}
             <div className="hidden min-w-0 lg:flex lg:items-center lg:gap-3">
+              <img src={clinicLogo} alt="" className="h-11 w-11 rounded-full object-contain" />
               <div className="min-w-0">
-                <div className="inline-flex items-center gap-2 rounded-full bg-maroon-50 px-2.5 py-1 dark:bg-maroon-950/35">
-                  <span className="h-1.5 w-1.5 rounded-full bg-maroon-700 dark:bg-maroon-300" />
-
-                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-maroon-800 dark:text-maroon-300">
+                <div className="inline-flex items-center gap-2">
+                  <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
                     {greeting}
                   </p>
                 </div>
@@ -631,7 +634,7 @@ const StudentLayout = ({ children }) => {
                 to="/student/alerts"
                 aria-label="Open notifications and announcements"
                 title="Notifications & Announcements"
-                className="relative flex h-10 w-10 items-center justify-center rounded-xl text-gray-600 transition-all hover:bg-maroon-50 hover:text-maroon-800 focus:outline-none focus:ring-2 focus:ring-maroon-500/30 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-maroon-300"
+                className="relative flex h-10 w-10 items-center justify-center rounded-xl text-white lg:text-gray-600 transition-all hover:bg-maroon-50 hover:text-maroon-800 focus:outline-none focus:ring-2 focus:ring-maroon-500/30 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-maroon-300"
               >
                 <Bell className="h-5 w-5" />
 
@@ -658,7 +661,7 @@ const StudentLayout = ({ children }) => {
                     ? 'Light mode'
                     : 'Dark mode'
                 }
-                className="hidden h-10 w-10 items-center justify-center rounded-xl text-gray-600 transition-all hover:bg-gray-100 hover:text-maroon-800 focus:outline-none focus:ring-2 focus:ring-maroon-500/30 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-yellow-300 sm:flex"
+                className="hidden h-11 w-11 items-center justify-center rounded-xl text-white lg:text-gray-600 transition-all hover:bg-gray-100 hover:text-maroon-800 focus:outline-none focus:ring-2 focus:ring-maroon-500/30 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-yellow-300 sm:flex"
               >
                 {darkMode ? (
                   <Sun className="h-5 w-5 text-yellow-400" />

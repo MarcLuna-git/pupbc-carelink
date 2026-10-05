@@ -1,0 +1,42 @@
+.student-appointments { width: 100%; min-width: 0; }
+.appointment-title { display:flex; align-items:center; gap:16px; }
+.appointment-title > svg { width:36px; height:36px; color:var(--color-maroon-800); }
+.appointment-banner { display:flex; align-items:center; gap:16px; max-width:410px; padding:14px 22px; border-radius:18px; background:#fcecee; }
+.appointment-banner .appointment-illustration { order:2; flex-shrink:0; }
+.appointment-illustration { display:flex; align-items:center; justify-content:center; width:80px; height:88px; border-radius:18px; background:#fff6f7; color:#9b1730; transform:rotate(-7deg); box-shadow:0 6px 14px #8000000d; }
+.appointment-illustration svg { width:56px; height:56px; stroke-width:1.5; }
+.appointment-care-panel { display:flex; flex-direction:column; gap:16px; justify-content:center; border-radius:18px; padding:20px; background:#fcecee; }
+.appointment-banner .appointment-illustration { width:64px; height:64px; }
+.appointment-care-panel .appointment-illustration { width:64px; height:70px; }
+.appointment-illustration svg { max-width:46px; max-height:46px; }
+.appointment-care-panel .font-bold { font-size:21px; line-height:1.2; }
+.appointment-booking-heading { display:flex; gap:14px; align-items:flex-start; }
+.appointment-heading-icon { display:flex; flex-shrink:0; width:44px; height:44px; align-items:center; justify-content:center; border-radius:12px; background:#fcecee; color:#800000; }
+.appointment-service-layout { display:grid; grid-template-columns:minmax(0,1fr) 240px; gap:28px; }
+.appointment-service-main { min-width:0; }
+.appointment-service-footer { grid-column:1/-1; }
+.appointment-rows { display:grid; gap:12px; padding:16px; }
+.appointment-row { display:flex; align-items:center; gap:18px; padding:16px; border:1px solid #e5e7eb; border-radius:14px; }
+.appointment-row-pending { border-left:4px solid #f9d981; }
+.appointment-row-icon { display:flex; width:54px; height:54px; align-items:center; justify-content:center; border-radius:14px; flex-shrink:0; }
+.appointment-row-actions { display:flex; align-items:center; gap:24px; }
+.student-appointments :is(input,select,textarea) { min-width:0; min-height:48px; font-size:16px; }
+.student-appointments button:focus-visible, .student-portal a:focus-visible, .student-portal button:focus-visible { outline:2px solid #d65b6d; outline-offset:3px; }
+.dark .appointment-banner,.dark .appointment-care-panel { background:#31212a; }
+.dark .appointment-illustration,.dark .appointment-heading-icon { background:#462531; color:#f3b6c0; }
+.dark .appointment-row { border-color:#374151; }
+.dark .appointment-row-pending { border-left-color:#b58a32; }
+.dark .appointment-title > svg { color:#f3b6c0; }
+@media(max-width:1279px) { .appointment-banner { display:none; } .appointment-service-layout { grid-template-columns:minmax(0,1fr) 210px; gap:20px; } .appointment-row-actions { flex-direction:column; gap:8px; align-items:flex-end; } }
+@media(max-width:767px) {
+  .appointment-title > svg,.appointment-care-panel { display:none; }
+  .appointment-service-layout { display:block; }
+  .appointment-service-footer { margin-top:22px; }
+  .student-appointments form button:not([type=submit]) { min-height:44px; }
+  .appointment-service-footer button { width:100%; }
+  .appointment-rows { padding:12px; gap:10px; }
+  .appointment-row { flex-wrap:wrap; gap:12px; padding:12px; align-items:flex-start; }
+  .appointment-row-icon { width:42px; height:42px; border-radius:10px; }
+  .appointment-row-actions { width:100%; flex-direction:row; justify-content:space-between; gap:8px; align-items:center; flex-wrap:wrap; }
+}
+@media(prefers-reduced-motion:reduce) { .student-portal * { scroll-behavior:auto; transition:none!important; } }
