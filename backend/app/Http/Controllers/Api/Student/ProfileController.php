@@ -32,11 +32,10 @@ class ProfileController extends Controller
             'address' => 'nullable|string|max:1000',
             'guardian_name' => 'nullable|string|max:255',
             'guardian_relationship' => 'nullable|string|max:100',
-            'guardian_contact' => ['required', 'string', 'max:20', 'regex:/^(?:09\d{9}|\+639\d{9})$/'],
+            'guardian_contact' => ['nullable', 'string', 'max:20', 'regex:/^(?:09\d{9}|\+639\d{9})$/'],
         ], [
             'mobile_number.required' => 'Mobile number is required.',
             'mobile_number.regex' => 'Use 09XXXXXXXXX or +639XXXXXXXXX for your mobile number.',
-            'guardian_contact.required' => 'Guardian contact is required.',
             'guardian_contact.regex' => 'Use 09XXXXXXXXX or +639XXXXXXXXX for the guardian contact.',
         ]);
 
@@ -44,16 +43,19 @@ class ProfileController extends Controller
             'mobile_number' => $data['mobile_number'] ?? $user->mobile_number,
         ]);
 
-        $profile = StudentProfile::updateOrCreate(
-            ['user_id' => $user->id],
-            array_filter([
+        $profileUpdates = array_filter([
                 'mobile_number' => $data['mobile_number'] ?? null,
                 'address' => $data['address'] ?? null,
                 'guardian_name' => $data['guardian_name'] ?? null,
                 'guardian_relationship' => $data['guardian_relationship'] ?? null,
                 'guardian_contact' => $data['guardian_contact'] ?? null,
-            ], static fn ($value) => $value !== null)
-        );
+            ], static fn ($value) => $value !== null);
+        // An explicitly blank optional contact clears the saved value.
+        // Omitting the field preserves it for older clients.
+        if (array_key_exists('guardian_contact', $data)) {
+            $profileUpdates['guardian_contact'] = $data['guardian_contact'];
+        }
+        $profile = StudentProfile::updateOrCreate(['user_id' => $user->id], $profileUpdates);
 
         return response()->json([
             'success' => true,

@@ -167,7 +167,7 @@ function SectionTitle({ eyebrow, title, description }) {
   return (
     <div className="mb-5">
       {eyebrow && (
-        <p className="mb-1 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#8b1730]">
+        <p className="mb-1 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#8b1730] dark:text-rose-300">
           {eyebrow}
         </p>
       )}
@@ -190,7 +190,7 @@ function FeatureCard({ feature }) {
 
   const content = (
     <>
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#f9e9ee] text-[#741126] sm:h-14 sm:w-14">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#f9e9ee] dark:bg-rose-950/40 text-[#741126] dark:text-rose-300 sm:h-14 sm:w-14">
         <Icon size={25} strokeWidth={1.9} />
       </span>
 
@@ -206,7 +206,7 @@ function FeatureCard({ feature }) {
 
       <ChevronRight
         size={18}
-        className="shrink-0 text-[#741126] transition-transform group-hover:translate-x-1"
+        className="shrink-0 text-[#741126] dark:text-rose-300 transition-transform group-hover:translate-x-1"
       />
     </>
   );
@@ -307,10 +307,10 @@ export default function Landing() {
   return (
     <div
       id="home"
-      className="min-h-screen overflow-x-hidden bg-[#f8f9fc] text-slate-900"
+      className="min-h-screen overflow-x-hidden bg-[#f8f9fc] text-slate-900 dark:bg-gray-900 dark:text-gray-100"
     >
       {/* HEADER */}
-      <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/95 shadow-sm backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/95 dark:bg-gray-900/95 shadow-sm backdrop-blur-xl">
         <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
           <Link
             to="/"
@@ -323,7 +323,7 @@ export default function Landing() {
               className="h-11 w-11 shrink-0 rounded-full bg-white object-cover sm:h-12 sm:w-12"
             />
 
-            <span className="block truncate text-base font-black tracking-tight text-[#701126] sm:text-lg">
+            <span className="block truncate text-base font-black tracking-tight text-[#701126] dark:text-rose-300 sm:text-lg">
               PUPBC CareLink
             </span>
           </Link>
@@ -336,7 +336,7 @@ export default function Landing() {
               <a
                 key={item.href}
                 href={item.href}
-                className="rounded-xl px-3 py-2 text-[13px] font-semibold text-slate-600 transition-colors hover:bg-rose-50 hover:text-[#741126]"
+                className="rounded-xl px-3 py-2 text-[13px] font-semibold text-slate-600 transition-colors hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-[#741126]"
               >
                 {item.label}
               </a>
@@ -346,7 +346,7 @@ export default function Landing() {
           <div className="hidden items-center gap-2 lg:flex">
             <Link
               to="/register"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-100 bg-rose-50 px-5 text-sm font-bold text-[#741126] transition hover:bg-rose-100"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-100 bg-rose-50 px-5 text-sm font-bold text-[#741126] dark:text-rose-300 transition hover:bg-rose-100 dark:hover:bg-rose-950/60"
             >
               <UserRoundPlus size={17} />
               Get Started
@@ -373,7 +373,7 @@ export default function Landing() {
             }
             aria-expanded={mobileMenuOpen}
             aria-controls="landing-mobile-menu"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[#741126] hover:bg-rose-50 lg:hidden"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[#741126] dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 lg:hidden"
           >
             {mobileMenuOpen ? (
               <X size={23} />
@@ -395,7 +395,7 @@ export default function Landing() {
                   key={item.href}
                   href={item.href}
                   onClick={closeMenu}
-                  className="block rounded-xl px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-rose-50 hover:text-[#741126]"
+                  className="block rounded-xl px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-[#741126]"
                 >
                   {item.label}
                 </a>
@@ -405,7 +405,7 @@ export default function Landing() {
                 <Link
                   to="/register"
                   onClick={closeMenu}
-                  className="flex min-h-11 items-center justify-center rounded-xl bg-rose-50 text-sm font-bold text-[#741126]"
+                  className="flex min-h-11 items-center justify-center rounded-xl bg-rose-50 text-sm font-bold text-[#741126] dark:text-rose-300"
                 >
                   Get Started
                 </Link>
@@ -588,7 +588,7 @@ export default function Landing() {
 
                       <Icon
                         size={21}
-                        className="text-[#8b1730]"
+                        className="text-[#8b1730] dark:text-rose-300"
                       />
                     </div>
 
@@ -605,14 +605,14 @@ export default function Landing() {
             </div>
 
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-rose-50 px-4 py-3">
-              <p className="text-xs font-medium text-[#741126]">
+              <p className="text-xs font-medium text-[#741126] dark:text-rose-300">
                 Your first clinic appointment starts with
                 your CareLink account.
               </p>
 
               <Link
                 to="/register"
-                className="inline-flex items-center gap-1 text-xs font-extrabold text-[#741126] hover:underline"
+                className="inline-flex items-center gap-1 text-xs font-extrabold text-[#741126] dark:text-rose-300 hover:underline"
               >
                 Create an account
                 <ArrowRight size={15} />
@@ -677,9 +677,9 @@ export default function Landing() {
                   <Link
                     key={service.title}
                     to="/login"
-                    className="group flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-rose-200 hover:bg-rose-50/40 sm:min-h-[155px]"
+                    className="group flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/40/40 sm:min-h-[155px]"
                   >
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f9e9ee] text-[#741126]">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f9e9ee] dark:bg-rose-950/40 text-[#741126] dark:text-rose-300">
                       <Icon size={21} />
                     </span>
 
@@ -693,7 +693,7 @@ export default function Landing() {
 
                     <ArrowRight
                       size={15}
-                      className="mt-3 text-[#741126] transition-transform group-hover:translate-x-1"
+                      className="mt-3 text-[#741126] dark:text-rose-300 transition-transform group-hover:translate-x-1"
                     />
                   </Link>
                 );
@@ -712,7 +712,7 @@ export default function Landing() {
           >
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
-                <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#8b1730]">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#8b1730] dark:text-rose-300">
                   Campus Updates
                 </p>
 
@@ -721,7 +721,7 @@ export default function Landing() {
                 </h2>
               </div>
 
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#f9e9ee] text-[#741126]">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#f9e9ee] dark:bg-rose-950/40 text-[#741126] dark:text-rose-300">
                 <Megaphone size={21} />
               </span>
             </div>
@@ -753,7 +753,7 @@ export default function Landing() {
                     setAnnouncementsLoading(true);
                     loadAnnouncements();
                   }}
-                  className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-[#741126] hover:underline"
+                  className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-[#741126] dark:text-rose-300 hover:underline"
                 >
                   <RefreshCw size={15} />
                   Try again
@@ -782,7 +782,7 @@ export default function Landing() {
                     key={announcement.id}
                     className="flex gap-3 py-3 first:pt-0"
                   >
-                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-[#741126]">
+                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-[#741126] dark:text-rose-300">
                       <Megaphone size={17} />
                     </span>
 
@@ -808,14 +808,14 @@ export default function Landing() {
             )}
 
             <div className="mt-5 rounded-xl border border-rose-100 bg-rose-50 p-3">
-              <p className="text-xs leading-5 text-[#741126]">
+              <p className="text-xs leading-5 text-[#741126] dark:text-rose-300">
                 Sign in to receive your personal clinic
                 notifications and appointment updates.
               </p>
 
               <Link
                 to="/login"
-                className="mt-2 inline-flex items-center gap-1 text-xs font-extrabold text-[#741126] hover:underline"
+                className="mt-2 inline-flex items-center gap-1 text-xs font-extrabold text-[#741126] dark:text-rose-300 hover:underline"
               >
                 Open Student Portal
                 <ArrowRight size={14} />
@@ -848,13 +848,13 @@ export default function Landing() {
                     )
                   }
                   aria-expanded={openFaq === index}
-                  className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-3 text-left text-[13px] font-bold text-slate-800 hover:bg-rose-50"
+                  className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-3 text-left text-[13px] font-bold text-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40"
                 >
                   {faq.question}
 
                   <ChevronDown
                     size={17}
-                    className={`shrink-0 text-[#741126] transition-transform ${
+                    className={`shrink-0 text-[#741126] dark:text-rose-300 transition-transform ${
                       openFaq === index
                         ? 'rotate-180'
                         : ''
@@ -963,7 +963,7 @@ export default function Landing() {
                 className="h-11 w-11 rounded-full object-cover"
               />
 
-              <p className="text-sm font-black text-[#741126]">
+              <p className="text-sm font-black text-[#741126] dark:text-rose-300">
                 PUPBC CareLink
               </p>
             </div>
@@ -1001,7 +1001,7 @@ export default function Landing() {
             <p className="mt-3 flex items-start gap-2 text-xs leading-6 text-slate-600">
               <MapPin
                 size={17}
-                className="mt-0.5 shrink-0 text-[#741126]"
+                className="mt-0.5 shrink-0 text-[#741126] dark:text-rose-300"
               />
 
               <span>

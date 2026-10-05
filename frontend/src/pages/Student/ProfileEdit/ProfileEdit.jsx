@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, MapPin, Users, Camera, Save, Loader2, Hash, GraduationCap, Calendar, Edit3, X, Shield, ArrowLeft } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Users, Camera, Save, Loader2, Hash, GraduationCap, Calendar, X, Shield, ArrowLeft } from 'lucide-react';
 import api from '../../../services/api';
 
 const Skeleton = ({ className = '' }) => (
@@ -11,7 +11,6 @@ const ProfileEdit = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const fileInputRef = useRef(null);
-  const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
@@ -76,6 +75,7 @@ const ProfileEdit = () => {
   };
 
   const handleSave = async () => {
+    if (loading || fetching) return;
     setLoading(true); setMessage(''); setFieldErrors({});
     try {
       const token = localStorage.getItem('token');
@@ -87,7 +87,7 @@ const ProfileEdit = () => {
         guardian_contact: form.guardian_contact,
       }, { headers: { Authorization: `Bearer ${token}` } });
 
-      let avatarUrl = user.profile?.profile_picture || null;
+      let avatarUrl = loadedProfile.profile_picture || user.profile?.profile_picture || null;
       if (avatarFile) {
         const avatarData = new FormData();
         avatarData.append('avatar', avatarFile);
@@ -112,7 +112,6 @@ const ProfileEdit = () => {
       setMessageType('success');
       setMessage('Profile updated successfully.');
       setAvatarFile(null);
-      setEditing(false);
       setTimeout(() => navigate('/student/profile'), 700);
     } catch (err) {
       setMessageType('error');
@@ -122,7 +121,7 @@ const ProfileEdit = () => {
   };
 
   const handleCancel = () => {
-    setEditing(false);
+    if (loading) return;
     setForm({
       mobile_number: loadedProfile.mobile_number ?? user.mobile_number ?? '',
       address: loadedProfile.address || '',
@@ -134,6 +133,7 @@ const ProfileEdit = () => {
     setFieldErrors({});
     setAvatarFile(null);
     setProfilePic(loadedProfile.profile_picture || null);
+    navigate('/student/profile');
   };
 
   const getAge = (birthday) => {
@@ -200,19 +200,13 @@ const ProfileEdit = () => {
           </div>
         </div>
         <div className="flex items-center gap-2 self-end sm:self-auto">
-          {!editing ? (
-            <button onClick={() => setEditing(true)} className="flex items-center gap-2 px-5 py-2.5 bg-maroon-800 text-white rounded-2xl font-semibold text-sm hover:bg-maroon-900 transition shadow-lg">
-              <Edit3 className="w-4 h-4" /><span>Edit</span>
-            </button>
-          ) : (
             <>
-              <button onClick={handleCancel} className="px-4 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-2xl font-semibold text-sm hover:bg-gray-300 dark:hover:bg-gray-600 transition flex items-center gap-2"><X className="w-4 h-4" />Cancel</button>
+              <button onClick={handleCancel} disabled={loading} className="px-4 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-2xl font-semibold text-sm hover:bg-gray-300 dark:hover:bg-gray-600 transition disabled:opacity-50 flex items-center gap-2"><X className="w-4 h-4" />Cancel</button>
               <button onClick={handleSave} disabled={loading} className="px-5 py-2.5 bg-maroon-800 text-white rounded-2xl font-semibold text-sm hover:bg-maroon-900 transition shadow-lg disabled:opacity-50 flex items-center gap-2">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {loading ? 'Saving...' : 'Save'}
               </button>
             </>
-          )}
         </div>
       </div>
 
@@ -228,16 +222,14 @@ const ProfileEdit = () => {
               <div className="w-24 h-24 bg-maroon-100 dark:bg-maroon-900/30 rounded-full flex items-center justify-center mx-auto mb-3 overflow-hidden border-4 border-white dark:border-gray-700 shadow-md">
                 {profilePic ? <img src={profilePic} alt="Profile" className="w-full h-full object-cover" /> : <User className="w-12 h-12 text-maroon-600 dark:text-maroon-400" />}
               </div>
-              {editing && (
-                <button onClick={() => fileInputRef.current.click()} className="absolute bottom-1 right-1 w-8 h-8 bg-maroon-800 rounded-full flex items-center justify-center text-white hover:bg-maroon-900 transition shadow-lg">
+                <button onClick={() => fileInputRef.current.click()} disabled={loading} aria-label="Change profile photo" className="absolute bottom-1 right-1 w-8 h-8 bg-maroon-800 rounded-full flex items-center justify-center text-white hover:bg-maroon-900 transition shadow-lg disabled:opacity-50">
                   <Camera className="w-4 h-4" />
                 </button>
-              )}
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
             </div>
             <h2 className="font-bold text-gray-900 dark:text-white">{user.first_name} {user.last_name}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">{user.student_id}</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{user.course} - {user.year}{user.section}</p>
+            <p className="text-xs text-gray-400 dark:text-gray-400 mt-1">{user.course} - {user.year}{user.section}</p>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
@@ -252,9 +244,9 @@ const ProfileEdit = () => {
                 { icon: Mail, label: 'Email', value: user.email },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <item.icon className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                  <item.icon className="w-4 h-4 text-gray-400 dark:text-gray-400 flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500">{item.label}</p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-400">{item.label}</p>
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{item.value}</p>
                   </div>
                 </div>
@@ -268,14 +260,13 @@ const ProfileEdit = () => {
           <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <User className="w-5 h-5 text-maroon-600 dark:text-maroon-400" />Personal Information
-              {editing && <span className="text-xs text-yellow-600 dark:text-yellow-400 font-normal">(Editing)</span>}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>Mobile Number</label>
                 <div className="relative">
                   <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input className={`${inputClass} pl-10`} type="tel" name="mobile_number" value={form.mobile_number} onChange={handleChange} placeholder="09XXXXXXXXX or +639XXXXXXXXX" disabled={!editing} required aria-invalid={Boolean(fieldErrors.mobile_number)} />
+                  <input className={`${inputClass} pl-10`} type="tel" name="mobile_number" value={form.mobile_number} onChange={handleChange} placeholder="09XXXXXXXXX or +639XXXXXXXXX" disabled={loading} required aria-invalid={Boolean(fieldErrors.mobile_number)} />
                 </div>
                 {fieldErrors.mobile_number && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{fieldErrors.mobile_number[0]}</p>}
               </div>
@@ -283,7 +274,7 @@ const ProfileEdit = () => {
                 <label className={labelClass}>Address</label>
                 <div className="relative">
                   <MapPin className="absolute left-3.5 top-3 text-gray-400" />
-                  <textarea className={`${inputClass} pl-10 resize-none`} name="address" value={form.address} onChange={handleChange} rows={2} placeholder="Enter your address" disabled={!editing} />
+                  <textarea className={`${inputClass} pl-10 resize-none`} name="address" value={form.address} onChange={handleChange} rows={2} placeholder="Enter your address" disabled={loading} />
                 </div>
                 {fieldErrors.address && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{fieldErrors.address[0]}</p>}
               </div>
@@ -299,7 +290,7 @@ const ProfileEdit = () => {
                 <label className={labelClass}>Guardian Name</label>
                 <div className="relative">
                   <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input className={`${inputClass} pl-10`} type="text" name="guardian_name" value={form.guardian_name} onChange={handleChange} placeholder="Guardian name" disabled={!editing} />
+                  <input className={`${inputClass} pl-10`} type="text" name="guardian_name" value={form.guardian_name} onChange={handleChange} placeholder="Guardian name" disabled={loading} />
                 </div>
                 {fieldErrors.guardian_name && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{fieldErrors.guardian_name[0]}</p>}
               </div>
@@ -307,15 +298,15 @@ const ProfileEdit = () => {
                 <label className={labelClass}>Relationship</label>
                 <div className="relative">
                   <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input className={`${inputClass} pl-10`} type="text" name="guardian_relationship" value={form.guardian_relationship} onChange={handleChange} placeholder="Relationship" disabled={!editing} />
+                  <input className={`${inputClass} pl-10`} type="text" name="guardian_relationship" value={form.guardian_relationship} onChange={handleChange} placeholder="Relationship" disabled={loading} />
                 </div>
                 {fieldErrors.guardian_relationship && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{fieldErrors.guardian_relationship[0]}</p>}
               </div>
               <div>
-                <label className={labelClass}>Guardian Contact</label>
+                <label className={labelClass}>Guardian Contact <span className="font-normal">(optional)</span></label>
                 <div className="relative">
                   <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input className={`${inputClass} pl-10`} type="tel" name="guardian_contact" value={form.guardian_contact} onChange={handleChange} placeholder="09XXXXXXXXX or +639XXXXXXXXX" disabled={!editing} required aria-invalid={Boolean(fieldErrors.guardian_contact)} />
+                  <input className={`${inputClass} pl-10`} type="tel" name="guardian_contact" value={form.guardian_contact} onChange={handleChange} placeholder="09XXXXXXXXX or +639XXXXXXXXX" disabled={loading} aria-invalid={Boolean(fieldErrors.guardian_contact)} />
                 </div>
                 {fieldErrors.guardian_contact && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{fieldErrors.guardian_contact[0]}</p>}
               </div>

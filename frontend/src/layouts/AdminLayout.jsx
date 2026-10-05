@@ -1,3 +1,4 @@
+import useAccountTheme from '../hooks/useAccountTheme';
 import authService from '../services/authService';
 import { Suspense, useState, useEffect } from 'react';
 import NursePageSkeleton from '../components/NursePageSkeleton';
@@ -14,30 +15,7 @@ const AdminLayout = ({ children }) => {
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
-
-  useEffect(() => {
-    const savedMode = localStorage.getItem('darkMode') === 'true';
-    setDarkMode(savedMode);
-    if (savedMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    
-    return () => {
-      document.documentElement.classList.remove('dark');
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleDarkModeChange = () => {
-      const isDark = localStorage.getItem('darkMode') === 'true';
-      setDarkMode(isDark);
-    };
-    window.addEventListener('darkModeChange', handleDarkModeChange);
-    return () => window.removeEventListener('darkModeChange', handleDarkModeChange);
-  }, []);
+  const { darkMode, toggleDarkMode } = useAccountTheme();
 
   useEffect(() => {
     let active = true;
@@ -62,24 +40,11 @@ const AdminLayout = ({ children }) => {
     };
   }, []);
 
-  const toggleDarkMode = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    localStorage.setItem('darkMode', newMode.toString());
-    if (newMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    window.dispatchEvent(new Event('darkModeChange'));
-  };
-
   const handleLogout = () => setShowLogoutConfirm(true);
 
   const confirmLogout = async () => {
     setLogoutLoading(true);
     await authService.logout();
-    document.documentElement.classList.remove('dark');
     navigate('/carelink-portal');
   };
 
@@ -99,15 +64,15 @@ const AdminLayout = ({ children }) => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-[#F8F9FB] dark:bg-gray-950 flex flex-col transition-colors duration-300">
-      
+    <div className="min-h-screen bg-[#F8F9FB] dark:bg-gray-900 dark:text-gray-100 flex flex-col transition-colors duration-300">
+
       <div className="hidden lg:flex">
-        <aside className={`w-64 flex flex-col min-h-screen fixed inset-y-0 left-0 z-40 shadow-2xl transition-all duration-300 ${
-          darkMode 
-            ? 'bg-gradient-to-b from-gray-900 to-gray-950 shadow-black/30' 
+        <aside className={`w-64 flex flex-col fixed inset-y-0 left-0 z-40 h-dvh shadow-2xl transition-all duration-300 ${
+          darkMode
+            ? 'bg-gradient-to-b from-gray-800 to-gray-900 shadow-black/30'
             : 'bg-gradient-to-b from-maroon-800 to-maroon-900 shadow-maroon-900/30'
         }`}>
-          
+
           <div className={`h-16 flex items-center px-5 border-b transition-colors ${
             darkMode ? 'border-white/5' : 'border-white/10'
           }`}>
@@ -130,9 +95,9 @@ const AdminLayout = ({ children }) => {
             {navItems.map(item => (
               <Link key={item.path} to={item.path}
                 className={`flex items-center space-x-3 px-4 py-2.5 rounded-2xl text-sm font-medium transition-all duration-200 ${
-                  isActive(item.path) 
-                    ? darkMode 
-                      ? 'bg-white/10 text-white shadow-lg' 
+                  isActive(item.path)
+                    ? darkMode
+                      ? 'bg-white/10 text-white shadow-lg'
                       : 'bg-white/20 text-white shadow-lg'
                     : darkMode
                       ? 'text-gray-400 hover:bg-white/5 hover:text-white'
@@ -164,8 +129,8 @@ const AdminLayout = ({ children }) => {
             </div>
             <button onClick={handleLogout}
               className={`flex items-center space-x-3 px-4 py-2.5 rounded-2xl text-sm transition-all w-full ${
-                darkMode 
-                  ? 'text-gray-400 hover:text-red-400 hover:bg-red-500/10' 
+                darkMode
+                  ? 'text-gray-400 hover:text-red-400 hover:bg-red-500/10'
                   : 'text-white/60 hover:text-red-200 hover:bg-red-500/10'
               }`}>
               <LogOut className="w-5 h-5" /><span>Sign Out</span>
@@ -174,27 +139,27 @@ const AdminLayout = ({ children }) => {
         </aside>
       </div>
 
-      <div className="flex-1 flex flex-col min-h-screen lg:ml-64">
-        
-        <header className="h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
-          <button className="lg:hidden" onClick={() => setSidebarOpen(true)}>
+      <div className="min-w-0 flex-1 flex flex-col min-h-screen lg:ml-64">
+
+        <header className="h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 flex items-center justify-between gap-2 px-3 sm:px-4 lg:px-6 sticky top-0 z-30">
+          <button aria-label="Open navigation" className="shrink-0 rounded-lg p-2 lg:hidden" onClick={() => setSidebarOpen(true)}>
             <Menu className="w-6 h-6 text-gray-600 dark:text-gray-300" />
           </button>
-          
-          <span className="font-semibold text-gray-800 dark:text-white">Welcome, Nurse {user.first_name}</span>
 
-          <div className="flex items-center space-x-1">
+          <span className="min-w-0 flex-1 truncate text-sm sm:text-base font-semibold text-gray-800 dark:text-gray-100">Welcome, Nurse {user.first_name}</span>
+
+          <div className="flex shrink-0 items-center space-x-1">
             <Link to="/nurse/notifications" className="p-2.5 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition relative">
               <Bell className="w-5 h-5" />
               {unreadNotificationCount > 0 && <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-red-500 px-1 text-center text-[9px] font-bold leading-4 text-white">{unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}</span>}
             </Link>
-            <button onClick={toggleDarkMode} className="p-2.5 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+            <button aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'} aria-pressed={darkMode} onClick={toggleDarkMode} className="p-2.5 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
               {darkMode ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5" />}
             </button>
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
+        <main className="min-w-0 flex-1 p-3 sm:p-4 lg:p-6 overflow-x-auto">
           <AnimatePresence mode="wait">
             <motion.div key={location.pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               <Suspense fallback={<NursePageSkeleton label="Loading page" />}>{children}</Suspense>
@@ -204,9 +169,9 @@ const AdminLayout = ({ children }) => {
       </div>
 
       {sidebarOpen && <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
-      <aside className={`fixed lg:hidden inset-y-0 left-0 z-50 w-64 flex flex-col min-h-screen transform transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} ${
-        darkMode 
-          ? 'bg-gradient-to-b from-gray-900 to-gray-950' 
+      <aside className={`fixed lg:hidden inset-y-0 left-0 z-50 w-64 max-w-[85vw] flex flex-col h-dvh transform transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} ${
+        darkMode
+          ? 'bg-gradient-to-b from-gray-800 to-gray-900'
           : 'bg-gradient-to-b from-maroon-800 to-maroon-900'
       }`}>
         <div className={`h-16 flex items-center justify-between px-5 border-b ${darkMode ? 'border-white/5' : 'border-white/10'}`}>
@@ -217,7 +182,7 @@ const AdminLayout = ({ children }) => {
           {navItems.map(item => (
             <Link key={item.path} to={item.path} onClick={() => setSidebarOpen(false)}
               className={`flex items-center space-x-3 px-4 py-2.5 rounded-2xl text-sm font-medium transition-all ${
-                isActive(item.path) 
+                isActive(item.path)
                   ? darkMode ? 'bg-white/10 text-white' : 'bg-white/20 text-white'
                   : darkMode ? 'text-gray-400 hover:bg-white/5 hover:text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'
               }`}>

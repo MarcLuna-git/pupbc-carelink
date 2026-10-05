@@ -251,15 +251,19 @@ Route::middleware([
                                 continue;
                             }
 
+                            // The query excludes null dates; Medicine casts this to Carbon.
+                            /** @var \Illuminate\Support\Carbon $expiryDate */
+                            $expiryDate = $medicine->expiry_date;
+
                             \App\Models\Notification::create([
                                 'user_id' => $user->id,
                                 'type' => 'medicine_expiring_soon',
                                 'title' => 'Medicine Expiring Soon',
                                 'message' => $medicine->name . ' expires on ' .
-                                    $medicine->expiry_date->format('M j, Y') . '.',
+                                    $expiryDate->format('M j, Y') . '.',
                                 'data' => [
                                     'medicine_id' => $medicine->id,
-                                    'expiry_date' => $medicine->expiry_date->toDateString(),
+                                    'expiry_date' => $expiryDate->toDateString(),
                                 ],
                             ]);
                         }

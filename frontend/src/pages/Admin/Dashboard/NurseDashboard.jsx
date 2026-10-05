@@ -11,7 +11,7 @@ const NurseDashboard = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   const [stats, setStats] = useState({
     todayAppointments: 0,
     confirmedAppointments: 0,
@@ -162,7 +162,7 @@ const NurseDashboard = () => {
 
   return (
     <div className="space-y-5">
-      
+
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         className="bg-gradient-to-br from-maroon-800 to-maroon-900 dark:from-maroon-900 dark:to-maroon-950 rounded-3xl p-5 lg:p-6 text-white shadow-xl shadow-maroon-800/20">
         <div className="flex items-center justify-between">
@@ -190,7 +190,7 @@ const NurseDashboard = () => {
             className="bg-white dark:bg-gray-800 rounded-3xl p-4 lg:p-5 border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-400 dark:text-gray-500">{card.title}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-400">{card.title}</p>
                 <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mt-1">{card.value}</p>
                 <p className="text-xs text-gray-400 mt-1">{card.sub}</p>
               </div>
@@ -203,9 +203,9 @@ const NurseDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        
+
         <div className="lg:col-span-2 space-y-5">
-          
+
           <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-gray-100 dark:border-gray-700">
             <h3 className="font-bold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -245,7 +245,7 @@ const NurseDashboard = () => {
         </div>
 
         <div className="space-y-5">
-          
+
           <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-gray-100 dark:border-gray-700">
             <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
               <Activity className="w-5 h-5 text-maroon-800 dark:text-maroon-400" />

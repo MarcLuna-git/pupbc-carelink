@@ -16,7 +16,7 @@ const NurseMedicine = () => {
   const [filter, setFilter] = useState('all');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
-  
+
   const [showModal, setShowModal] = useState(false);
   const [editingMedicine, setEditingMedicine] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
@@ -57,12 +57,12 @@ const NurseMedicine = () => {
       if (filter === 'low_stock') params.low_stock = true;
       if (filter === 'expiring_soon') params.expiring_soon = true;
       if (filter === 'expired') params.expired = true;
-      
+
       const response = await api.get('/nurse/medicines', {
         headers: { Authorization: `Bearer ${token}` },
         params
       });
-      
+
       if (response.data.success) {
         const data = response.data.data;
         setMedicines(Array.isArray(data) ? data : (data?.data || []));
@@ -111,11 +111,11 @@ const NurseMedicine = () => {
       return;
     }
     setFormLoading(true);
-    
+
     try {
       const token = localStorage.getItem('token');
       let response;
-      
+
       if (editingMedicine) {
         const editableFields = { ...form };
         delete editableFields.quantity;
@@ -155,11 +155,11 @@ const NurseMedicine = () => {
     if (!stockMedicine) return;
     if (!Number.isInteger(Number(stockQuantity)) || Number(stockQuantity) < 1) return;
     setFormLoading(true);
-    
+
     try {
       const token = localStorage.getItem('token');
       const endpoint = `/nurse/medicines/${stockMedicine.id}/add-stock`;
-      
+
       const response = await api.post(endpoint, { quantity: stockQuantity }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -245,7 +245,7 @@ const NurseMedicine = () => {
       await api.delete(`/nurse/medicines/${deleteMedicine.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       setMessageType('success');
       setMessage('Medicine deleted.');
       setShowDeleteConfirm(false);
@@ -268,7 +268,7 @@ const NurseMedicine = () => {
     return { color: 'bg-green-100 text-green-700', text: 'OK', icon: Package };
   };
 
-  const inputClass = "w-full border border-gray-200 dark:border-gray-600 rounded-2xl px-4 py-2.5 text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-maroon-500";
+  const inputClass = "w-full border border-gray-200 dark:border-gray-600 rounded-2xl px-4 py-2.5 text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-maroon-500 dark:focus:ring-maroon-300/30 dark:focus:border-maroon-300";
   const labelClass = "text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5";
   const today = new Date();
   const minimumExpiryDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -338,7 +338,7 @@ const NurseMedicine = () => {
       <div className="flex flex-col sm:flex-row gap-3">
         <form onSubmit={handleSearch} className="flex-1 relative">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input className="w-full border border-gray-200 dark:border-gray-600 rounded-2xl pl-10 pr-10 py-2.5 text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-maroon-500"
+          <input className="w-full border border-gray-200 dark:border-gray-600 rounded-2xl pl-10 pr-10 py-2.5 text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-maroon-500 dark:focus:ring-maroon-300/30 dark:focus:border-maroon-300"
             value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search medicines..." />
           {search && <button type="button" onClick={() => { setSearch(''); fetchMedicines(''); }} aria-label="Clear search" className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"><X className="h-4 w-4" /></button>}
         </form>

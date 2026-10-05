@@ -22,8 +22,8 @@ const INITIAL = {
   email: '', mobile_number: '', course: '', year: '', section: '',
   password: '', password_confirmation: '', agree_terms: false,
 };
-const INPUT = 'min-h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#741126] focus:ring-2 focus:ring-[#741126]/15 disabled:cursor-not-allowed disabled:opacity-60';
-const INVALID = 'border-red-400 focus:border-red-500 focus:ring-red-500/15';
+const INPUT = 'min-h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#741126] focus:ring-2 focus:ring-[#741126]/15 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:border-rose-300 dark:focus:ring-rose-300/25 disabled:cursor-not-allowed disabled:opacity-60';
+const INVALID = 'border-red-400 focus:border-red-500 focus:ring-red-500/15 dark:border-red-400 dark:focus:border-red-400 dark:focus:ring-red-400/25';
 
 function getManilaDate() {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -122,7 +122,7 @@ function Field({ id, label, error, optional, children }) {
 function SectionTitle({ icon: Icon, children }) {
   return (
     <div className="mb-3 flex items-center gap-2 border-b border-slate-100 pb-2.5">
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f9e9ee] text-[#741126]">
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f9e9ee] dark:bg-rose-950/40 text-[#741126] dark:text-rose-300">
         <Icon size={17} />
       </span>
       <h3 className="text-sm font-extrabold text-slate-900">{children}</h3>
@@ -174,6 +174,7 @@ export default function Register() {
   const change = (event) => {
     const { name, value, type, checked } = event.target;
     let next = type === 'checkbox' ? checked : value;
+    if (name === 'section' && value && !availableSections.includes(value)) return;
     if (['first_name', 'middle_name', 'last_name'].includes(name)) {
       next = value.replace(/[^\p{L}\s\-'.]/gu, '');
     }
@@ -368,7 +369,7 @@ export default function Register() {
   );
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#f7f8fa] lg:flex-row">
+    <div className="flex min-h-dvh flex-col bg-[#f7f8fa] dark:bg-gray-900 lg:flex-row">
       {/* Same split layout as Login. Actual school + clinic photos merge via CSS.
           Image panel is intentionally hidden on phones, optional on tablets. */}
       <aside className="relative isolate hidden min-h-screen overflow-hidden bg-[#4d0d1b] text-white lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-1/2 lg:shrink-0 xl:w-[55%]">
@@ -437,15 +438,15 @@ export default function Register() {
         </Link>
       </div>
 
-      <main className="flex min-w-0 flex-1 justify-center bg-[#f8f4f3] px-4 py-7 sm:px-6 lg:px-7 lg:py-10">
+      <main className="flex min-w-0 flex-1 justify-center bg-[#f8f4f3] dark:bg-gray-900 px-4 py-7 sm:px-6 lg:px-7 lg:py-10">
         <div className="w-full max-w-md">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-[0.15em] text-[#741126]">Student registration</p>
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.15em] text-[#741126] dark:text-rose-300">Student registration</p>
               <h2 className="mt-1 text-2xl font-black text-slate-950">{otpStep ? 'Verify your email' : 'Create your account'}</h2>
               <p className="mt-1.5 text-sm leading-6 text-slate-500">{otpStep ? 'One last step before you can sign in.' : 'Fill in your details to get started.'}</p>
             </div>
-            <Link to="/login" aria-label="Back to login" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#741126] hover:bg-[#f9e9ee]"><ArrowLeft size={18} /></Link>
+            <Link to="/login" aria-label="Back to login" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#741126] dark:text-rose-300 hover:bg-[#f9e9ee] dark:hover:bg-rose-950/40"><ArrowLeft size={18} /></Link>
           </div>
 
           {message && (
@@ -626,9 +627,9 @@ export default function Register() {
                         <input id="agree_terms" name="agree_terms" type="checkbox" checked={form.agree_terms} onChange={change} disabled={loading} className="mt-1 h-4 w-4 shrink-0 accent-[#741126]" />
                         <div className="text-xs leading-6 text-slate-600">
                           <label htmlFor="agree_terms">I agree to the </label>
-                          <button type="button" onClick={() => setLegalModal('terms')} className="font-bold text-[#741126] hover:underline">Terms of Service</button>
+                          <button type="button" onClick={() => setLegalModal('terms')} className="font-bold text-[#741126] dark:text-rose-300 hover:underline">Terms of Service</button>
                           {' and '}
-                          <button type="button" onClick={() => setLegalModal('privacy')} className="font-bold text-[#741126] hover:underline">Privacy Policy</button>.
+                          <button type="button" onClick={() => setLegalModal('privacy')} className="font-bold text-[#741126] dark:text-rose-300 hover:underline">Privacy Policy</button>.
                         </div>
                       </div>
                       {errors.agree_terms && <p role="alert" className="mt-2 text-xs text-red-600">{errors.agree_terms}</p>}
@@ -638,7 +639,7 @@ export default function Register() {
               </div>
             ) : (
               <div className="py-4 text-center">
-                <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f9e9ee] text-[#741126]"><Mail size={27} /></span>
+                <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f9e9ee] dark:bg-rose-950/40 text-[#741126] dark:text-rose-300"><Mail size={27} /></span>
                 <h3 className="mt-4 text-xl font-bold">Check your inbox</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-500">Enter the six-digit code sent to <strong className="break-all text-slate-900">{form.email}</strong>. It expires in 10 minutes.</p>
                 <div className="mx-auto mt-5 max-w-[250px] text-left">
@@ -648,7 +649,7 @@ export default function Register() {
                 </div>
                 <div className="mt-4 text-xs text-slate-500">
                   {cooldown > 0 ? `Resend code in ${cooldown}s` : (
-                    <button type="button" onClick={resendOtp} disabled={resending || loading || verified} className="inline-flex items-center gap-1.5 font-bold text-[#741126] hover:underline disabled:opacity-50">{resending ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}{resending ? 'Resending...' : 'Resend verification code'}</button>
+                    <button type="button" onClick={resendOtp} disabled={resending || loading || verified} className="inline-flex items-center gap-1.5 font-bold text-[#741126] dark:text-rose-300 hover:underline disabled:opacity-50">{resending ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}{resending ? 'Resending...' : 'Resend verification code'}</button>
                   )}
                 </div>
               </div>
@@ -656,7 +657,7 @@ export default function Register() {
             <button type="submit" disabled={loading || resending || verified} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#741126] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#4d0d1b] disabled:cursor-not-allowed disabled:opacity-60">
               {loading ? <><Loader2 size={17} className="animate-spin" />{otpStep ? 'Verifying...' : 'Sending code...'}</> : otpStep ? <><CheckCircle2 size={17} />Verify & Create Account</> : <>Continue to Email Verification <ArrowRight size={17} /></>}
             </button>
-            <p className="mt-4 text-center text-sm text-slate-500">Already have an account? <Link to="/login" className="font-bold text-[#741126] hover:underline">Log in</Link></p>
+            <p className="mt-4 text-center text-sm text-slate-500">Already have an account? <Link to="/login" className="font-bold text-[#741126] dark:text-rose-300 hover:underline">Log in</Link></p>
           </form>
           <p className="mt-5 text-center text-xs text-slate-400">PUPBC CareLink · Student Health Portal</p>
         </div>
@@ -666,7 +667,7 @@ export default function Register() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) setLegalModal(null); }}>
           <section role="dialog" aria-modal="true" aria-labelledby="legal-title" className="flex max-h-[85dvh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-              <h2 id="legal-title" className="flex items-center gap-2 text-base font-extrabold text-slate-900"><FileText size={19} className="text-[#741126]" />{legalModal === 'terms' ? 'Terms of Service' : 'Privacy Policy'}</h2>
+              <h2 id="legal-title" className="flex items-center gap-2 text-base font-extrabold text-slate-900"><FileText size={19} className="text-[#741126] dark:text-rose-300" />{legalModal === 'terms' ? 'Terms of Service' : 'Privacy Policy'}</h2>
               <button type="button" onClick={() => setLegalModal(null)} aria-label="Close" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><X size={19} /></button>
             </div>
             <div className="space-y-4 overflow-y-auto p-5 text-sm leading-6 text-slate-600">

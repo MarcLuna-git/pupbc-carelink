@@ -39,6 +39,12 @@ class RegistrationAcademicsTest extends TestCase
         $years = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
         foreach (RegistrationAcademics::courses() as $course) {
             foreach ($course['sections'] as $section) {
+                $this->assertMatchesRegularExpression('/^[1-4]-[1-9]$/', $section);
+            }
+            foreach (['1-11', '1-12', '11-1', '1-01', '1.1'] as $invalidSection) {
+                $this->assertNotContains($invalidSection, $course['sections']);
+            }
+            foreach ($course['sections'] as $section) {
                 foreach ($years as $index => $year) {
                     $this->assertSame((string) ($index + 1) === $section[0], in_array($section, RegistrationAcademics::sections($course['code'], $year), true));
                 }

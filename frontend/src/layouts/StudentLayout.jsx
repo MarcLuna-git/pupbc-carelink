@@ -1,3 +1,4 @@
+import useAccountTheme from '../hooks/useAccountTheme';
 import {
   Suspense,
   useCallback,
@@ -91,11 +92,7 @@ const StudentLayout = ({ children }) => {
     getStoredUser
   );
 
-  const [darkMode, setDarkMode] = useState(
-    () =>
-      localStorage.getItem('darkMode') ===
-      'true'
-  );
+  const { darkMode, toggleDarkMode } = useAccountTheme();
 
   const [
     profileMenuOpen,
@@ -175,66 +172,6 @@ const StudentLayout = ({ children }) => {
    * Appearance
    * ------------------------------------------------
    */
-
-  useEffect(() => {
-    const savedMode =
-      localStorage.getItem('darkMode') ===
-      'true';
-
-    setDarkMode(savedMode);
-
-    document.documentElement.classList.toggle(
-      'dark',
-      savedMode
-    );
-  }, []);
-
-  useEffect(() => {
-    const handleDarkModeChange = () => {
-      const isDark =
-        localStorage.getItem('darkMode') ===
-        'true';
-
-      setDarkMode(isDark);
-
-      document.documentElement.classList.toggle(
-        'dark',
-        isDark
-      );
-    };
-
-    window.addEventListener(
-      'darkModeChange',
-      handleDarkModeChange
-    );
-
-    return () => {
-      window.removeEventListener(
-        'darkModeChange',
-        handleDarkModeChange
-      );
-    };
-  }, []);
-
-  const toggleDarkMode = () => {
-    const nextMode = !darkMode;
-
-    setDarkMode(nextMode);
-
-    localStorage.setItem(
-      'darkMode',
-      String(nextMode)
-    );
-
-    document.documentElement.classList.toggle(
-      'dark',
-      nextMode
-    );
-
-    window.dispatchEvent(
-      new Event('darkModeChange')
-    );
-  };
 
   /*
    * ------------------------------------------------
@@ -639,7 +576,7 @@ const StudentLayout = ({ children }) => {
           MAIN AREA
       ================================================== */}
 
-      <div className="flex min-h-screen flex-col lg:ml-64">
+      <div className="flex min-w-0 min-h-screen flex-col lg:ml-64">
         {/* Header */}
         <header className="sticky top-0 z-30 border-b border-gray-200/80 bg-white/95 shadow-sm shadow-black/[0.02] backdrop-blur-xl dark:border-gray-800 dark:bg-gray-900/95">
           <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-5 lg:px-7">
@@ -688,7 +625,7 @@ const StudentLayout = ({ children }) => {
             </div>
 
             {/* Header actions */}
-            <div className="ml-auto flex items-center gap-1 sm:gap-2">
+            <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
               {/* Combined Notifications + Announcements */}
               <Link
                 to="/student/alerts"
@@ -975,7 +912,7 @@ const StudentLayout = ({ children }) => {
             PAGE CONTENT
         ================================================== */}
 
-        <main className="flex-1 px-3 py-4 pb-28 sm:px-5 sm:py-5 lg:px-7 lg:py-6 lg:pb-8">
+        <main className="min-w-0 flex-1 px-3 py-4 pb-28 sm:px-5 sm:py-5 lg:px-7 lg:py-6 lg:pb-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}

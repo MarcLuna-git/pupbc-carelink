@@ -78,10 +78,10 @@ const NurseConsultation = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedStudent) return;
-    
+
     setLoading(true);
     setMessage('');
-    
+
     try {
       const token = localStorage.getItem('token');
       const payload = {
@@ -123,7 +123,7 @@ const NurseConsultation = () => {
     }
   };
 
-  const inputClass = "w-full border border-gray-200 dark:border-gray-600 rounded-2xl px-4 py-2.5 text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-maroon-500 focus:outline-none";
+  const inputClass = "w-full border border-gray-200 dark:border-gray-600 rounded-2xl px-4 py-2.5 text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-maroon-500 dark:focus:ring-maroon-300/30 dark:focus:border-maroon-300 focus:outline-none";
   const labelClass = "text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5";
 
   if (pageLoading) {
@@ -139,8 +139,8 @@ const NurseConsultation = () => {
 
       {message && (
         <div className={`p-3 rounded-2xl text-sm text-center ${
-          messageType === 'success' 
-            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' 
+          messageType === 'success'
+            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
             : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
         }`}>{message}</div>
       )}
@@ -151,7 +151,7 @@ const NurseConsultation = () => {
             <Users className="w-5 h-5 text-maroon-800 dark:text-maroon-400" />
             <span>Clinic Queue</span>
           </h3>
-          
+
           <div className="flex gap-3 mb-4"><button onClick={callNext} disabled={loading || checkedInStudents.some(s => s.status === 'serving')} className="bg-maroon-800 text-white rounded-xl px-4 py-2 disabled:opacity-50">Call Next</button><button onClick={() => fetchCheckedInStudents(true)} className="border rounded-xl px-4 py-2">Refresh Queue</button></div>
           <p className="text-sm text-gray-500 mb-4">Complete the serving patient's consultation before calling the next patient.</p>
           {checkedInStudents.length === 0 ? (
@@ -190,10 +190,10 @@ const NurseConsultation = () => {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className={labelClass}>Chief Complaint *</label>
-              <textarea name="chief_complaint" value={form.chief_complaint} onChange={handleChange} rows={3} 
+              <textarea name="chief_complaint" value={form.chief_complaint} onChange={handleChange} rows={3}
                 className={inputClass} placeholder="Describe the student's main concern..." required />
             </div>
-            
+
             <div>
               <label className={`${labelClass} flex items-center space-x-2`}>
                 <Heart className="w-4 h-4 text-red-500" /><span>Vital Signs (Optional)</span>
@@ -208,8 +208,8 @@ const NurseConsultation = () => {
                 ].map(v => (
                   <div key={v.name}>
                     <label className="text-[10px] text-gray-400 block mb-1">{v.label}</label>
-                    <input name={v.name} value={form[v.name]} onChange={handleChange} 
-                      className="w-full border rounded-xl px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600" 
+                    <input name={v.name} value={form[v.name]} onChange={handleChange}
+                      className="w-full border rounded-xl px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
                       placeholder={v.placeholder} />
                   </div>
                 ))}
@@ -218,26 +218,26 @@ const NurseConsultation = () => {
 
             <div>
               <label className={labelClass}>General Remarks</label>
-              <textarea name="general_remarks" value={form.general_remarks} onChange={handleChange} rows={3} 
+              <textarea name="general_remarks" value={form.general_remarks} onChange={handleChange} rows={3}
                 className={inputClass} placeholder="Additional notes..." />
             </div>
 
             <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
               <span className="text-sm">Issue Medical Certificate?</span>
-              <input type="checkbox" name="medical_certificate" checked={form.medical_certificate} onChange={handleChange} 
+              <input type="checkbox" name="medical_certificate" checked={form.medical_certificate} onChange={handleChange}
                 className="w-5 h-5 accent-maroon-800" />
             </div>
             {form.medical_certificate && (
               <div>
                 <label className={labelClass}>Certificate Reference</label>
-                <input name="medical_certificate_ref" value={form.medical_certificate_ref} onChange={handleChange} 
+                <input name="medical_certificate_ref" value={form.medical_certificate_ref} onChange={handleChange}
                   className={inputClass} placeholder="MED-2024-001" />
               </div>
             )}
 
             <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
               <span className="text-sm">Follow-up Required?</span>
-              <input type="checkbox" name="follow_up" checked={form.follow_up} onChange={handleChange} 
+              <input type="checkbox" name="follow_up" checked={form.follow_up} onChange={handleChange}
                 className="w-5 h-5 accent-maroon-800" />
             </div>
             {form.follow_up && (
@@ -248,9 +248,9 @@ const NurseConsultation = () => {
             )}
 
             <div className="flex gap-3 pt-4 border-t">
-              <button type="button" onClick={() => setStep(1)} 
+              <button type="button" onClick={() => setStep(1)}
                 className="flex-1 py-3 bg-gray-200 dark:bg-gray-700 rounded-2xl font-semibold">Back</button>
-              <button type="submit" disabled={loading} 
+              <button type="submit" disabled={loading}
                 className="flex-1 py-3 bg-maroon-800 text-white rounded-2xl font-semibold flex items-center justify-center space-x-2 disabled:opacity-50">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 <span>{loading ? 'Saving...' : 'Save Consultation'}</span>

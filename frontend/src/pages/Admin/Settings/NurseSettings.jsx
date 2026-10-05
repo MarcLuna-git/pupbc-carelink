@@ -12,11 +12,11 @@ const NurseSettings = () => {
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [showCurrentPass, setShowCurrentPass] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
-  
-  const [passwordForm, setPasswordForm] = useState({ 
-    current_password: '', 
-    new_password: '', 
-    new_password_confirmation: '' 
+
+  const [passwordForm, setPasswordForm] = useState({
+    current_password: '',
+    new_password: '',
+    new_password_confirmation: ''
   });
 
   const [profile, setProfile] = useState({
@@ -55,7 +55,7 @@ const NurseSettings = () => {
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
-    
+
     if (passwordForm.new_password !== passwordForm.new_password_confirmation) {
       setMessageType('error');
       setMessage('New passwords do not match.');
@@ -72,7 +72,7 @@ const NurseSettings = () => {
 
     setLoading(true);
     setMessage('');
-    
+
     try {
       const token = localStorage.getItem('token');
       await api.post('/nurse/change-password', {
@@ -109,16 +109,16 @@ const NurseSettings = () => {
 
     setLoading(true);
     setMessage('');
-    
+
     try {
       const token = localStorage.getItem('token');
       await api.put('/nurse/profile', profile, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       const updatedUser = { ...user, ...profile };
       localStorage.setItem('user', JSON.stringify(updatedUser));
-      
+
       setMessageType('success');
       setMessage('Profile updated successfully!');
     } catch (err) {
@@ -146,7 +146,7 @@ const NurseSettings = () => {
     }
   };
 
-  const inputClass = "w-full border border-gray-200 dark:border-gray-600 rounded-2xl px-4 py-2.5 text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-maroon-500 focus:outline-none";
+  const inputClass = "w-full border border-gray-200 dark:border-gray-600 rounded-2xl px-4 py-2.5 text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-maroon-500 dark:focus:ring-maroon-300/30 dark:focus:border-maroon-300 focus:outline-none";
   const labelClass = "text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5";
 
   return (
@@ -158,8 +158,8 @@ const NurseSettings = () => {
 
       {message && (
         <div className={`p-3 rounded-2xl text-sm text-center flex items-center justify-center space-x-2 ${
-          messageType === 'success' 
-            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' 
+          messageType === 'success'
+            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
             : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
         }`}>
           {messageType === 'success' ? <CheckCircle className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
@@ -176,33 +176,33 @@ const NurseSettings = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>First Name</label>
-              <input 
+              <input
                 className={inputClass}
-                type="text" 
+                type="text"
                 maxLength={100}
-                value={profile.first_name} 
+                value={profile.first_name}
                 onChange={(e) => {
                   const first_name = e.target.value.replace(/[^\p{L}\s\-'.]/gu, '');
                   setProfile({...profile, first_name});
                   setProfileErrors((current) => ({ ...current, first_name: '' }));
                 }}
-                placeholder="First Name" 
+                placeholder="First Name"
               />
               {profileErrors.first_name && <p role="alert" className="mt-1 text-xs text-red-600">{profileErrors.first_name}</p>}
             </div>
             <div>
               <label className={labelClass}>Last Name</label>
-              <input 
+              <input
                 className={inputClass}
-                type="text" 
+                type="text"
                 maxLength={100}
-                value={profile.last_name} 
+                value={profile.last_name}
                 onChange={(e) => {
                   const last_name = e.target.value.replace(/[^\p{L}\s\-'.]/gu, '');
                   setProfile({...profile, last_name});
                   setProfileErrors((current) => ({ ...current, last_name: '' }));
                 }}
-                placeholder="Last Name" 
+                placeholder="Last Name"
               />
               {profileErrors.last_name && <p role="alert" className="mt-1 text-xs text-red-600">{profileErrors.last_name}</p>}
             </div>
@@ -211,17 +211,17 @@ const NurseSettings = () => {
             <label className={labelClass}>Email Address</label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input 
-                className={`${inputClass} pl-10 bg-gray-50 dark:bg-gray-600 cursor-not-allowed`}
-                type="email" 
-                value={profile.email} 
-                disabled 
+              <input
+                className={`${inputClass} pl-10 bg-gray-50 dark:bg-gray-800 cursor-not-allowed`}
+                type="email"
+                value={profile.email}
+                disabled
                 title="Email cannot be changed"
               />
             </div>
             <p className="text-xs text-gray-400 mt-1">Email cannot be changed. Contact the clinic for changes.</p>
           </div>
-          <button type="submit" disabled={loading} 
+          <button type="submit" disabled={loading}
             className="px-6 py-2.5 bg-maroon-800 text-white rounded-xl font-semibold text-sm flex items-center space-x-2 hover:bg-maroon-900 transition disabled:opacity-50">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>Update Profile</span>
@@ -239,15 +239,15 @@ const NurseSettings = () => {
             <label className={labelClass}>Current Password</label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input 
+              <input
                 className={`${inputClass} pl-10 pr-12`}
                 type={showCurrentPass ? 'text' : 'password'}
-                value={passwordForm.current_password} 
-                onChange={(e) => setPasswordForm({...passwordForm, current_password: e.target.value})} 
+                value={passwordForm.current_password}
+                onChange={(e) => setPasswordForm({...passwordForm, current_password: e.target.value})}
                 placeholder="Enter current password"
-                required 
+                required
               />
-              <button type="button" onClick={() => setShowCurrentPass(!showCurrentPass)} 
+              <button type="button" onClick={() => setShowCurrentPass(!showCurrentPass)}
                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1">
                 {showCurrentPass ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               </button>
@@ -258,15 +258,15 @@ const NurseSettings = () => {
             <label className={labelClass}>New Password</label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input 
+              <input
                 className={`${inputClass} pl-10 pr-12`}
                 type={showNewPass ? 'text' : 'password'}
-                value={passwordForm.new_password} 
-                onChange={(e) => setPasswordForm({...passwordForm, new_password: e.target.value})} 
+                value={passwordForm.new_password}
+                onChange={(e) => setPasswordForm({...passwordForm, new_password: e.target.value})}
                 placeholder="Enter new password (min 8 chars)"
-                required 
+                required
               />
-              <button type="button" onClick={() => setShowNewPass(!showNewPass)} 
+              <button type="button" onClick={() => setShowNewPass(!showNewPass)}
                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1">
                 {showNewPass ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               </button>
@@ -289,19 +289,19 @@ const NurseSettings = () => {
             <label className={labelClass}>Confirm New Password</label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input 
+              <input
                 className={`${inputClass} pl-10 ${
-                  passwordForm.new_password_confirmation && passwordForm.new_password === passwordForm.new_password_confirmation 
-                    ? 'border-green-400 bg-green-50 dark:bg-green-900/10' 
-                    : passwordForm.new_password_confirmation && passwordForm.new_password !== passwordForm.new_password_confirmation 
-                    ? 'border-red-400 bg-red-50 dark:bg-red-900/10' 
+                  passwordForm.new_password_confirmation && passwordForm.new_password === passwordForm.new_password_confirmation
+                    ? 'border-green-400 bg-green-50 dark:bg-green-900/10'
+                    : passwordForm.new_password_confirmation && passwordForm.new_password !== passwordForm.new_password_confirmation
+                    ? 'border-red-400 bg-red-50 dark:bg-red-900/10'
                     : 'border-gray-200 dark:border-gray-600'
                 }`}
                 type="password"
-                value={passwordForm.new_password_confirmation} 
-                onChange={(e) => setPasswordForm({...passwordForm, new_password_confirmation: e.target.value})} 
+                value={passwordForm.new_password_confirmation}
+                onChange={(e) => setPasswordForm({...passwordForm, new_password_confirmation: e.target.value})}
                 placeholder="Re-enter new password"
-                required 
+                required
               />
             </div>
             {passwordForm.new_password_confirmation && passwordForm.new_password === passwordForm.new_password_confirmation && (
@@ -312,7 +312,7 @@ const NurseSettings = () => {
             )}
           </div>
 
-          <button type="submit" disabled={loading} 
+          <button type="submit" disabled={loading}
             className="w-full py-3 bg-maroon-800 text-white rounded-2xl font-semibold flex items-center justify-center space-x-2 hover:bg-maroon-900 transition disabled:opacity-50">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>Update Password</span>
@@ -337,11 +337,11 @@ const NurseSettings = () => {
                 <p className="text-xs text-gray-400">{item.desc}</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={notifPrefs[item.key]} 
+                <input
+                  type="checkbox"
+                  checked={notifPrefs[item.key]}
                   onChange={(e) => setNotifPrefs({...notifPrefs, [item.key]: e.target.checked})}
-                  className="sr-only peer" 
+                  className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-maroon-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-maroon-800"></div>
               </label>
@@ -375,7 +375,7 @@ const NurseSettings = () => {
         </div>
       </div>
 
-      <button 
+      <button
         onClick={handleLogout}
         className="w-full py-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-2xl font-semibold hover:bg-red-100 dark:hover:bg-red-900/30 transition flex items-center justify-center space-x-2"
       >
