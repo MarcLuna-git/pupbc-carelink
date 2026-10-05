@@ -11,6 +11,7 @@ const ProfileEdit = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const fileInputRef = useRef(null);
+  const savedFormRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
@@ -30,14 +31,15 @@ const ProfileEdit = () => {
           const returnedUser = response.data.data?.user || {};
           setLoadedProfile(profile);
           setProfilePic(profile.profile_picture || null);
-          setForm(prev => ({
-            ...prev,
+          const savedForm = {
             mobile_number: profile.mobile_number ?? returnedUser.mobile_number ?? '',
             address: profile.address || '',
             guardian_name: profile.guardian_name || '',
             guardian_relationship: profile.guardian_relationship || '',
             guardian_contact: profile.guardian_contact || '',
-          }));
+          };
+          savedFormRef.current = savedForm;
+          setForm(savedForm);
         }
       } catch (err) { console.log('Profile could not be loaded', err); }
       finally { setFetching(false); }
@@ -67,6 +69,8 @@ const ProfileEdit = () => {
     if (file) {
       if (file.size > 2 * 1024 * 1024) { setMessage('Image must be less than 2MB'); setMessageType('error'); return; }
       if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { setMessage('Use a JPG, PNG, or WebP image.'); setMessageType('error'); return; }
+      setMessage('');
+      setFieldErrors(current => ({ ...current, avatar: undefined }));
       setAvatarFile(file);
       const reader = new FileReader();
       reader.onload = () => setProfilePic(reader.result);
@@ -79,13 +83,14 @@ const ProfileEdit = () => {
     setLoading(true); setMessage(''); setFieldErrors({});
     try {
       const token = localStorage.getItem('token');
-      const response = await api.put('/student/profile', {
+      const detailsChanged = !savedFormRef.current || Object.keys(form).some(key => form[key] !== savedFormRef.current[key]);
+      const response = detailsChanged || !avatarFile ? await api.put('/student/profile', {
         mobile_number: form.mobile_number,
         address: form.address,
         guardian_name: form.guardian_name,
         guardian_relationship: form.guardian_relationship,
         guardian_contact: form.guardian_contact,
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      }, { headers: { Authorization: `Bearer ${token}` } }) : null;
 
       let avatarUrl = loadedProfile.profile_picture || user.profile?.profile_picture || null;
       if (avatarFile) {
@@ -96,8 +101,8 @@ const ProfileEdit = () => {
         });
         avatarUrl = avatarResponse.data.data?.profile_picture || avatarUrl;
       }
-      const returnedUser = response.data.data?.user || {};
-      const returnedProfile = response.data.data?.profile || {};
+      const returnedUser = response?.data.data?.user || {};
+      const returnedProfile = response?.data.data?.profile || loadedProfile;
       const updatedUser = {
         ...user,
         ...returnedUser,
@@ -116,7 +121,10 @@ const ProfileEdit = () => {
     } catch (err) {
       setMessageType('error');
       setFieldErrors(err.response?.status === 422 ? (err.response?.data?.errors || {}) : {});
-      setMessage(err.response?.status === 422 ? 'Please check the highlighted fields.' : 'We could not update your profile. Please try again.');
+      const validationMessages = Object.values(err.response?.data?.errors || {}).flat().filter(value => typeof value === 'string');
+      setMessage(err.response?.status === 422
+        ? validationMessages.join(' ') || err.response?.data?.message || 'Please check your profile details.'
+        : 'We could not update your profile. Please try again.');
     } finally { setLoading(false); }
   };
 
@@ -225,8 +233,9 @@ const ProfileEdit = () => {
                 <button onClick={() => fileInputRef.current.click()} disabled={loading} aria-label="Change profile photo" className="absolute bottom-1 right-1 w-8 h-8 bg-maroon-800 rounded-full flex items-center justify-center text-white hover:bg-maroon-900 transition shadow-lg disabled:opacity-50">
                   <Camera className="w-4 h-4" />
                 </button>
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+              <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageChange} className="hidden" />
             </div>
+            {fieldErrors.avatar && <p role="alert" className="mt-1 text-xs text-red-600 dark:text-red-400">{fieldErrors.avatar.join(' ')}</p>}
             <h2 className="font-bold text-gray-900 dark:text-white">{user.first_name} {user.last_name}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">{user.student_id}</p>
             <p className="text-xs text-gray-400 dark:text-gray-400 mt-1">{user.course} - {user.year}{user.section}</p>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Calendar, Loader2, CheckCheck, Trash2 } from 'lucide-react';
 import api from '../../../services/api';
@@ -11,18 +11,26 @@ const NurseNotifications = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState(null);
+  const [category, setCategory] = useState('all');
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const requestId = useRef(0);
+  const categories = [['all', 'All'], ['medicine', 'Medicines'], ['appointment', 'Appointments'], ['consultation', 'Consultations']];
 
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
+    const currentRequest = ++requestId.current;
     try {
       setLoading(true);
       setError('');
-      const response = await fetchNurseNotifications();
+      const response = await fetchNurseNotifications({ category, page });
+      if (currentRequest !== requestId.current) return;
       if (response.data.success) {
         const data = response.data.data;
+        if (data?.last_page && page > data.last_page) {
+          setPage(data.last_page);
+          return;
+        }
+        setLastPage(data?.last_page || 1);
         const notifications = Array.isArray(data) ? data : (data?.data || []);
         const formatted = notifications.map(n => ({
           id: n.id,
@@ -36,12 +44,19 @@ const NurseNotifications = () => {
         setNotifs(formatted);
       }
     } catch (err) {
+      if (currentRequest !== requestId.current) return;
       console.log('Notifications error:', err);
       setError('Failed to load notifications.');
     } finally {
-      setLoading(false);
+      if (currentRequest === requestId.current) setLoading(false);
     }
-  };
+  }, [category, page]);
+
+  useEffect(() => {
+    const requests = requestId;
+    fetchNotifications();
+    return () => { requests.current++; };
+  }, [fetchNotifications]);
 
   const markAsRead = async (id) => {
     try {
@@ -59,6 +74,7 @@ const NurseNotifications = () => {
     if (!notification.read && !(await markAsRead(notification.id))) return;
     if (notification.type.startsWith('appointment_')) navigate('/nurse/appointments');
     else if (notification.type.startsWith('medicine_')) navigate('/nurse/medicines');
+    else if (notification.type.startsWith('consultation_')) navigate('/nurse/consultation');
     else navigate('/nurse/notifications');
   };
 
@@ -67,6 +83,7 @@ const NurseNotifications = () => {
     try {
       await api.delete(`/notifications/${id}`);
       setNotifs((current) => current.filter((notification) => notification.id !== id));
+      await fetchNotifications();
     } catch (err) {
       console.error('Delete notification error:', err);
       setError(err.response?.data?.message || 'Could not delete the notification.');
@@ -101,17 +118,13 @@ const NurseNotifications = () => {
 
   const unreadCount = notifs.filter(n => !n.read).length;
 
-  if (loading) {
-    return <NursePageSkeleton label="Loading notifications" />;
-  }
-
   return (
     <div className="space-y-5 max-w-2xl mx-auto">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Notifications</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up!'}
+            {loading ? 'Loading notifications…' : unreadCount > 0 ? `${unreadCount} unread on this page` : 'No unread notifications on this page'}
           </p>
         </div>
         {unreadCount > 0 && (
@@ -120,20 +133,30 @@ const NurseNotifications = () => {
             className="flex items-center space-x-1.5 text-xs font-semibold text-maroon-600 dark:text-maroon-400 hover:text-maroon-800 dark:hover:text-maroon-300 bg-maroon-50 dark:bg-maroon-900/20 px-3 py-1.5 rounded-xl transition"
           >
             <CheckCheck className="w-4 h-4" />
-            <span>Mark All Read</span>
+            <span>Mark All Categories Read</span>
           </button>
         )}
+      </div>
+
+      <div role="group" aria-label="Filter notifications by category" className="flex flex-wrap gap-2">
+        {categories.map(([value, label]) => <button key={value} type="button" aria-pressed={category === value}
+          onClick={() => { setCategory(value); setPage(1); }}
+          className={`min-h-11 rounded-xl border px-3 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon-300 ${category === value
+            ? 'border-maroon-800 bg-maroon-800 text-white dark:border-maroon-300 dark:bg-maroon-300 dark:text-gray-900'
+            : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700'}`}>
+          {label}
+        </button>)}
       </div>
 
       {error && (
         <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-2xl text-sm text-center">{error}</div>
       )}
 
-      {notifs.length === 0 ? (
+      {loading ? <NursePageSkeleton contentOnly label="Loading notifications" /> : notifs.length === 0 ? (
         <div className="text-center py-16">
           <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-500">No Notifications</h3>
-          <p className="text-sm text-gray-400 mt-1">You're all caught up!</p>
+          <h3 className="text-lg font-semibold text-gray-500">No {category === 'all' ? '' : categories.find(([value]) => value === category)[1] + ' '}Notifications</h3>
+          <p className="text-sm text-gray-400 mt-1">Notifications for this category will appear here.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -175,6 +198,11 @@ const NurseNotifications = () => {
           ))}
         </div>
       )}
+      {lastPage > 1 && <nav aria-label="Notification pages" className="flex flex-wrap items-center justify-between gap-3 text-sm">
+        <button type="button" disabled={loading || page === 1} onClick={() => setPage(current => current - 1)} className="min-h-11 rounded-xl border border-gray-200 px-4 py-2 disabled:opacity-40 dark:border-gray-600">Previous</button>
+        <span>Page {page} of {lastPage}</span>
+        <button type="button" disabled={loading || page >= lastPage} onClick={() => setPage(current => current + 1)} className="min-h-11 rounded-xl border border-gray-200 px-4 py-2 disabled:opacity-40 dark:border-gray-600">Next</button>
+      </nav>}
     </div>
   );
 };

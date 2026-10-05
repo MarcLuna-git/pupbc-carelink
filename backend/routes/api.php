@@ -214,6 +214,10 @@ Route::middleware([
             ->group(function () {
 
                 Route::get('/', function (Request $request) {
+                    $filters = $request->validate([
+                        'category' => 'nullable|in:all,medicine,appointment,consultation',
+                    ]);
+                    $category = $filters['category'] ?? 'all';
                     $user = auth()->user();
 
                     /*
@@ -273,6 +277,9 @@ Route::middleware([
                         'user_id',
                         auth()->id()
                     )
+                        ->when($category !== 'all', function ($query) use ($category) {
+                            $query->where('type', 'like', $category . '\_%');
+                        })
                         ->where(function ($query) {
                             $query->where('type', '!=', 'medicine_expiring_soon')
                                 ->orWhereNull('data->dismissed')

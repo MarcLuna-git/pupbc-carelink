@@ -32,6 +32,10 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    // Let the browser generate the multipart boundary for file uploads.
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
     const token = localStorage.getItem('token');
 
     if (token) {
