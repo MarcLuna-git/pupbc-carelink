@@ -214,16 +214,62 @@ Route::middleware([
             ->group(function () {
 
                 Route::get('/', function (Request $request) {
-                    $notifications =
-                        \App\Models\Notification::where(
-                            'user_id',
-                            auth()->id()
-                        )
-                            ->orderBy(
-                                'created_at',
-                                'desc'
+                    $user = auth()->user();
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Free on-demand medicine expiry check
+                    |--------------------------------------------------------------------------
+                    |
+                    | While the project is still in testing, this avoids needing a paid
+                    | scheduler/cron service. Whenever a nurse loads the shared notifications
+                    | endpoint, medicines expiring within the next three months are checked.
+                    |
+                    | Duplicate notifications are prevented per nurse + medicine.
+                    |
+                    */
+                    if ($user && $user->role === 'nurse') {
+                        $today = today('Asia/Manila');
+                        $expiryLimit = $today->copy()->addMonths(3);
+
+                        $expiringMedicines = \App\Models\Medicine::whereNotNull('expiry_date')
+                            ->whereDate('expiry_date', '>=', $today->toDateString())
+                            ->whereDate('expiry_date', '<=', $expiryLimit->toDateString())
+                            ->get(['id', 'name', 'expiry_date']);
+
+                        foreach ($expiringMedicines as $medicine) {
+                            $alreadyNotified = \App\Models\Notification::where(
+                                'user_id',
+                                $user->id
                             )
-                            ->paginate(20);
+                                ->where('type', 'medicine_expiring_soon')
+                                ->where('data->medicine_id', $medicine->id)
+                                ->exists();
+
+                            if ($alreadyNotified) {
+                                continue;
+                            }
+
+                            \App\Models\Notification::create([
+                                'user_id' => $user->id,
+                                'type' => 'medicine_expiring_soon',
+                                'title' => 'Medicine Expiring Soon',
+                                'message' => $medicine->name . ' expires on ' .
+                                    $medicine->expiry_date->format('M j, Y') . '.',
+                                'data' => [
+                                    'medicine_id' => $medicine->id,
+                                    'expiry_date' => $medicine->expiry_date->toDateString(),
+                                ],
+                            ]);
+                        }
+                    }
+
+                    $notifications = \App\Models\Notification::where(
+                        'user_id',
+                        auth()->id()
+                    )
+                        ->orderBy('created_at', 'desc')
+                        ->paginate(20);
 
                     return response()->json([
                         'success' => true,

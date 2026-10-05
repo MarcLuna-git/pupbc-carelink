@@ -18,10 +18,7 @@ const NurseNotifications = () => {
     try {
       setLoading(true);
       setError('');
-      const token = localStorage.getItem('token');
-      const response = await api.get('/notifications', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/notifications');
       if (response.data.success) {
         const data = response.data.data;
         const notifications = Array.isArray(data) ? data : (data?.data || []);
@@ -46,9 +43,7 @@ const NurseNotifications = () => {
 
   const markAsRead = async (id) => {
     try {
-      await api.patch(`/notifications/${id}/read`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.patch(`/notifications/${id}/read`);
       setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
       return true;
     } catch (err) {
@@ -80,10 +75,7 @@ const NurseNotifications = () => {
 
   const markAllAsRead = async () => {
     try {
-      const token = localStorage.getItem('token');
-      await api.patch('/notifications/read-all', {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.patch('/notifications/read-all');
       setNotifs(prev => prev.map(n => ({ ...n, read: true })));
     } catch (err) {
       console.log('Mark all read error:', err);
