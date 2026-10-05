@@ -53,7 +53,7 @@ const KioskScan = ({
     if (methodTab === 'qr') {
       const timer = setTimeout(() => {
         startQrScanner();
-      }, 800);
+      }, 150);
 
       return () => clearTimeout(timer);
     }
@@ -322,7 +322,7 @@ const KioskScan = ({
           ...response.data.data,
           identity: payload,
         });
-      }, 800);
+      }, 150);
     } catch (err) {
       console.error('QR lookup error:', err);
 

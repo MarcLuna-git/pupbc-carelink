@@ -1,9 +1,11 @@
 import {
+  Suspense,
   useCallback,
   useEffect,
   useRef,
   useState,
 } from 'react';
+import RouteLoading from '../components/RouteLoading';
 import {
   Link,
   useLocation,
@@ -83,6 +85,7 @@ const StudentLayout = ({ children }) => {
   const location = useLocation();
 
   const profileMenuRef = useRef(null);
+  const unreadRequestPending = useRef(false);
 
   const [user, setUser] = useState(
     getStoredUser
@@ -275,6 +278,8 @@ const StudentLayout = ({ children }) => {
 
   const fetchUnreadCount =
     useCallback(async () => {
+      if (document.hidden || unreadRequestPending.current) return;
+      unreadRequestPending.current = true;
       try {
         const token =
           localStorage.getItem('token');
@@ -308,6 +313,8 @@ const StudentLayout = ({ children }) => {
          * Notification refresh should never block
          * the Student portal.
          */
+      } finally {
+        unreadRequestPending.current = false;
       }
     }, []);
 
@@ -989,7 +996,7 @@ const StudentLayout = ({ children }) => {
               }}
               className="mx-auto w-full max-w-[1600px]"
             >
-              {children}
+              <Suspense fallback={<RouteLoading />}>{children}</Suspense>
             </motion.div>
           </AnimatePresence>
         </main>

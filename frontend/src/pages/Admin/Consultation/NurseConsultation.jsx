@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User, Stethoscope, Heart, Save, Loader2, Users, ClipboardList } from 'lucide-react';
 import api from '../../../services/api';
+import NursePageSkeleton from '../../../components/NursePageSkeleton';
 
 const NurseConsultation = () => {
   const [step, setStep] = useState(1);
@@ -126,11 +127,7 @@ const NurseConsultation = () => {
   const labelClass = "text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5";
 
   if (pageLoading) {
-    return (
-      <div className="flex justify-center items-center py-20">
-        <Loader2 className="w-10 h-10 animate-spin text-maroon-600" />
-      </div>
-    );
+    return <NursePageSkeleton label="Loading consultations" />;
   }
 
   return (

@@ -1,9 +1,10 @@
 import authService from '../services/authService';
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
+import NursePageSkeleton from '../components/NursePageSkeleton';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, Calendar, Users, FileText, Bell, LogOut, QrCode, Settings, Menu, X, Stethoscope, Activity, Sun, Moon, Pill, Megaphone, BookOpen } from 'lucide-react';
-import api from '../services/api';
+import { fetchNurseNotifications } from '../services/nurseNotifications';
 
 const AdminLayout = ({ children }) => {
   const navigate = useNavigate();
@@ -42,7 +43,8 @@ const AdminLayout = ({ children }) => {
     let active = true;
     const fetchUnreadCount = async () => {
       try {
-        const response = await api.get('/notifications');
+        if (document.hidden) return;
+        const response = await fetchNurseNotifications();
         if (active && response.data?.success) {
           setUnreadNotificationCount(Math.max(0, Number(response.data.unread_count) || 0));
         }
@@ -195,7 +197,7 @@ const AdminLayout = ({ children }) => {
         <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
           <AnimatePresence mode="wait">
             <motion.div key={location.pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              {children}
+              <Suspense fallback={<NursePageSkeleton label="Loading page" />}>{children}</Suspense>
             </motion.div>
           </AnimatePresence>
         </main>

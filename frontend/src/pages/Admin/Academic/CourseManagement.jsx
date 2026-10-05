@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BookOpen, CalendarDays, Layers, Loader2, Plus, RefreshCw, Save } from 'lucide-react';
 import api from '../../../services/api';
+import NursePageSkeleton from '../../../components/NursePageSkeleton';
 
 const emptyPeriod = { academic_year_start: '', academic_year_end: '', semester: '1st Semester', is_active: true };
 const emptyCourse = { code: '', name: '', is_active: true };
@@ -46,7 +47,7 @@ export default function CourseManagement() {
     finally { setSaving(false); }
   };
   const input = 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-gray-600 dark:bg-gray-900';
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-maroon-800" /></div>;
+  if (loading) return <NursePageSkeleton variant="cards" label="Loading courses" />;
 
   return <div className="mx-auto max-w-7xl space-y-5 text-gray-900 dark:text-gray-100">
     <header className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-bold">Course Management</h1><p className="mt-1 text-sm text-gray-500">Manage academic periods, courses, and course-specific sections.</p></div><button onClick={load} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700"><RefreshCw size={16} />Refresh</button></header>

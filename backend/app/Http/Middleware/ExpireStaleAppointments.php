@@ -13,6 +13,12 @@ class ExpireStaleAppointments
     // ponytail: first request of the day pays for the expiry run; move to a cron/worker if volume grows.
     public function handle($request, Closure $next)
     {
+        // Public page reads, health probes, and authentication do not use appointments.
+        // Leave daily expiry to clinic requests, avoiding maintenance during login.
+        if ($request->is('api/health', 'api/auth/*', 'api/announcements', 'api/announcements/*')) {
+            return $next($request);
+        }
+
         $key = 'appointments:expired:' . today('Asia/Manila')->toDateString();
 
         if (Cache::add($key, true, now()->addDay())) {

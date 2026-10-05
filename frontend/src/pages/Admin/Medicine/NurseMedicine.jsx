@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Plus, Edit2, Trash2, Loader2, Pill, AlertTriangle, Clock, Package, Filter, ChevronDown, ClipboardList, X, History } from 'lucide-react';
 import api from '../../../services/api';
+import NursePageSkeleton from '../../../components/NursePageSkeleton';
 
 const isWholeNumberInput = (value) => /^\d*$/.test(value);
+const isPositiveWholeNumberInput = (value) => value === '' || /^[1-9]\d*$/.test(value);
 
 const NurseMedicine = () => {
   const [medicines, setMedicines] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
@@ -46,7 +49,9 @@ const NurseMedicine = () => {
 
   const fetchMedicines = async (searchValue = search) => {
     try {
-      setLoading(true);
+      setError('');
+      setRefreshing(true);
+      setLoading(medicines.length === 0);
       const token = localStorage.getItem('token');
       const params = { search: searchValue };
       if (filter === 'low_stock') params.low_stock = true;
@@ -62,10 +67,11 @@ const NurseMedicine = () => {
         const data = response.data.data;
         setMedicines(Array.isArray(data) ? data : (data?.data || []));
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load medicines.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -75,12 +81,14 @@ const NurseMedicine = () => {
   };
 
   const openAddModal = () => {
+    setMessage('');
     setEditingMedicine(null);
     setForm({ name: '', generic_name: '', category: '', quantity: '', minimum_stock: 10, unit: 'tablet', dosage: '', expiry_date: '', description: '' });
     setShowModal(true);
   };
 
   const openEditModal = (medicine) => {
+    setMessage('');
     setEditingMedicine(medicine);
     setForm({
       name: medicine.name || '',
@@ -132,7 +140,6 @@ const NurseMedicine = () => {
       const errors = err.response?.data?.errors;
       const fieldError = errors ? Object.values(errors).flat()[0] : null;
       setMessage(fieldError || err.response?.data?.message || 'Failed to save medicine.');
-      setTimeout(() => setMessage(''), 4000);
     } finally {
       setFormLoading(false);
     }
@@ -267,11 +274,7 @@ const NurseMedicine = () => {
   const minimumExpiryDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center py-20">
-        <Loader2 className="w-10 h-10 animate-spin text-maroon-600" />
-      </div>
-    );
+    return <NursePageSkeleton variant="cards" label="Loading medicine inventory" />;
   }
 
   return (
@@ -280,6 +283,7 @@ const NurseMedicine = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Medicine Inventory</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage clinic medicines and supplies</p>
+          {refreshing && <p role="status" className="mt-1 text-xs text-gray-500">Updating inventory...</p>}
         </div>
         <button onClick={openAddModal}
           className="flex items-center space-x-2 px-5 py-2.5 bg-maroon-800 text-white rounded-2xl font-semibold text-sm hover:bg-maroon-900 transition">
@@ -287,6 +291,8 @@ const NurseMedicine = () => {
           <span>Add Medicine</span>
         </button>
       </div>
+
+      {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
       {message && (
         <div className={`p-3 rounded-2xl text-sm text-center ${
@@ -430,6 +436,7 @@ const NurseMedicine = () => {
               {editingMedicine ? 'Edit Medicine' : 'Add New Medicine'}
             </h2>
             <form onSubmit={handleSave} className="space-y-4">
+              {message && messageType === 'error' && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{message}</p>}
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
                   <label className={labelClass}>Medicine Name *</label>
@@ -457,7 +464,7 @@ const NurseMedicine = () => {
                 {!editingMedicine && (
                   <div>
                     <label className={labelClass}>Quantity *</label>
-                    <input className={inputClass} type="number" min="1" step="1" inputMode="numeric" value={form.quantity} onChange={(e) => { if (isWholeNumberInput(e.target.value)) setForm({...form, quantity: e.target.value}); }} required />
+                    <input className={inputClass} type="text" inputMode="numeric" pattern="[1-9][0-9]*" value={form.quantity} onChange={(e) => { if (isPositiveWholeNumberInput(e.target.value)) setForm({...form, quantity: e.target.value}); }} required />
                   </div>
                 )}
                 <div>

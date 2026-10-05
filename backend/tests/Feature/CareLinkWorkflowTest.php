@@ -68,11 +68,11 @@ class CareLinkWorkflowTest extends TestCase
     public function test_password_reset_storage_hash_expiry_and_single_use()
     {
         Mail::fake(); $user = $this->person();
-        app(AuthService::class)->forgotPassword(['email' => $user->email]);
+        app(AuthService::class)->forgotPassword(['email' => $user->email, 'account_type' => 'student']);
         $reset = PasswordReset::where('user_id', $user->id)->firstOrFail();
         $this->assertNotEmpty($reset->otp_hash);
         $reset->update(['otp_hash' => Hash::make('123456')]);
-        $data = ['email' => $user->email, 'otp' => '123456', 'password' => 'NewPassword123!', 'password_confirmation' => 'NewPassword123!'];
+        $data = ['email' => $user->email, 'account_type' => 'student', 'otp' => '123456', 'password' => 'NewPassword123!', 'password_confirmation' => 'NewPassword123!'];
         $this->postJson('/api/auth/reset-password', array_merge($data, ['otp' => '000000']))->assertStatus(400);
         $this->postJson('/api/auth/reset-password', $data)->assertOk();
         $this->assertTrue(Hash::check('NewPassword123!', $user->fresh()->password));
@@ -361,6 +361,7 @@ class CareLinkWorkflowTest extends TestCase
         $this->postJson('/api/nurse/medicines/'.$medicine->id.'/movements', [
             'movement_type' => 'dispensed',
             'quantity' => 6,
+            'student_id' => $this->person('student')->student_id,
             'batch_id' => $batch['id'],
             'reason' => 'Dispensed for clinic visit',
         ])->assertOk();

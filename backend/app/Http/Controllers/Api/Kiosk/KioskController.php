@@ -72,10 +72,13 @@ class KioskController extends Controller
     }
     public function todayQueue(Request $request)
     {
-        $queue = ClinicQueue::ordered()->get();
-        $serving = $queue->firstWhere('status', 'serving');
         // Hiwalay ang auth at role checks ng Nurse routes.
         $nurse = $request->is('api/nurse/*');
+        $query = ClinicQueue::ordered();
+        // Kiosk tickets only need triage priority; skip two unused relation queries.
+        if (!$nurse) $query->without(['user', 'appointment']);
+        $queue = $query->get();
+        $serving = $queue->firstWhere('status', 'serving');
         return response()->json(['success' => true, 'data' => [
             'now_serving' => $serving ? ($nurse ? $serving : $this->ticket($serving)) : null,
             'queue' => $nurse ? $queue : $queue->map(function ($row) { return $this->ticket($row); }),

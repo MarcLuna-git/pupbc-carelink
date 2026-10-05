@@ -251,6 +251,7 @@ export default function Landing() {
       setAnnouncementsError(false);
 
       const response = await api.get('/announcements', {
+        params: { limit: 3 },
         signal,
       });
 

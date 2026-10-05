@@ -622,7 +622,7 @@ public function login(Request $request): JsonResponse
                         'max:255',
                     ],
                     'account_type' => [
-                        'nullable',
+                        'required',
                         Rule::in(['student', 'nurse']),
                     ],
                 ],
@@ -665,7 +665,7 @@ public function login(Request $request): JsonResponse
             $data = $request->validate([
                 'email' => ['required', 'email', 'max:255'],
                 'otp' => ['required', 'string', 'size:6', 'regex:/^\d{6}$/'],
-                'account_type' => ['nullable', Rule::in(['student', 'nurse'])],
+                'account_type' => ['required', Rule::in(['student', 'nurse'])],
             ], [
                 'otp.required' => 'Verification code is required.',
                 'otp.size' => 'Verification code must contain 6 digits.',
@@ -723,7 +723,7 @@ public function login(Request $request): JsonResponse
                         'same:password',
                     ],
                     'account_type' => [
-                        'nullable',
+                        'required',
                         Rule::in(['student', 'nurse']),
                     ],
                 ],

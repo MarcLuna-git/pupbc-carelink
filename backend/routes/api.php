@@ -237,16 +237,17 @@ Route::middleware([
                             ->whereDate('expiry_date', '<=', $expiryLimit->toDateString())
                             ->get(['id', 'name', 'expiry_date']);
 
-                        foreach ($expiringMedicines as $medicine) {
-                            $alreadyNotified = \App\Models\Notification::where(
-                                'user_id',
-                                $user->id
-                            )
-                                ->where('type', 'medicine_expiring_soon')
-                                ->where('data->medicine_id', $medicine->id)
-                                ->exists();
+                        // Read existing alerts once instead of querying for every medicine.
+                        // Include dismissed alerts so polling does not recreate them.
+                        $notifiedMedicineIds = \App\Models\Notification::where('user_id', $user->id)
+                            ->where('type', 'medicine_expiring_soon')
+                            ->get(['data'])
+                            ->map(function ($notification) { return $notification->data['medicine_id'] ?? null; })
+                            ->filter()
+                            ->flip();
 
-                            if ($alreadyNotified) {
+                        foreach ($expiringMedicines as $medicine) {
+                            if ($notifiedMedicineIds->has($medicine->id)) {
                                 continue;
                             }
 
@@ -268,6 +269,11 @@ Route::middleware([
                         'user_id',
                         auth()->id()
                     )
+                        ->where(function ($query) {
+                            $query->where('type', '!=', 'medicine_expiring_soon')
+                                ->orWhereNull('data->dismissed')
+                                ->orWhere('data->dismissed', false);
+                        })
                         ->orderBy('created_at', 'desc')
                         ->paginate(20);
 
@@ -329,7 +335,16 @@ Route::middleware([
                         $notification = \App\Models\Notification::where('id', $id)
                             ->where('user_id', auth()->id())
                             ->firstOrFail();
-                        $notification->delete();
+                        if ($notification->type === 'medicine_expiring_soon') {
+                            // Keep the row so both expiry generators retain their suppression record.
+                            $notification->update([
+                                'data' => array_merge($notification->data ?? [], ['dismissed' => true]),
+                                'read' => true,
+                                'read_at' => $notification->read_at ?? now(),
+                            ]);
+                        } else {
+                            $notification->delete();
+                        }
 
                         return response()->json([
                             'success' => true,

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Calendar, Loader2, CheckCheck, Trash2 } from 'lucide-react';
 import api from '../../../services/api';
+import NursePageSkeleton from '../../../components/NursePageSkeleton';
+import { fetchNurseNotifications } from '../../../services/nurseNotifications';
 
 const NurseNotifications = () => {
   const navigate = useNavigate();
@@ -18,7 +20,7 @@ const NurseNotifications = () => {
     try {
       setLoading(true);
       setError('');
-      const response = await api.get('/notifications');
+      const response = await fetchNurseNotifications();
       if (response.data.success) {
         const data = response.data.data;
         const notifications = Array.isArray(data) ? data : (data?.data || []);
@@ -100,11 +102,7 @@ const NurseNotifications = () => {
   const unreadCount = notifs.filter(n => !n.read).length;
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center py-20">
-        <Loader2 className="w-10 h-10 animate-spin text-maroon-600" />
-      </div>
-    );
+    return <NursePageSkeleton label="Loading notifications" />;
   }
 
   return (

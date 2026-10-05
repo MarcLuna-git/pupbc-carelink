@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, CheckCircle, XCircle, Search, User, Loader2, X, FileText, Stethoscope, Info, Filter, Users, RefreshCw } from 'lucide-react';
 import api from '../../../services/api';
+import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import { formatAppointmentDate, groupAppointments } from '../../../utils/appointmentDate';
 
 const NurseAppointments = () => {
@@ -220,10 +221,7 @@ const NurseAppointments = () => {
       </div>
 
       {loading ? (
-        <div className="text-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-gray-400" />
-          <p className="text-sm text-gray-400 mt-3">Loading appointments...</p>
-        </div>
+        <NursePageSkeleton contentOnly label="Loading appointments" />
       ) : filtered.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700/50 py-12 text-center">
           <Calendar className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />

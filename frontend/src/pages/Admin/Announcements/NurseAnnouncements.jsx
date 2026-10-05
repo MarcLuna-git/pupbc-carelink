@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Megaphone, Plus, Trash2, Edit2, Loader2, X, Send, Search } from 'lucide-react';
 import api from '../../../services/api';
+import NursePageSkeleton from '../../../components/NursePageSkeleton';
 
 const NurseAnnouncements = () => {
   const [announcements, setAnnouncements] = useState([]);
@@ -45,30 +46,32 @@ const NurseAnnouncements = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title.trim() || !form.content.trim()) return;
+    if (saving || !form.title.trim() || !form.content.trim()) return;
 
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
       if (editingId) {
-        await api.put(`/nurse/announcements/${editingId}`, form, {
+        const response = await api.put(`/nurse/announcements/${editingId}`, form, {
           headers: { Authorization: `Bearer ${token}` },
           timeout: 120000
         });
+        setAnnouncements((current) => current.map((announcement) => announcement.id === editingId
+          ? { ...announcement, ...response.data.data } : announcement));
         setMessageType('success');
         setMessage('Announcement updated!');
       } else {
-        await api.post('/nurse/announcements', form, {
+        const response = await api.post('/nurse/announcements', form, {
           headers: { Authorization: `Bearer ${token}` },
           timeout: 120000
         });
+        setAnnouncements((current) => [response.data.data, ...current]);
         setMessageType('success');
         setMessage('Announcement posted!');
       }
       setShowForm(false);
       setEditingId(null);
       setForm({ title: '', content: '', category: 'General' });
-      await fetchAnnouncements();
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       console.error('Save announcement failed:', err?.response?.status, err?.response?.data || err);
@@ -86,6 +89,7 @@ const NurseAnnouncements = () => {
   };
 
   const handleDelete = async (id) => {
+    if (deletingId !== null) return;
     if (!confirm('Delete this announcement?')) return;
     setDeletingId(id);
     try {
@@ -93,9 +97,9 @@ const NurseAnnouncements = () => {
       await api.delete(`/nurse/announcements/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      setAnnouncements((current) => current.filter((announcement) => announcement.id !== id));
       setMessage('Announcement deleted.');
       setMessageType('success');
-      await fetchAnnouncements();
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       setMessageType('error');
@@ -113,11 +117,7 @@ const NurseAnnouncements = () => {
   const categories = ['General', 'Clinic Advisory', 'Health Advisory', 'School Events', 'Emergency'];
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center py-20">
-        <Loader2 className="w-10 h-10 animate-spin text-maroon-600" />
-      </div>
-    );
+    return <NursePageSkeleton label="Loading announcements" />;
   }
 
   return (

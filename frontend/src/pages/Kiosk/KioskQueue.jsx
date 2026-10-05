@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, Clock, User, Users, RefreshCw, ArrowRight, QrCode } from 'lucide-react';
 import api from '../../services/api';
@@ -8,6 +8,7 @@ const KioskQueue = ({ checkin, onDone }) => {
   const isPriority = checkin.queue_type === 'priority';
   const [queueData, setQueueData] = useState(null);
   const [countdown, setCountdown] = useState(30);
+  const queueRequestPending = useRef(false);
 
   useEffect(() => {
     fetchQueue();
@@ -20,10 +21,13 @@ const KioskQueue = ({ checkin, onDone }) => {
   }, []);
 
   const fetchQueue = async () => {
+    if (queueRequestPending.current || document.hidden) return;
+    queueRequestPending.current = true;
     try {
       const res = await api.get('/kiosk/queue');
       if (res.data.success) setQueueData(res.data.data);
-    } catch (err) {   }
+    } catch { /* Keep the last known queue visible during a connection failure. */ }
+    finally { queueRequestPending.current = false; }
   };
 
   const position = queueData?.queue?.findIndex(q => q.id === checkin.id) ?? -1;

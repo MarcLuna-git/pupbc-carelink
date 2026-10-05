@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Users, Calendar, Clock, ClipboardList, QrCode, FileText, Bell, Activity, Stethoscope, Loader2 } from 'lucide-react';
+import { Users, Calendar, Clock, ClipboardList, QrCode, FileText, Bell, Activity, Stethoscope } from 'lucide-react';
 import api from '../../../services/api';
+import NursePageSkeleton from '../../../components/NursePageSkeleton';
+import { fetchNurseNotifications } from '../../../services/nurseNotifications';
 
 const NurseDashboard = () => {
   const navigate = useNavigate();
@@ -26,6 +28,7 @@ const NurseDashboard = () => {
   useEffect(() => {
     fetchDashboardData();
     fetchTodaySchedule();
+    fetchRecentActivity();
     fetchNotifications();
   }, []);
 
@@ -77,7 +80,7 @@ const NurseDashboard = () => {
     }
   };
 
-  const fetchNotifications = async () => {
+  const fetchRecentActivity = async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await api.get('/nurse/dashboard/recent-activity', {
@@ -95,18 +98,17 @@ const NurseDashboard = () => {
     } catch (err) {
       console.log('Notifications error:', err);
     }
-    
+  };
+
+  const fetchNotifications = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await api.get('/notifications', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await fetchNurseNotifications();
       if (response.data.success) {
         const data = response.data.data;
         const notifs = Array.isArray(data) ? data : (data?.data || []);
         const unread = notifs.filter(n => !n.read).slice(0, 3);
         setNotifications(unread.map(n => n.message || n.text || 'Notification'));
-        setNotifCount(notifs.filter(n => !n.read).length);
+        setNotifCount(Number(response.data.unread_count) || 0);
       }
     } catch (err) {
       console.log('Notifications error:', err);
@@ -155,11 +157,7 @@ const NurseDashboard = () => {
   ];
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center py-20">
-        <Loader2 className="w-10 h-10 animate-spin text-maroon-600" />
-      </div>
-    );
+    return <NursePageSkeleton variant="dashboard" label="Loading dashboard" />;
   }
 
   return (

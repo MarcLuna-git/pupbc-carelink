@@ -6,49 +6,50 @@ import {
   Navigate,
 } from 'react-router-dom';
 
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 
 import Landing from './pages/Landing/Landing';
 
-import Login from './pages/Student/Login';
-import Register from './pages/Student/Register';
-import ForgotPassword from './pages/Student/ForgotPassword';
-import ResetPassword from './pages/Student/ResetPassword';
+const Login = lazy(() => import('./pages/Student/Login'));
+const Register = lazy(() => import('./pages/Student/Register'));
+const ForgotPassword = lazy(() => import('./pages/Student/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/Student/ResetPassword'));
 
-import Welcome from './pages/Student/Welcome/Welcome';
-import HealthProfile from './pages/Student/HealthProfile/HealthProfile';
-import Appointments from './pages/Student/Appointments/Appointments';
-import QR from './pages/Student/QR/QR';
-import Profile from './pages/Student/Profile/Profile';
-import ProfileEdit from './pages/Student/ProfileEdit/ProfileEdit';
-import Alerts from './pages/Student/Alerts/Alerts';
-import Announcements from './pages/Student/Announcements/Announcements';
-import HealthRecords from './pages/Student/HealthRecords/HealthRecords';
-import Settings from './pages/Student/Settings/Settings';
-import Help from './pages/Student/Help/Help';
-import About from './pages/Student/About/About';
+const Welcome = lazy(() => import('./pages/Student/Welcome/Welcome'));
+const HealthProfile = lazy(() => import('./pages/Student/HealthProfile/HealthProfile'));
+const Appointments = lazy(() => import('./pages/Student/Appointments/Appointments'));
+const QR = lazy(() => import('./pages/Student/QR/QR'));
+const Profile = lazy(() => import('./pages/Student/Profile/Profile'));
+const ProfileEdit = lazy(() => import('./pages/Student/ProfileEdit/ProfileEdit'));
+const Alerts = lazy(() => import('./pages/Student/Alerts/Alerts'));
+const Announcements = lazy(() => import('./pages/Student/Announcements/Announcements'));
+const HealthRecords = lazy(() => import('./pages/Student/HealthRecords/HealthRecords'));
+const Settings = lazy(() => import('./pages/Student/Settings/Settings'));
+const Help = lazy(() => import('./pages/Student/Help/Help'));
+const About = lazy(() => import('./pages/Student/About/About'));
 
-import StudentLayout from './layouts/StudentLayout';
+const StudentLayout = lazy(() => import('./layouts/StudentLayout'));
 
-import NurseLogin from './pages/Admin/Login/NurseLogin';
-import NurseDashboard from './pages/Admin/Dashboard/NurseDashboard';
-import NurseAppointments from './pages/Admin/Appointments/NurseAppointments';
-import NurseStudents from './pages/Admin/Students/NurseStudents';
-import NurseConsultation from './pages/Admin/Consultation/NurseConsultation';
-import NurseMedicine from './pages/Admin/Medicine/NurseMedicine';
-import NurseRecords from './pages/Admin/Records/NurseRecords';
-import NurseNotifications from './pages/Admin/Notifications/NurseNotifications';
-import NurseAnnouncements from './pages/Admin/Announcements/NurseAnnouncements';
-import NurseSettings from './pages/Admin/Settings/NurseSettings';
-import CourseManagement from './pages/Admin/Academic/CourseManagement';
+const NurseLogin = lazy(() => import('./pages/Admin/Login/NurseLogin'));
+const NurseDashboard = lazy(() => import('./pages/Admin/Dashboard/NurseDashboard'));
+const NurseAppointments = lazy(() => import('./pages/Admin/Appointments/NurseAppointments'));
+const NurseStudents = lazy(() => import('./pages/Admin/Students/NurseStudents'));
+const NurseConsultation = lazy(() => import('./pages/Admin/Consultation/NurseConsultation'));
+const NurseMedicine = lazy(() => import('./pages/Admin/Medicine/NurseMedicine'));
+const NurseRecords = lazy(() => import('./pages/Admin/Records/NurseRecords'));
+const NurseNotifications = lazy(() => import('./pages/Admin/Notifications/NurseNotifications'));
+const NurseAnnouncements = lazy(() => import('./pages/Admin/Announcements/NurseAnnouncements'));
+const NurseSettings = lazy(() => import('./pages/Admin/Settings/NurseSettings'));
+const CourseManagement = lazy(() => import('./pages/Admin/Academic/CourseManagement'));
 
-import AdminLayout from './layouts/AdminLayout';
+const AdminLayout = lazy(() => import('./layouts/AdminLayout'));
 import ProtectedRoute from './components/ProtectedRoute';
 
-import KioskPage from './pages/Kiosk/KioskPage';
+const KioskPage = lazy(() => import('./pages/Kiosk/KioskPage'));
 import AppErrorBoundary from './components/AppErrorBoundary';
 
 import api from './services/api';
+import RouteLoading from './components/RouteLoading';
 
 /*
  * ============================================================
@@ -461,6 +462,7 @@ function App() {
   return (
     <AppErrorBoundary>
       <BrowserRouter>
+        <Suspense fallback={<RouteLoading />}>
         <Routes>
           {/* ==================================================
               PUBLIC
@@ -750,6 +752,7 @@ function App() {
             }
           />
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </AppErrorBoundary>
   );
