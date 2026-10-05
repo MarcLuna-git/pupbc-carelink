@@ -6,24 +6,11 @@ import {
   RefreshCw, ShieldCheck, UserRound, X,
 } from 'lucide-react';
 import authService from '../../services/authService';
+import COURSES from '../../data/registration-academics.json';
 import clinicLogo from '../../assets/clinic logo.jpg';
 import campusPhoto from '../../assets/pup-binan-hero.jpg';
 import clinicPhoto from '../../assets/clinic-waiting-area.jpg';
 
-// The keys below are the existing database/API course codes.
-// The descriptions appear in the dropdown; they are not sent to the API.
-const COURSES = [
-  ['BSIT', 'Bachelor of Science in Information Technology'],
-  ['BSCPE', 'Bachelor of Science in Computer Engineering'],
-  ['BSIE', 'Bachelor of Science in Industrial Engineering'],
-  ['BSBA-HRM', 'Bachelor of Science in Business Administration, major in Human Resource Management'],
-  ['BSED-SS', 'Bachelor of Secondary Education, major in Social Studies'],
-  ['BSED-English', 'Bachelor of Secondary Education, major in English'],
-  ['BEED', 'Bachelor of Elementary Education'],
-  ['BSPSYCH', 'Bachelor of Science in Psychology'],
-  ['DIT', 'Diploma in Information Technology'],
-  ['DCET', 'Diploma in Computer Engineering Technology'],
-];
 const YEARS = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -166,6 +153,9 @@ export default function Register() {
     return Array.from({ length: 83 }, (_, index) => current - 17 - index);
   }, []);
   const passwordStrength = getPasswordStrength(form.password);
+  const selectedCourse = COURSES.find((course) => course.code === form.course);
+  const availableYears = YEARS.filter((year, index) => selectedCourse?.sections.some((section) => section.startsWith(`${index + 1}-`)));
+  const availableSections = selectedCourse?.sections.filter((section) => YEARS[Number(section[0]) - 1] === form.year) || [];
   const dayCount = form.dobYear && form.dobMonth
     ? new Date(+form.dobYear, +form.dobMonth, 0).getDate() : 31;
 
@@ -193,15 +183,14 @@ export default function Register() {
       if (formatted === null) return; // Reject non-PH prefixes and extra digits as typed.
       next = formatted;
     }
-    if (name === 'section') {
-      const digits = value.replace(/\D/g, '').slice(0, 2);
-      next = digits.length > 1 ? `${digits[0]}-${digits[1]}` : digits;
-    }
-    if (name === 'year') {
-      setErrors((previous) => ({ ...previous, section: '' }));
-    }
     setForm((previous) => {
       const updated = { ...previous, [name]: next };
+      if (name === 'course') {
+        const course = COURSES.find((entry) => entry.code === next);
+        if (!course?.sections.some((section) => YEARS[Number(section[0]) - 1] === previous.year)) updated.year = '';
+        updated.section = '';
+      }
+      if (name === 'year') updated.section = '';
       if (['dobMonth', 'dobYear'].includes(name) && updated.dobYear && updated.dobMonth && updated.dobDay) {
         if (+updated.dobDay > new Date(+updated.dobYear, +updated.dobMonth, 0).getDate()) {
           updated.dobDay = '';
@@ -212,6 +201,8 @@ export default function Register() {
     setErrors((previous) => ({
       ...previous,
       [name]: '',
+      ...(['course', 'year'].includes(name) ? { section: '' } : {}),
+      ...(name === 'course' ? { year: '' } : {}),
       ...(name === 'password' ? { password_confirmation: '' } : {}),
       ...(name.startsWith('dob') ? { birthday: '' } : {}),
     }));
@@ -239,15 +230,9 @@ export default function Register() {
     if (!/^09\d{9}$/.test(form.mobile_number) && !/^\+639\d{9}$/.test(form.mobile_number)) {
       next.mobile_number = 'Use 09XXXXXXXXX or +639XXXXXXXXX.';
     }
-    if (!COURSES.some(([code]) => code === form.course)) next.course = 'Select your course.';
-    if (!YEARS.includes(form.year)) next.year = 'Select your year level.';
-    const sectionsByYear = {
-      '1st Year': ['1-1', '1-2', '1-3', '1-4', '1-5'],
-      '2nd Year': ['2-1', '2-2', '2-3', '2-4', '2-5'],
-      '3rd Year': ['3-1', '3-2', '3-3', '3-4', '3-5'],
-      '4th Year': ['4-1', '4-2', '4-3', '4-4', '4-5'],
-    };
-    if (!sectionsByYear[form.year]?.includes(form.section.trim())) next.section = 'Enter a valid section for your year (e.g. 1-2).';
+    if (!selectedCourse) next.course = 'Select your course.';
+    if (!availableYears.includes(form.year)) next.year = 'Select a valid year level for your course.';
+    if (!availableSections.includes(form.section)) next.section = 'Select your section.';
     if (form.password.length < 8) next.password = 'Password must have at least 8 characters.';
     else if (!/[\d\W_]/.test(form.password)) next.password = 'Include at least one number or special character.';
     if (!form.password_confirmation.trim()) next.password_confirmation = 'Confirm Password is required.';
@@ -528,21 +513,23 @@ export default function Register() {
                   <SectionTitle icon={GraduationCap}>Academic Information</SectionTitle>
                   <div className="space-y-3">
                     <Field id="course" label="Course" error={errors.course}>
-                      <select id="course" name="course" value={form.course} onChange={change} disabled={loading} className={`${INPUT} ${errors.course ? INVALID : ''}`}>
+                      <select id="course" name="course" value={form.course} onChange={change} disabled={loading} aria-invalid={Boolean(errors.course)} className={`${INPUT} ${errors.course ? INVALID : ''}`}>
                         <option value="">Select your course</option>
-                        {COURSES.map(([code, label]) => <option key={code} value={code}>{code} — {label}</option>)}
+                        {COURSES.map((course) => <option key={course.code} value={course.code}>{course.abbreviation} — {course.name}</option>)}
                       </select>
                     </Field>
                     <Field id="year" label="Year level" error={errors.year}>
-                      <select id="year" name="year" value={form.year} onChange={change} disabled={loading} className={`${INPUT} ${errors.year ? INVALID : ''}`}>
-                        <option value="">Select year level</option>
-                        {YEARS.map((year) => <option key={year} value={year}>{year}</option>)}
+                      <select id="year" name="year" value={form.year} onChange={change} disabled={loading || !form.course} aria-invalid={Boolean(errors.year)} className={`${INPUT} ${errors.year ? INVALID : ''}`}>
+                        <option value="">{form.course ? 'Select year level' : 'Select your course first'}</option>
+                        {availableYears.map((year) => <option key={year} value={year}>{year}</option>)}
                       </select>
                     </Field>
                     <Field id="section" label="Section" error={errors.section}>
-                      <input id="section" name="section" type="text" value={form.section} onChange={change} disabled={loading || !form.year} maxLength={3} inputMode="numeric" placeholder={form.year ? 'Type your section, e.g. 1-2' : 'Select year level first'} autoComplete="off" className={`${INPUT} ${errors.section ? INVALID : ''}`} />
+                      <select id="section" name="section" value={form.section} onChange={change} disabled={loading || !form.course || !form.year} aria-invalid={Boolean(errors.section)} className={`${INPUT} ${errors.section ? INVALID : ''}`}>
+                        <option value="">{form.course && form.year ? 'Select your section' : 'Select course and year level first'}</option>
+                        {availableSections.map((section) => <option key={section} value={section}>{section}</option>)}
+                      </select>
                     </Field>
-                    <p className="text-xs leading-5 text-slate-500">Enter your one-digit year and section (for example, 1-2).</p>
                   </div>
                 </section>
 

@@ -1,0 +1,12 @@
+[
+  {"code":"BSCPE","abbreviation":"BSCpE","name":"Bachelor of Science in Computer Engineering","sections":["1-1","1-2","2-1","2-2","3-1","3-2","4-1","4-2"]},
+  {"code":"DCET","abbreviation":"DCpET","name":"Diploma in Computer Engineering Technology","sections":["1-1","2-1","3-1"]},
+  {"code":"BSBA-HRM","abbreviation":"BSBA HRM","name":"Bachelor of Science in Business Administration, major in Human Resource Management","sections":["1-1","1-2","2-1","2-2","3-1","3-2","4-1","4-2"]},
+  {"code":"BSIT","abbreviation":"BSIT","name":"Bachelor of Science in Information Technology","sections":["1-1","1-2","2-1","2-2","3-1","3-2","4-1"]},
+  {"code":"DIT","abbreviation":"DIT","name":"Diploma in Information Technology","sections":["1-1","2-1","3-1"]},
+  {"code":"BSIE","abbreviation":"BSIE","name":"Bachelor of Science in Industrial Engineering","sections":["1-1","2-1","3-1","4-1"]},
+  {"code":"BSPSYCH","abbreviation":"BSPSY","name":"Bachelor of Science in Psychology","sections":["1-1","1-2","2-1","2-2","3-1","3-2","4-1"]},
+  {"code":"BSED-English","abbreviation":"BSEDEN","name":"Bachelor of Secondary Education, major in English","sections":["1-1","1-2","2-1","3-1","4-1"]},
+  {"code":"BSED-SS","abbreviation":"BSEDSS","name":"Bachelor of Secondary Education, major in Social Studies","sections":["1-1","1-2","2-1","3-1","4-1"]},
+  {"code":"BEED","abbreviation":"BEED","name":"Bachelor of Elementary Education","sections":["1-1","2-1","3-1","4-1"]}
+]

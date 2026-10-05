@@ -33,39 +33,6 @@ class AuthController extends Controller
         '4th Year',
     ];
 
-    private const SECTIONS_BY_YEAR = [
-        '1st Year' => [
-            '1-1',
-            '1-2',
-            '1-3',
-            '1-4',
-            '1-5',
-        ],
-
-        '2nd Year' => [
-            '2-1',
-            '2-2',
-            '2-3',
-            '2-4',
-            '2-5',
-        ],
-
-        '3rd Year' => [
-            '3-1',
-            '3-2',
-            '3-3',
-            '3-4',
-            '3-5',
-        ],
-
-        '4th Year' => [
-            '4-1',
-            '4-2',
-            '4-3',
-            '4-4',
-            '4-5',
-        ],
-    ];
 
     public function __construct(
         AuthService $authService
@@ -93,7 +60,7 @@ class AuthController extends Controller
             $minimumBirthday = $minimumDate->toDateString();
 
             $allowedSections =
-                self::SECTIONS_BY_YEAR[$selectedYear] ?? [];
+                \App\Support\RegistrationAcademics::sections((string) $request->input('course'), (string) $selectedYear);
 
             $data = $request->validate(
                 [
@@ -267,7 +234,7 @@ class AuthController extends Controller
                         'Section is required.',
 
                     'section.in' =>
-                        'Please select a valid section for your year level.',
+                        'Please select a valid section for your course and year level.',
 
                     'mobile_number.required' =>
                         'Mobile number is required.',
