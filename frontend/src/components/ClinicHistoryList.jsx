@@ -4,8 +4,12 @@ const display = value => typeof value === 'boolean' ? (value ? 'Yes' : 'No') : A
 
 export const DataFields = ({ data }) => <dl className="grid sm:grid-cols-2 gap-3 text-sm">{Object.entries(data || {}).filter(([key]) => !['id', 'user_id', 'recorded_by', 'created_at', 'updated_at', 'deleted_at'].includes(key)).map(([key, value]) => <div key={key} className="rounded-xl bg-gray-50 dark:bg-gray-700/40 p-3 break-words"><dt className="text-gray-500 text-xs mb-1">{label(key)}</dt><dd>{value && typeof value === 'object' && !Array.isArray(value) ? <DataFields data={value} /> : display(value)}</dd></div>)}</dl>;
 
-export default function ClinicHistoryList({ records = [] }) {
+export default function ClinicHistoryList({ records = [], variant = 'compact' }) {
   if (!records.length) return <p className="text-sm text-gray-500 py-3">No completed encounters recorded.</p>;
+  if (variant === 'compact') return <div className="space-y-3">{records.map(record => <details key={`${record.record_type}-${record.id}`} className="border rounded-xl p-4 dark:border-gray-700">
+    <summary className="cursor-pointer"><b>{record.record_type === 'emergency' ? 'Emergency Encounter' : 'Scheduled Consultation'}</b><span className="ml-3 text-xs text-gray-500">{new Date(record.occurred_at).toLocaleString()}</span><p className="text-sm mt-1">{record.reason || record.chief_complaint}</p></summary>
+    <div className="mt-4"><DataFields data={Object.fromEntries(Object.entries(record).filter(([key]) => !['record_type', 'occurred_at', 'incident_datetime'].includes(key)))} /></div>
+  </details>)}</div>;
   return <div className="space-y-3">{records.map(record => <details key={`${record.record_type}-${record.id}`} className="group rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 dark:border-gray-700 dark:bg-gray-800">
     <summary className="flex cursor-pointer list-none items-start gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon-300 [&::-webkit-details-marker]:hidden">
       <span className={`shrink-0 rounded-xl p-2.5 ${record.record_type === 'emergency' ? 'bg-red-50 text-red-700 dark:bg-red-900/25 dark:text-red-300' : 'bg-maroon-50 text-maroon-800 dark:bg-maroon-950/40 dark:text-maroon-300'}`}>{record.record_type === 'emergency' ? <HeartPulse size={20} /> : <Stethoscope size={20} />}</span>
