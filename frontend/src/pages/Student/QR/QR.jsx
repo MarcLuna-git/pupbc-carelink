@@ -63,8 +63,8 @@ const QR = () => {
 
   const [pageLoading, setPageLoading] =
     useState(true);
-
-
+  const [refreshing, setRefreshing] =
+    useState(false);
 
   const [downloading, setDownloading] =
     useState(false);
@@ -113,9 +113,10 @@ const today = getManilaDateString();
   };
 
 const fetchQrData = async (signal) => {
-    setPageLoading(true);
+    setRefreshing(true);
     try {
       const response = await api.get('/student/qr', { signal });
+      if (signal?.aborted) return;
       const qrData = response?.data?.data || null;
 
       setQrCodeHash(qrData?.qr_code_hash || '');
@@ -128,10 +129,8 @@ const fetchQrData = async (signal) => {
       );
 
       // Store check-in window times
-      if (qrData?.appointment) {
-        setCheckinOpensAt(qrData.appointment.checkin_opens_at || null);
-        setCheckinDeadlineAt(qrData.appointment.checkin_deadline_at || null);
-      }
+      setCheckinOpensAt(qrData?.appointment?.checkin_opens_at || null);
+      setCheckinDeadlineAt(qrData?.appointment?.checkin_deadline_at || null);
 
       const appointmentPayload = qrData?.appointment;
       const normalizedAppointments = Array.isArray(appointmentPayload)
@@ -147,6 +146,7 @@ const fetchQrData = async (signal) => {
       setMessage('Unable to load your QR information. Please try again.');
     } finally {
       setPageLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -492,7 +492,7 @@ const fetchQrData = async (signal) => {
         <button
           type="button"
           onClick={() =>
-            fetchQrData(true)
+            fetchQrData()
           }
           disabled={refreshing}
           className="p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50"
