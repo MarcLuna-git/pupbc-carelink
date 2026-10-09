@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { BookOpen, CalendarDays, Layers, Plus, RefreshCw, Search, X, Pencil, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import { Pagination } from '../Students/StudentDirectory';
 import { inputStyle, primary, secondary, focus } from '../Students/directoryOptions';
 import AcademicFormDialog from './AcademicFormDialog';
+import useNurseSync from '../../../hooks/useNurseSync';
 import { periodLabel, academicNames } from './academicOptions';
 
 const tabs = [{ key: 'course', label: 'Courses', icon: BookOpen }, { key: 'section', label: 'Sections', icon: Layers }, { key: 'period', label: 'Academic periods', icon: CalendarDays }];
@@ -33,17 +34,20 @@ export default function CourseManagement() {
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
+  const requestId = useRef(0);
 
   const load = useCallback(async signal => {
+    const request = ++requestId.current;
     setRefreshing(true); setLoadError('');
     try {
       const responses = await Promise.all([api.get(paths.period, { signal }), api.get(paths.course, { signal }), api.get(paths.section, { signal })]);
-      if (signal?.aborted) return;
+      if (signal?.aborted || request !== requestId.current) return;
       setData({ period: responses[0].data.data || [], course: (responses[1].data.data || []).filter(item => !item.deleted_at), section: responses[2].data.data || [] });
     } catch (err) { if (!signal?.aborted) setLoadError(err.response?.data?.message || 'Unable to load academic data. Please try again.'); }
     finally { if (!signal?.aborted) { setLoading(false); setRefreshing(false); } }
   }, []);
   useEffect(() => { const controller = new AbortController(); load(controller.signal); return () => controller.abort(); }, [load]);
+  useNurseSync(['academic'], load);
 
   const courses = data.course;
   const periods = data.period;
@@ -72,7 +76,7 @@ export default function CourseManagement() {
     const values = { ...defaults[type] };
     if (item) Object.keys(values).forEach(key => { values[key] = key === 'is_active' ? Boolean(item[key]) : item[key] ?? values[key]; });
     else if (type === 'section') { values.course_id = courseId; values.academic_period_id = periodId; }
-    setModal({ type, id: item?.id }); setForm(values); setErrors({}); setFormError('');
+    setModal({ type, id: item?.id, version: item?.sync_version }); setForm(values); setErrors({}); setFormError('');
   };
   const changeField = (key, value) => { setForm(previous => ({ ...previous, [key]: value })); setErrors(previous => ({ ...previous, [key]: undefined })); };
   const submit = async event => {
@@ -85,7 +89,7 @@ export default function CourseManagement() {
     if (Object.keys(validation).length) { setErrors(validation); return; }
     setSaving(true); setFormError(''); setErrors({}); setMessage('');
     try {
-      const response = modal.id ? await api.put(`${paths[modal.type]}/${modal.id}`, body) : await api.post(paths[modal.type], body);
+      const response = modal.id ? await api.put(`${paths[modal.type]}/${modal.id}`, body, { headers: { 'If-Match': modal.version } }) : await api.post(paths[modal.type], body);
       const saved = response.data.data;
       setData(previous => ({ ...previous, [modal.type]: modal.id ? previous[modal.type].map(item => item.id === modal.id ? { ...item, ...saved } : item) : [...previous[modal.type], saved] }));
       setMessage(`${modal.type === 'period' ? 'Academic period' : modal.type === 'course' ? 'Course' : 'Section'} ${modal.id ? 'updated' : 'added'} successfully.`);

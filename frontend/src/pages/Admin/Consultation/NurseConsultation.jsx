@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { User, Stethoscope, Heart, Save, Loader2, Users, ClipboardList } from 'lucide-react';
+import { User, Heart, Save, Loader2, Users, ClipboardList, CheckCircle, RotateCcw, SkipForward } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
+import useNurseSync from '../../../hooks/useNurseSync';
 
 const NurseConsultation = () => {
   const [step, setStep] = useState(1);
@@ -13,29 +14,75 @@ const NurseConsultation = () => {
   const [messageType, setMessageType] = useState('success');
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [checkedInStudents, setCheckedInStudents] = useState([]);
-
+  const queueRequest = useRef(0);
   const [form, setForm] = useState({
     chief_complaint: '', bp: '', hr: '', rr: '', temp: '', o2_sat: '',
     general_remarks: '', medical_certificate: false, medical_certificate_ref: '',
     follow_up: false, follow_up_date: '',
   });
 
+  const queueAction = async (student, action) => {
+    setLoading(true); setMessage('');
+    try {
+      const { data } = await api.post(`/nurse/queue/${student.checkin_id}/${action}`, {}, {
+        headers: { 'If-Match': student.sync_version },
+      });
+      if (data.success) {
+        setMessageType('success');
+        setMessage(data.message);
+        await fetchCheckedInStudents(true);
+      }
+    } catch (err) {
+      setMessageType('error');
+      setMessage(err.response?.data?.message || 'Failed to update the queue.');
+      if (err.response?.status === 409) await fetchCheckedInStudents(true).catch(() => {});
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+
   useEffect(() => {
     fetchCheckedInStudents();
   }, []);
   useEffect(() => {
-    if (step !== 1) return;
-    const timer = setInterval(() => fetchCheckedInStudents(true), 10000);
-    return () => clearInterval(timer);
-  }, [step]);
+    if (step !== 2 || !selectedStudent) return;
+    const id = selectedStudent.checkin_id;
+    return () => { api.delete(`/nurse/queue/${id}/claim`).catch(() => {}); };
+  }, [step, selectedStudent]);
+  useNurseSync(['queue', 'appointments', 'consultations', 'students'], async () => {
+    await fetchCheckedInStudents(true);
+    if (step === 2 && selectedStudent) {
+      try { await api.post(`/nurse/queue/${selectedStudent.checkin_id}/claim`); }
+      catch (err) {
+        if (err.response?.status === 409) { setMessageType('error'); setMessage(err.response.data.message); }
+        throw err;
+      }
+    }
+  });
+
+  const openVisit = async student => {
+    if (loading) return;
+    setLoading(true); setMessage('');
+    try {
+      await api.post(`/nurse/queue/${student.checkin_id}/claim`);
+      setSelectedStudent(student);
+      setForm(current => ({ ...current, chief_complaint: student.complaint }));
+      setStep(2);
+    } catch (err) { setMessageType('error'); setMessage(err.response?.data?.message || 'Unable to open this visit.'); }
+    finally { setLoading(false); }
+  };
 
   const fetchCheckedInStudents = async (silent = false) => {
+    const request = ++queueRequest.current;
     try {
       if (!silent) setPageLoading(true);
       const token = localStorage.getItem('token');
       const response = await api.get('/nurse/queue/checkins', {
         headers: { Authorization: `Bearer ${token}` }
       });
+      if (request !== queueRequest.current) return;
       if (response.data.success) {
         const data = response.data.data;
         const checkins = Array.isArray(data) ? data : (data?.data || []);
@@ -51,15 +98,17 @@ const NurseConsultation = () => {
           appointment_id: c.appointment_id,
           priority: c.triage?.priority || 'LOW',
           queue_number: c.queue_number || 'N/A',
+          called_at: c.called_at || null,
+          sync_version: c.sync_version,
         }));
         setCheckedInStudents(formatted);
       }
     } catch (err) {
       console.log('Checkins error:', err);
-      setMessageType('error'); setMessage('Unable to load the clinic queue. Please refresh.');
-      setCheckedInStudents([]);
+      if (!silent) { setMessageType('error'); setMessage('Unable to load the clinic queue. Retrying automatically.'); }
+      if (silent) throw err;
     } finally {
-      setPageLoading(false);
+      if (request === queueRequest.current) setPageLoading(false);
     }
   };
 
@@ -117,7 +166,7 @@ const NurseConsultation = () => {
     } catch (err) {
       setMessageType('error');
       setMessage(err.response?.data?.message || 'Failed to save consultation.');
-      setTimeout(() => setMessage(''), 5000);
+      if (err.response?.status !== 409) setTimeout(() => setMessage(''), 5000);
     } finally {
       setLoading(false);
     }
@@ -152,8 +201,8 @@ const NurseConsultation = () => {
             <span>Clinic Queue</span>
           </h3>
 
-          <div className="flex gap-3 mb-4"><button onClick={callNext} disabled={loading || checkedInStudents.some(s => s.status === 'serving')} className="bg-maroon-800 text-white rounded-xl px-4 py-2 disabled:opacity-50">Call Next</button><button onClick={() => fetchCheckedInStudents(true)} className="border rounded-xl px-4 py-2">Refresh Queue</button></div>
-          <p className="text-sm text-gray-500 mb-4">Complete the serving patient's consultation before calling the next patient.</p>
+          <div className="flex gap-3 mb-4"><button onClick={callNext} disabled={loading || checkedInStudents.some(s => ['serving', 'called'].includes(s.status))} className="bg-maroon-800 text-white rounded-xl px-4 py-2 disabled:opacity-50">Call Next</button><button onClick={() => fetchCheckedInStudents(true)} className="border rounded-xl px-4 py-2">Refresh Queue</button></div>
+          <p className="text-sm text-gray-500 mb-4">Confirm arrival or skip after calling attempts. Skipped students stay in the waiting queue until marked returned or their original check-in deadline passes.</p>
           {checkedInStudents.length === 0 ? (
             <div className="text-center py-12">
               <ClipboardList className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -164,9 +213,58 @@ const NurseConsultation = () => {
             <div className="space-y-3">
               {checkedInStudents.map(s => (
                 <div key={s.checkin_id} className="border rounded-2xl p-4 space-y-2 dark:border-gray-700">
-                  <div className="flex justify-between gap-3"><b>{s.queue_number} - {s.name}</b><span>{s.priority} / {s.status}</span></div>
+                  <div className="flex justify-between gap-3">
+                    <b>{s.queue_number} - {s.name}</b>
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                      s.status === 'called' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 animate-pulse' :
+                      s.status === 'serving' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                      s.status === 'waiting' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
+                      s.status === 'skipped' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300' :
+                      s.status === 'no_show' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+                      s.status === 'completed' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400' :
+                      'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
+                    }`}>
+                      {s.status.toUpperCase().replace('_', ' ')}
+                    </span>
+                  </div>
+
+                  {s.status === 'called' && (
+                    <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 rounded-xl">
+                      <div className="flex gap-2">
+                        <button onClick={() => queueAction(s, 'arrived')} disabled={loading} className="flex-1 py-2 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 disabled:opacity-50 text-sm">
+                          <CheckCircle className="w-4 h-4 inline-block mr-1" /> Patient Arrived
+                        </button>
+                        <button onClick={() => queueAction(s, 'recall')} disabled={loading} className="px-3 py-2 border border-yellow-600 text-yellow-700 dark:text-yellow-400 rounded-xl font-semibold hover:bg-yellow-50 dark:hover:bg-yellow-900/20 text-sm">
+                          <RotateCcw className="w-4 h-4 inline-block mr-1" /> Recall
+                        </button>
+                        <button onClick={() => queueAction(s, 'skip')} disabled={loading} className="px-3 py-2 border border-red-600 text-red-700 dark:text-red-400 rounded-xl font-semibold hover:bg-red-50 dark:hover:bg-red-900/20 text-sm">
+                          <SkipForward className="w-4 h-4 inline-block mr-1" /> Skip
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {s.status === 'skipped' && (
+                    <button onClick={() => queueAction(s, 'returned')} disabled={loading} className="px-3 py-2 border border-green-600 text-green-700 dark:text-green-400 rounded-xl font-semibold hover:bg-green-50 dark:hover:bg-green-900/20 disabled:opacity-50 text-sm">
+                      <RotateCcw className="w-4 h-4 inline-block mr-1" /> Mark Returned
+                    </button>
+                  )}
+
                   <p className="text-sm">{s.complaint}</p>
-                  <div className="flex gap-4 text-sm"><Link className="text-maroon-700 underline" to={`/nurse/students?student=${s.user_id}`}>Open Student</Link><button className="text-maroon-700 underline disabled:text-gray-400" disabled={s.status !== 'serving'} onClick={() => { setSelectedStudent(s); setForm(current => ({ ...current, chief_complaint: s.complaint })); setStep(2); }}>Open Visit</button></div>
+
+                  {/* Action buttons for waiting patients */}
+                  {s.status === 'waiting' && (
+                    <div className="flex gap-4 text-sm">
+                      <Link className="text-maroon-700 underline" to={`/nurse/students?student=${s.user_id}`}>Open Student</Link>
+                    </div>
+                  )}
+
+                  {/* Action buttons for serving patients */}
+                  {s.status === 'serving' && (
+                    <div className="flex gap-4 text-sm">
+                      <Link className="text-maroon-700 underline" to={`/nurse/students?student=${s.user_id}`}>Open Student</Link>
+                      <button className="text-maroon-700 underline disabled:text-gray-400" disabled={loading} onClick={() => openVisit(s)}>Open Visit</button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, CheckCircle, XCircle, Search, User, Loader2, X, FileText, Stethoscope, Info, Filter, Users, RefreshCw } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
+import useNurseSync from '../../../hooks/useNurseSync';
 import { formatAppointmentDate, groupAppointments } from '../../../utils/appointmentDate';
 
 const NurseAppointments = () => {
@@ -19,49 +20,42 @@ const NurseAppointments = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const requestInFlight = useRef(false);
+  const requestId = useRef(0);
 
-  const fetchAppointments = useCallback(async () => {
-    if (document.visibilityState === 'hidden' || requestInFlight.current) return;
-    requestInFlight.current = true;
+  const fetchAppointments = useCallback(async signal => {
+    if (document.visibilityState === 'hidden') return;
+    const request = ++requestId.current;
     setRefreshing(true);
     try {
       const token = localStorage.getItem('token');
       const res = await api.get('/nurse/appointments', {
+        signal: signal instanceof AbortSignal ? signal : undefined,
         headers: { Authorization: `Bearer ${token}` },
         params: {
           status: filter !== 'all' ? filter : undefined,
           search: search || undefined,
         },
       });
+      if (request !== requestId.current) return;
       const data = res.data.data;
-      setAppointments(Array.isArray(data) ? data : (data?.data || []));
+      const latest = Array.isArray(data) ? data : (data?.data || []);
+      setAppointments(latest);
+      setSelectedAppointment(previous => previous ? latest.find(item => item.id === previous.id) || previous : null);
     } catch (err) {
-      console.error(err);
+      if (err.code !== 'ERR_CANCELED') console.error(err);
     } finally {
-      setLoading(false);
-      setRefreshing(false);
-      requestInFlight.current = false;
+      if (request === requestId.current) { setLoading(false); setRefreshing(false); }
     }
   }, [filter, search]);
 
   useEffect(() => {
+    const controller = new AbortController();
     setLoading(true);
-    fetchAppointments();
+    fetchAppointments(controller.signal);
+    return () => controller.abort();
   }, [filter, fetchAppointments]);
 
-  // Mag-poll lang habang visible ang page para iwas background requests.
-  useEffect(() => {
-    const refresh = () => fetchAppointments();
-    const interval = setInterval(refresh, 5000);
-    window.addEventListener('focus', refresh);
-    document.addEventListener('visibilitychange', refresh);
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('focus', refresh);
-      document.removeEventListener('visibilitychange', refresh);
-    };
-  }, [fetchAppointments]);
+  useNurseSync(['appointments', 'students'], fetchAppointments, JSON.stringify([filter, search]));
 
   const handleApprove = async (id) => {
     setActionLoading(true);

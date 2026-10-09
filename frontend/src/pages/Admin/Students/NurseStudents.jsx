@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import api from '../../../services/api';
+import useNurseSync from '../../../hooks/useNurseSync';
 import { StudentDirectory, StudentFilters, Pagination } from './StudentDirectory';
 import { StudentDetailsModal, EmergencyModal } from './StudentDetailsModal';
 import { emptyFilters, secondary } from './directoryOptions';
@@ -30,14 +31,36 @@ export default function NurseStudents() {
   const [listRefresh, setListRefresh] = useState(0);
   const [statusSaving, setStatusSaving] = useState(false);
   const filtered = Object.values(filters).some(Boolean);
+  const listRequest = useRef(0);
+  const detailRequest = useRef(0);
+  useNurseSync(['students', 'academic', 'appointments', 'consultations'], async signal => {
+    const listId = ++listRequest.current;
+    const list = await api.get('/nurse/students', { params: { ...filters, page }, signal });
+    if (signal.aborted || listId !== listRequest.current) return;
+    setStudents(list.data.data.data);
+    const latest = list.data.data;
+    setMeta({ total: latest.total, last_page: latest.last_page, from: latest.from, to: latest.to });
+    setListError('');
+    if (selectedId) {
+      const detailId = ++detailRequest.current;
+      const [detail, visits, records] = await Promise.all([
+        api.get(`/nurse/students/${selectedId}`, { signal }),
+        api.get(`/nurse/students/${selectedId}/appointments`, { signal }),
+        api.get(`/nurse/students/${selectedId}/clinic-history`, { signal }),
+      ]);
+      if (signal.aborted || detailId !== detailRequest.current) return;
+      setSelected(detail.data.data); setAppointments(visits.data.data); setHistory(records.data.data);
+    }
+  }, JSON.stringify([filters, page, selectedId]));
 
   useEffect(() => {
+    const request = ++listRequest.current;
     const controller = new AbortController();
     setLoading(true); setListError('');
     const timer = setTimeout(() => {
       api.get('/nurse/students', { params: { ...filters, page }, signal: controller.signal })
         .then(({ data }) => {
-          if (controller.signal.aborted) return;
+          if (controller.signal.aborted || request !== listRequest.current) return;
           setStudents(data.data.data);
           setMeta({ total: data.data.total, last_page: data.data.last_page, from: data.data.from, to: data.data.to });
         })
@@ -48,6 +71,7 @@ export default function NurseStudents() {
   }, [filters, page, listRefresh]);
 
   useEffect(() => {
+    const request = ++detailRequest.current;
     if (!selectedId) { setSelected(null); return; }
     const controller = new AbortController();
     setDetailLoading(true); setSelected(null); setHistory([]); setAppointments([]); setDetailError('');
@@ -56,7 +80,7 @@ export default function NurseStudents() {
       api.get(`/nurse/students/${selectedId}/appointments`, { signal: controller.signal }),
       api.get(`/nurse/students/${selectedId}/clinic-history`, { signal: controller.signal }),
     ]).then(([detail, visits, records]) => {
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted || request !== detailRequest.current) return;
       setSelected(detail.data.data); setAppointments(visits.data.data); setHistory(records.data.data);
     }).catch(err => { if (!controller.signal.aborted && err.code !== 'ERR_CANCELED') setDetailError('Unable to load student record. Close and try again.'); }).finally(() => { if (!controller.signal.aborted) setDetailLoading(false); });
     return () => controller.abort();

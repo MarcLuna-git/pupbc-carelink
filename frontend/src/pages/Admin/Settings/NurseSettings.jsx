@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Key, Lock, Save, Loader2, Eye, EyeOff, User, Mail, Shield, Bell, Building, CheckCircle, AlertTriangle } from 'lucide-react';
 import api from '../../../services/api';
 import authService from '../../../services/authService';
+import useNurseSync from '../../../hooks/useNurseSync';
 
 const NurseSettings = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -25,6 +26,26 @@ const NurseSettings = () => {
     email: user.email || '',
   });
   const [profileErrors, setProfileErrors] = useState({});
+  const baseline = useRef(user);
+  const draft = useRef(profile);
+  draft.current = profile;
+  const refreshProfile = async signal => {
+    const { data } = await api.get('/auth/me', { signal });
+    if (signal?.aborted) return;
+    const latest = data.user;
+    localStorage.setItem('user', JSON.stringify(latest));
+    const dirty = ['first_name', 'last_name'].some(field => draft.current[field] !== baseline.current[field]);
+    if (!dirty) {
+      baseline.current = latest;
+      setProfile({ first_name: latest.first_name, last_name: latest.last_name, email: latest.email });
+    }
+  };
+  useNurseSync(['students'], refreshProfile);
+  useEffect(() => {
+    const controller = new AbortController();
+    refreshProfile(controller.signal).catch(() => {});
+    return () => controller.abort();
+  }, []);
 
   const getPasswordStrength = (password) => {
     let score = 0;
@@ -112,11 +133,12 @@ const NurseSettings = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await api.put('/nurse/profile', profile, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await api.put('/nurse/profile', profile, {
+        headers: { Authorization: `Bearer ${token}`, 'If-Match': baseline.current.sync_version }
       });
 
-      const updatedUser = { ...user, ...profile };
+      const updatedUser = response.data.data;
+      baseline.current = updatedUser;
       localStorage.setItem('user', JSON.stringify(updatedUser));
 
       setMessageType('success');
@@ -126,7 +148,6 @@ const NurseSettings = () => {
       setMessage(err.response?.data?.message || 'Failed to update profile.');
     } finally {
       setLoading(false);
-      setTimeout(() => setMessage(''), 4000);
     }
   };
 

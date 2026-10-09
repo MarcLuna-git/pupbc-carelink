@@ -79,6 +79,7 @@ Route::prefix('kiosk')
             '/queue',
             [KioskController::class, 'todayQueue']
         );
+        Route::get('/session', function () { return response()->json(['success' => true]); });
 
         Route::post(
             '/verify-qr',
@@ -170,7 +171,7 @@ Route::middleware('throttle:60,1,announcements:')
 Route::middleware([
     'jwt.configured',
     'auth:api',
-    'throttle:60,1,authenticated:',
+    'throttle:authenticated',
 ])
     ->group(function () {
 
@@ -211,6 +212,7 @@ Route::middleware([
         */
 
         Route::prefix('notifications')
+            ->middleware(\App\Http\Middleware\NurseOperation::class)
             ->group(function () {
 
                 Route::get('/', function (Request $request) {
@@ -388,6 +390,8 @@ Route::middleware([
 
                 Route::prefix('notifications')
                     ->group(function () {
+
+                        Route::get('/unread-count', [StudentNotificationController::class, 'unreadCount']);
 
                         Route::get(
                             '/',
@@ -635,8 +639,15 @@ Route::middleware([
         */
 
         Route::prefix('nurse')
-            ->middleware('nurse')
+            ->middleware(['nurse', \App\Http\Middleware\NurseOperation::class])
             ->group(function () {
+
+                Route::get('/sync', function () {
+                    return response()->json(['data' => \App\Services\NurseSync::revisions()])
+                        ->header('Cache-Control', 'private, no-store');
+                });
+                Route::post('/queue/{id}/claim', [KioskController::class, 'claimVisit']);
+                Route::delete('/queue/{id}/claim', [KioskController::class, 'releaseVisit']);
 
                 Route::put(
                     '/profile',
@@ -710,6 +721,23 @@ Route::middleware([
                     '/queue/call-next',
                     [KioskController::class, 'callNext']
                 );
+
+                Route::post(
+                    '/queue/{id}/arrived',
+                    [KioskController::class, 'patientArrived']
+                );
+
+                Route::post(
+                    '/queue/{id}/recall',
+                    [KioskController::class, 'recallPatient']
+                );
+
+                Route::post(
+                    '/queue/{id}/no-show',
+                    [KioskController::class, 'markNoShow']
+                );
+                Route::post('/queue/{id}/skip', [KioskController::class, 'skipPatient']);
+                Route::post('/queue/{id}/returned', [KioskController::class, 'markReturned']);
 
                 Route::get(
                     '/queue/checkins',

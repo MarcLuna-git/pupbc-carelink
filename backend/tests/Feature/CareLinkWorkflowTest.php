@@ -84,7 +84,7 @@ class CareLinkWorkflowTest extends TestCase
     {
         $nurse = $this->person('nurse');
         $this->actingAs($this->person(), 'api')->putJson('/api/nurse/profile', ['first_name' => 'No', 'last_name' => 'Access'])->assertForbidden();
-        $this->actingAs($nurse, 'api')->putJson('/api/nurse/profile', ['first_name' => 'Updated', 'last_name' => 'Nurse', 'role' => 'student'])->assertOk();
+        $this->actingAs($nurse, 'api')->putJson('/api/nurse/profile', ['first_name' => 'Updated', 'last_name' => 'Nurse', 'role' => 'student'], ['If-Match' => $nurse->fresh()->sync_version])->assertOk();
         $this->assertSame('nurse', $nurse->fresh()->role);
         $this->postJson('/api/nurse/change-password', ['current_password' => 'wrong', 'new_password' => 'ChangedPass123!', 'new_password_confirmation' => 'ChangedPass123!'])->assertStatus(400);
         $this->postJson('/api/nurse/change-password', ['current_password' => 'TestPassword123!', 'new_password' => 'ChangedPass123!', 'new_password_confirmation' => 'ChangedPass123!'])->assertOk();
@@ -322,7 +322,7 @@ class CareLinkWorkflowTest extends TestCase
             'medical_history' => ['Asthma'],
             'medications' => 'Salbutamol',
             'allergy_details' => 'Should not change',
-        ])->assertOk();
+        ], ['If-Match' => $profile->fresh()->sync_version])->assertOk();
 
         $profile = $profile->fresh();
         $this->assertSame(['Asthma'], $profile->medical_history);
@@ -341,7 +341,7 @@ class CareLinkWorkflowTest extends TestCase
             'status' => 'completed',
         ]);
 
-        $this->actingAs($nurse, 'api')->putJson('/api/nurse/consultations/'.$consultation->id, ['chief_complaint' => 'Changed'])->assertUnprocessable();
+        $this->actingAs($nurse, 'api')->putJson('/api/nurse/consultations/'.$consultation->id, ['chief_complaint' => 'Changed'], ['If-Match' => $consultation->fresh()->sync_version])->assertUnprocessable();
         $this->assertSame('Headache', $consultation->fresh()->chief_complaint);
     }
 
@@ -364,7 +364,7 @@ class CareLinkWorkflowTest extends TestCase
             'student_id' => $this->person('student')->student_id,
             'batch_id' => $batch['id'],
             'reason' => 'Dispensed for clinic visit',
-        ])->assertOk();
+        ], ['If-Match' => $medicine->fresh()->sync_version])->assertOk();
 
         $this->assertSame(4, $medicine->fresh()->quantity);
         $this->assertSame(4, MedicineBatch::findOrFail($batch['id'])->quantity);

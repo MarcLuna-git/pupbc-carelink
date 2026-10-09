@@ -170,10 +170,10 @@ class AppointmentIntegrationTest extends TestCase
         $this->actingAs($nurse, 'api');
         $base = '/api/nurse/appointments/' . $appointment->id;
         $schedule = ['appointment_date' => '2026-09-29', 'time_slot' => '8:00 AM'];
-        $this->patchJson($base . '/reschedule', $schedule)->assertOk()->assertJsonPath('data.appointment_date', '2026-09-29');
+        $this->patchJson($base . '/reschedule', $schedule, ['If-Match' => $appointment->fresh()->sync_version])->assertOk()->assertJsonPath('data.appointment_date', '2026-09-29');
         DB::commit();
-        $this->patchJson($base . '/reschedule', $schedule)->assertOk();
-        $this->patchJson($base . '/reschedule', ['appointment_date' => '2026-09-27', 'time_slot' => '8:00 AM'])->assertUnprocessable();
+        $this->patchJson($base . '/reschedule', $schedule, ['If-Match' => $appointment->fresh()->sync_version])->assertOk();
+        $this->patchJson($base . '/reschedule', ['appointment_date' => '2026-09-27', 'time_slot' => '8:00 AM'], ['If-Match' => $appointment->fresh()->sync_version])->assertUnprocessable();
         $this->patchJson($base . '/cancel', ['reason' => 'Clinic unavailable'])->assertOk();
         $this->patchJson($base . '/cancel', ['reason' => 'Repeated'])->assertUnprocessable();
         Mail::assertSent(StudentAppointmentStatusMail::class, 3);

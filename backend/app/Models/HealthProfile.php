@@ -9,6 +9,9 @@ use Illuminate\Support\Str;
 
 class HealthProfile extends Model
 {
+    public const COMPLETION_COLUMNS = ['id', 'user_id', 'emergency_name', 'emergency_relationship',
+        'emergency_phone', 'consent_signature', 'consent_date', 'agree_privacy', 'agree_terms'];
+    use \App\Models\Concerns\HasSyncVersion;
     use HasFactory;
 
     protected $keyType = 'string';

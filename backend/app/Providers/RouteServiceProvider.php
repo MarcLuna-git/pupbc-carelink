@@ -36,6 +36,17 @@ class RouteServiceProvider extends ServiceProvider
     protected function configureRateLimiting()
     {
         RateLimiter::for('api', function (Request $request) {
+            if (optional($request->user())->role === 'nurse' && $request->bearerToken()) {
+                $sync = $request->is('api/nurse/sync');
+                return Limit::perMinute($sync ? 30 : 180)->by(($sync ? 'sync:' : 'nurse:') . hash('sha256', $request->bearerToken()));
+            }
+            return Limit::perMinute(60)->by(optional($request->user())->id ?: $request->ip());
+        });
+        RateLimiter::for('authenticated', function (Request $request) {
+            if (optional($request->user())->role === 'nurse' && $request->bearerToken()) {
+                $sync = $request->is('api/nurse/sync');
+                return Limit::perMinute($sync ? 30 : 180)->by(($sync ? 'sync:' : 'nurse:') . hash('sha256', $request->bearerToken()));
+            }
             return Limit::perMinute(60)->by(optional($request->user())->id ?: $request->ip());
         });
     }

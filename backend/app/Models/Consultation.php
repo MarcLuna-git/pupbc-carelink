@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 
 class Consultation extends Model
 {
+    use \App\Models\Concerns\HasSyncVersion;
     use HasFactory, SoftDeletes;
 
     protected $keyType = 'string';

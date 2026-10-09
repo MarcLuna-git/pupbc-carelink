@@ -9,6 +9,7 @@ use App\Models\AppointmentSlot;
 use App\Models\Notification;
 use App\Models\QRCode;
 use App\Models\User;
+use App\Services\AppointmentExpiry;
 use App\Services\ClinicQueue;
 use App\Services\StudentAppointmentMail;
 use Carbon\Carbon;
@@ -777,6 +778,10 @@ class AppointmentController extends Controller
 
         $data =
             $appointment->toArray();
+
+        $expiry = app(AppointmentExpiry::class);
+        $data['checkin_opens_at'] = $expiry->getCheckinOpening($appointment)->toIso8601String();
+        $data['checkin_deadline_at'] = $expiry->getCheckinDeadline($appointment)->toIso8601String();
 
         unset(
             $data['checkins']

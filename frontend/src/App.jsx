@@ -8,7 +8,7 @@ import {
 
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 
-import Landing from './pages/Landing/Landing';
+const Landing = lazy(() => import('./pages/Landing/Landing'));
 
 const Login = lazy(() => import('./pages/Student/Login'));
 const Register = lazy(() => import('./pages/Student/Register'));
@@ -105,6 +105,11 @@ let completedHealthProfileCache = {
 };
 
 const COMPLETED_STATUS_CACHE_MS = 60 * 1000;
+const hasCompletedStatusCache = () => completedHealthProfileCache.token === localStorage.getItem('token') &&
+  completedHealthProfileCache.completed && Date.now() - completedHealthProfileCache.fetchedAt < COMPLETED_STATUS_CACHE_MS;
+window.addEventListener('carelink:health-profile-saved', () => {
+  completedHealthProfileCache = { token: null, completed: false, fetchedAt: 0 };
+});
 
 /*
  * Safely read the locally stored authenticated user.
@@ -213,6 +218,7 @@ const fetchHealthProfileStatus = async () => {
   const response = await api.get(
     '/student/health-profile/status'
   );
+  if (localStorage.getItem('token') !== token) throw new Error('Session changed.');
 
   const data = response.data?.data || {};
 
@@ -253,17 +259,17 @@ const fetchHealthProfileStatus = async () => {
  */
 
 const useStudentHealthProfileStatus = () => {
-  const [state, setState] = useState({
-    loading: true,
-    completed: false,
-    exists: false,
+  const [state, setState] = useState(() => ({
+    loading: !hasCompletedStatusCache(),
+    completed: hasCompletedStatusCache(),
+    exists: hasCompletedStatusCache(),
     error: '',
-  });
+  }));
 
   const checkStatus = useCallback(async () => {
     setState((current) => ({
       ...current,
-      loading: true,
+      loading: !hasCompletedStatusCache(),
       error: '',
     }));
 

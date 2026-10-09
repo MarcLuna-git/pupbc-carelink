@@ -85,7 +85,7 @@ class MedicineController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Medicine added successfully.',
-            'data' => $medicine
+            'data' => $medicine->fresh()
         ], 201);
     }
 

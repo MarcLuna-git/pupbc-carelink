@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Users, Calendar, Clock, ClipboardList, QrCode, FileText, Bell, Activity, Stethoscope } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import { fetchNurseNotifications } from '../../../services/nurseNotifications';
+import useNurseSync from '../../../hooks/useNurseSync';
 
 const NurseDashboard = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const NurseDashboard = () => {
   const [recentActivity, setRecentActivity] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [notifCount, setNotifCount] = useState(0);
+  const requests = useRef({ stats: 0, schedule: 0, activity: 0, notifications: 0 });
 
   useEffect(() => {
     fetchDashboardData();
@@ -32,14 +34,22 @@ const NurseDashboard = () => {
     fetchNotifications();
   }, []);
 
-  const fetchDashboardData = async () => {
+  useNurseSync(['appointments', 'consultations', 'students', 'queue'], () => Promise.all([
+    fetchDashboardData(true), fetchTodaySchedule(), fetchRecentActivity(),
+  ]));
+  useNurseSync(['notifications', 'medicines'], () => fetchNotifications());
+
+  const fetchDashboardData = async (silent = false) => {
+    const request = ++requests.current.stats;
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const token = localStorage.getItem('token');
       const response = await api.get('/nurse/dashboard-stats', {
         headers: { Authorization: `Bearer ${token}` }
       });
+      if (request !== requests.current.stats) return;
       if (response.data.success) {
+        setError('');
         const data = response.data.data;
         setStats({
           todayAppointments: data.today_appointments || data.todayAppointments || 0,
@@ -59,11 +69,13 @@ const NurseDashboard = () => {
   };
 
   const fetchTodaySchedule = async () => {
+    const request = ++requests.current.schedule;
     try {
       const token = localStorage.getItem('token');
       const response = await api.get('/nurse/dashboard/appointments-today', {
         headers: { Authorization: `Bearer ${token}` }
       });
+      if (request !== requests.current.schedule) return;
       if (response.data.success) {
         const data = response.data.data;
         const appointments = Array.isArray(data) ? data : (data?.data || []);
@@ -81,11 +93,13 @@ const NurseDashboard = () => {
   };
 
   const fetchRecentActivity = async () => {
+    const request = ++requests.current.activity;
     try {
       const token = localStorage.getItem('token');
       const response = await api.get('/nurse/dashboard/recent-activity', {
         headers: { Authorization: `Bearer ${token}` }
       });
+      if (request !== requests.current.activity) return;
       if (response.data.success) {
         const data = response.data.data;
         const activities = Array.isArray(data) ? data : (data?.data || []);
@@ -101,8 +115,10 @@ const NurseDashboard = () => {
   };
 
   const fetchNotifications = async () => {
+    const request = ++requests.current.notifications;
     try {
       const response = await fetchNurseNotifications();
+      if (request !== requests.current.notifications) return;
       if (response.data.success) {
         const data = response.data.data;
         const notifs = Array.isArray(data) ? data : (data?.data || []);

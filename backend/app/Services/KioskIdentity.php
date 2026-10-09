@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Appointment;
 use App\Models\User;
+use App\Services\AppointmentExpiry;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -91,7 +92,7 @@ class KioskIdentity
         return $student;
     }
 
-    public static function appointment(User $student)
+    public static function appointment(User $student, bool $lock = false)
     {
         $appointment = Appointment::where(
             'user_id',
@@ -105,6 +106,7 @@ class KioskIdentity
                 'status',
                 'approved'
             )
+            ->when($lock, function ($query) { $query->lockForUpdate(); })
             ->orderBy(
                 'created_at'
             )
@@ -115,6 +117,23 @@ class KioskIdentity
             422,
             'No approved appointment for today. Please contact the clinic for emergency assistance.'
         );
+
+        // Check if appointment is within check-in window
+        $expiryService = app(AppointmentExpiry::class);
+        $now = now('Asia/Manila');
+
+        // Check if check-in window has opened (15 minutes before)
+        $checkinOpening = $expiryService->getCheckinOpening($appointment);
+        if ($now->lt($checkinOpening)) {
+            $minutesUntilOpen = $now->diffInMinutes($checkinOpening, false);
+            abort_if(true, 422, 'Check-in opens ' . $minutesUntilOpen . ' minutes before your appointment at ' . $checkinOpening->format('g:i A') . '. Please wait.');
+        }
+
+        // Check if check-in deadline has passed (30 minutes after)
+        $checkinDeadline = $expiryService->getCheckinDeadline($appointment);
+        if ($now->gte($checkinDeadline)) {
+            abort_if(true, 422, 'Check-in deadline has passed at ' . $checkinDeadline->format('g:i A') . '. Your appointment may have expired. Please contact the clinic.');
+        }
 
         return $appointment;
     }

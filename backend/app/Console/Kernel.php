@@ -13,7 +13,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('appointments:expire')->dailyAt('00:05')->timezone('Asia/Manila');
+        $schedule->command('appointments:expire')->everyMinute()->timezone('Asia/Manila')->withoutOverlapping();
+        $schedule->command('queue:expire-skipped')->everyMinute()->timezone('Asia/Manila')->withoutOverlapping();
         $schedule->command('medicines:notify-expiring')->dailyAt('08:00')->timezone('Asia/Manila');
     }
 

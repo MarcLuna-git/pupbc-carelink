@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle, Loader2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { ArrowLeft, CheckCircle, Loader2, Clock, Info } from 'lucide-react';
 import api from '../../services/api';
 import KioskLayout from '../../layouts/KioskLayout';
 
@@ -21,6 +21,17 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Check-in window from appointment data
+  const checkinOpensAt = useMemo(() => {
+    if (!appointment?.checkin_opens_at) return null;
+    return new Date(appointment.checkin_opens_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  }, [appointment?.checkin_opens_at]);
+
+  const checkinDeadlineAt = useMemo(() => {
+    if (!appointment?.checkin_deadline_at) return null;
+    return new Date(appointment.checkin_deadline_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  }, [appointment?.checkin_deadline_at]);
 
   useEffect(() => {
     if (!has_active_checkin) return;
@@ -59,6 +70,18 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
       <p className="font-semibold">{user.first_name} {user.last_name}</p>
       <p className="text-sm text-white/60">{appointment?.appointment_date} · {appointment?.time_slot}</p>
       <p className="text-sm text-green-300 mt-2">{appointment?.service}</p>
+      {checkinOpensAt && checkinDeadlineAt && (
+        <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+          <div className="flex items-center gap-1 bg-blue-500/20 border border-blue-500/30 rounded-lg px-2 py-1">
+            <Clock className="w-3 h-3 text-blue-400" />
+            <span className="text-blue-300">Check-in opens: {checkinOpensAt}</span>
+          </div>
+          <div className="flex items-center gap-1 bg-yellow-500/20 border border-yellow-500/30 rounded-lg px-2 py-1">
+            <Clock className="w-3 h-3 text-yellow-400" />
+            <span className="text-yellow-300">Deadline: {checkinDeadlineAt}</span>
+          </div>
+        </div>
+      )}
     </div>
     <label className="block text-sm text-white/70">Chief complaint or reason *
       <textarea required rows="3" value={chiefComplaint} onChange={(e) => setChiefComplaint(e.target.value)} className="mt-2 w-full rounded-xl bg-white/5 border border-white/10 p-3 text-white" />

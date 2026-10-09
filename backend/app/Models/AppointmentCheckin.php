@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 
 class AppointmentCheckin extends Model
 {
+    use \App\Models\Concerns\HasSyncVersion;
     use HasFactory;
 
     public $incrementing = false;
@@ -34,6 +35,14 @@ class AppointmentCheckin extends Model
         'status',
         'check_in_time',
         'checked_in_at',
+        'called_at',
+        'called_by',
+        'no_show_at',
+        'no_show_by',
+        'skipped_at',
+        'skipped_by',
+        'returned_at',
+        'returned_by',
         'chief_complaint',
         'checkin_status',
     ];
@@ -42,6 +51,10 @@ class AppointmentCheckin extends Model
         'is_walk_in' => 'boolean',
         'check_in_time' => 'datetime',
         'checked_in_at' => 'datetime',
+        'called_at' => 'datetime',
+        'no_show_at' => 'datetime',
+        'skipped_at' => 'datetime',
+        'returned_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -49,6 +62,11 @@ class AppointmentCheckin extends Model
     public function triage()
     {
         return $this->hasOne(TriageAssessment::class);
+    }
+
+    public function consultation()
+    {
+        return $this->hasOne(Consultation::class, 'appointment_checkin_id');
     }
 
     public function user(): BelongsTo

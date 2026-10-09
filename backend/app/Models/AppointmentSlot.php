@@ -53,12 +53,14 @@ class AppointmentSlot extends Model
         }
 
         $slots = [];
+        // One round trip for all 16 slots. Booking still revalidates under ClinicQueue's lock.
+        $bookings = Appointment::where('appointment_date', $date)
+            ->whereIn('status', ['pending', 'approved'])
+            ->selectRaw('time_slot, COUNT(*) AS booked')
+            ->groupBy('time_slot')->pluck('booked', 'time_slot');
 
         foreach (self::TIME_SLOTS as $time) {
-            $bookedCount = self::bookingQuery(
-                $date,
-                $time
-            )->count();
+            $bookedCount = (int) ($bookings[$time] ?? 0);
 
             $isPast = self::isPastSlot(
                 $date,
@@ -229,7 +231,7 @@ class AppointmentSlot extends Model
         string $date,
         string $timeSlot
     ) {
-        return Appointment::whereDate(
+        return Appointment::where(
             'appointment_date',
             $date
         )
