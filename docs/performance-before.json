@@ -1,0 +1,52 @@
+{
+    "environment": {
+        "database": "SQLite :memory:",
+        "php": "7.4.33",
+        "samples": 30,
+        "fixture": "500 appointments, 100 queue entries/triage, 50 consultations, 100 notifications",
+        "scope": "in-process controller/model work; excludes HTTP, JWT, network, Render and PostgreSQL"
+    },
+    "mode": "before",
+    "scenarios": {
+        "availability_16_slots": {
+            "median_ms": 34.13,
+            "p95_ms": 70.747,
+            "query_count_min": 16,
+            "query_count_max": 16,
+            "database_median_ms": 9.46,
+            "response_bytes": 1363
+        },
+        "nurse_dashboard_uncached": {
+            "median_ms": 501.834,
+            "p95_ms": 1300.819,
+            "query_count_min": 16,
+            "query_count_max": 16,
+            "database_median_ms": 7.525,
+            "response_bytes": 155301
+        },
+        "nurse_dashboard_cached": {
+            "median_ms": 886.348,
+            "p95_ms": 2457.149,
+            "query_count_min": 5,
+            "query_count_max": 5,
+            "database_median_ms": 5.13,
+            "response_bytes": 155301
+        },
+        "student_unread_badge": {
+            "median_ms": 13.105,
+            "p95_ms": 205.913,
+            "query_count_min": 3,
+            "query_count_max": 3,
+            "database_median_ms": 1.115,
+            "response_bytes": 1548
+        },
+        "kiosk_queue_100_waiting": {
+            "median_ms": 129.213,
+            "p95_ms": 533.828,
+            "query_count_min": 2,
+            "query_count_max": 2,
+            "database_median_ms": 4.205,
+            "response_bytes": 17364
+        }
+    }
+}

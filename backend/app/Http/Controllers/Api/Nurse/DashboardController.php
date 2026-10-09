@@ -14,26 +14,44 @@ class DashboardController extends Controller
 {
     public function stats()
     {
-        $stats = Cache::remember('nurse_dashboard_stats', 300, function() {
+        $revisions = \App\Services\NurseSync::revisions();
+        $cacheKey = 'nurse_dashboard_counts:' . hash('sha256', json_encode(array_intersect_key($revisions,
+            array_flip(['appointments', 'consultations', 'students', 'day']))));
+        $stats = Cache::remember($cacheKey, 300, function() {
             $today = Carbon::today('Asia/Manila');
-            
+            $appointments = Appointment::selectRaw(
+                "COUNT(CASE WHEN appointment_date = ? THEN 1 END) AS today_count,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) AS pending_count,
+                COUNT(CASE WHEN appointment_date = ? AND status = 'approved' THEN 1 END) AS confirmed_count",
+                [$today->toDateString(), $today->toDateString()])->first();
+            $consultations = Consultation::selectRaw(
+                "COUNT(CASE WHEN status = 'completed' THEN 1 END) AS completed_count,
+                COUNT(CASE WHEN created_at >= ? AND created_at < ? THEN 1 END) AS today_count",
+                [$today, $today->copy()->addDay()])->first();
             return [
-                'today_appointments' => Appointment::whereDate('appointment_date', $today)->count(),
-                'pending_appointments' => Appointment::where('status', 'pending')->count(),
-                'today_consultations' => Consultation::whereDate('created_at', $today)->count(),
+                'today_appointments' => (int) $appointments->today_count,
+                'pending_appointments' => (int) $appointments->pending_count,
+                'pending_approvals' => (int) $appointments->pending_count,
+                'confirmed_appointments' => (int) $appointments->confirmed_count,
+                'completed_consultations' => (int) $consultations->completed_count,
+                'today_consultations' => (int) $consultations->today_count,
                 'total_students' => User::where('role', 'student')->count(),
-                'upcoming_appointments' => Appointment::with('user:id,student_id,first_name,last_name')
-                    ->where('status', 'approved')
-                    ->whereDate('appointment_date', '>=', $today)
-                    ->orderBy('appointment_date')
-                    ->limit(5)
-                    ->get(),
-                'recent_consultations' => Consultation::with('user:id,first_name,last_name')
-                    ->orderBy('created_at', 'desc')
-                    ->limit(5)
-                    ->get()
             ];
         });
+        // Cache only aggregates; clinical rows stay fresh and out of the shared file cache.
+        $today = Carbon::today('Asia/Manila')->toDateString();
+        $stats['upcoming_appointments'] = Appointment::with('user:id,student_id,first_name,last_name')
+                    ->where('status', 'approved')
+                    ->where('appointment_date', '>=', $today)
+                    ->orderBy('appointment_date')
+                    ->limit(5)
+                    ->get();
+        $stats['recent_consultations'] = Consultation::with('user:id,first_name,last_name')
+                    ->orderBy('created_at', 'desc')
+                    ->limit(5)
+                    ->get();
+        $stats['today_schedule'] = Appointment::with('user:id,student_id,first_name,last_name')
+            ->where('appointment_date', $today)->orderBy('time_slot')->limit(5)->get();
         
         return response()->json(['success' => true, 'data' => $stats]);
     }

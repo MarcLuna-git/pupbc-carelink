@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Plus, Edit2, Trash2, Loader2, Pill, AlertTriangle, Clock, Package, Filter, ChevronDown, ClipboardList, X, History } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
+import useNurseSync from '../../../hooks/useNurseSync';
 
 const isWholeNumberInput = (value) => /^\d*$/.test(value);
 const isPositiveWholeNumberInput = (value) => value === '' || /^[1-9]\d*$/.test(value);
@@ -42,16 +43,26 @@ const NurseMedicine = () => {
   const [movementHistory, setMovementHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
+  const medicineRequest = useRef(0);
+
+  useNurseSync(['medicines'], async signal => {
+    await fetchMedicines(search, true, signal);
+    if (historyMedicine) {
+      const response = await api.get(`/nurse/medicines/${historyMedicine.id}/movements`, { signal });
+      setMovementHistory(response.data.data?.data || []);
+    }
+  }, JSON.stringify([filter, search, historyMedicine?.id]));
 
   useEffect(() => {
     fetchMedicines();
   }, [filter]);
 
-  const fetchMedicines = async (searchValue = search) => {
+  const fetchMedicines = async (searchValue = search, silent = false, signal) => {
+    const request = ++medicineRequest.current;
     try {
       setError('');
       setRefreshing(true);
-      setLoading(medicines.length === 0);
+      if (!silent) setLoading(medicines.length === 0);
       const token = localStorage.getItem('token');
       const params = { search: searchValue };
       if (filter === 'low_stock') params.low_stock = true;
@@ -60,18 +71,20 @@ const NurseMedicine = () => {
 
       const response = await api.get('/nurse/medicines', {
         headers: { Authorization: `Bearer ${token}` },
-        params
+        params, signal
       });
 
+      if (request !== medicineRequest.current || signal?.aborted) return;
       if (response.data.success) {
         const data = response.data.data;
         setMedicines(Array.isArray(data) ? data : (data?.data || []));
       }
-    } catch {
+    } catch (err) {
+      if (signal?.aborted) return;
+      if (silent) throw err;
       setError('Failed to load medicines.');
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (request === medicineRequest.current) { setLoading(false); setRefreshing(false); }
     }
   };
 
@@ -120,7 +133,7 @@ const NurseMedicine = () => {
         const editableFields = { ...form };
         delete editableFields.quantity;
         response = await api.put(`/nurse/medicines/${editingMedicine.id}`, editableFields, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}`, 'If-Match': editingMedicine.sync_version }
         });
       } else {
         response = await api.post('/nurse/medicines', form, {
@@ -230,7 +243,7 @@ const NurseMedicine = () => {
     setFormLoading(true);
     setMovementError('');
     try {
-      await api.post(`/nurse/medicines/${movementMedicine.id}/movements`, movementForm);
+      await api.post(`/nurse/medicines/${movementMedicine.id}/movements`, movementForm, { headers: { 'If-Match': movementMedicine.sync_version } });
       setMessageType('success'); setMessage('Stock movement recorded.'); setShowMovementModal(false); fetchMedicines();
     } catch (err) {
       setMovementError(err.response?.data?.message || 'Failed to record movement.');
@@ -243,7 +256,7 @@ const NurseMedicine = () => {
     try {
       const token = localStorage.getItem('token');
       await api.delete(`/nurse/medicines/${deleteMedicine.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}`, 'If-Match': deleteMedicine.sync_version }
       });
 
       setMessageType('success');

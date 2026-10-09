@@ -11,7 +11,7 @@ class HealthProfileController extends Controller
     public function show() { return response()->json(['success' => true, 'data' => $this->profileData(auth()->user()->healthProfile()->first())]); }
     public function checkStatus()
     {
-        $profile = HealthProfile::where('user_id', auth()->id())->first();
+        $profile = HealthProfile::where('user_id', auth()->id())->first(HealthProfile::COMPLETION_COLUMNS);
         return response()->json(['success' => true, 'data' => ['exists' => (bool) $profile, 'completed' => $profile && $profile->isComplete()]]);
     }
     public function store(Request $request)

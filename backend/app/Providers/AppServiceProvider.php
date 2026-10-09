@@ -19,6 +19,13 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot()
     {
+        foreach (\App\Services\NurseSync::TOPICS as $model => $topic) {
+            foreach (['created', 'updated', 'deleted'] as $event) {
+                \Illuminate\Support\Facades\Event::listen("eloquent.{$event}: App\\Models\\{$model}", function () use ($topic) {
+                    \App\Services\NurseSync::changed($topic);
+                });
+            }
+        }
         \Illuminate\Support\Facades\Event::listen(
             \Illuminate\Mail\Events\MessageSending::class,
             function ($event) {

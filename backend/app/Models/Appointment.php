@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Appointment extends Model
 {
+    use \App\Models\Concerns\HasSyncVersion;
     use HasFactory, SoftDeletes;
 
     protected $keyType = 'string';
@@ -55,6 +56,7 @@ class Appointment extends Model
         'appointment_date' => 'date:Y-m-d',
         'approved_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'no_show' => 'boolean',
     ];
 
     public function user()

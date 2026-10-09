@@ -1,6 +1,6 @@
 import { AppointmentRows, HealthcareAccent } from './AppointmentPresentation';
 import './appointments.css';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import api from '../../../services/api';
 import { clinicDate as getLocalDateString, appointmentDate as normalizeDateValue, appointmentTime as parseAppointmentDateTime, isClinicSunday as isSunday, formatAppointmentDate as formatDate } from '../../../utils/appointmentDate';
+import useVisiblePolling from '../../../hooks/useVisiblePolling';
 
 const Skeleton = ({ className = '' }) => (
   <div
@@ -133,19 +134,9 @@ const Appointments = () => {
   ];
 
   const fetchAppointments =
-    useCallback(async () => {
+    useCallback(async (signal) => {
       try {
-        const token =
-          localStorage.getItem('token');
-
-        const response = await api.get(
-          '/student/appointments',
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await api.get('/student/appointments', { signal });
 
         if (response.data.success) {
           const data =
@@ -168,6 +159,7 @@ const Appointments = () => {
           );
         }
       } catch (err) {
+        if (err.name === 'CanceledError') return;
         console.log(
           'Fetch appointments error:',
           err
@@ -179,7 +171,7 @@ const Appointments = () => {
 
   const fetchAvailableSlots =
     useCallback(
-      async (date) => {
+      async (date, signal) => {
         if (!date || isSunday(date)) {
           setAvailableSlots([]);
           return;
@@ -188,19 +180,10 @@ const Appointments = () => {
         setSlotsLoading(true);
 
         try {
-          const token =
-            localStorage.getItem(
-              'token'
-            );
-
           const response =
             await api.get(
               `/student/available-slots?date=${date}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
+              { signal }
             );
 
           if (
@@ -212,6 +195,7 @@ const Appointments = () => {
             );
           }
         } catch (err) {
+          if (err.name === 'CanceledError') return;
           console.log(
             'Fetch slots error:',
             err
@@ -225,36 +209,29 @@ const Appointments = () => {
       []
     );
 
-  useEffect(() => {
-    fetchAppointments();
-  }, [fetchAppointments]);
+  useVisiblePolling(fetchAppointments, 30000);
 
+  const slotPollingRef = useRef(null);
   useEffect(() => {
     if (
       showForm &&
       form.date &&
       !isSunday(form.date)
     ) {
-      fetchAvailableSlots(
-        form.date
+      fetchAvailableSlots(form.date);
+
+      slotPollingRef.current = setInterval(
+        () =>
+          fetchAvailableSlots(form.date),
+        30000
       );
-
-      const interval =
-        setInterval(
-          () =>
-            fetchAvailableSlots(
-              form.date
-            ),
-          30000
-        );
-
-      return () =>
-        clearInterval(
-          interval
-        );
     }
 
-    return undefined;
+    return () => {
+      if (slotPollingRef.current) {
+        clearInterval(slotPollingRef.current);
+      }
+    };
   }, [
     showForm,
     form.date,

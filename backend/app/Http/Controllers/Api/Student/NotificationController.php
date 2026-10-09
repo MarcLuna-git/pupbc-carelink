@@ -8,6 +8,12 @@ use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+    public function unreadCount()
+    {
+        return response()->json(['success' => true, 'unread_count' => Notification::where('user_id', auth()->id())
+            ->where('read', false)->count()])->header('Cache-Control', 'private, no-store');
+    }
+
     public function index(Request $request)
     {
         $validated = $request->validate([

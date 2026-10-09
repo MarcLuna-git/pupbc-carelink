@@ -1,0 +1,89 @@
+{
+  "initial_js": [
+    {
+      "file": "assets/index-D084_4Xa.js",
+      "bytes": 326613,
+      "gzip_bytes": 103999
+    }
+  ],
+  "initial_js_bytes": 326613,
+  "initial_js_gzip_bytes": 103999,
+  "routes": [
+    {
+      "source": "src/pages/Admin/Dashboard/NurseDashboard.jsx",
+      "file": "assets/NurseDashboard-DLcTgjgY.js",
+      "bytes": 11112,
+      "gzip_bytes": 3175,
+      "imports": [
+        "_activity-CF-cdCus.js",
+        "_calendar-BZyoHO-T.js",
+        "_clock-C1o4nq7w.js",
+        "_users-ysGydyTx.js",
+        "index.html",
+        "_NursePageSkeleton-DArFWTZM.js",
+        "_proxy-rbu6MNYd.js",
+        "_nurseNotifications-BwMOjgwo.js",
+        "_useNurseSync-BsNPDC4_.js"
+      ],
+      "dynamic_imports": []
+    },
+    {
+      "source": "src/pages/Kiosk/KioskScan.jsx",
+      "file": "assets/KioskScan-CePICLgA.js",
+      "bytes": 387847,
+      "gzip_bytes": 111370,
+      "imports": [
+        "_circle-alert-DSP4phMn.js",
+        "_circle-check-big-DgL9CPMB.js",
+        "_loader-circle-CReQBXJ4.js",
+        "_arrow-left-DSe_PZLW.js",
+        "_camera-8xO-hzBm.js",
+        "_clock-C1o4nq7w.js",
+        "_KioskLayout-c1HtJIHV.js",
+        "_search-BCy48hHE.js",
+        "_user-ZnYWh85K.js",
+        "index.html",
+        "_proxy-rbu6MNYd.js",
+        "_AnimatePresence-BIEUujhR.js"
+      ],
+      "dynamic_imports": []
+    },
+    {
+      "source": "src/pages/Student/HealthProfile/HealthProfile.jsx",
+      "file": "assets/HealthProfile-Bo4zutHW.js",
+      "bytes": 29178,
+      "gzip_bytes": 7169,
+      "imports": [
+        "_circle-alert-DSP4phMn.js",
+        "_loader-circle-CReQBXJ4.js",
+        "_arrow-left-DSe_PZLW.js",
+        "_check-C2gfBa4D.js",
+        "_info-t3vvlKhc.js",
+        "_shield-CrYi5l3J.js",
+        "index.html",
+        "_proxy-rbu6MNYd.js",
+        "_AnimatePresence-BIEUujhR.js"
+      ],
+      "dynamic_imports": []
+    },
+    {
+      "source": "src/pages/Student/QR/QR.jsx",
+      "file": "assets/QR-CdBo-eOY.js",
+      "bytes": 42525,
+      "gzip_bytes": 13839,
+      "imports": [
+        "_circle-alert-DSP4phMn.js",
+        "_circle-check-big-DgL9CPMB.js",
+        "_loader-circle-CReQBXJ4.js",
+        "_calendar-BZyoHO-T.js",
+        "_clock-C1o4nq7w.js",
+        "_shield-CrYi5l3J.js",
+        "_users-ysGydyTx.js",
+        "index.html",
+        "_proxy-rbu6MNYd.js",
+        "_appointmentDate-DHOHc8CF.js"
+      ],
+      "dynamic_imports": []
+    }
+  ]
+}

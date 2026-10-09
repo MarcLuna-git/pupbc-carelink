@@ -27,7 +27,7 @@ class CourseManagementController extends Controller
             'semester' => 'required|string|max:30',
             'is_active' => 'sometimes|boolean',
         ]);
-        return response()->json(['success' => true, 'data' => AcademicPeriod::create($data)], 201);
+        return response()->json(['success' => true, 'data' => AcademicPeriod::create($data)->fresh()], 201);
     }
 
     public function updatePeriod(Request $request, $id)
@@ -50,7 +50,7 @@ class CourseManagementController extends Controller
     public function storeCourse(Request $request)
     {
         $data = $request->validate(['code' => 'required|string|max:50|unique:courses,code', 'name' => 'required|string|max:150', 'is_active' => 'sometimes|boolean']);
-        return response()->json(['success' => true, 'data' => Course::create($data)], 201);
+        return response()->json(['success' => true, 'data' => Course::create($data)->fresh()], 201);
     }
 
     public function updateCourse(Request $request, $id)
@@ -86,7 +86,7 @@ class CourseManagementController extends Controller
             'section_code' => 'required|string|max:30',
             'is_active' => 'sometimes|boolean',
         ]);
-        return response()->json(['success' => true, 'data' => CourseSection::create($data)], 201);
+        return response()->json(['success' => true, 'data' => CourseSection::create($data)->fresh()], 201);
     }
 
     public function updateSection(Request $request, $id)

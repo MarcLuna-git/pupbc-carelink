@@ -45,7 +45,7 @@ class AnnouncementController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $announcement->load('author:id,first_name,last_name'),
+            'data' => $announcement->fresh()->load('author:id,first_name,last_name'),
             'message' => 'Announcement created'
         ], 201);
     }
@@ -62,7 +62,7 @@ class AnnouncementController extends Controller
         $announcement->update($request->validate(['title' => 'sometimes|required|string|max:255', 'content' => 'sometimes|required|string', 'category' => 'nullable|string|max:50', 'is_published' => 'sometimes|boolean']));
         $announcement->target_audience = 'students';
         $announcement->save();
-        return response()->json(['success' => true, 'data' => $announcement, 'message' => 'Announcement updated']);
+        return response()->json(['success' => true, 'data' => $announcement->fresh(), 'message' => 'Announcement updated']);
     }
 
     public function destroy($id)

@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 
 class CourseSection extends Model
 {
+    use \App\Models\Concerns\HasSyncVersion;
     use HasFactory;
 
     protected $keyType = 'string';

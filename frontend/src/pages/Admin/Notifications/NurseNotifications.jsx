@@ -4,6 +4,7 @@ import { Bell, Calendar, Loader2, CheckCheck, Trash2 } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import { fetchNurseNotifications } from '../../../services/nurseNotifications';
+import useNurseSync from '../../../hooks/useNurseSync';
 
 const NurseNotifications = () => {
   const navigate = useNavigate();
@@ -17,10 +18,10 @@ const NurseNotifications = () => {
   const requestId = useRef(0);
   const categories = [['all', 'All'], ['medicine', 'Medicines'], ['appointment', 'Appointments'], ['consultation', 'Consultations']];
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async (silent = false) => {
     const currentRequest = ++requestId.current;
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError('');
       const response = await fetchNurseNotifications({ category, page });
       if (currentRequest !== requestId.current) return;
@@ -46,11 +47,14 @@ const NurseNotifications = () => {
     } catch (err) {
       if (currentRequest !== requestId.current) return;
       console.log('Notifications error:', err);
+      if (silent) throw err;
       setError('Failed to load notifications.');
     } finally {
       if (currentRequest === requestId.current) setLoading(false);
     }
   }, [category, page]);
+
+  useNurseSync(['notifications', 'medicines'], () => fetchNotifications(true));
 
   useEffect(() => {
     const requests = requestId;

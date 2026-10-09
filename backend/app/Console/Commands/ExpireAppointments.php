@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 class ExpireAppointments extends Command
 {
     protected $signature = 'appointments:expire';
-    protected $description = 'Expire pending appointments whose appointment date has passed';
+    protected $description = 'Expire overdue pending appointments and approved appointments past their check-in deadline';
 
     public function handle(AppointmentExpiry $expiry): int
     {

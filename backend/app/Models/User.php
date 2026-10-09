@@ -12,6 +12,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
+    use \App\Models\Concerns\HasSyncVersion;
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     protected $keyType = 'string';

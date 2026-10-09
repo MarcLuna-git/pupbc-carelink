@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Megaphone, Plus, Trash2, Edit2, Loader2, X, Send, Search } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
+import useNurseSync from '../../../hooks/useNurseSync';
 
 const NurseAnnouncements = () => {
   const [announcements, setAnnouncements] = useState([]);
@@ -15,13 +16,18 @@ const NurseAnnouncements = () => {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ title: '', content: '', category: 'General' });
   const [search, setSearch] = useState('');
+  const [editVersion, setEditVersion] = useState(null);
+  const requestId = useRef(0);
+  useNurseSync(['announcements'], () => fetchAnnouncements());
 
   const fetchAnnouncements = async () => {
+    const request = ++requestId.current;
     try {
       const token = localStorage.getItem('token');
       const res = await api.get('/nurse/announcements', {
         headers: { Authorization: `Bearer ${token}` }
       });
+      if (request !== requestId.current) return;
       if (res.data.success) {
         const data = res.data.data;
         setAnnouncements(Array.isArray(data) ? data : (data?.data || []));
@@ -53,7 +59,7 @@ const NurseAnnouncements = () => {
       const token = localStorage.getItem('token');
       if (editingId) {
         const response = await api.put(`/nurse/announcements/${editingId}`, form, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}`, 'If-Match': editVersion },
           timeout: 120000
         });
         setAnnouncements((current) => current.map((announcement) => announcement.id === editingId
@@ -83,6 +89,7 @@ const NurseAnnouncements = () => {
   };
 
   const handleEdit = (ann) => {
+    setEditVersion(ann.sync_version);
     setForm({ title: ann.title, content: ann.content, category: ann.category || 'General' });
     setEditingId(ann.id);
     setShowForm(true);
@@ -95,7 +102,7 @@ const NurseAnnouncements = () => {
     try {
       const token = localStorage.getItem('token');
       await api.delete(`/nurse/announcements/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}`, 'If-Match': announcements.find(item => item.id === id)?.sync_version }
       });
       setAnnouncements((current) => current.filter((announcement) => announcement.id !== id));
       setMessage('Announcement deleted.');
@@ -103,7 +110,7 @@ const NurseAnnouncements = () => {
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       setMessageType('error');
-      setMessage('Failed to delete.');
+      setMessage(err.response?.data?.message || 'Failed to delete.');
     } finally {
       setDeletingId(null);
     }

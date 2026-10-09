@@ -46,23 +46,25 @@ class ConsultationController extends Controller
             'follow_up_required' => 'sometimes|boolean',
             'follow_up_date' => 'nullable|required_if:follow_up_required,true|date|after_or_equal:today',
         ]);
-        $consultation = DB::transaction(function () use ($data) {
+        $consultation = DB::transaction(function () use ($data, $request) {
             \App\Services\ClinicQueue::lock();
             $student = \App\Models\User::where('role', 'student')->findOrFail($data['user_id']);
             $appointment = Appointment::findOrFail($data['appointment_id']);
             $checkin = \App\Models\AppointmentCheckin::findOrFail($data['appointment_checkin_id']);
             abort_unless($appointment->user_id === $student->id && $checkin->user_id === $student->id && $checkin->appointment_id === $appointment->id && !$checkin->is_walk_in, 422, 'Student, appointment and check-in must belong to the same visit.');
             abort_if(Consultation::where('appointment_checkin_id', $checkin->id)->exists(), 409, 'This visit already has a consultation.');
-            abort_unless($appointment->status === 'approved' && $checkin->status === 'serving', 422, 'Call this patient before recording the consultation.');
+            \App\Services\NurseVisitClaim::acquire($request, $checkin->id);
+            abort_unless($appointment->status === 'approved' && in_array($checkin->status, ['called', 'serving']), 422, 'Call this patient before recording the consultation.');
             $consultation = Consultation::create(array_merge($data, ['nurse_id' => auth()->id(), 'status' => 'completed']));
             $appointment->update(['status' => 'completed']);
             $checkin->update(['status' => 'completed']);
+            DB::table('nurse_visit_claims')->where('checkin_id', $checkin->id)->delete();
             Notification::create(['user_id' => $student->id, 'type' => 'consultation_completed', 'title' => 'Consultation Recorded', 'message' => 'Your consultation has been recorded.']);
             AuditLog::create(['user_id' => auth()->id(), 'action' => 'consultation_created', 'description' => 'Consultation recorded for visit ' . $checkin->id, 'ip_address' => request()->ip()]);
             return $consultation;
         }, 3);
         Cache::forget('nurse_dashboard_stats');
-        return response()->json(['success' => true, 'data' => $consultation, 'message' => 'Consultation saved'], 201);
+        return response()->json(['success' => true, 'data' => $consultation->fresh(), 'message' => 'Consultation saved'], 201);
     }
 
     public function show($id)
@@ -88,7 +90,7 @@ class ConsultationController extends Controller
             'general_remarks' => 'nullable|string|max:5000', 'medical_certificate' => 'sometimes|boolean', 'medical_certificate_ref' => 'nullable|string|max:191',
             'follow_up_required' => 'sometimes|boolean', 'follow_up_date' => 'nullable|date',
         ]));
-        return response()->json(['success' => true, 'data' => $consultation, 'message' => 'Consultation updated']);
+        return response()->json(['success' => true, 'data' => $consultation->fresh(), 'message' => 'Consultation updated']);
     }
 
     public function todayConsultations()

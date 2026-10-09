@@ -61,6 +61,8 @@ return [
         'X-CSRF-TOKEN',
         'X-Socket-Id',
         'X-Kiosk-Token',
+        'If-Match',
+        'Idempotency-Key',
     ],
 
     'exposed_headers' => [

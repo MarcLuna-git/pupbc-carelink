@@ -1,0 +1,112 @@
+{
+    "environment": {
+        "database": "SQLite :memory:",
+        "php": "7.4.33",
+        "samples": 30,
+        "fixture": "500 appointments, 100 queue entries/triage, 50 consultations, 100 notifications",
+        "scope": "in-process controller/model work; excludes HTTP, JWT, network, Render and PostgreSQL"
+    },
+    "mode": "after",
+    "index_plans": {
+        "before_indexes": {
+            "visit_lookup": [
+                {
+                    "id": "2",
+                    "parent": "0",
+                    "notused": "0",
+                    "detail": "SCAN TABLE appointment_checkins"
+                }
+            ],
+            "active_queue": [
+                {
+                    "id": "2",
+                    "parent": "0",
+                    "notused": "0",
+                    "detail": "SCAN TABLE appointment_checkins"
+                }
+            ],
+            "notifications": [
+                {
+                    "id": "5",
+                    "parent": "0",
+                    "notused": "0",
+                    "detail": "SEARCH TABLE notifications USING INDEX notifications_user_id_read_index (user_id=?)"
+                },
+                {
+                    "id": "20",
+                    "parent": "0",
+                    "notused": "0",
+                    "detail": "USE TEMP B-TREE FOR ORDER BY"
+                }
+            ]
+        },
+        "after_indexes": {
+            "visit_lookup": [
+                {
+                    "id": "3",
+                    "parent": "0",
+                    "notused": "0",
+                    "detail": "SEARCH TABLE appointment_checkins USING INDEX checkins_visit_lookup (appointment_id=? AND is_walk_in=?)"
+                }
+            ],
+            "active_queue": [
+                {
+                    "id": "3",
+                    "parent": "0",
+                    "notused": "0",
+                    "detail": "SEARCH TABLE appointment_checkins USING INDEX checkins_active_day (is_walk_in=? AND status=? AND created_at>? AND created_at<?)"
+                }
+            ],
+            "notifications": [
+                {
+                    "id": "5",
+                    "parent": "0",
+                    "notused": "0",
+                    "detail": "SEARCH TABLE notifications USING INDEX notifications_user_timeline (user_id=?)"
+                }
+            ]
+        }
+    },
+    "scenarios": {
+        "availability_16_slots": {
+            "median_ms": 27.78,
+            "p95_ms": 532.495,
+            "query_count_min": 1,
+            "query_count_max": 1,
+            "database_median_ms": 0.79,
+            "response_bytes": 1363
+        },
+        "nurse_dashboard_uncached": {
+            "median_ms": 53.099,
+            "p95_ms": 69.545,
+            "query_count_min": 10,
+            "query_count_max": 10,
+            "database_median_ms": 3.68,
+            "response_bytes": 11245
+        },
+        "nurse_dashboard_cached": {
+            "median_ms": 75.396,
+            "p95_ms": 199.98,
+            "query_count_min": 7,
+            "query_count_max": 7,
+            "database_median_ms": 3.39,
+            "response_bytes": 11245
+        },
+        "student_unread_badge": {
+            "median_ms": 1.146,
+            "p95_ms": 1.672,
+            "query_count_min": 1,
+            "query_count_max": 1,
+            "database_median_ms": 0.205,
+            "response_bytes": 35
+        },
+        "kiosk_queue_100_waiting": {
+            "median_ms": 57.638,
+            "p95_ms": 126.896,
+            "query_count_min": 1,
+            "query_count_max": 1,
+            "database_median_ms": 1.49,
+            "response_bytes": 17364
+        }
+    }
+}

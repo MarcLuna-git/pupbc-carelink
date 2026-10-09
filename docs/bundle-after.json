@@ -1,0 +1,105 @@
+{
+  "initial_js": [
+    {
+      "file": "assets/index-CdLr_VGn.js",
+      "bytes": 297760,
+      "gzip_bytes": 96859
+    }
+  ],
+  "initial_js_bytes": 297760,
+  "initial_js_gzip_bytes": 96859,
+  "routes": [
+    {
+      "source": "src/pages/Admin/Dashboard/NurseDashboard.jsx",
+      "file": "assets/NurseDashboard-BXuWffnN.js",
+      "bytes": 11297,
+      "gzip_bytes": 3260,
+      "imports": [
+        "index.html",
+        "_NursePageSkeleton-C4tEp-2t.js",
+        "_proxy-DqfiQAUX.js",
+        "_activity-BzG_Zbsg.js",
+        "_bell-BJnWtgwm.js",
+        "_calendar-CCPi_L2e.js",
+        "_clipboard-list-CmZnvf2k.js",
+        "_clock-CQxPP777.js",
+        "_file-text-eAJzlzvS.js",
+        "_qr-code-BYxA7erN.js",
+        "_stethoscope-Crn4LJF7.js",
+        "_users-DWepl2lw.js",
+        "_nurseNotifications-D-mXQYpG.js",
+        "_useNurseSync-DAqkC4HS.js"
+      ],
+      "dynamic_imports": []
+    },
+    {
+      "source": "src/pages/Kiosk/KioskScan.jsx",
+      "file": "assets/KioskScan-C8EeAumZ.js",
+      "bytes": 387924,
+      "gzip_bytes": 111402,
+      "imports": [
+        "index.html",
+        "_proxy-DqfiQAUX.js",
+        "_AnimatePresence-BelQ2b4c.js",
+        "_createLucideIcon-D-l0tLtD.js",
+        "_circle-alert-2y0ieYbG.js",
+        "_circle-check-big-VnIcNcHm.js",
+        "_loader-circle-CB7n9lzj.js",
+        "_arrow-left-DFkkqbxt.js",
+        "_camera-Niywze9O.js",
+        "_clock-CQxPP777.js",
+        "_KioskLayout-CChxKyg4.js",
+        "_refresh-cw-DJmH26fw.js",
+        "_search-B3NjQJ11.js",
+        "_user-CAR5pcM-.js"
+      ],
+      "dynamic_imports": []
+    },
+    {
+      "source": "src/pages/Student/HealthProfile/HealthProfile.jsx",
+      "file": "assets/HealthProfile-D98qIKIO.js",
+      "bytes": 29292,
+      "gzip_bytes": 7201,
+      "imports": [
+        "index.html",
+        "_proxy-DqfiQAUX.js",
+        "_AnimatePresence-BelQ2b4c.js",
+        "_circle-alert-2y0ieYbG.js",
+        "_loader-circle-CB7n9lzj.js",
+        "_arrow-left-DFkkqbxt.js",
+        "_arrow-right-D3m1Zx_P.js",
+        "_check-C2hHr0om.js",
+        "_clipboard-list-CmZnvf2k.js",
+        "_heart-BG7Gdr54.js",
+        "_info-Cw02-Jlb.js",
+        "_shield-DjeeYvpI.js"
+      ],
+      "dynamic_imports": []
+    },
+    {
+      "source": "src/pages/Student/QR/QR.jsx",
+      "file": "assets/QR-Gui8p8-z.js",
+      "bytes": 42765,
+      "gzip_bytes": 13928,
+      "imports": [
+        "index.html",
+        "_proxy-DqfiQAUX.js",
+        "_createLucideIcon-D-l0tLtD.js",
+        "_circle-alert-2y0ieYbG.js",
+        "_circle-check-big-VnIcNcHm.js",
+        "_loader-circle-CB7n9lzj.js",
+        "_calendar-CCPi_L2e.js",
+        "_chevron-right-o1pj-kM5.js",
+        "_clock-CQxPP777.js",
+        "_qr-code-BYxA7erN.js",
+        "_refresh-cw-DJmH26fw.js",
+        "_shield-DjeeYvpI.js",
+        "_smartphone-Cq_snCyF.js",
+        "_users-DWepl2lw.js",
+        "_clinic logo-DXPcW-2O.js",
+        "_appointmentDate-DHOHc8CF.js"
+      ],
+      "dynamic_imports": []
+    }
+  ]
+}

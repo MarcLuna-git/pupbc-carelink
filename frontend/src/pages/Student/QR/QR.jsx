@@ -18,9 +18,11 @@ import {
   Users,
   AlertCircle,
   RefreshCw,
+  Info,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import clinicLogo from '../../../assets/clinic logo.jpg';
+import useVisiblePolling from '../../../hooks/useVisiblePolling';
 
 const Skeleton = ({ className = '' }) => (
   <div
@@ -62,8 +64,7 @@ const QR = () => {
   const [pageLoading, setPageLoading] =
     useState(true);
 
-  const [refreshing, setRefreshing] =
-    useState(false);
+
 
   const [downloading, setDownloading] =
     useState(false);
@@ -86,7 +87,7 @@ const QR = () => {
   const [qrDataUrl, setQrDataUrl] =
     useState('');
 
-  const today = getManilaDateString();
+const today = getManilaDateString();
   const todayAppointment = useMemo(
     () => groupAppointments(appointments).today[0] || null,
     [appointments, today]
@@ -100,99 +101,56 @@ const QR = () => {
     Boolean(qrCodeHash) &&
     Boolean(todayAppointment);
 
-  const fetchQrData = async (
-    silent = false
-  ) => {
-    if (!silent) {
-      setPageLoading(true);
-    } else {
-      setRefreshing(true);
-    }
+  // Check-in window state
+  const [checkinOpensAt, setCheckinOpensAt] = useState(null);
+  const [checkinDeadlineAt, setCheckinDeadlineAt] = useState(null);
 
+  // Helper to format time for display
+  const formatTime = (isoString) => {
+    if (!isoString) return null;
+    const date = new Date(isoString);
+    return date.toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit', hour12: true });
+  };
+
+const fetchQrData = async (signal) => {
+    setPageLoading(true);
     try {
-      const [
-        qrResponse,
-        statusResponse,
-        appointmentsResponse,
-      ] = await Promise.all([
-        api.get('/student/qr'),
-        api.get('/student/qr/status'),
-        api.get('/student/appointments'),
-      ]);
+      const response = await api.get('/student/qr', { signal });
+      const qrData = response?.data?.data || null;
 
-      const qrData =
-        qrResponse?.data?.data || null;
-
-      const statusData =
-        statusResponse?.data?.data || null;
-
-      const appointmentPayload =
-        appointmentsResponse?.data?.data;
-
-      const normalizedAppointments =
-        Array.isArray(appointmentPayload)
-          ? appointmentPayload
-          : Array.isArray(
-                appointmentPayload?.data
-              )
-            ? appointmentPayload.data
-            : [];
-
-      setQrCodeHash(
-        qrData?.qr_code_hash || ''
-      );
+      setQrCodeHash(qrData?.qr_code_hash || '');
 
       setQrUsable(
         Boolean(
-          statusData?.exists &&
-            statusData?.active
+          qrData?.available &&
+            qrData?.qr_code_hash
         )
       );
 
-      setAppointments(
-        normalizedAppointments
-      );
-
-      if (!silent) {
-        setMessage('');
+      // Store check-in window times
+      if (qrData?.appointment) {
+        setCheckinOpensAt(qrData.appointment.checkin_opens_at || null);
+        setCheckinDeadlineAt(qrData.appointment.checkin_deadline_at || null);
       }
-    } catch (error) {
-      console.error(
-        'QR data load error:',
-        error
-      );
 
+      const appointmentPayload = qrData?.appointment;
+      const normalizedAppointments = Array.isArray(appointmentPayload)
+        ? [appointmentPayload]
+        : appointmentPayload ? [appointmentPayload] : [];
+
+      setAppointments(normalizedAppointments);
+      setMessage('');
+    } catch (error) {
+      if (error.name === 'CanceledError') return;
+      console.error('QR data load error:', error);
       setMessageType('error');
-      setMessage(
-        'Unable to load your QR information. Please try again.'
-      );
+      setMessage('Unable to load your QR information. Please try again.');
     } finally {
       setPageLoading(false);
-      setRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    if (healthProfileDone) {
-      fetchQrData();
-    } else {
-      setPageLoading(false);
-    }
-  }, [healthProfileDone]);
-
-  useEffect(() => {
-    if (!healthProfileDone) {
-      return undefined;
-    }
-
-    const interval = setInterval(() => {
-      fetchQrData(true);
-    }, 10000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [healthProfileDone]);
+  useVisiblePolling(fetchQrData, 10000, healthProfileDone);
 
   useEffect(() => {
     let cancelled = false;
@@ -427,6 +385,12 @@ const QR = () => {
               )}
               •
               ${todayAppointment.time_slot || 'N/A'}
+              ${checkinOpensAt && checkinDeadlineAt ? (
+                `<br /><br />
+                <strong>Check-in Window:</strong><br />
+                Opens: ${checkinOpensAt}<br />
+                Deadline: ${checkinDeadlineAt}`
+              ) : ''}
             </div>
 
             <p class="notice">
@@ -750,6 +714,27 @@ const QR = () => {
                     </p>
                   </div>
                 </div>
+
+                {checkinOpensAt && checkinDeadlineAt && (
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100 dark:border-gray-700">
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30 rounded-xl p-3">
+                      <p className="text-[10px] uppercase tracking-wider text-green-700 dark:text-green-400">
+                        Check-in Opens
+                      </p>
+                      <p className="text-sm font-semibold text-green-900 dark:text-green-300 mt-1">
+                        {formatTime(checkinOpensAt)}
+                      </p>
+                    </div>
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 rounded-xl p-3">
+                      <p className="text-[10px] uppercase tracking-wider text-yellow-700 dark:text-yellow-400">
+                        Check-in Deadline
+                      </p>
+                      <p className="text-sm font-semibold text-yellow-900 dark:text-yellow-300 mt-1">
+                        {formatTime(checkinDeadlineAt)}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <p className="text-[11px] uppercase tracking-wider text-gray-400">

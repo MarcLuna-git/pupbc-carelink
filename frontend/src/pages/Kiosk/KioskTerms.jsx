@@ -26,10 +26,16 @@ const KioskTerms = ({ onAgree, onDecline, onBack }) => {
       text: 'You will be assigned a queue number upon check-in. Priority may be given to emergency cases, PWDs, and pregnant students.'
     },
     {
+      icon: Clock,
+      title: 'Check-in Window',
+      color: 'blue',
+      text: 'Check-in opens 15 minutes before your appointment and closes 30 minutes after. If you do not check in within this window, your appointment will expire.'
+    },
+    {
       icon: AlertCircle,
       title: 'No-Show Policy',
       color: 'orange',
-      text: 'If you fail to check in within 15 minutes of your scheduled appointment, it will be marked as void. A new appointment must be booked.'
+      text: 'If you are absent when called, the nurse may skip your turn. Tell the nurse when you return. If you remain skipped after your original check-in deadline, your visit will be marked as no-show.'
     },
   ];
 

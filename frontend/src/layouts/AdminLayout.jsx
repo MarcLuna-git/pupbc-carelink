@@ -6,16 +6,30 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, Calendar, Users, FileText, Bell, LogOut, QrCode, Settings, Menu, X, Stethoscope, Activity, Sun, Moon, Pill, Megaphone, BookOpen } from 'lucide-react';
 import { fetchNurseNotifications } from '../services/nurseNotifications';
+import useNurseSync from '../hooks/useNurseSync';
+import api from '../services/api';
 
 const AdminLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user') || '{}'));
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const { darkMode, toggleDarkMode } = useAccountTheme();
+
+  useNurseSync(['students'], async signal => {
+    const { data } = await api.get('/auth/me', { signal });
+    if (signal.aborted) return;
+    setUser(data.user);
+    localStorage.setItem('user', JSON.stringify(data.user));
+  });
+
+  useNurseSync(['notifications', 'medicines'], async () => {
+    const response = await fetchNurseNotifications();
+    setUnreadNotificationCount(Math.max(0, Number(response.data.unread_count) || 0));
+  });
 
   useEffect(() => {
     let active = true;
@@ -31,12 +45,8 @@ const AdminLayout = ({ children }) => {
       }
     };
     fetchUnreadCount();
-    const interval = window.setInterval(fetchUnreadCount, 10000);
-    window.addEventListener('focus', fetchUnreadCount);
     return () => {
       active = false;
-      window.clearInterval(interval);
-      window.removeEventListener('focus', fetchUnreadCount);
     };
   }, []);
 

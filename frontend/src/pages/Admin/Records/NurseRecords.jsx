@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { FileText, RefreshCw } from 'lucide-react';
 import api from '../../../services/api';
 import RecordDirectory, { RecordDetailsModal } from './RecordDirectory';
+import useNurseSync from '../../../hooks/useNurseSync';
 import { StudentFilters, Pagination } from '../Students/StudentDirectory';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import academics from '../../../data/registration-academics.json';
@@ -17,11 +18,22 @@ export default function NurseRecords() {
   const [refresh, setRefresh] = useState(0);
   const [page, setPage] = useState(1);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const requestId = useRef(0);
+  useNurseSync(['consultations', 'students', 'academic'], async signal => {
+    const request = ++requestId.current;
+    const { data } = await api.get('/nurse/clinic-history', { signal });
+    if (signal.aborted || request !== requestId.current) return;
+    const latest = Array.isArray(data.data) ? data.data : [];
+    setRecords(latest);
+    setError('');
+    setSelectedRecord(previous => previous ? latest.find(record => record.id === previous.id && record.type === previous.type) || null : null);
+  });
   useEffect(() => {
+    const request = ++requestId.current;
     const controller = new AbortController();
     setLoading(true); setError('');
     api.get('/nurse/clinic-history', { signal: controller.signal })
-      .then(({ data }) => { if (!controller.signal.aborted) setRecords(Array.isArray(data.data) ? data.data : []); })
+      .then(({ data }) => { if (!controller.signal.aborted && request === requestId.current) setRecords(Array.isArray(data.data) ? data.data : []); })
       .catch(() => { if (!controller.signal.aborted) setError('Unable to load clinic history. Please try again.'); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();

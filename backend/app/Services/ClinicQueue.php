@@ -18,9 +18,10 @@ class ClinicQueue
     public static function ordered()
     {
         return AppointmentCheckin::with(['user:id,student_id,first_name,last_name', 'triage', 'appointment'])
-            ->whereDate('appointment_checkins.created_at', today())
+            ->where('appointment_checkins.created_at', '>=', today())
+            ->where('appointment_checkins.created_at', '<', today()->addDay())
             ->where('is_walk_in', false)
-            ->whereIn('status', ['waiting', 'serving'])
+            ->whereIn('status', ['waiting', 'called', 'serving', 'skipped', 'no_show'])
             ->orderByRaw("COALESCE((SELECT CASE priority WHEN 'HIGH' THEN 0 WHEN 'MEDIUM' THEN 1 ELSE 2 END FROM triage_assessments WHERE appointment_checkin_id = appointment_checkins.id LIMIT 1), 2)")
             ->orderByRaw('CASE WHEN check_in_time IS NULL THEN 0 ELSE 1 END')
             ->orderBy('check_in_time')->orderBy('appointment_checkins.created_at')->orderBy('appointment_checkins.id');
