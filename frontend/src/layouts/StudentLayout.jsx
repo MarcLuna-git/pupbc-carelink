@@ -34,6 +34,7 @@ import {
 
 import authService from '../services/authService';
 import api from '../services/api';
+import ChatWidget from '../components/chatbot/ChatWidget';
 import clinicLogo from '../assets/clinic logo.jpg';
 import campusBackground from '../assets/pup-binan-hero.jpg';
 
@@ -1004,6 +1005,9 @@ const StudentLayout = ({ children }) => {
           </section>
         </div>
       )}
+
+      {/* Clinic assistant. Student portal only; conversation lives in memory. */}
+      <ChatWidget />
     </div>
   );
 };

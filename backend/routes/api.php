@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\Student\AppointmentController as StudentAppointment
 use App\Http\Controllers\Api\Student\ConsultationController as StudentConsultationController;
 use App\Http\Controllers\Api\Student\DashboardController as StudentDashboardController;
 use App\Http\Controllers\Api\Student\NotificationController as StudentNotificationController;
+use App\Http\Controllers\Api\Student\ChatbotController;
 
 use App\Http\Controllers\Api\Nurse\AppointmentController as NurseAppointmentController;
 use App\Http\Controllers\Api\Nurse\ConsultationController as NurseConsultationController;
@@ -379,6 +380,24 @@ Route::middleware([
         Route::prefix('student')
             ->middleware('student')
             ->group(function () {
+
+                /*
+                |--------------------------------------------------------------------------
+                | Clinic Assistant (AI chatbot)
+                |--------------------------------------------------------------------------
+                |
+                | Dedicated throttle so one student cannot exhaust the shared
+                | Gemini quota for everyone else.
+                |
+                */
+
+                Route::post(
+                    '/chatbot/message',
+                    [ChatbotController::class, 'message']
+                )->middleware([
+                    'throttle:' . (int) config('chatbot.rate_limit', 20) . ',1',
+                    'throttle:chatbot-daily',
+                ]);
 
                 /*
                 |--------------------------------------------------------------------------

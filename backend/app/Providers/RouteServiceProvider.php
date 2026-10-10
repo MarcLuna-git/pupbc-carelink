@@ -38,5 +38,13 @@ class RouteServiceProvider extends ServiceProvider
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by(optional($request->user())->id ?: $request->ip());
         });
+
+        // Rolling 24-hour ceiling for the clinic assistant. The per-minute
+        // throttle on the route stops bursts; this one stops a single student
+        // from draining the shared Gemini daily quota.
+        RateLimiter::for('chatbot-daily', function (Request $request) {
+            return Limit::perDay((int) config('chatbot.daily_limit', 100))
+                ->by(optional($request->user())->id ?: $request->ip());
+        });
     }
 }
