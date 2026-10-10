@@ -20,9 +20,9 @@ services:
         # Format: base64:xxxx (tingnan ang docs/RENDER_DEPLOYMENT.md).
         sync: false
       - key: APP_URL
-        value: https://pupbc-carelink-api-hwl7.onrender.com
+        value: https://pupbc-carelink-api-hwl7.onrender.com #=========JEROME BRANCH===========
       - key: FRONTEND_URL
-        value: https://pupbc-carelink-8dq0.onrender.com
+        value: https://pupbc-carelink-8dq0.onrender.com #=========JEROME BRANCH===========
       - key: LOG_CHANNEL
         value: stderr
 
@@ -85,7 +85,7 @@ services:
         value: local
 
       - key: SANCTUM_STATEFUL_DOMAINS
-        value: pupbc-carelink-8dq0.onrender.com
+        value: pupbc-carelink-8dq0.onrender.com #=========JEROME BRANCH===========
 
       - key: SEED_NURSE_PASSWORD
         sync: false
@@ -141,6 +141,6 @@ services:
       - key: NODE_VERSION # Vite 8 needs Node 20.19+ / 22.12+
         value: "22"
       - key: VITE_API_URL
-        value: https://pupbc-carelink-api-hwl7.onrender.com/api
+        value: https://pupbc-carelink-api-hwl7.onrender.com/api #=========JEROME BRANCH===========
       - key: VITE_APP_NAME
         value: "PUPBC CareLink"
