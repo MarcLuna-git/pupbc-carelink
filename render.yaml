@@ -144,6 +144,6 @@ services:
         value: "22"
         #=========JEROME BRANCH===========
       - key: VITE_API_URL
-        value: https://pupbc-carelink-api-hwl7.onrender.com/api #=========JEROME BRANCH===========
+        value: https://pupbc-carelink-api-hwl7.onrender.com/api
       - key: VITE_APP_NAME
         value: "PUPBC CareLink"
