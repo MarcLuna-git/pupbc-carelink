@@ -74,6 +74,35 @@ input[type="password"]::-ms-clear {
 .animation-delay-2000 { animation-delay: 2s; }
 .animation-delay-4000 { animation-delay: 4s; }
 
+/* Chatbot "thinking" indicator: three dots cycling "..." -> "." -> ".." -> "..."
+   instead of a spinner. First dot stays lit, dots 2 and 3 blink on their own
+   schedules so the bubble reads as typing in a narrow chat window. */
+.think-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background-color: var(--color-maroon-600);
+  opacity: 1;
+  animation-duration: 1.6s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+.think-dot-2 { animation-name: thinkDots2; }
+.think-dot-3 { animation-name: thinkDots3; }
+
+@keyframes thinkDots2 {
+  0%, 24% { opacity: 1; }
+  25%, 49% { opacity: 0.12; }
+  50%, 100% { opacity: 1; }
+}
+
+@keyframes thinkDots3 {
+  0%, 24% { opacity: 1; }
+  25%, 74% { opacity: 0.12; }
+  75%, 100% { opacity: 1; }
+}
+
 html { color-scheme: light; }
 html.dark { color-scheme: dark; }
 .dark body { background-color: #111827; color: #e5e7eb; }
