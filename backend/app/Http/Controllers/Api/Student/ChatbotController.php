@@ -34,6 +34,10 @@ class ChatbotController extends Controller
             'history' => 'nullable|array|max:' . $maxHistory,
             'history.*.role' => 'nullable|string|in:user,assistant',
             'history.*.text' => 'nullable|string|max:' . $maxLength,
+            // The follow-up chips the assistant already showed. Sent back so the
+            // model can avoid repeating them.
+            'history.*.suggestions' => 'nullable|array|max:5',
+            'history.*.suggestions.*' => 'nullable|string|max:200',
         ]);
 
         $result = $this->assistant->reply(

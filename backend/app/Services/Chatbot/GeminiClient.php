@@ -14,6 +14,11 @@ use Throwable;
  * Deliberately never throws: callers get a result object and decide how to
  * degrade. A chatbot outage must not turn into a 500 for the student.
  *
+ * The client walks an ordered list of models (the configured primary followed
+ * by its fallbacks). A rate limited (429), missing (404), or briefly overloaded
+ * (5xx) model is skipped for the next one, so a single exhausted quota does not
+ * take the assistant down.
+ *
  * Failures are classified with a `reason` code so the caller can tell a blocked
  * prompt apart from a provider outage and answer accordingly.
  */
@@ -25,6 +30,8 @@ class GeminiClient
 
     private const OPEN_UNTIL_KEY = 'chatbot:gemini:open_until';
 
+    private const RATE_LIMIT_KEY_PREFIX = 'chatbot:gemini:rate_limited:';
+
     /**
      * Finish reasons that mean the model refused to answer.
      *
@@ -33,10 +40,27 @@ class GeminiClient
     private const BLOCKING_FINISH_REASONS = ['SAFETY', 'RECITATION', 'BLOCKLIST'];
 
     /**
+     * Failures that are worth retrying on the next model in the chain: the
+     * model is rate limited, gone, or briefly overloaded.
+     *
+     * @var array<int, string>
+     */
+    private const FAILOVER_REASONS = ['rate_limit', 'not_found', 'server_error'];
+
+    /**
+     * A content refusal is not a provider outage: it must not trip the circuit
+     * breaker, and every model would refuse the same prompt alike.
+     *
+     * @var array<int, string>
+     */
+    private const CONTENT_REFUSAL_REASONS = ['blocked', 'safety'];
+
+    /**
      * @param  array<int, array{role: string, text: string}>  $messages
+     * @param  bool  $json  Ask the provider for a JSON response body.
      * @return array{ok: bool, text: string, error: string|null, reason: string|null}
      */
-    public function generate(string $systemPrompt, array $messages): array
+    public function generate(string $systemPrompt, array $messages, bool $json = false): array
     {
         $key = (string) config('services.gemini.key');
 
@@ -48,42 +72,110 @@ class GeminiClient
             return $this->failure('circuit_open', 'Gemini circuit breaker is open.');
         }
 
-        $model = (string) config('services.gemini.model');
         $timeout = (int) config('services.gemini.timeout', 15);
+        $cooldown = (int) config('services.gemini.rate_limit_cooldown', 60);
+        $lastFailure = null;
 
-        try {
-            $response = Http::withHeaders([
-                // Header auth keeps the key out of URLs, logs, and error traces.
-                'x-goog-api-key' => $key,
-            ])
-                ->timeout($timeout)
-                ->acceptJson()
-                ->post(sprintf(self::ENDPOINT, $model), [
-                    'systemInstruction' => [
-                        'parts' => [
-                            ['text' => $systemPrompt],
-                        ],
-                    ],
-                    'contents' => $this->toContents($messages),
-                    'generationConfig' => [
-                        'temperature' => 0.3,
-                        'maxOutputTokens' => (int) config('services.gemini.max_output_tokens', 1024),
-                    ],
-                    'safetySettings' => (array) config('services.gemini.safety_settings', []),
+        foreach ($this->modelsToTry() as $model) {
+            $result = $this->attempt($key, $model, $systemPrompt, $messages, $json, $timeout);
+
+            if ($result['ok']) {
+                Cache::forget($this->rateLimitKey($model));
+                $this->recordSuccess();
+
+                return $result;
+            }
+
+            if (in_array($result['reason'], self::CONTENT_REFUSAL_REASONS, true)) {
+                return $result;
+            }
+
+            if (in_array($result['reason'], self::FAILOVER_REASONS, true)) {
+                $lastFailure = $result;
+
+                if ($result['reason'] === 'rate_limit' && $cooldown > 0) {
+                    Cache::put($this->rateLimitKey($model), time(), $cooldown);
+                }
+
+                Log::warning('Chatbot model failed; trying the next one', [
+                    'model' => $model,
+                    'reason' => $result['reason'],
                 ]);
-        } catch (ConnectionException $e) {
-            return $this->recordFailure('timeout', 'Gemini request timed out: ' . $e->getMessage());
-        } catch (Throwable $e) {
-            return $this->recordFailure('error', 'Gemini request failed: ' . $e->getMessage());
+
+                continue;
+            }
+
+            // Any other failure (timeout, bad request, empty response, ...)
+            // would repeat on every model, so count it and stop.
+            $this->recordFailure((string) $result['reason'], (string) $result['error']);
+
+            return $result;
         }
 
-        if ($response->failed()) {
-            return $this->recordFailure('http', 'Gemini returned HTTP ' . $response->status());
+        $failure = $lastFailure ?? $this->failure('unavailable', 'No Gemini model could answer.');
+
+        $this->recordFailure((string) $failure['reason'], (string) $failure['error']);
+
+        return $failure;
+    }
+
+    /**
+     * Call one model once. Never touches the circuit breaker; the caller owns
+     * the retry and accounting policy.
+     *
+     * @param  array<int, array{role: string, text: string}>  $messages
+     * @return array{ok: bool, text: string, error: string|null, reason: string|null}
+     */
+    private function attempt(string $key, string $model, string $systemPrompt, array $messages, bool $json, int $timeout): array
+    {
+        $generationConfig = [
+            'temperature' => 0.3,
+            'maxOutputTokens' => (int) config('services.gemini.max_output_tokens', 1024),
+        ];
+
+        if ($json) {
+            $generationConfig['responseMimeType'] = 'application/json';
+        }
+
+        try {
+            $response = Http::timeout($timeout)
+                ->withHeaders(['x-goog-api-key' => $key])
+                ->post(
+                    sprintf(self::ENDPOINT, $model),
+                    [
+                        'systemInstruction' => ['parts' => [['text' => $systemPrompt]]],
+                        'contents' => $this->toContents($messages),
+                        'generationConfig' => $generationConfig,
+                        'safetySettings' => (array) config('services.gemini.safety_settings', []),
+                    ]
+                );
+        } catch (ConnectionException $e) {
+            return $this->failure('timeout', 'Gemini request timed out: ' . $e->getMessage());
+        } catch (Throwable $e) {
+            return $this->failure('error', 'Gemini request failed: ' . $e->getMessage());
+        }
+
+        $status = $response->status();
+
+        if ($status === 429) {
+            return $this->failure('rate_limit', 'Gemini rate limited the request (HTTP 429).');
+        }
+
+        if ($status === 404) {
+            return $this->failure('not_found', 'Gemini model was not found: ' . $model);
+        }
+
+        if ($status >= 500) {
+            return $this->failure('server_error', 'Gemini reported a server error (HTTP ' . $status . ').');
+        }
+
+        if (! $response->successful()) {
+            return $this->failure('http', 'Gemini request failed (HTTP ' . $status . ').');
         }
 
         $payload = $response->json();
 
-        // A blocked prompt never reaches a candidate, so check it first.
+        // The prompt was rejected before any candidate was produced.
         $blockReason = $payload['promptFeedback']['blockReason'] ?? null;
 
         if (is_string($blockReason) && $blockReason !== '') {
@@ -98,19 +190,55 @@ class GeminiClient
         }
 
         if ($text === '') {
-            return $this->recordFailure('empty', 'Gemini returned an empty response.');
+            return $this->failure('empty', 'Gemini returned an empty response.');
         }
 
         // A truncated answer is still useful, so it counts as a success. The
         // caller can surface the partial text rather than a generic error.
-        $this->recordSuccess();
-
         return [
             'ok' => true,
             'text' => $text,
             'error' => null,
             'reason' => $finishReason === 'MAX_TOKENS' ? 'truncated' : null,
         ];
+    }
+
+    /**
+     * The ordered models to try for this request.
+     *
+     * Models that recently returned a rate limit are skipped here, so traffic
+     * cycles to the next one. If every model is cooling down we still try them
+     * all rather than failing outright, because the cooldown is only a hint.
+     *
+     * @return array<int, string>
+     */
+    private function modelsToTry(): array
+    {
+        $primary = trim((string) config('services.gemini.model'));
+        $fallbacks = array_map('trim', (array) config('services.gemini.fallback_models', []));
+
+        $chain = array_values(array_filter(
+            array_unique(array_merge([$primary], $fallbacks)),
+            static fn (string $model): bool => $model !== ''
+        ));
+
+        $cooldown = (int) config('services.gemini.rate_limit_cooldown', 60);
+
+        if ($cooldown <= 0) {
+            return $chain;
+        }
+
+        $ready = array_values(array_filter(
+            $chain,
+            fn (string $model): bool => ! Cache::has($this->rateLimitKey($model))
+        ));
+
+        return $ready !== [] ? $ready : $chain;
+    }
+
+    private function rateLimitKey(string $model): string
+    {
+        return self::RATE_LIMIT_KEY_PREFIX . $model;
     }
 
     /*
@@ -200,7 +328,11 @@ class GeminiClient
     }
 
     /**
-     * Pull the first text part out of a generateContent response.
+     * Pull the answer text out of a generateContent response.
+     *
+     * Thinking models (Gemma 4, Gemini thinking variants) return their
+     * reasoning as a part flagged `thought: true` before the real answer, so
+     * those parts are skipped rather than concatenated into the reply.
      *
      * @param  array<string, mixed>|null  $payload
      */
@@ -215,6 +347,10 @@ class GeminiClient
         $text = '';
 
         foreach ($parts as $part) {
+            if (($part['thought'] ?? false) === true) {
+                continue;
+            }
+
             if (isset($part['text']) && is_string($part['text'])) {
                 $text .= $part['text'];
             }

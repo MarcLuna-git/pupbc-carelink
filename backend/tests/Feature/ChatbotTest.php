@@ -118,15 +118,15 @@ class ChatbotTest extends TestCase
 
     public function test_successful_reply_is_returned(): void
     {
-        $this->fakeGeminiSuccess('Bukas ang clinic mula 8:00 AM hanggang 5:00 PM.');
+        $this->fakeGeminiSuccess('The clinic is open from 8:00 AM to 5:00 PM.');
 
         $this->actingAs($this->student(), 'api')
-            ->postJson(self::ENDPOINT, ['message' => 'Anong oras bukas ang clinic?'])
+            ->postJson(self::ENDPOINT, ['message' => 'What time does the clinic open?'])
             ->assertStatus(200)
             ->assertJson([
                 'success' => true,
                 'data' => [
-                    'reply' => 'Bukas ang clinic mula 8:00 AM hanggang 5:00 PM.',
+                    'reply' => 'The clinic is open from 8:00 AM to 5:00 PM.',
                     'degraded' => false,
                 ],
             ]);
@@ -218,12 +218,12 @@ class ChatbotTest extends TestCase
         $this->fakeGeminiSuccess();
 
         $suggestions = $this->actingAs($this->student(), 'api')
-            ->postJson(self::ENDPOINT, ['message' => 'Paano mag-book ng appointment?'])
+            ->postJson(self::ENDPOINT, ['message' => 'How do I book an appointment?'])
             ->assertStatus(200)
             ->json('data.suggestions');
 
         $this->assertContains(
-            'Paano ko makikita ang aking mga appointment?',
+            'How do I see my appointments?',
             $suggestions
         );
     }
@@ -233,17 +233,17 @@ class ChatbotTest extends TestCase
         $this->fakeGeminiSuccess();
 
         $history = [
-            ['role' => 'user', 'text' => 'Paano mag-book ng appointment?'],
-            ['role' => 'assistant', 'text' => 'Buksan ang Appointments sa portal.'],
+            ['role' => 'user', 'text' => 'How do I book an appointment?'],
+            ['role' => 'assistant', 'text' => 'Open Appointments in the student portal.'],
         ];
 
         $suggestions = $this->actingAs($this->student(), 'api')
-            ->postJson(self::ENDPOINT, ['message' => 'oo', 'history' => $history])
+            ->postJson(self::ENDPOINT, ['message' => 'ok', 'history' => $history])
             ->assertStatus(200)
             ->json('data.suggestions');
 
         $this->assertContains(
-            'Paano ko makikita ang aking mga appointment?',
+            'How do I see my appointments?',
             $suggestions
         );
     }
@@ -274,16 +274,267 @@ class ChatbotTest extends TestCase
         $this->assertContains('How do I book an appointment?', $suggestions);
     }
 
-    public function test_follow_up_questions_switch_to_tagalog(): void
+    public function test_reply_and_follow_ups_use_the_students_language(): void
+    {
+        $this->fakeGeminiSuccess(json_encode([
+            'reply' => 'Bukas ang clinic mula 8:00 AM hanggang 5:00 PM.',
+            'suggestions' => [
+                'Paano ako mag-book ng appointment?',
+                'Anong mga serbisyo ang available?',
+                'Paano ko makokontak ang clinic?',
+            ],
+        ]));
+
+        $response = $this->actingAs($this->student(), 'api')
+            ->postJson(self::ENDPOINT, ['message' => 'Anong oras bukas ang clinic?'])
+            ->assertStatus(200);
+
+        $this->assertSame(
+            'Bukas ang clinic mula 8:00 AM hanggang 5:00 PM.',
+            $response->json('data.reply')
+        );
+
+        $this->assertSame(
+            [
+                'Paano ako mag-book ng appointment?',
+                'Anong mga serbisyo ang available?',
+                'Paano ko makokontak ang clinic?',
+            ],
+            $response->json('data.suggestions')
+        );
+    }
+
+    public function test_reply_unwraps_json_inside_a_markdown_fence(): void
+    {
+        $this->fakeGeminiSuccess(
+            "```json\n" . json_encode([
+                'reply' => 'The clinic is open from 8:00 AM to 5:00 PM.',
+                'suggestions' => [
+                    'How do I book an appointment?',
+                    'What services are available?',
+                    'How can I contact the clinic?',
+                ],
+            ]) . "\n```"
+        );
+
+        $this->actingAs($this->student(), 'api')
+            ->postJson(self::ENDPOINT, ['message' => 'What time does the clinic open?'])
+            ->assertStatus(200)
+            ->assertJson([
+                'data' => ['reply' => 'The clinic is open from 8:00 AM to 5:00 PM.'],
+            ]);
+    }
+
+    public function test_truncated_json_reply_is_recovered_as_plain_text(): void
+    {
+        // A MAX_TOKENS finish can cut the JSON mid-string; the reply text must
+        // still reach the student instead of a raw JSON fragment.
+        $this->fakeGeminiSuccess('{"reply": "The clinic is open from 8:00 AM');
+
+        $this->actingAs($this->student(), 'api')
+            ->postJson(self::ENDPOINT, ['message' => 'What time does the clinic open?'])
+            ->assertStatus(200)
+            ->assertJson([
+                'data' => ['reply' => 'The clinic is open from 8:00 AM'],
+            ]);
+    }
+
+    public function test_json_response_mode_is_requested_from_gemini(): void
     {
         $this->fakeGeminiSuccess();
 
-        $suggestions = $this->actingAs($this->student(), 'api')
-            ->postJson(self::ENDPOINT, ['message' => 'Paano mag-book ng appointment?'])
-            ->assertStatus(200)
-            ->json('data.suggestions');
+        $this->actingAs($this->student(), 'api')
+            ->postJson(self::ENDPOINT, ['message' => 'Hello'])
+            ->assertStatus(200);
 
-        $this->assertContains('Paano ko makikita ang aking mga appointment?', $suggestions);
-        $this->assertNotContains('How do I see my appointments?', $suggestions);
+        Http::assertSent(function ($request) {
+            return ($request->data()['generationConfig']['responseMimeType'] ?? null) === 'application/json';
+        });
+    }
+
+    public function test_system_prompt_asks_the_model_to_refuse_in_the_students_language(): void
+    {
+        $this->fakeGeminiSuccess();
+
+        $this->actingAs($this->student(), 'api')
+            ->postJson(self::ENDPOINT, ['message' => 'Who was the president of the Philippines in 2010?'])
+            ->assertStatus(200);
+
+        $prompt = '';
+
+        Http::assertSent(function ($request) use (&$prompt) {
+            $prompt = $request['systemInstruction']['parts'][0]['text'] ?? '';
+
+            return true;
+        });
+
+        // The refusal must be written in the student's language rather than a
+        // single hardcoded English sentence.
+        $this->assertStringContainsString("in the same language as the student's message", $prompt);
+        $this->assertStringNotContainsString('put exactly this text in', $prompt);
+    }
+
+    public function test_blocked_fallback_is_bilingual(): void
+    {
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response([
+                'promptFeedback' => ['blockReason' => 'PROHIBITED_CONTENT'],
+            ]),
+        ]);
+
+        $reply = $this->actingAs($this->student(), 'api')
+            ->postJson(self::ENDPOINT, ['message' => 'Hello'])
+            ->assertStatus(200)
+            ->json('data.reply');
+
+        $this->assertStringContainsString('Sorry, I can\'t help you with that.', $reply);
+        $this->assertStringContainsString('Paumanhin', $reply);
+    }
+
+    public function test_previously_offered_follow_ups_are_sent_back_to_the_model(): void
+    {
+        $this->fakeGeminiSuccess();
+
+        $history = [
+            ['role' => 'user', 'text' => 'How do I book an appointment?'],
+            [
+                'role' => 'assistant',
+                'text' => 'Open Appointments in the student portal.',
+                'suggestions' => [
+                    'How do I see my appointments?',
+                    'When can I check in with my QR code?',
+                    'What services are available?',
+                ],
+            ],
+        ];
+
+        $this->actingAs($this->student(), 'api')
+            ->postJson(self::ENDPOINT, [
+                'message' => 'ok',
+                'history' => $history,
+            ])
+            ->assertStatus(200);
+
+        $prompt = '';
+
+        Http::assertSent(function ($request) use (&$prompt) {
+            $prompt = $request['systemInstruction']['parts'][0]['text'] ?? '';
+
+            return true;
+        });
+
+        $this->assertStringContainsString('BEGIN PREVIOUS FOLLOW-UP QUESTIONS', $prompt);
+        $this->assertStringContainsString('How do I see my appointments?', $prompt);
+        $this->assertStringContainsString('When can I check in with my QR code?', $prompt);
+    }
+
+    public function test_too_many_follow_ups_in_history_are_rejected(): void
+    {
+        $this->fakeGeminiSuccess();
+
+        $this->actingAs($this->student(), 'api')
+            ->postJson(self::ENDPOINT, [
+                'message' => 'Hello',
+                'history' => [
+                    [
+                        'role' => 'assistant',
+                        'text' => 'Hello!',
+                        'suggestions' => ['a', 'b', 'c', 'd', 'e', 'f'],
+                    ],
+                ],
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('history.0.suggestions');
+    }
+
+    public function test_third_follow_up_reuses_a_skipped_question(): void
+    {
+        $this->fakeGeminiSuccess(
+            '{"reply":"Here you go.","suggestions":["Fresh one?","Fresh two?","Fresh three?"]}'
+        );
+
+        $history = [
+            ['role' => 'user', 'text' => 'Hi'],
+            [
+                'role' => 'assistant',
+                'text' => 'Hello!',
+                'suggestions' => ['Old A?', 'Old B?', 'Old C?'],
+            ],
+            ['role' => 'user', 'text' => 'What services are there?'],
+            [
+                'role' => 'assistant',
+                'text' => 'We offer several.',
+                'suggestions' => ['Recent A?', 'Recent B?', 'Recent C?'],
+            ],
+        ];
+
+        $response = $this->actingAs($this->student(), 'api')
+            ->postJson(self::ENDPOINT, [
+                'message' => 'ok',
+                'history' => $history,
+            ])
+            ->assertStatus(200);
+
+        $this->assertSame(
+            ['Fresh one?', 'Fresh two?', 'Old A?'],
+            $response->json('data.suggestions')
+        );
+    }
+
+    public function test_third_follow_up_does_not_reuse_an_asked_question(): void
+    {
+        $this->fakeGeminiSuccess(
+            '{"reply":"Here you go.","suggestions":["Fresh one?","Fresh two?","Fresh three?"]}'
+        );
+
+        $history = [
+            ['role' => 'user', 'text' => 'Hi'],
+            [
+                'role' => 'assistant',
+                'text' => 'Hello!',
+                'suggestions' => ['Old A?', 'Old B?', 'Old C?'],
+            ],
+            ['role' => 'user', 'text' => 'Old A?'],
+            [
+                'role' => 'assistant',
+                'text' => 'We offer several.',
+                'suggestions' => ['Recent A?', 'Recent B?', 'Recent C?'],
+            ],
+        ];
+
+        $response = $this->actingAs($this->student(), 'api')
+            ->postJson(self::ENDPOINT, [
+                'message' => 'ok',
+                'history' => $history,
+            ])
+            ->assertStatus(200);
+
+        $this->assertSame(
+            ['Fresh one?', 'Fresh two?', 'Old B?'],
+            $response->json('data.suggestions')
+        );
+    }
+
+    public function test_reference_data_carries_the_clinic_schedule(): void
+    {
+        $this->fakeGeminiSuccess();
+
+        $this->actingAs($this->student(), 'api')
+            ->postJson(self::ENDPOINT, ['message' => 'What is the schedule of the clinic campus?'])
+            ->assertStatus(200);
+
+        $prompt = '';
+
+        Http::assertSent(function ($request) use (&$prompt) {
+            $prompt = $request['systemInstruction']['parts'][0]['text'] ?? '';
+
+            return true;
+        });
+
+        // The clinic is not open 24/7, so the model must know it is closed on
+        // Sundays and can answer the campus schedule question.
+        $this->assertStringContainsString('Open days: Monday to Saturday', $prompt);
+        $this->assertStringContainsString('Closed on: Sunday', $prompt);
+        $this->assertStringContainsString('What is the schedule of the clinic campus?', $prompt);
     }
 }

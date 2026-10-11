@@ -106,7 +106,7 @@ class ChatbotStudentContextTest extends TestCase
     /**
      * Capture the system prompt that was actually sent to Gemini.
      */
-    private function captureSystemPrompt(User $user, string $message = 'Kumusta?'): string
+    private function captureSystemPrompt(User $user, string $message = 'Hello?'): string
     {
         Http::fake([
             'generativelanguage.googleapis.com/*' => Http::response([

@@ -15,7 +15,7 @@ const chatbotService = {
    * Send one message plus the recent conversation to the clinic assistant.
    *
    * @param {string} message
-   * @param {Array<{role: 'user'|'assistant', text: string}>} history
+   * @param {Array<{role: 'user'|'assistant', text: string, suggestions?: string[]}>} history
    * @returns {Promise<{reply: string, degraded: boolean, suggestions: string[]}>}
    */
   async sendMessage(message, history = []) {

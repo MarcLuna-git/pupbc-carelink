@@ -310,13 +310,14 @@ class ChatbotHardeningTest extends TestCase
 
         $student = $this->student();
         $threshold = (int) config('chatbot.circuit_breaker.failure_threshold');
+        $models = 1 + count((array) config('services.gemini.fallback_models', []));
 
         for ($i = 0; $i < $threshold + 2; $i++) {
             $this->ask($student, 'Attempt ' . $i)->assertStatus(200);
         }
 
-        // With the breaker off, Gemini is still called every time.
-        Http::assertSentCount($threshold + 2);
+        // With the breaker off, the whole model chain is retried every time.
+        Http::assertSentCount(($threshold + 2) * $models);
     }
 
     /*
@@ -406,7 +407,7 @@ class ChatbotHardeningTest extends TestCase
         Http::fake([
             'generativelanguage.googleapis.com/*' => Http::response(['error' => 'boom'], 503),
         ]);
-        $this->assertSame('http', $client->generate('prompt', [])['reason']);
+        $this->assertSame('server_error', $client->generate('prompt', [])['reason']);
 
         $this->resetHttpFakes();
         Http::fake([
@@ -431,5 +432,83 @@ class ChatbotHardeningTest extends TestCase
             },
         ]);
         $this->assertSame('timeout', $client->generate('prompt', [])['reason']);
+    }
+
+    public function test_a_rate_limited_model_falls_back_to_the_next_one(): void
+    {
+        config([
+            'services.gemini.model' => 'gemini-primary',
+            'services.gemini.fallback_models' => ['gemini-backup'],
+            'services.gemini.rate_limit_cooldown' => 60,
+        ]);
+
+        $models = [];
+
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => function ($request) use (&$models) {
+                $models[] = $request->url();
+
+                if (str_contains($request->url(), 'gemini-primary')) {
+                    return Http::response(['error' => ['message' => 'quota exceeded']], 429);
+                }
+
+                return Http::response([
+                    'candidates' => [[
+                        'finishReason' => 'STOP',
+                        'content' => ['parts' => [['text' => 'Fallback answer.']]],
+                    ]],
+                ]);
+            },
+        ]);
+
+        $this->ask($this->student())
+            ->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'data' => ['reply' => 'Fallback answer.', 'degraded' => false],
+            ]);
+
+        $this->assertCount(2, $models);
+        $this->assertStringContainsString('gemini-primary', $models[0]);
+        $this->assertStringContainsString('gemini-backup', $models[1]);
+    }
+
+    public function test_a_rate_limited_model_is_skipped_on_the_next_request(): void
+    {
+        config([
+            'services.gemini.model' => 'gemini-primary',
+            'services.gemini.fallback_models' => ['gemini-backup'],
+            'services.gemini.rate_limit_cooldown' => 60,
+        ]);
+
+        $models = [];
+
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => function ($request) use (&$models) {
+                $models[] = $request->url();
+
+                if (str_contains($request->url(), 'gemini-primary')) {
+                    return Http::response(['error' => ['message' => 'quota exceeded']], 429);
+                }
+
+                return Http::response([
+                    'candidates' => [[
+                        'finishReason' => 'STOP',
+                        'content' => ['parts' => [['text' => 'Fallback answer.']]],
+                    ]],
+                ]);
+            },
+        ]);
+
+        $student = $this->student();
+
+        $this->ask($student)->assertStatus(200);
+        $this->assertCount(2, $models);
+
+        // The primary is cooling down after its 429, so the next request starts
+        // straight from the backup instead of hitting it again.
+        $this->ask($student)->assertStatus(200);
+        $this->assertCount(3, $models);
+        $this->assertStringContainsString('gemini-backup', $models[2]);
     }
 }

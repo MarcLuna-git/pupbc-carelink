@@ -12,26 +12,21 @@ const GREETING = "Hi! I'm the CareLink Assistant. How may I help you?";
 const ASSISTANT_NAME = 'CareLink Assistant';
 
 const SUGGESTIONS = [
+  'How do I book an appointment?',
   'What time is the clinic open?',
   'What is my queue status?',
-  'How do I book an appointment?',
 ];
-
-// Render Free sleeps after 15 minutes, so the first request can take a while.
-const SLOW_REPLY_MS = 6000;
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
-  const [slow, setSlow] = useState(false);
   const [error, setError] = useState('');
   const [suggestions, setSuggestions] = useState(SUGGESTIONS);
 
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
-  const slowTimer = useRef(null);
 
   // Keep the newest message in view.
   useEffect(() => {
@@ -65,8 +60,6 @@ export default function ChatWidget() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [open]);
 
-  useEffect(() => () => clearTimeout(slowTimer.current), []);
-
   const send = useCallback(
     async (rawText) => {
       const text = rawText.trim();
@@ -75,19 +68,23 @@ export default function ChatWidget() {
         return;
       }
 
-      // History is the conversation so far, before this new message.
-      const history = messages.map((message) => ({
-        role: message.role,
-        text: message.text,
-      }));
+      // History is the conversation so far, before this new message. Assistant
+      // turns also carry the follow-up chips that were shown, so the backend can
+      // tell the model not to repeat them.
+      const history = messages.map((message) => {
+        const turn = { role: message.role, text: message.text };
+
+        if (message.role === 'assistant' && message.suggestions?.length) {
+          turn.suggestions = message.suggestions;
+        }
+
+        return turn;
+      });
 
       setMessages((current) => [...current, { role: 'user', text }]);
       setInput('');
       setError('');
       setSending(true);
-      setSlow(false);
-
-      slowTimer.current = setTimeout(() => setSlow(true), SLOW_REPLY_MS);
 
       try {
         const { reply, degraded, suggestions: next } = await chatbotService.sendMessage(
@@ -95,14 +92,17 @@ export default function ChatWidget() {
           history
         );
 
+        // Keep guiding the student: use the assistant's follow-ups, or fall
+        // back to the starter set if the backend sent none. The chips are
+        // stored on the message so they travel with the history next time.
+        const shown = next.length > 0 ? next : SUGGESTIONS;
+
         setMessages((current) => [
           ...current,
-          { role: 'assistant', text: reply, degraded },
+          { role: 'assistant', text: reply, degraded, suggestions: shown },
         ]);
 
-        // Keep guiding the student: use the assistant's follow-ups, or fall
-        // back to the starter set if the backend sent none.
-        setSuggestions(next.length > 0 ? next : SUGGESTIONS);
+        setSuggestions(shown);
       } catch (requestError) {
         const status = requestError?.response?.status;
         const timedOut =
@@ -119,8 +119,6 @@ export default function ChatWidget() {
                 : 'Could not reach the clinic assistant. Please check your connection and try again.'
         );
       } finally {
-        clearTimeout(slowTimer.current);
-        setSlow(false);
         setSending(false);
       }
     },
@@ -186,10 +184,6 @@ const lastAssistantIndex = messages.reduce(
                 <p className="truncate text-sm font-bold text-white">
                   CareLink Assistant
                 </p>
-
-                <p className="truncate text-[11px] text-white/70">
-                  Clinic help, 24/7
-                </p>
               </div>
 
               <button
@@ -244,18 +238,10 @@ const lastAssistantIndex = messages.reduce(
                     <Bot className="h-4 w-4" />
                   </div>
 
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm bg-gray-100 px-4 py-3 dark:bg-gray-800">
-                      <span className="think-dot" />
-                      <span className="think-dot think-dot-2" />
-                      <span className="think-dot think-dot-3" />
-                    </div>
-
-                    {slow && (
-                      <p className="mt-1.5 px-1 text-[11px] text-gray-500 dark:text-gray-400">
-                        Still waking up the clinic server…
-                      </p>
-                    )}
+                  <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm bg-gray-100 px-4 py-3 dark:bg-gray-800">
+                    <span className="think-dot" />
+                    <span className="think-dot think-dot-2" />
+                    <span className="think-dot think-dot-3" />
                   </div>
                 </div>
               )}
