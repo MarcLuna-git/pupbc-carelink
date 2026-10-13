@@ -15,8 +15,55 @@ import {
   ImageUp,
 } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
+import jsQR from 'jsqr';
 import api from '../../services/api';
 import KioskLayout from '../../layouts/KioskLayout';
+
+/* Mas maaasahan ang jsQR sa pag-decode ng nakapasang larawan kaysa sa
+   scanFile() ng html5-qrcode, lalo na sa maliliit na quiet zone. */
+const decodeQrFromFile = (file) =>
+  new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+
+    image.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+        const imageData = context.getImageData(
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
+
+        const result = jsQR(
+          imageData.data,
+          imageData.width,
+          imageData.height,
+          { inversionAttempts: 'attemptBoth' }
+        );
+
+        resolve(result ? result.data : null);
+      } catch (err) {
+        reject(err);
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Could not read the selected image.'));
+    };
+
+    image.src = objectUrl;
+  });
 
 const KioskScan = ({
   onStudentFound,
@@ -80,9 +127,15 @@ const KioskScan = ({
     if (!canUseLiveCamera) {
       await stopQrScanner();
 
-      setError(
-        'Live camera scanning is unavailable on this connection. Please take a photo of the QR code instead.'
-      );
+      let message =
+        'Live camera scanning is unavailable on this connection. Please take a photo of the QR code instead.';
+
+      // Sa dev, ipakita ang rason kung bakit itinuturing na insecure ang page.
+      if (import.meta.env.DEV) {
+        message += ` [secureContext=${window.isSecureContext}, mediaDevices=${!!navigator.mediaDevices}, protocol=${window.location.protocol}]`;
+      }
+
+      setError(message);
 
       return;
     }
@@ -104,31 +157,84 @@ const KioskScan = ({
 
       element.innerHTML = '';
 
-      const html5QrCode = new Html5Qrcode(qrRegionId, {
-        verbose: false,
-      });
+      const config = {
+        fps: 10,
+        qrbox: {
+          width: 250,
+          height: 250,
+        },
+        aspectRatio: 1,
+      };
 
-      scannerRef.current = html5QrCode;
+      const onDecoded = (decodedText) => {
+        handleQRScanned(decodedText);
+      };
 
-      await html5QrCode.start(
-        {
-          facingMode: 'environment',
-        },
-        {
-          fps: 10,
-          qrbox: {
-            width: 250,
-            height: 250,
-          },
-          aspectRatio: 1,
-        },
-        (decodedText) => {
-          handleQRScanned(decodedText);
-        },
-        () => {
-          // Normal lang ang per-frame decode failures habang naghahanap ng QR.
+      const onFrameError = () => {
+        // Normal lang ang per-frame decode failures habang naghahanap ng QR.
+      };
+
+      /* Subukan ang rear camera, tapos front camera, tapos default.
+         Kapag exact ang hinihingi ng configuration, nag-fail ang
+         OverconstrainedError sa mga device na walang "environment" camera. */
+      const candidates = [
+        { facingMode: 'environment' },
+        { facingMode: 'user' },
+        {},
+      ];
+
+      let lastError = null;
+
+      for (const constraints of candidates) {
+        const html5QrCode = new Html5Qrcode(qrRegionId, {
+          verbose: false,
+        });
+
+        scannerRef.current = html5QrCode;
+
+        try {
+          await html5QrCode.start(
+            constraints,
+            config,
+            onDecoded,
+            onFrameError
+          );
+
+          lastError = null;
+          break;
+        } catch (err) {
+          lastError = err;
+
+          try {
+            await html5QrCode.stop();
+          } catch {
+            // Hindi pa umiiral ang camera session.
+          }
+
+          try {
+            html5QrCode.clear();
+          } catch {
+            // Puwedeng cleared na.
+          }
+
+          if (scannerRef.current === html5QrCode) {
+            scannerRef.current = null;
+          }
+
+          // Huwag nang mag-retry kapag permission o hardware ang problema.
+          if (
+            err?.name === 'NotAllowedError' ||
+            err?.name === 'NotFoundError' ||
+            err?.name === 'NotReadableError'
+          ) {
+            throw err;
+          }
         }
-      );
+      }
+
+      if (lastError) {
+        throw lastError;
+      }
 
       setCameraReady(true);
 
@@ -163,6 +269,13 @@ const KioskScan = ({
       ) {
         errorMessage =
           'The camera is currently being used by another application.';
+      }
+
+      // Sa dev, isama ang totoong error para mas madaling i-diagnose.
+      if (import.meta.env.DEV) {
+        errorMessage += ` [${err?.name || 'Error'}: ${
+          err?.message || 'unknown'
+        }]`;
       }
 
       setError(errorMessage);
@@ -229,8 +342,33 @@ const KioskScan = ({
 
       scannerRef.current = html5QrCode;
 
-      /* Ipakita rin ang uploaded QR image kapag true ang scanFile argument. */
-      const decodedText = await html5QrCode.scanFile(file, true);
+      let decodedText = null;
+
+      try {
+        /* Ipakita rin ang uploaded QR image kapag true ang scanFile argument. */
+        decodedText = await html5QrCode.scanFile(file, true);
+      } catch (scanErr) {
+        console.warn('html5-qrcode scanFile failed, trying jsQR:', scanErr);
+      }
+
+      /* Fallback decoder: mas tolerant sa DC offset/quiet zone ng larawan. */
+      if (!decodedText) {
+        decodedText = await decodeQrFromFile(file);
+      }
+
+      if (!decodedText) {
+        throw new Error('No readable QR code was found in the image.');
+      }
+
+      if (scannerRef.current) {
+        try {
+          scannerRef.current.clear();
+        } catch {
+          // Puwedeng cleared na.
+        }
+
+        scannerRef.current = null;
+      }
 
       await handleQRScanned(decodedText);
     } catch (err) {

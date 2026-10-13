@@ -6,10 +6,11 @@ const getApiUrl = () => {
     ?.trim()
     .replace(/\/+$/, '');
 
-  // Sa dev, sundin ang host/IP na ginamit para buksan ang frontend.
+  // Sa dev, dumaan sa Vite proxy (same-origin) para hindi ma-block ng
+  // Chrome ang API calls bilang mixed content kapag HTTPS ang dev page.
+  // Ang proxy sa vite.config.js ang nag-forward sa backend.
   if (import.meta.env.DEV) {
-    const host = window.location.hostname;
-    return `http://${host}:8000/api`;
+    return '/api';
   }
 
   // Sa production, puwedeng configured API URL ang gamitin.
