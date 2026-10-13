@@ -1,0 +1,116 @@
+.student-approved-shell {
+  --sp-bg: #f8f5f3; --sp-surface: #fff; --sp-soft: #faeeec; --sp-border: #ebdfe0;
+  --sp-text: #382a2e; --sp-muted: #6f6166; --sp-accent: #800000; --sp-sidebar: 198px;
+  --sp-nav-height: 0px; --sp-dock-height: 72px;
+  background: var(--sp-bg); color: var(--sp-text); font-family: Arial, Helvetica, sans-serif;min-height:100dvh;
+}
+.dark .student-approved-shell {
+  --sp-bg: #17151b; --sp-surface: #242029; --sp-soft: #36232c; --sp-border: #443640;
+  --sp-text: #f6edf0; --sp-muted: #c1acb5; --sp-accent: #efb0bd;
+}
+.student-approved-shell :is(button,a,input,select,textarea):focus-visible { outline: 2px solid #c85c73; outline-offset: 3px; }
+.student-skip-link { position:fixed;left:12px;top:-70px;z-index:200;padding:12px 18px;background:var(--sp-surface);border-radius:8px;color:var(--sp-accent); }
+.student-skip-link:focus { top:12px; }
+.student-sidebar { position:fixed;inset:0 auto 0 0;z-index:40;display:flex;flex-direction:column;width:var(--sp-sidebar);overflow:hidden;background:linear-gradient(160deg,#8b2235,#770b21 55%,#4e1021);color:white; }
+.student-sidebar-brand { padding:25px 18px 22px;border-bottom:1px solid #ffffff16; }
+.student-sidebar-brand a { gap:9px; }
+.student-brand-symbol { width:33px;height:33px;flex-shrink:0;color:#fff0ef; }
+.student-sidebar-brand p:first-child { font-size:23px;letter-spacing:-.7px; }
+.student-sidebar-brand p:last-child { margin-top:2px;font-size:11px;text-transform:none;letter-spacing:1px; }
+.student-sidebar-nav { position:relative;flex:1;padding:24px 12px;overflow-y:auto; }
+.student-sidebar-nav>p { display:none; }
+.student-sidebar-nav>a { margin-bottom:8px;border-radius:8px;padding:13px 12px;gap:11px;font-size:13px;min-height:45px;font-weight:500; }
+.student-sidebar-nav>a[aria-current=page] { background:#ffffff20;color:white;box-shadow:none; }
+.student-sidebar-nav>a[aria-current=page] svg { color:white; }
+.student-sidebar-nav>a>svg:last-child:not(:first-child) { display:none; }
+.student-sidebar-campus { position:absolute;bottom:76px;left:0;width:100%;height:245px;object-fit:cover;filter:grayscale(1);mix-blend-mode:luminosity;opacity:.16;mask-image:linear-gradient(transparent,#000 35%);pointer-events:none; }
+.student-sidebar-tagline { position:relative;padding:22px 20px 29px;font-size:12px;line-height:1.6;color:#f7dadd; }
+.student-shell-body { height:100dvh;min-width:0;margin-left:var(--sp-sidebar);display:flex;flex-direction:column;padding-bottom:calc(var(--sp-nav-height) + env(safe-area-inset-bottom)); }
+.student-header { position:relative;z-index:30;flex-shrink:0;background:var(--sp-surface);border-bottom:1px solid var(--sp-border); }
+.student-header-inner { height:62px;display:flex;align-items:center;gap:16px;padding:0 24px; }
+.student-header-page { flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;font-weight:700;color:var(--sp-accent); }
+.student-old-header-brand,.student-old-header-greeting { display:none; }
+.student-header-search { flex:1.65;max-width:420px;display:flex;align-items:center;gap:9px;min-width:130px;border:1px solid transparent;background:#f2edeb;border-radius:25px;padding:7px 12px; }
+.dark .student-header-search { background:#332b35; }
+.student-header-search>svg { width:15px;height:15px;color:var(--sp-muted);flex-shrink:0; }
+.student-header-search input { background:transparent;outline:none;border:none;font-size:11px;min-width:0;width:100%;color:var(--sp-text);height:25px; }
+.student-header-search input::placeholder { color:var(--sp-muted); }
+.student-header-search kbd { flex-shrink:0;font:10px Arial,sans-serif;color:var(--sp-muted);border-left:1px solid var(--sp-border);padding-left:8px; }
+.student-search-close,.student-mobile-search { display:none; }
+.student-header-actions { display:flex;align-items:center;gap:8px;flex-shrink:0; }
+.student-clinic-status { display:flex;align-items:center;gap:8px;padding:7px 11px;border-radius:8px;background:#e6f2e8;color:#286a43;font-size:10px;line-height:1.3; }
+.dark .student-clinic-status { background:#233b30;color:#b0d9bb; }
+.student-clinic-status strong,.student-clinic-status small { display:block; }
+.student-clinic-status small { font-size:9px;font-weight:400;color:var(--sp-muted);margin-top:2px; }
+.student-clinic-dot { width:6px;height:6px;border-radius:50%;background:var(--sp-accent); }
+.student-header-icon,.student-mobile-search { position:relative;align-items:center;justify-content:center;display:flex;width:38px;height:40px;border-radius:9px;color:var(--sp-text);cursor:pointer; }
+.student-mobile-search { display:none; }
+.student-header-icon:hover,.student-mobile-search:hover { background:var(--sp-soft);color:var(--sp-accent); }
+.student-header-icon svg,.student-mobile-search svg { width:19px;height:19px; }
+.student-theme-toggle { width:44px; }
+.student-mobile-search { order:-1; }
+.student-clinic-status { order:0; }
+.student-theme-toggle { order:1; }
+.student-notification-bell { order:2; }
+.student-header-actions>.relative { order:3; }
+.student-theme-toggle>svg { border-radius:24px;background:var(--sp-soft);padding:4px;box-sizing:content-box; }
+.student-account-button { display:flex;align-items:center;gap:9px;min-height:42px;max-width:170px;border-radius:9px;padding:3px 5px;cursor:pointer; }
+.student-account-caption { display:flex;min-width:0;flex-direction:column;text-align:left;line-height:1.4; }
+.student-account-caption strong { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px; }
+.student-account-caption small { font-size:9px;color:var(--sp-muted);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.student-main { flex:1;min-height:0;min-width:0;overflow:auto;overscroll-behavior:contain;padding:16px 22px;scroll-behavior:smooth;scroll-padding-top:16px; }
+.student-page-content { width:100%;max-width:1440px;margin:0 auto;min-width:0; }
+.student-profile-sections { display:flex;gap:5px;flex-wrap:wrap;margin:0 auto 16px;max-width:1440px;border-bottom:1px solid var(--sp-border);padding-bottom:10px; }
+.student-profile-sections a { border-radius:8px;font-size:13px;padding:10px 14px;color:var(--sp-muted); }
+.student-profile-sections a[aria-current=page] { color:var(--sp-accent);background:var(--sp-soft);font-weight:700; }
+.student-assistant-dock { flex-shrink:0;height:var(--sp-dock-height);display:flex;align-items:center;padding:8px 92px 8px 22px;background:var(--sp-bg); }
+.student-assistant-dock>a { display:flex;align-items:center;gap:10px;max-width:540px;background:var(--sp-surface);border:1px solid var(--sp-border);padding:12px 14px;border-radius:10px;font-size:11px;color:var(--sp-muted); }
+.student-assistant-dock>a svg { width:18px;height:18px;flex-shrink:0;color:var(--sp-accent); }
+.student-assistant-dock strong { color:var(--sp-accent); }
+.student-bottom-nav { display:none; }
+.student-approved-shell .carelink-assistant-launcher { bottom:calc(var(--sp-nav-height) + env(safe-area-inset-bottom) + 10px);right:18px;width:52px;height:52px; }
+.student-approved-shell .carelink-assistant-panel { bottom:calc(var(--sp-nav-height) + env(safe-area-inset-bottom) + 78px);right:18px;width:min(380px,calc(100vw - 32px));height:min(510px,calc(100dvh - var(--sp-nav-height) - 150px)); }
+.student-approved-shell:has([aria-modal="true"]) :is(.carelink-assistant-launcher,.carelink-assistant-panel) { display:none; }
+@media (min-width:1100px) {
+  .student-header-page { flex:0 0 210px; }
+  .student-header-actions { margin-left:auto; }
+}
+@media (min-width:768px) and (max-width:1099px) {
+  .student-approved-shell { --sp-sidebar:76px; }
+  .student-sidebar-brand { padding:22px 0; }
+  .student-sidebar-brand a { justify-content:center; }
+  .student-sidebar-brand a>div,.student-sidebar-tagline,.student-sidebar-campus { display:none; }
+  .student-sidebar-nav { padding:16px 8px; }
+  .student-sidebar-nav>a { padding:12px 8px;justify-content:center; }
+  .student-sidebar-nav>a span { display:none; }
+  .student-header-inner { padding:0 18px;gap:10px; }
+  .student-account-caption { display:none; }
+  .student-clinic-status { display:none; }
+}
+@media (max-width:767px) {
+  .student-approved-shell { --sp-sidebar:0px;--sp-nav-height:70px;--sp-dock-height:70px; }
+  .student-sidebar { display:none; }
+  .student-header-inner { height:58px;padding:0 12px;gap:7px; }
+  .student-header-page { font-size:13px; }
+  .student-header-actions { gap:1px; }
+  .student-header-icon,.student-mobile-search { width:44px;height:44px; }
+  .student-mobile-search { display:flex; }
+  .student-header-search { display:none; }
+  .student-header-search.is-open { display:flex;position:absolute;top:64px;left:12px;right:12px;max-width:none;background:var(--sp-surface);border-color:var(--sp-border);box-shadow:0 10px 24px #2a001d20;border-radius:10px;padding:10px; }
+  .student-header-search input { font-size:16px; }
+  .student-header-search kbd { display:none; }
+  .student-search-close { display:block;width:32px;height:32px;font-size:24px; }
+  .student-clinic-status,.student-account-caption { display:none; }
+  .student-account-button { width:44px;min-height:44px;padding:0; }
+  .student-main { padding:12px 12px 16px; }
+  .student-account-menu { position:fixed;top:64px;right:12px;max-height:calc(100dvh - 100px);overflow-y:auto; }
+  .student-bottom-nav { display:block;position:fixed;bottom:0;left:0;right:0;z-index:40;min-height:70px;background:var(--sp-surface);border-top:1px solid var(--sp-border);padding-bottom:env(safe-area-inset-bottom); }
+  .student-bottom-nav>div { max-width:500px;margin:auto;padding:6px 4px; }
+  .student-bottom-nav a { min-height:56px; }
+  .student-assistant-dock { padding:6px 80px 6px 12px; }
+  .student-assistant-dock>a { padding:9px;font-size:10px;line-height:1.5; }
+  .student-assistant-dock>a>svg:last-child { display:none; }
+  .student-approved-shell .carelink-assistant-launcher { right:14px;width:48px;height:48px;bottom:calc(70px + env(safe-area-inset-bottom) + 11px); }
+  .student-approved-shell .carelink-assistant-panel { right:12px;width:calc(100vw - 24px); }
+}
+@media (prefers-reduced-motion:reduce) { .student-approved-shell .student-main { scroll-behavior:auto; } }

@@ -1,4 +1,4 @@
-import { AppointmentRows, HealthcareAccent } from './AppointmentPresentation';
+import ApprovedAppointmentsView from './ApprovedAppointmentsView';
 import './appointments.css';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
@@ -6,22 +6,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar,
   Clock,
-  Plus,
   X,
   AlertCircle,
   CheckCircle,
   XCircle,
-  Loader2,
   Stethoscope,
   Shield,
-  ChevronRight,
   FileText,
   Edit3,
-  Info,
-  Users,
 } from 'lucide-react';
 import api from '../../../services/api';
-import { clinicDate as getLocalDateString, appointmentDate as normalizeDateValue, appointmentTime as parseAppointmentDateTime, isClinicSunday as isSunday, formatAppointmentDate as formatDate } from '../../../utils/appointmentDate';
+import { appointmentDate as normalizeDateValue, appointmentTime as parseAppointmentDateTime, isClinicSunday as isSunday, formatAppointmentDate as formatDate } from '../../../utils/appointmentDate';
 import useVisiblePolling from '../../../hooks/useVisiblePolling';
 
 const Skeleton = ({ className = '' }) => (
@@ -39,7 +34,6 @@ const Appointments = () => {
     Boolean(user?.profile?.health_profile_completed || user?.health_profile_completed);
 
   const [showForm, setShowForm] = useState(true);
-  const [bookingStep, setBookingStep] = useState(1);
   const [editingId, setEditingId] = useState(null);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(false);
@@ -274,12 +268,6 @@ const Appointments = () => {
     return bDate - aDate;
   });
 
-  const pendingAppointments = orderedAppointments.filter(
-    (appointment) => appointment.status === 'pending'
-  );
-
-  const primaryPending = pendingAppointments[0] || null;
-
   const filteredAppointments =
     filter === 'all'
       ? orderedAppointments
@@ -398,40 +386,6 @@ const Appointments = () => {
     return slot;
   };
 
-  const getSlotColor = (time) => {
-    const slot =
-      getSlotInfo(time);
-
-    if (slot.isFull) {
-      return 'text-red-500';
-    }
-
-    if (
-      slot.available <= 3
-    ) {
-      return 'text-yellow-500';
-    }
-
-    return 'text-green-500';
-  };
-
-  const getSlotBg = (time) => {
-    const slot =
-      getSlotInfo(time);
-
-    if (slot.isFull) {
-      return 'bg-red-50 dark:bg-red-900/10';
-    }
-
-    if (
-      slot.available <= 3
-    ) {
-      return 'bg-yellow-50 dark:bg-yellow-900/10';
-    }
-
-    return '';
-  };
-
   const handleEditClick = (
     appointment
   ) => {
@@ -458,9 +412,8 @@ const Appointments = () => {
       appointment.id
     );
 
-    setBookingStep(1);
     setShowForm(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('appointment-booking')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
   };
 
   const handleSubmit =
@@ -633,7 +586,6 @@ const Appointments = () => {
           response.data.success
         ) {
           setShowForm(true);
-          setBookingStep(1);
           setEditingId(null);
 
           setForm({
@@ -833,369 +785,17 @@ const Appointments = () => {
   }
 
   return (
-    <div className="student-appointments space-y-5 max-w-7xl mx-auto pb-6">
-      <div className="flex items-center justify-between gap-6">
-        <div className="appointment-title">
-          <Calendar aria-hidden="true" />
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white lg:text-3xl">Appointments</h1>
-            <p className="mt-1 hidden text-sm text-gray-600 dark:text-gray-300 md:block">Manage your clinic appointments with ease.</p>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{appointments.length} appointment{appointments.length !== 1 ? 's' : ''}</p>
-          </div>
-        </div>
-        <HealthcareAccent compact />
-      </div>
+    <div className="student-appointments approved-appointments-page">
+      <ApprovedAppointmentsView appointments={orderedAppointments} filteredAppointments={filteredAppointments}
+        form={form} onChange={handleChange} onSubmit={handleSubmit} onView={setSelectedAppointment} onEdit={handleEditClick}
+        filter={filter} onFilter={setFilter} editingId={editingId} services={services} timeSlots={timeSlots}
+        availableSlots={availableSlots} slotsLoading={slotsLoading} loading={loading} message={message} messageType={messageType}
+        retrySlots={() => fetchAvailableSlots(form.date)} onCancelEdit={() => {
+          setEditingId(null);
+          setForm({ service: '', date: '', time: '', concern: '' });
+          setAvailableSlots([]);
+        }} />
 
-      <AnimatePresence>
-        {message && (
-          <motion.div
-            initial={{
-              opacity: 0,
-              y: -10,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
-            exit={{
-              opacity: 0,
-              y: -10,
-            }}
-            className={`p-4 rounded-2xl text-sm font-medium text-center ${
-              messageType ===
-              'success'
-                ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-            }`}
-          >
-            {message}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Booking is open by default. Keep My Appointments below at all times. */}
-      <section className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <div className="border-b border-gray-100 px-4 py-5 dark:border-gray-700 sm:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="appointment-booking-heading">
-              <span className="appointment-heading-icon" aria-hidden="true"><Calendar className="h-6 w-6" /></span>
-              <div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                {editingId ? 'Edit Appointment' : 'Book New Appointment'}
-              </h2>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                {editingId
-                  ? 'Update the details of your pending appointment.'
-                  : 'Choose a service, pick your schedule, then review your request.'}
-              </p>
-              </div>
-            </div>
-            {editingId && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingId(null);
-                  setBookingStep(1);
-                  setForm({ service: '', date: '', time: '', concern: '' });
-                  setAvailableSlots([]);
-                }}
-                className="rounded-xl bg-gray-100 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-white"
-              >
-                Cancel editing
-              </button>
-            )}
-          </div>
-          <div className="mt-5 grid grid-cols-3 gap-2" aria-label="Booking progress">
-            {[
-              ['1', 'Service'],
-              ['2', 'Schedule'],
-              ['3', 'Review'],
-            ].map(([number, label], index) => (
-              <div key={number} className="min-w-0" aria-current={bookingStep === index + 1 ? 'step' : undefined}>
-                <div className={`h-1.5 rounded-full ${bookingStep >= index + 1 ? 'bg-maroon-800' : 'bg-gray-200 dark:bg-gray-700'}`} />
-                <div className={`mt-2 flex items-center gap-1.5 text-[11px] font-semibold ${bookingStep === index + 1 ? 'text-maroon-800 dark:text-maroon-300' : 'text-gray-500 dark:text-gray-400'}`}>
-                  <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] ${bookingStep >= index + 1 ? 'bg-maroon-800 text-white' : 'bg-gray-100 dark:bg-gray-700'}`}>
-                    {bookingStep > index + 1 ? <CheckCircle className="h-3 w-3" /> : number}
-                  </span>
-                  {label}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="p-4 sm:p-6">
-          <form onSubmit={handleSubmit} noValidate>
-            {bookingStep === 1 && (
-              <div className="appointment-service-layout">
-                <div className="appointment-service-main space-y-5">
-                <div>
-                  <h3 className="text-base font-bold text-gray-900 dark:text-white">What brings you to the clinic?</h3>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Select the service you need.</p>
-                </div>
-                <div className="max-w-xl">
-                  <label htmlFor="appointment-service" className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-300">Service *</label>
-                  <div className="relative">
-                    <Stethoscope className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                    <select
-                      id="appointment-service"
-                      name="service"
-                      value={form.service}
-                      onChange={handleChange}
-                      className="w-full rounded-2xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-maroon-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                    >
-                      <option value="">Select Service</option>
-                      {services.map((service) => <option key={service} value={service}>{service}</option>)}
-                    </select>
-                  </div>
-                </div>
-                </div>
-                <HealthcareAccent />
-                <div className="appointment-service-footer flex justify-end border-t border-gray-100 pt-4 dark:border-gray-700">
-                  <button
-                    type="button"
-                    disabled={!form.service}
-                    onClick={() => setBookingStep(2)}
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-maroon-800 px-6 text-sm font-semibold text-white hover:bg-maroon-900 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Next: Choose Schedule <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {bookingStep === 2 && (
-              <div className="space-y-5">
-                <div>
-                  <h3 className="text-base font-bold text-gray-900 dark:text-white">Choose your appointment schedule</h3>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Select a date and an available time slot.</p>
-                </div>
-                <div className="flex items-start gap-2 rounded-2xl border border-blue-200 bg-blue-50 p-3 text-xs text-blue-700 dark:border-blue-900 dark:bg-blue-950/20 dark:text-blue-300">
-                  <Info className="mt-0.5 h-4 w-4 shrink-0" />
-                  <div>
-                    <p className="font-semibold">Clinic Hours</p>
-                    <p className="mt-1">Morning: 8:00 AM – 12:00 PM | Lunch: 12:00 PM – 1:00 PM | Afternoon: 1:00 PM – 5:00 PM</p>
-                    <p className="mt-1 font-semibold text-amber-700 dark:text-amber-300">Closed every Sunday.</p>
-                  </div>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="appointment-date" className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-300">Date *</label>
-                    <div className="relative">
-                      <Calendar className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                      <input
-                        id="appointment-date"
-                        type="date"
-                        name="date"
-                        value={form.date}
-                        onChange={handleChange}
-                        min={getLocalDateString()}
-                        className="w-full rounded-2xl border border-gray-200 bg-white py-3 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label htmlFor="appointment-time" className="mb-1.5 flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-300">
-                      Time * {slotsLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                    </label>
-                    <div className="relative">
-                      <Clock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                      <select
-                        id="appointment-time"
-                        name="time"
-                        value={form.time}
-                        onChange={handleChange}
-                        disabled={!form.date || slotsLoading}
-                        className="w-full rounded-2xl border border-gray-200 bg-white py-3 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500 disabled:opacity-60 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                      >
-                        <option value="">{!form.date ? 'Choose date first' : 'Select Time'}</option>
-                        {timeSlots.map((time) => {
-                          const slot = getSlotInfo(time);
-                          const slotDateTime = form.date ? parseAppointmentDateTime(form.date, time) : null;
-                          const past = Boolean(slotDateTime) && slotDateTime < new Date();
-                          const unavailable = past || slot.isFull;
-                          return (
-                            <option key={time} value={time} disabled={unavailable}>
-                              {time}{form.date ? past ? ' (Past)' : slot.isFull ? ' (Full)' : ` (${slot.available}/10 slots)` : ''}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                {form.date && form.time && (
-                  <div className="max-w-sm rounded-xl bg-gray-50 p-3 text-xs dark:bg-gray-700">
-                    {(() => {
-                      const slot = getSlotInfo(form.time);
-                      return <span className={getSlotColor(form.time)}>{slot.available} of 10 slots currently available</span>;
-                    })()}
-                  </div>
-                )}
-                <div className="flex flex-wrap justify-between gap-3 border-t border-gray-100 pt-4 dark:border-gray-700">
-                  <button type="button" onClick={() => setBookingStep(1)} className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200">Back</button>
-                  <button
-                    type="button"
-                    disabled={!form.date || !form.time || slotsLoading || getSlotInfo(form.time).isFull || !parseAppointmentDateTime(form.date, form.time) || parseAppointmentDateTime(form.date, form.time) < new Date()}
-                    onClick={() => setBookingStep(3)}
-                    className="inline-flex min-h-11 items-center gap-2 rounded-2xl bg-maroon-800 px-6 text-sm font-semibold text-white hover:bg-maroon-900 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Next: Review <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {bookingStep === 3 && (
-              <div className="space-y-5">
-                <div>
-                  <h3 className="text-base font-bold text-gray-900 dark:text-white">Review your appointment</h3>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Double-check your details before submitting to the clinic.</p>
-                </div>
-                <div className="grid gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm dark:border-gray-700 dark:bg-gray-900 sm:grid-cols-2">
-                  <div><p className="text-xs text-gray-500">Service</p><p className="mt-1 font-semibold text-gray-900 dark:text-white">{form.service}</p></div>
-                  <div><p className="text-xs text-gray-500">Date</p><p className="mt-1 font-semibold text-gray-900 dark:text-white">{formatDate(form.date)}</p></div>
-                  <div><p className="text-xs text-gray-500">Time</p><p className="mt-1 font-semibold text-gray-900 dark:text-white">{form.time}</p></div>
-                  <div><p className="text-xs text-gray-500">Status after submission</p><p className="mt-1 font-semibold text-amber-700 dark:text-amber-300">Pending clinic approval</p></div>
-                </div>
-                <div>
-                  <label htmlFor="appointment-reason" className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-300">Reason (optional)</label>
-                  <textarea
-                    id="appointment-reason"
-                    name="concern"
-                    value={form.concern}
-                    onChange={handleChange}
-                    rows={3}
-                    maxLength={1000}
-                    placeholder="Describe your concern..."
-                    className="w-full resize-y rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-                <div className="flex flex-wrap justify-between gap-3 border-t border-gray-100 pt-4 dark:border-gray-700">
-                  <button type="button" onClick={() => setBookingStep(2)} className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200">Back</button>
-                  <button type="submit" disabled={loading} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-maroon-800 px-6 text-sm font-semibold text-white hover:bg-maroon-900 disabled:opacity-50">
-                    {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : <><CheckCircle className="h-4 w-4" /> {editingId ? 'Update Appointment' : 'Confirm Booking'}</>}
-                  </button>
-                </div>
-              </div>
-            )}
-          </form>
-        </div>
-      </section>
-
-      {primaryPending && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-800/50 dark:bg-amber-900/10">
-          <div className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex min-w-0 items-start gap-3 md:items-center">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-                <Clock className="h-5 w-5" />
-              </div>
-
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">
-                    Pending Approval
-                  </p>
-
-                  {pendingAppointments.length > 1 && (
-                    <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
-                      +{pendingAppointments.length - 1} more
-                    </span>
-                  )}
-                </div>
-
-                <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {primaryPending.service || 'Appointment'}
-                  </span>
-
-                  <span className="text-xs text-gray-600 dark:text-gray-300">
-                    {formatDate(primaryPending.appointment_date, {
-                      weekday: 'short',
-                    })}
-                  </span>
-
-                  <span className="text-xs text-gray-600 dark:text-gray-300">
-                    {primaryPending.time_slot || 'N/A'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setSelectedAppointment(primaryPending)}
-              className="inline-flex min-h-11 items-center justify-center gap-1 rounded-xl border border-amber-300 bg-white px-4 py-2 text-xs font-semibold text-amber-900 transition hover:bg-amber-100 dark:border-amber-700 dark:bg-gray-800 dark:text-amber-200 dark:hover:bg-gray-700"
-            >
-              View Details
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-        <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-4 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="flex items-center gap-2 text-base font-bold text-gray-900 dark:text-white">
-              <Calendar className="h-5 w-5 text-maroon-800 dark:text-maroon-300" aria-hidden="true" />
-              My Appointments
-            </h2>
-
-            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              Pending requests are shown first.
-            </p>
-          </div>
-
-          <div className="flex max-w-full gap-1.5 overflow-x-auto pb-1">
-            {[
-              ['all', 'All'],
-              [
-                'pending',
-                `Pending${pendingAppointments.length ? ` (${pendingAppointments.length})` : ''}`,
-              ],
-              ['approved', 'Upcoming'],
-              ['past', 'Past'],
-            ].map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={filter === value}
-                onClick={() => setFilter(value)}
-                className={`min-h-11 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                  filter === value
-                    ? 'bg-maroon-800 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {filteredAppointments.length === 0 ? (
-          <div className="px-5 py-12 text-center">
-            <Calendar className="mx-auto h-10 w-10 text-gray-300 dark:text-gray-600" />
-
-            <p className="mt-3 font-medium text-gray-500 dark:text-gray-400">
-              No appointments found
-            </p>
-          </div>
-        ) : (
-          <AppointmentRows appointments={filteredAppointments} statusConfig={statusConfig} formatDate={formatDate} onView={setSelectedAppointment} />
-        )}
-      </div>
-
-      <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
-        <div className="flex items-start gap-3">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" />
-
-          <p className="text-xs leading-5 text-gray-600 dark:text-gray-300">
-            Queue numbers are assigned after successful kiosk check-in and clinic triage. Use your CareLink QR only on the date of an approved appointment.
-          </p>
-        </div>
-      </div>
 
       <AnimatePresence>
         {selectedAppointment && (
@@ -1209,7 +809,8 @@ const Appointments = () => {
             exit={{
               opacity: 0,
             }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4"
+            role="dialog" aria-modal="true" aria-label="Appointment details"
             onClick={() =>
               setSelectedAppointment(
                 null
@@ -1580,7 +1181,8 @@ const Appointments = () => {
             exit={{
               opacity: 0,
             }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4"
+            role="dialog" aria-modal="true" aria-label="Confirm appointment cancellation"
             onClick={() =>
               setConfirmCancel(
                 null

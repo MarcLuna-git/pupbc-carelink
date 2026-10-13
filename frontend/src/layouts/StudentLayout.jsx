@@ -15,14 +15,17 @@ import {
 import {
   Bell,
   Calendar,
+  ClipboardPlus,
   ChevronRight,
   FileText,
   HelpCircle,
+  HeartPulse,
   Info,
   LogOut,
   Moon,
   Palette,
   QrCode,
+  Search,
   Settings,
   Sun,
   User,
@@ -35,7 +38,9 @@ import {
 import authService from '../services/authService';
 import api from '../services/api';
 import ChatWidget from '../components/chatbot/ChatWidget';
-import clinicLogo from '../assets/clinic logo.jpg';
+import { StudentPortalSearchContext } from '../components/StudentPortalSearchContext';
+import { STUDENT_PRIMARY_LINKS, isStudentNavActive, studentPageTitle } from '../utils/studentPortalNavigation';
+import '../student-portal.css';
 import campusBackground from '../assets/pup-binan-hero.jpg';
 
 const getStoredUser = () => {
@@ -89,6 +94,9 @@ const StudentLayout = ({ children }) => {
 
   const profileMenuRef = useRef(null);
   const unreadRequestPending = useRef(false);
+  const searchRef = useRef(null);
+  const [query, setQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const [user, setUser] = useState(
     getStoredUser
@@ -101,8 +109,6 @@ const StudentLayout = ({ children }) => {
     setProfileMenuOpen,
   ] = useState(false);
 
-  const [greeting, setGreeting] =
-    useState('');
 
   const [
     unreadCount,
@@ -180,30 +186,6 @@ const StudentLayout = ({ children }) => {
    * Greeting
    * ------------------------------------------------
    */
-
-  useEffect(() => {
-    const updateGreeting = () => {
-      const hour = new Date().getHours();
-
-      if (hour < 12) {
-        setGreeting('Good morning');
-      } else if (hour < 18) {
-        setGreeting('Good afternoon');
-      } else {
-        setGreeting('Good evening');
-      }
-    };
-
-    updateGreeting();
-
-    const interval = window.setInterval(
-      updateGreeting,
-      60000
-    );
-
-    return () =>
-      window.clearInterval(interval);
-  }, []);
 
   /*
    * ------------------------------------------------
@@ -379,7 +361,21 @@ const StudentLayout = ({ children }) => {
 
   useEffect(() => {
     setProfileMenuOpen(false);
+    setSearchOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    const shortcut = event => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setSearchOpen(true);
+        requestAnimationFrame(() => searchRef.current?.focus());
+      }
+      if (event.key === 'Escape') setSearchOpen(false);
+    };
+    document.addEventListener('keydown', shortcut);
+    return () => document.removeEventListener('keydown', shortcut);
+  }, []);
 
   /*
    * ------------------------------------------------
@@ -411,113 +407,37 @@ const StudentLayout = ({ children }) => {
    * ------------------------------------------------
    */
 
-  const desktopNavItems = [
-    {
-      path: '/student/appointments',
-      icon: Calendar,
-      label: 'Appointments',
-    },
-    {
-      path: '/student/qr',
-      icon: QrCode,
-      label: 'My QR Code',
-    },
-    {
-      path: '/student/health-records',
-      icon: FileText,
-      label: 'Health Records',
-    },
-  ];
-
-  const mobileNavItems = [
-    {
-      path: '/student/appointments',
-      icon: Calendar,
-      label: 'Appointments',
-    },
-    {
-      path: '/student/qr',
-      icon: QrCode,
-      label: 'QR',
-    },
-    {
-      path: '/student/health-records',
-      icon: FileText,
-      label: 'Records',
-    },
-    {
-      path: '/student/profile',
-      icon: User,
-      label: 'Profile',
-    },
-  ];
-
-  const isActive = (path) => {
-    if (path === '/student/profile') {
-      return (
-        location.pathname ===
-          '/student/profile' ||
-        location.pathname.startsWith(
-          '/student/profile/'
-        ) ||
-        location.pathname.startsWith(
-          '/student/settings'
-        ) ||
-        location.pathname.startsWith(
-          '/student/help'
-        ) ||
-        location.pathname.startsWith(
-          '/student/about'
-        )
-      );
-    }
-
-    return (
-      location.pathname === path ||
-      location.pathname.startsWith(
-        `${path}/`
-      )
-    );
-  };
+  const navIcons = { appointments: Calendar, qr: QrCode, records: FileText, profile: User };
+  const desktopNavItems = STUDENT_PRIMARY_LINKS.map(item => ({ ...item, icon: navIcons[item.key] }));
+  const mobileNavItems = desktopNavItems;
+  const isActive = path => isStudentNavActive(location.pathname, path);
 
   const displayName =
     getDisplayName(user);
 
   const avatar = getAvatar(user);
 
-  const studentMeta = [
-    user?.course ||
-      user?.profile?.course,
-    user?.student_id,
-  ]
-    .filter(Boolean)
-    .join(' • ');
-
   return (
-    <div className="student-portal min-h-screen bg-[#f7f7f8] text-gray-900 transition-colors duration-300 dark:bg-gray-950 dark:text-gray-100">
+    <StudentPortalSearchContext.Provider value={{ query, setQuery }}>
+    <div className="student-portal student-approved-shell min-h-screen text-gray-900 dark:text-gray-100">
+      <a href="#student-main" className="student-skip-link">Skip to content</a>
       {/* ==================================================
           DESKTOP SIDEBAR
       ================================================== */}
 
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col overflow-hidden border-r border-maroon-950/10 bg-gradient-to-b from-[#65111f] via-[#751426] to-[#4f0d18] shadow-2xl shadow-black/10 lg:flex">
-        <img src={campusBackground} alt="" aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-28 h-72 w-full object-cover opacity-15" />
+      <aside className="student-sidebar">
+        <img src={campusBackground} alt="" aria-hidden="true" loading="lazy" className="student-sidebar-campus" />
         {/* Brand */}
-        <div className="border-b border-white/10 px-5 py-5">
+        <div className="student-sidebar-brand">
           <Link
             to="/student/appointments"
             className="flex items-center gap-3"
           >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-1 shadow-lg">
-              <img
-                src={clinicLogo}
-                alt="PUPBC CareLink clinic logo"
-                className="h-full w-full object-contain"
-              />
-            </div>
+            <HeartPulse className="student-brand-symbol" aria-hidden="true" />
 
             <div className="min-w-0">
               <p className="truncate text-base font-bold leading-tight text-white">
-                PUPBC CareLink
+                CareLink
               </p>
 
               <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">
@@ -528,7 +448,7 @@ const StudentLayout = ({ children }) => {
         </div>
 
         {/* Main links */}
-        <nav className="relative flex-1 space-y-2 overflow-y-auto px-3 py-6">
+        <nav aria-label="Primary student navigation" className="student-sidebar-nav">
           <p className="px-4 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/70">
             Main Menu
           </p>
@@ -546,6 +466,9 @@ const StudentLayout = ({ children }) => {
                 <Link
                   key={item.path}
                   to={item.path}
+                  aria-label={item.label}
+                  aria-current={active ? 'page' : undefined}
+                  title={item.label}
                   className={`group relative flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold transition-all duration-200 ${
                     active
                       ? 'bg-white text-maroon-900 shadow-lg shadow-black/10'
@@ -553,6 +476,7 @@ const StudentLayout = ({ children }) => {
                   }`}
                 >
                   <Icon
+                    aria-hidden="true"
                     className={`h-5 w-5 shrink-0 ${
                       active
                         ? 'text-maroon-800'
@@ -572,7 +496,7 @@ const StudentLayout = ({ children }) => {
             }
           )}
         </nav>
-        <div className="px-7 pb-8 text-xs leading-relaxed text-white/80">
+        <div className="student-sidebar-tagline">
           Your Health. Our Care.<br />A Healthier PUPBC Community.
         </div>
       </aside>
@@ -581,61 +505,36 @@ const StudentLayout = ({ children }) => {
           MAIN AREA
       ================================================== */}
 
-      <div className="flex min-w-0 min-h-screen flex-col lg:ml-64">
+      <div className="student-shell-body">
         {/* Header */}
-        <header className="sticky top-0 z-30 border-b border-gray-200/80 bg-maroon-800 shadow-sm shadow-black/[0.02] dark:border-gray-800 dark:bg-maroon-950 lg:bg-white lg:dark:bg-gray-900">
-          <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-5 lg:px-7">
-            {/* Mobile brand */}
-            <div className="flex min-w-0 items-center gap-2.5 lg:hidden">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-white p-0.5 dark:border-gray-700">
-                <img
-                  src={clinicLogo}
-                  alt="PUPBC CareLink clinic logo"
-                  className="h-full w-full object-contain"
-                />
-              </div>
-
-              <div className="min-w-0">
-                <p className="truncate text-sm font-bold leading-tight text-white">
-                  PUPBC CareLink
-                </p>
-
-                <p className="text-[10px] font-medium text-white/80">
-                  Student Portal
-                </p>
-              </div>
-            </div>
-
-            {/* Desktop greeting */}
-            <div className="hidden min-w-0 lg:flex lg:items-center lg:gap-3">
-              <img src={clinicLogo} alt="" className="h-11 w-11 rounded-full object-contain" />
-              <div className="min-w-0">
-                <div className="inline-flex items-center gap-2">
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                    {greeting}
-                  </p>
-                </div>
-
-                <p className="mt-1 truncate text-sm font-semibold text-gray-950 dark:text-white">
-                  {displayName}
-                </p>
-
-                {studentMeta && (
-                  <p className="mt-0.5 truncate text-[11px] text-gray-500 dark:text-gray-400">
-                    {studentMeta}
-                  </p>
-                )}
-              </div>
-            </div>
-
+        <header className="student-header">
+          <div className="student-header-inner">
+            <p className="student-header-page">{studentPageTitle(location.pathname)}</p>
+            <form className={`student-header-search ${searchOpen ? 'is-open' : ''}`} onSubmit={event => {
+              event.preventDefault();
+              setSearchOpen(false);
+              navigate('/student/appointments');
+            }} role="search">
+              <Search aria-hidden="true" />
+              <input ref={searchRef} type="search" value={query} onChange={event => setQuery(event.target.value)} aria-label="Search appointments" placeholder="Search services or appointments…" />
+              <kbd>Ctrl K</kbd>
+              <button type="button" className="student-search-close" onClick={() => setSearchOpen(false)} aria-label="Close search">×</button>
+            </form>
             {/* Header actions */}
-            <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+            <div className="student-header-actions">
+              <button type="button" className="student-mobile-search" aria-label="Open appointment search" aria-expanded={searchOpen} onClick={() => {
+                setSearchOpen(value => !value);
+                requestAnimationFrame(() => searchRef.current?.focus());
+              }}><Search /></button>
+              <Link to="/student/appointments" className="student-clinic-status" title="Scheduling is confirmed by the clinic. See server-provided availability in the booking calendar.">
+                <span className="student-clinic-dot" /><span><strong>Clinic schedule</strong><small>See available times</small></span>
+              </Link>
               {/* Combined Notifications + Announcements */}
               <Link
                 to="/student/alerts"
                 aria-label="Open notifications and announcements"
                 title="Notifications & Announcements"
-                className="relative flex h-10 w-10 items-center justify-center rounded-xl text-white lg:text-gray-600 transition-all hover:bg-maroon-50 hover:text-maroon-800 focus:outline-none focus:ring-2 focus:ring-maroon-500/30 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-maroon-300"
+                className="student-header-icon student-notification-bell"
               >
                 <Bell className="h-5 w-5" />
 
@@ -662,7 +561,7 @@ const StudentLayout = ({ children }) => {
                     ? 'Light mode'
                     : 'Dark mode'
                 }
-                className="hidden h-11 w-11 items-center justify-center rounded-xl text-white lg:text-gray-600 transition-all hover:bg-gray-100 hover:text-maroon-800 focus:outline-none focus:ring-2 focus:ring-maroon-500/30 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-yellow-300 sm:flex"
+                className="student-header-icon student-theme-toggle"
               >
                 {darkMode ? (
                   <Sun className="h-5 w-5 text-yellow-400" />
@@ -690,7 +589,7 @@ const StudentLayout = ({ children }) => {
                   aria-haspopup="menu"
                   aria-label="Open account menu"
                   title={displayName}
-                  className={`ml-0.5 flex h-10 w-10 items-center justify-center rounded-full border transition-all focus:outline-none focus:ring-2 focus:ring-maroon-500/30 ${
+                  className={`student-account-button ${
                     profileMenuOpen
                       ? 'border-maroon-200 bg-maroon-50 dark:border-maroon-800 dark:bg-maroon-950/35'
                       : 'border-transparent hover:border-gray-200 hover:bg-gray-50 dark:hover:border-gray-700 dark:hover:bg-gray-800'
@@ -713,6 +612,7 @@ const StudentLayout = ({ children }) => {
                       getInitials(user)
                     )}
                   </div>
+                  <span className="student-account-caption"><strong>{displayName}</strong><small>{user?.course || user?.profile?.course || 'Student account'}</small></span>
                 </button>
 
                 <AnimatePresence>
@@ -737,7 +637,7 @@ const StudentLayout = ({ children }) => {
                         duration: 0.15,
                       }}
                       role="menu"
-                      className="absolute right-0 top-[calc(100%+0.6rem)] w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl shadow-black/15 dark:border-gray-700 dark:bg-gray-900"
+                      className="student-account-menu absolute right-0 top-[calc(100%+0.6rem)] w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl shadow-black/15 dark:border-gray-700 dark:bg-gray-900"
                     >
                       {/* Account summary */}
                       <div className="border-b border-gray-100 bg-gradient-to-br from-maroon-50 to-white p-4 dark:border-gray-800 dark:from-maroon-950/30 dark:to-gray-900">
@@ -808,6 +708,9 @@ const StudentLayout = ({ children }) => {
                           </div>
                         </Link>
 
+                        <Link to="/student/health-profile" role="menuitem" className="mt-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800">
+                          <ClipboardPlus className="h-5 w-5" /><span>Health Profile</span>
+                        </Link>
                         <Link
                           to="/student/settings"
                           role="menuitem"
@@ -916,7 +819,14 @@ const StudentLayout = ({ children }) => {
             PAGE CONTENT
         ================================================== */}
 
-        <main className="min-w-0 flex-1 px-3 py-4 pb-28 sm:px-5 sm:py-5 lg:px-7 lg:py-6 lg:pb-8">
+        <main id="student-main" tabIndex={-1} className="student-main">
+          {isActive('/student/profile') && (
+            <nav aria-label="Profile sections" className="student-profile-sections">
+              <Link to="/student/profile" aria-current={location.pathname.startsWith('/student/profile') ? 'page' : undefined}>Overview</Link>
+              <Link to="/student/health-profile" aria-current={location.pathname === '/student/health-profile' ? 'page' : undefined}>Health Profile</Link>
+              <Link to="/student/settings" aria-current={location.pathname.startsWith('/student/settings') ? 'page' : undefined}>Settings</Link>
+            </nav>
+          )}
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -935,19 +845,22 @@ const StudentLayout = ({ children }) => {
               transition={{
                 duration: 0.16,
               }}
-              className="mx-auto w-full max-w-[1600px]"
+              className="student-page-content"
             >
               <Suspense fallback={<RouteLoading />}>{children}</Suspense>
             </motion.div>
           </AnimatePresence>
         </main>
+        <footer className="student-assistant-dock">
+          <Link to="/student/help"><HelpCircle /><span><strong>Need help?</strong> Visit Help & Support for clinic and portal guidance.</span><ChevronRight /></Link>
+        </footer>
       </div>
 
       {/* ==================================================
           MOBILE / TABLET BOTTOM NAVIGATION
       ================================================== */}
 
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_25px_rgba(0,0,0,0.06)] backdrop-blur-xl dark:border-gray-800 dark:bg-gray-900/95 lg:hidden">
+      <nav aria-label="Mobile student navigation" className="student-bottom-nav">
         <div className="mx-auto grid max-w-xl grid-cols-4 px-1.5 py-1.5">
           {mobileNavItems.map(
             (item) => {
@@ -963,6 +876,7 @@ const StudentLayout = ({ children }) => {
                   key={item.path}
                   to={item.path}
                   aria-label={item.label}
+                  aria-current={active ? 'page' : undefined}
                   className={`relative flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-xl px-1 transition-all ${
                     active
                       ? 'text-maroon-800 dark:text-maroon-300'
@@ -1009,6 +923,7 @@ const StudentLayout = ({ children }) => {
       {/* Clinic assistant. Student portal only; conversation lives in memory. */}
       <ChatWidget />
     </div>
+    </StudentPortalSearchContext.Provider>
   );
 };
 

@@ -153,7 +153,7 @@ const lastAssistantIndex = messages.reduce(
         onClick={() => setOpen((current) => !current)}
         aria-label={open ? 'Close clinic assistant' : 'Open clinic assistant'}
         aria-expanded={open}
-        className="fixed bottom-24 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-maroon-800 text-white shadow-xl shadow-maroon-950/30 transition-transform hover:scale-105 active:scale-95 lg:bottom-6 lg:right-6"
+        className="carelink-assistant-launcher fixed z-50 flex h-14 w-14 items-center justify-center rounded-full bg-maroon-800 text-white shadow-xl shadow-maroon-950/30 transition-transform hover:scale-105 active:scale-95"
       >
         {open ? (
           <X className="h-6 w-6" />
@@ -172,7 +172,7 @@ const lastAssistantIndex = messages.reduce(
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={{ duration: 0.16 }}
-            className="fixed bottom-40 right-4 z-50 flex h-[min(70vh,520px)] w-[min(calc(100vw-2rem),380px)] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-900 lg:bottom-24 lg:right-6"
+            className="carelink-assistant-panel fixed z-50 flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-900"
           >
             {/* Header */}
             <header className="flex items-center gap-3 border-b border-gray-200 bg-gradient-to-r from-[#65111f] to-[#4f0d18] px-4 py-3 dark:border-gray-800">
