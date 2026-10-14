@@ -178,3 +178,61 @@ html.dark { color-scheme: dark; }
 @media (prefers-reduced-motion: reduce) {
   .animate-blob, .animate-fadeInUp, .animate-fadeIn, .animate-shake, .animate-bounce-in { animation: none; }
 }
+
+/* ============================================================
+   Chatbot typewriter + chip animations
+   ============================================================ */
+
+/* Each word fades in as it is "typed" */
+.word-appear {
+  display: inline-block;
+  animation: word-in 0.1s ease-out both;
+}
+
+@keyframes word-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Follow-up chips stagger in one by one */
+.chip-stagger {
+  animation: chip-in 0.4s ease-out both;
+}
+
+@keyframes chip-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* While the AI is typing, the transcript locks to the bottom so the
+   newest words stay in view (the "camera" follows the reply). */
+.chat-locked {
+  scroll-behavior: smooth;
+}
+
+/* Hide the chatbot scrollbar but keep scrolling */
+.chatbot-transcript {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.chatbot-transcript::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word-appear,
+  .chip-stagger {
+    animation: none;
+  }
+}

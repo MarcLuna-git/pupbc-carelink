@@ -5,7 +5,7 @@ import { Bot, Loader2, Send, Trash2, X } from 'lucide-react';
 import ChatMessage from './ChatMessage';
 import chatbotService from '../../services/chatbotService';
 
-const GREETING = "Hi! I'm the CareLink Assistant. How may I help you?";
+const GREETING = "Hi, I'm the CareLink Assistant. How can I help you?";
 
 // Tiny sender label shown above each AI reply that appears in the chat
 // (not on the very first greeting, and not in the header).
@@ -24,18 +24,37 @@ export default function ChatWidget() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [suggestions, setSuggestions] = useState(SUGGESTIONS);
+  const [isTyping, setIsTyping] = useState(false);
 
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Keep the newest message in view.
+  // Keep the newest message in view. While the AI is typing, lock the
+  // transcript to the bottom so the newest words stay visible (the
+  // "camera" follows the reply). When typing stops, free scroll returns.
   useEffect(() => {
     const node = scrollRef.current;
 
-    if (node) {
+    if (node && isTyping) {
       node.scrollTop = node.scrollHeight;
     }
-  }, [messages, sending, open]);
+  }, [messages, sending, open, isTyping]);
+
+  // Also follow during the word-by-word reveal.
+  useEffect(() => {
+    const node = scrollRef.current;
+
+    if (node && isTyping) {
+      const observer = new MutationObserver(() => {
+        node.scrollTop = node.scrollHeight;
+      });
+
+      observer.observe(node, { childList: true, subtree: true, characterData: true });
+
+      return () => observer.disconnect();
+    }
+    return undefined;
+  }, [isTyping]);
 
   useEffect(() => {
     if (open) {
@@ -103,6 +122,7 @@ export default function ChatWidget() {
         ]);
 
         setSuggestions(shown);
+        setIsTyping(true);
       } catch (requestError) {
         const status = requestError?.response?.status;
         const timedOut =
@@ -137,7 +157,7 @@ export default function ChatWidget() {
     inputRef.current?.focus();
   };
 
-  const showSuggestions = !sending && suggestions.length > 0;
+  const showSuggestions = !sending && !isTyping && suggestions.length > 0;
 
 // Only the newest AI reply keeps the NEW badge; earlier replies lose it.
 const lastAssistantIndex = messages.reduce(
@@ -199,7 +219,9 @@ const lastAssistantIndex = messages.reduce(
             {/* Transcript */}
             <div
               ref={scrollRef}
-              className="flex flex-1 flex-col gap-3 overflow-y-auto px-3.5 py-4"
+              className={`flex flex-1 flex-col gap-3 overflow-y-auto px-3.5 py-4 chatbot-transcript ${
+                isTyping ? 'chat-locked' : ''
+              }`}
             >
               {/* Fresh state: the greeting sits directly above the starter
                   chips at the bottom-right. Once a conversation starts, the
@@ -223,6 +245,12 @@ const lastAssistantIndex = messages.reduce(
                       ? 'new'
                       : undefined
                   }
+                  animate={
+                    message.role === 'assistant' &&
+                    index === lastAssistantIndex &&
+                    !message.degraded
+                  }
+                  onTypingDone={() => setIsTyping(false)}
                 />
               ))}
 
@@ -267,12 +295,13 @@ const lastAssistantIndex = messages.reduce(
               >
                 {showSuggestions && (
                   <div className="flex flex-col items-end gap-2">
-                    {suggestions.map((suggestion) => (
+                    {suggestions.map((suggestion, chipIndex) => (
                       <button
                         key={suggestion}
                         type="button"
                         onClick={() => send(suggestion)}
-                        className="rounded-full border border-maroon-200 bg-maroon-50 px-3 py-1.5 text-[11px] font-medium text-maroon-800 transition-colors hover:bg-maroon-100 dark:border-maroon-900 dark:bg-maroon-950/40 dark:text-maroon-300 dark:hover:bg-maroon-950/70"
+                        className="chip-stagger rounded-full border border-maroon-200 bg-maroon-50 px-3 py-1.5 text-[11px] font-medium text-maroon-800 transition-colors hover:bg-maroon-100 dark:border-maroon-900 dark:bg-maroon-950/40 dark:text-maroon-300 dark:hover:bg-maroon-950/70"
+                        style={{ animationDelay: `${chipIndex * 0.15}s` }}
                       >
                         {suggestion}
                       </button>
