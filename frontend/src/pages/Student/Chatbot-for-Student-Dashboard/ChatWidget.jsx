@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, Loader2, Send, Trash2, X } from 'lucide-react';
 
 import ChatMessage from './ChatMessage';
-import chatbotService from '../../services/chatbotService';
+import chatbotService from '../../../services/chatbotService';
 
 const GREETING = "Hi, I'm the CareLink Assistant. How can I help you?";
 

@@ -37,7 +37,7 @@ import {
 
 import authService from '../services/authService';
 import api from '../services/api';
-import ChatWidget from '../components/chatbot/ChatWidget';
+import ChatWidget from '../pages/Student/Chatbot-for-Student-Dashboard/ChatWidget';
 import { StudentPortalSearchContext } from '../components/StudentPortalSearchContext';
 import { STUDENT_PRIMARY_LINKS, isStudentNavActive, studentPageTitle } from '../utils/studentPortalNavigation';
 import '../student-portal.css';
