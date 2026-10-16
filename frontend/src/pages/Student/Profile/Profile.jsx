@@ -22,6 +22,16 @@ const Profile = () => {
       const response = await api.get('/student/profile');
       if (!response.data?.success) throw new Error();
       const normalized = normalizeProfile(response.data.data);
+      /*
+       * /student/profile does not include health_profile_completed, and
+       * replacing localStorage wholesale would wipe the flag set after a
+       * completed Health Profile. Carry the stored value over; App.jsx
+       * re-syncs it from the database whenever the status endpoint runs.
+       */
+      const stored = JSON.parse(localStorage.getItem('user') || '{}');
+      if (normalized.profile && normalized.profile.health_profile_completed === undefined) {
+        normalized.profile.health_profile_completed = stored?.profile?.health_profile_completed;
+      }
       setStudent(normalized);
       localStorage.setItem('user', JSON.stringify(normalized));
       window.dispatchEvent(new Event('studentProfileUpdated'));

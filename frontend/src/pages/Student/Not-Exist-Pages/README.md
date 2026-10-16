@@ -1,0 +1,1 @@
+Confirm this pages is not exist or unused pages: `Dashboard.jsx`, `Notifications.jsx`, and `AppointmentPresentation.jsx` — nothing imports them and no route points to them, so they are parked here for reference.

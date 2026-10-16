@@ -1,7 +1,17 @@
+/*
+ * Student portal outer shell / main frame styles (web view).
+ *
+ * Base chrome shared by BOTH view shells. The shells render the same class
+ * names (`.student-sidebar`, `.student-header`, `.student-main`, ...), so
+ * their default rules live here; each shell stylesheet then overrides them
+ * inside its own breakpoint:
+ *   - StudentLayout-for-Laptop-View.css  (>= 768px)
+ *   - StudentLayout-for-Mobile-View.css  (<= 767px)
+ */
 .student-approved-shell {
   --sp-bg: #f8f5f3; --sp-surface: #fff; --sp-soft: #faeeec; --sp-border: #ebdfe0;
   --sp-text: #382a2e; --sp-muted: #6f6166; --sp-accent: #800000; --sp-sidebar: 198px;
-  --sp-nav-height: 0px; --sp-dock-height: 72px; --sp-header-height: 62px;
+  --sp-nav-height: 0px; --sp-header-height: 62px;
   background: var(--sp-bg); color: var(--sp-text); font-family: Arial, Helvetica, sans-serif;min-height:100dvh;overflow-x:hidden;
 }
 .dark .student-approved-shell {
@@ -37,19 +47,14 @@
 .student-header-search input::placeholder { color:var(--sp-muted); }
 .student-header-search kbd { flex-shrink:0;font:10px Arial,sans-serif;color:var(--sp-muted);border-left:1px solid var(--sp-border);padding-left:8px; }
 .student-search-close,.student-mobile-search { display:none; }
+.student-mobile-menu,.student-sidebar-close,.student-sidebar-backdrop { display:none; }
 .student-header-actions { display:flex;align-items:center;gap:8px;flex-shrink:0; }
-.student-clinic-status { display:flex;align-items:center;gap:8px;padding:7px 11px;border-radius:8px;background:#e6f2e8;color:#286a43;font-size:10px;line-height:1.3; }
-.dark .student-clinic-status { background:#233b30;color:#b0d9bb; }
-.student-clinic-status strong,.student-clinic-status small { display:block; }
-.student-clinic-status small { font-size:9px;font-weight:400;color:var(--sp-muted);margin-top:2px; }
-.student-clinic-dot { width:6px;height:6px;border-radius:50%;background:var(--sp-accent); }
 .student-header-icon,.student-mobile-search { position:relative;align-items:center;justify-content:center;display:flex;width:38px;height:40px;border-radius:9px;color:var(--sp-text);cursor:pointer; }
 .student-mobile-search { display:none; }
 .student-header-icon:hover,.student-mobile-search:hover { background:var(--sp-soft);color:var(--sp-accent); }
 .student-header-icon svg,.student-mobile-search svg { width:19px;height:19px; }
 .student-theme-toggle { width:44px; }
 .student-mobile-search { order:-1; }
-.student-clinic-status { order:0; }
 .student-theme-toggle { order:1; }
 .student-notification-bell { order:2; }
 .student-header-actions>.relative { order:3; }
@@ -58,59 +63,25 @@
 .student-account-caption { display:flex;min-width:0;flex-direction:column;text-align:left;line-height:1.4; }
 .student-account-caption strong { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px; }
 .student-account-caption small { font-size:9px;color:var(--sp-muted);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-.student-main { flex:1 0 auto;min-height:calc(100dvh - var(--sp-dock-height));min-width:0;overflow:visible;overscroll-behavior:contain;padding:calc(var(--sp-header-height) + 16px) 22px 16px;scroll-behavior:smooth;scroll-padding-top:calc(var(--sp-header-height) + 16px); }
+.student-main { flex:1 0 auto;min-height:100dvh;min-width:0;overflow:visible;overscroll-behavior:contain;padding:calc(var(--sp-header-height) + 16px) 22px 16px;scroll-behavior:smooth;scroll-padding-top:calc(var(--sp-header-height) + 16px); }
 .student-page-content { width:100%;max-width:1440px;margin:0 auto;min-width:0; }
 .student-profile-sections { display:flex;gap:5px;flex-wrap:wrap;margin:0 auto 16px;max-width:1440px;border-bottom:1px solid var(--sp-border);padding-bottom:10px; }
 .student-profile-sections a { border-radius:8px;font-size:13px;padding:10px 14px;color:var(--sp-muted); }
 .student-profile-sections a[aria-current=page] { color:var(--sp-accent);background:var(--sp-soft);font-weight:700; }
-.student-assistant-dock { flex-shrink:0;height:var(--sp-dock-height);display:flex;align-items:center;padding:8px 92px 8px 22px;background:var(--sp-bg); }
-.student-assistant-dock>a { display:flex;align-items:center;gap:10px;max-width:540px;background:var(--sp-surface);border:1px solid var(--sp-border);padding:12px 14px;border-radius:10px;font-size:11px;color:var(--sp-muted); }
-.student-assistant-dock>a svg { width:18px;height:18px;flex-shrink:0;color:var(--sp-accent); }
-.student-assistant-dock strong { color:var(--sp-accent); }
+.student-help-widget { position:fixed;z-index:45;left:calc(var(--sp-sidebar) + 22px);bottom:calc(18px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:10px;max-width:300px;padding:11px 14px;border-radius:14px;background:var(--sp-surface);border:1px solid var(--sp-border);box-shadow:0 12px 30px #3d12201f;font-size:11px;line-height:1.45;color:var(--sp-muted);transition:transform .18s ease,box-shadow .18s ease; }
+.student-help-widget:hover { transform:translateY(-2px);box-shadow:0 16px 34px #3d122029; }
+.student-help-widget .student-help-widget-icon { width:20px;height:20px;flex-shrink:0;color:var(--sp-accent); }
+.student-help-widget strong { display:block;font-size:12px;color:var(--sp-accent); }
+.student-help-widget .student-help-widget-arrow { width:16px;height:16px;flex-shrink:0;color:var(--sp-muted); }
 .student-bottom-nav { display:none; }
 .student-approved-shell .carelink-assistant-launcher { bottom:calc(var(--sp-nav-height) + env(safe-area-inset-bottom) + 10px);right:18px;width:52px;height:52px; }
 .student-approved-shell .carelink-assistant-panel { bottom:calc(var(--sp-nav-height) + env(safe-area-inset-bottom) + 78px);right:18px;width:min(380px,calc(100vw - 32px));height:min(510px,calc(100dvh - var(--sp-nav-height) - 150px)); }
-.student-approved-shell:has([aria-modal="true"]) :is(.carelink-assistant-launcher,.carelink-assistant-panel) { display:none; }
-@media (min-width:1100px) {
-  .student-header-page { flex:0 0 210px; }
-  .student-header-actions { margin-left:auto; }
-}
-@media (min-width:768px) and (max-width:1099px) {
-  .student-approved-shell { --sp-sidebar:76px; }
-  .student-sidebar-brand { padding:22px 0; }
-  .student-sidebar-brand a { justify-content:center; }
-  .student-sidebar-brand a>div,.student-sidebar-tagline,.student-sidebar-campus { display:none; }
-  .student-sidebar-nav { padding:16px 8px; }
-  .student-sidebar-nav>a { padding:12px 8px;justify-content:center; }
-  .student-sidebar-nav>a span { display:none; }
-  .student-header-inner { padding:0 18px;gap:10px; }
-  .student-account-caption { display:none; }
-  .student-clinic-status { display:none; }
-}
-@media (max-width:767px) {
-  .student-approved-shell { --sp-sidebar:0px;--sp-nav-height:70px;--sp-dock-height:70px;--sp-header-height:58px; }
-  .student-sidebar { display:none; }
-  .student-header-inner { padding:0 12px;gap:7px; }
-  .student-header-page { font-size:13px; }
-  .student-header-actions { gap:1px; }
-  .student-header-icon,.student-mobile-search { width:44px;height:44px; }
-  .student-mobile-search { display:flex; }
-  .student-header-search { display:none; }
-  .student-header-search.is-open { display:flex;position:absolute;top:64px;left:12px;right:12px;max-width:none;background:var(--sp-surface);border-color:var(--sp-border);box-shadow:0 10px 24px #2a001d20;border-radius:10px;padding:10px; }
-  .student-header-search input { font-size:16px; }
-  .student-header-search kbd { display:none; }
-  .student-search-close { display:block;width:32px;height:32px;font-size:24px; }
-  .student-clinic-status,.student-account-caption { display:none; }
-  .student-account-button { width:44px;min-height:44px;padding:0; }
-  .student-main { padding:calc(var(--sp-header-height) + 12px) 12px 16px;scroll-padding-top:calc(var(--sp-header-height) + 12px); }
-  .student-account-menu { position:fixed;top:64px;right:12px;max-height:calc(100dvh - 100px);overflow-y:auto; }
-  .student-bottom-nav { display:block;position:fixed;bottom:0;left:0;right:0;z-index:40;min-height:70px;background:var(--sp-surface);border-top:1px solid var(--sp-border);padding-bottom:env(safe-area-inset-bottom); }
-  .student-bottom-nav>div { max-width:500px;margin:auto;padding:6px 4px; }
-  .student-bottom-nav a { min-height:56px; }
-  .student-assistant-dock { padding:6px 80px 6px 12px; }
-  .student-assistant-dock>a { padding:9px;font-size:10px;line-height:1.5; }
-  .student-assistant-dock>a>svg:last-child { display:none; }
-  .student-approved-shell .carelink-assistant-launcher { right:14px;width:48px;height:48px;bottom:calc(70px + env(safe-area-inset-bottom) + 11px); }
-  .student-approved-shell .carelink-assistant-panel { right:12px;width:calc(100vw - 24px); }
-}
+.student-approved-shell:has([aria-modal="true"]) :is(.carelink-assistant-launcher,.carelink-assistant-panel,.student-help-widget) { display:none; }
+
+/*
+ * The laptop / desktop (>= 768px) breakpoints live in
+ * StudentLayout-for-Laptop-View.css, and the mobile (<= 767px) breakpoint
+ * lives in StudentLayout-for-Mobile-View.css. Both are loaded after this
+ * file so the cascade order is preserved.
+ */
 @media (prefers-reduced-motion:reduce) { .student-approved-shell .student-main { scroll-behavior:auto; } }

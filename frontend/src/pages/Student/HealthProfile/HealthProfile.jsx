@@ -50,6 +50,7 @@ const HealthProfile = () => {
   const [loadFailed, setLoadFailed] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [profileExists, setProfileExists] = useState(false);
+  const [showCompletion, setShowCompletion] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
   const totalSteps = 6;
@@ -76,6 +77,7 @@ const HealthProfile = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const profileCompleted = profileExists && Boolean(user?.profile?.health_profile_completed);
 
   useEffect(() => {
     let active = true;
@@ -216,9 +218,7 @@ const HealthProfile = () => {
         localStorage.setItem('user', JSON.stringify({ ...currentUser, profile: { ...(currentUser.profile || {}), health_profile_completed: true } }));
         window.dispatchEvent(new Event('storage'));
         window.dispatchEvent(new CustomEvent('healthProfileUpdated'));
-        setMessageType('success');
-        setMessage('Health Profile completed! Redirecting to appointments...');
-        setTimeout(() => navigate('/student/appointments'), 1500);
+        setShowCompletion(true);
       }
     } catch (err) {
       setMessageType('error');
@@ -309,9 +309,60 @@ const HealthProfile = () => {
     );
   }
 
+  if (showCompletion) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4 py-8">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          role="status"
+          className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-6 lg:p-8 text-center"
+        >
+          <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-5">
+            <Check className="w-10 h-10 text-green-600 dark:text-green-400" strokeWidth={3} />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Health Profile Completed!</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 leading-relaxed">
+            Your health profile has been saved successfully. You can now book clinic appointments and use other clinic services.
+          </p>
+          <div className="mt-6 space-y-3">
+            <button
+              type="button"
+              onClick={() => navigate('/student/appointments')}
+              className="w-full flex items-center justify-center space-x-2 px-5 py-3 rounded-xl bg-maroon-800 text-white text-sm font-semibold hover:bg-maroon-900 transition"
+            >
+              <span>Proceed to Appointments</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowCompletion(false); setStep(1); setMessage(''); }}
+              className="w-full px-5 py-3 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+            >
+              Review my answers
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-6 lg:p-8">
+
+        {profileCompleted ? (
+          <div className="mb-5 p-3 rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 text-sm text-green-700 dark:text-green-400 flex items-start space-x-2">
+            <Check className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
+            <span><strong className="font-semibold">Health Profile completed!</strong> You can review and update your answers anytime.</span>
+          </div>
+        ) : (
+          <div className="mb-5 p-3 rounded-2xl bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 text-sm text-blue-700 dark:text-blue-400 flex items-start space-x-2">
+            <Info className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
+            <span>Complete the required fields in each step, then submit to finish your Health Profile.</span>
+          </div>
+        )}
 
         <div className="mb-6">
           <div className="flex items-center justify-between text-xs text-gray-400 mb-2"><span>Step {step} of {totalSteps}</span><span>{progress}%</span></div>

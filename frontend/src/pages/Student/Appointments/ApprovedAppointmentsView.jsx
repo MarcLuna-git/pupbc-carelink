@@ -158,31 +158,46 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
     <UpcomingAppointment appointment={upcoming} onView={onView} onEdit={onEdit} />
     <section id="appointment-booking" className="ap-card ap-booking">
       <div className="ap-section-heading"><CalendarDays /><div><h2>{editingId ? 'Edit Appointment' : 'Book a New Appointment'}</h2><p>{editingId ? 'Update your pending appointment request.' : 'Choose a date, time, and service that works for you.'}</p></div>{editingId && <button type="button" className="ap-text-button" onClick={onCancelEdit}>Cancel editing</button>}</div>
-      <ol className="ap-booking-progress" aria-label="Booking progress">{['Select Date', 'Choose Time', 'Select Service', 'Review & Book'].map((label, index) => <li key={label} aria-current={progress === index + 1 ? 'step' : undefined} className={progress >= index + 1 ? 'is-active' : ''}><span>{progress > index + 1 ? <CheckCircle /> : index + 1}</span>{label}</li>)}</ol>
-      <form className="ap-booking-grid" onSubmit={onSubmit} noValidate>
-        <section className="ap-booking-column"><h3>Select Date</h3><CalendarPicker value={form.date} onChange={onChange} disabled={loading} /></section>
-        <section className="ap-booking-column"><h3>Available Time Slots</h3><p className="ap-column-caption">{form.date ? formatAppointmentDate(form.date, { weekday: 'long' }) : 'Select an appointment date'}</p>
-          {slotsLoading ? <div className="ap-slots-loading" role="status"><Loader2 className="animate-spin" />Loading availability…</div> : <div className="ap-time-grid">{timeSlots.map(time => {
-            const slot = availableSlots.find(item => item.time === time);
-            const instant = appointmentTime(form.date, time);
-            const past = instant && instant < new Date();
-            const unavailable = !form.date || !slot || past || slot.isFull;
-            return <button key={time} type="button" disabled={loading || unavailable} aria-pressed={form.time === time} title={slot ? `${slot.available} remaining slots` : 'Availability has not been returned by the clinic'} className={`${form.time === time ? 'is-selected' : ''} ${slot?.isFull ? 'is-full' : ''}`} onClick={() => onChange({ target: { name: 'time', value: time } })}>{time}{slot?.isFull && <span>Full</span>}</button>;
-          })}</div>}
-          {form.date && !slotsLoading && availableSlots.length === 0 && <p className="ap-availability-note">No availability returned. <button type="button" onClick={retrySlots}>Retry</button></p>}
-          <p className="ap-column-footnote">Availability updates automatically.</p>
-        </section>
-        <section className="ap-booking-column"><h3>Select Service</h3><div className="ap-service-list" role="radiogroup" aria-label="Appointment service">{services.map((service, index) => <label key={service} className={form.service === service ? 'is-selected' : ''}>
-          <input type="radio" name="service" value={service} checked={form.service === service} onChange={onChange} disabled={loading} />
-          {index === 0 ? <Stethoscope /> : <FileText />}<span><strong>{serviceTitle(service)}</strong><small>{SERVICE_NOTES[service]}</small></span>
-        </label>)}</div><details className="ap-reason" open={form.concern ? true : undefined}><summary>Add a reason <span>(optional)</span></summary><label className="sr-only" htmlFor="appointment-reason">Appointment reason</label><textarea id="appointment-reason" name="concern" value={form.concern} onChange={onChange} rows={2} maxLength={1000} placeholder="Briefly describe your concern…" disabled={loading} /></details></section>
-        <section className="ap-booking-column ap-summary"><h3>Booking Summary</h3>
-          <dl><div><CalendarDays /><span><dt>Date</dt><dd>{form.date ? formatAppointmentDate(form.date) : 'Choose a date'}</dd></span></div>
-            <div><Clock /><span><dt>Time · Asia/Manila</dt><dd>{form.time || 'Choose a time'}</dd></span></div>
-            <div><Stethoscope /><span><dt>Service</dt><dd>{form.service ? serviceTitle(form.service) : 'Choose a service'}</dd></span></div></dl>
-          <p className="ap-summary-note"><ShieldCheck />Your request is subject to clinic approval.</p>
-          <button type="submit" disabled={!canBook} className="ap-button ap-confirm-booking">{loading ? <><Loader2 className="animate-spin" />Saving…</> : <>{editingId ? 'Update Appointment' : 'Confirm Appointment'}<ArrowRight /></>}</button>
-        </section>
+      {/* The four booking steps stack vertically: the numbered rail on the left
+          carries the progress, and each step keeps its own form section beside it. */}
+      <form className="ap-booking-steps" onSubmit={onSubmit} noValidate>
+        <ol className="ap-booking-progress" aria-label="Booking progress">
+          <li aria-current={progress === 1 ? 'step' : undefined} className={`ap-booking-step${progress >= 1 ? ' is-active' : ''}`}>
+            <span className="ap-step-marker">{progress > 1 ? <CheckCircle /> : 1}</span>
+            <h3 className="ap-step-label">Select Date</h3><section className="ap-booking-column"><CalendarPicker value={form.date} onChange={onChange} disabled={loading} /></section>
+          </li>
+          <li aria-current={progress === 2 ? 'step' : undefined} className={`ap-booking-step${progress >= 2 ? ' is-active' : ''}`}>
+            <span className="ap-step-marker">{progress > 2 ? <CheckCircle /> : 2}</span>
+            <h3 className="ap-step-label">Available Time Slots</h3><section className="ap-booking-column"><div className="ap-step-body" style={{ maxWidth:420, margin:'0 auto', width:'100%' }}><p className="ap-column-caption">{form.date ? formatAppointmentDate(form.date, { weekday: 'long' }) : 'Select an appointment date'}</p>
+            {slotsLoading ? <div className="ap-slots-loading" role="status"><div className="ap-slots-loading-grid" aria-hidden="true">{timeSlots.map(time => <span key={time} />)}</div><span className="ap-slots-loading-label"><Loader2 className="animate-spin" />Loading availability…</span></div> : <div className="ap-time-grid">{timeSlots.map(time => {
+              const slot = availableSlots.find(item => item.time === time);
+              const instant = appointmentTime(form.date, time);
+              const past = instant && instant < new Date();
+              const unavailable = !form.date || !slot || past || slot.isFull;
+              return <button key={time} type="button" disabled={loading || unavailable} aria-pressed={form.time === time} title={slot ? `${slot.available} remaining slots` : 'Availability has not been returned by the clinic'} className={`${form.time === time ? 'is-selected' : ''} ${slot?.isFull ? 'is-full' : ''}`} onClick={() => onChange({ target: { name: 'time', value: time } })}>{time}{slot?.isFull && <span>Full</span>}</button>;
+            })}</div>}
+            {form.date && !slotsLoading && availableSlots.length === 0 && <p className="ap-availability-note">No availability returned. <button type="button" onClick={retrySlots}>Retry</button></p>}
+            <p className="ap-column-footnote">Availability updates automatically.</p>
+            </div></section>
+          </li>
+          <li aria-current={progress === 3 ? 'step' : undefined} className={`ap-booking-step${progress >= 3 ? ' is-active' : ''}`}>
+            <span className="ap-step-marker">{progress > 3 ? <CheckCircle /> : 3}</span>
+            <h3 className="ap-step-label">Select Service</h3><section className="ap-booking-column"><div className="ap-step-body" style={{ maxWidth:420, margin:'0 auto', width:'100%' }}><div className="ap-service-list" role="radiogroup" aria-label="Appointment service">{services.map((service, index) => <label key={service} className={form.service === service ? 'is-selected' : ''}>
+              <input type="radio" name="service" value={service} checked={form.service === service} onChange={onChange} disabled={loading} />
+              {index === 0 ? <Stethoscope /> : <FileText />}<span><strong>{serviceTitle(service)}</strong><small>{SERVICE_NOTES[service]}</small></span>
+            </label>)}</div><div className="ap-reason"><label htmlFor="appointment-reason">Add a reason <span>(optional)</span></label><textarea id="appointment-reason" name="concern" value={form.concern} onChange={onChange} rows={2} maxLength={1000} placeholder="Briefly describe your concern…" disabled={loading} /></div></div></section>
+          </li>
+          <li aria-current={progress === 4 ? 'step' : undefined} className={`ap-booking-step${progress >= 4 ? ' is-active' : ''}`}>
+            <span className="ap-step-marker">{progress > 4 ? <CheckCircle /> : 4}</span>
+            <h3 className="ap-step-label">Booking Summary</h3><section className="ap-booking-column ap-summary"><div className="ap-step-body" style={{ maxWidth:420, margin:'0 auto', width:'100%' }}>
+              <dl><div><CalendarDays /><span><dt>Date</dt><dd>{form.date ? formatAppointmentDate(form.date) : 'Choose a date'}</dd></span></div>
+                <div><Clock /><span><dt>Time · Asia/Manila</dt><dd>{form.time || 'Choose a time'}</dd></span></div>
+                <div><Stethoscope /><span><dt>Service</dt><dd>{form.service ? serviceTitle(form.service) : 'Choose a service'}</dd></span></div></dl>
+              <p className="ap-summary-note"><ShieldCheck />Your request is subject to clinic approval.</p>
+              <button type="submit" disabled={!canBook} className="ap-button ap-confirm-booking">{loading ? <><Loader2 className="animate-spin" />Saving…</> : <>{editingId ? 'Update Appointment' : 'Confirm Appointment'}<ArrowRight /></>}</button>
+            </div></section>
+          </li>
+        </ol>
       </form>
     </section>
     <section className="ap-card ap-history">

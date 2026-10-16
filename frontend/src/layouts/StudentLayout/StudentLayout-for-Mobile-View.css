@@ -1,0 +1,56 @@
+/*
+ * Mobile outer shell styles (viewport <= 767px).
+ *
+ * Split out of StudentLayout-for-Web-View.css. These rules deliberately come
+ * AFTER StudentLayout-for-Web-View.css in the bundle (StudentLayout-for-Web-View
+ * imports StudentLayout-for-Web-View.css, then imports
+ * StudentLayout-for-Mobile-View, which imports this file), so the cascade order
+ * matches the original single stylesheet.
+ */
+
+@media (max-width:767px) {
+  .student-approved-shell { --sp-sidebar:0px;--sp-nav-height:70px;--sp-header-height:58px; }
+  .student-sidebar { display:flex;width:min(82vw,300px);visibility:hidden;transform:translateX(-100%);transition:transform .28s ease,visibility .28s ease;z-index:60;box-shadow:0 10px 40px #00000059; }
+  .student-sidebar.is-open { visibility:visible;transform:translateX(0); }
+  .student-sidebar-close { display:flex;position:absolute;top:14px;right:12px;align-items:center;justify-content:center;width:34px;height:34px;border-radius:9px;color:#fff;background:#ffffff1f;cursor:pointer; }
+  .student-sidebar-close:hover { background:#ffffff33; }
+  .student-sidebar-close svg { width:18px;height:18px; }
+  .student-sidebar-backdrop { display:block;position:fixed;inset:0;z-index:55;border:0;padding:0;background:#1a000080;opacity:0;visibility:hidden;cursor:pointer;transition:opacity .28s ease,visibility .28s ease; }
+  .student-sidebar-backdrop.is-open { opacity:1;visibility:visible; }
+  .student-mobile-menu { display:flex;order:-2;flex-shrink:0;align-items:center;justify-content:center;width:44px;height:44px;border-radius:9px;color:var(--sp-text);cursor:pointer; }
+  .student-mobile-menu:hover { background:var(--sp-soft);color:var(--sp-accent); }
+  .student-mobile-menu svg { width:22px;height:22px; }
+  .student-header-inner { padding:0 12px;gap:7px; }
+  .student-header-page { font-size:13px; }
+  .student-header-actions { gap:1px; }
+  .student-header-icon,.student-mobile-search { width:44px;height:44px; }
+  .student-mobile-search { display:flex; }
+  .student-header-search { display:none; }
+  .student-header-search.is-open { display:flex;position:absolute;top:64px;left:12px;right:12px;max-width:none;background:var(--sp-surface);border-color:var(--sp-border);box-shadow:0 10px 24px #2a001d20;border-radius:10px;padding:10px; }
+  .student-header-search input { font-size:16px; }
+  .student-header-search kbd { display:none; }
+  .student-search-close { display:block;width:32px;height:32px;font-size:24px; }
+  .student-clinic-status,.student-account-caption { display:none; }
+  .student-account-button { width:44px;min-height:44px;padding:0; }
+  .student-main { padding:calc(var(--sp-header-height) + 12px) 12px 16px;scroll-padding-top:calc(var(--sp-header-height) + 12px); }
+  .student-account-menu { position:fixed;top:64px;right:12px;max-height:calc(100dvh - 100px);overflow-y:auto; }
+  .student-bottom-nav { display:block;position:fixed;bottom:0;left:0;right:0;z-index:40;min-height:70px;background:var(--sp-surface);border-top:1px solid var(--sp-border);padding-bottom:env(safe-area-inset-bottom); }
+  .student-bottom-nav>div { max-width:500px;margin:auto;padding:6px 4px; }
+  .student-bottom-nav a { min-height:56px; }
+  .student-help-widget { left:12px;bottom:calc(var(--sp-nav-height) + env(safe-area-inset-bottom) + 11px);max-width:min(240px,calc(100vw - 92px));padding:9px 11px;border-radius:12px; }
+  .student-help-widget .student-help-widget-arrow { display:none; }
+  .student-approved-shell .carelink-assistant-launcher { right:14px;width:48px;height:48px;bottom:calc(70px + env(safe-area-inset-bottom) + 11px); }
+  .student-approved-shell .carelink-assistant-panel { right:12px;width:calc(100vw - 24px); }
+
+  /*
+   * Hide the page scrollbar on the Student shell while still allowing scroll
+   * (native-app feel). Scoped with :has() so other routes keep their
+   * scrollbars, and only for the mobile breakpoint.
+   */
+  html:has(.student-approved-shell),
+  body:has(.student-approved-shell),
+  .student-approved-shell { scrollbar-width:none;-ms-overflow-style:none; }
+  html:has(.student-approved-shell)::-webkit-scrollbar,
+  body:has(.student-approved-shell)::-webkit-scrollbar,
+  .student-approved-shell::-webkit-scrollbar { display:none; }
+}

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 
 use App\Http\Controllers\Api\Student\ProfileController;
+use App\Http\Controllers\Api\Student\DataResetController;
 use App\Http\Controllers\Api\Student\HealthProfileController;
 use App\Http\Controllers\Api\Student\AppointmentController as StudentAppointmentController;
 use App\Http\Controllers\Api\Student\ConsultationController as StudentConsultationController;
@@ -492,6 +493,23 @@ Route::middleware([
                 );
 
                 Route::patch('/profile/email', [ProfileController::class, 'updateEmail']);
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Student Data Reset
+                |--------------------------------------------------------------------------
+                |
+                | Clears the data the student entered in the portal (appointments,
+                | QR/queue trail, profile details, health profile) while leaving
+                | the account and the clinic's medical records alone.
+                |
+                */
+
+                Route::post(
+                    '/reset-data',
+                    [DataResetController::class, 'store']
+                );
 
 
                 /*

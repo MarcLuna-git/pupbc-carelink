@@ -3,13 +3,16 @@ export const STUDENT_PRIMARY_LINKS = [
   { key: 'qr', path: '/student/qr', label: 'QR Code' },
   { key: 'records', path: '/student/health-records', label: 'Records' },
   { key: 'profile', path: '/student/profile', label: 'Profile' },
+  { key: 'settings', path: '/student/settings', label: 'Settings' },
 ];
 
 const matches = (pathname, path) => pathname === path || pathname.startsWith(`${path}/`);
 
 export function isStudentNavActive(pathname, path) {
   if (path === '/student/profile') {
-    return ['profile', 'health-profile', 'settings', 'help', 'about']
+    /* Settings is now its own primary tab, so it is no longer part of the
+       Profile group. Health Profile and the account pages still are. */
+    return ['profile', 'health-profile', 'help', 'about']
       .some(section => matches(pathname, `/student/${section}`));
   }
   return matches(pathname, path);

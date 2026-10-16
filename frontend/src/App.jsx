@@ -28,7 +28,7 @@ const Settings = lazy(() => import('./pages/Student/Settings/Settings'));
 const Help = lazy(() => import('./pages/Student/Help/Help'));
 const About = lazy(() => import('./pages/Student/About/About'));
 
-const StudentLayout = lazy(() => import('./layouts/StudentLayout'));
+const StudentLayoutForWebView = lazy(() => import('./layouts/StudentLayout/StudentLayout-for-Web-View'));
 
 const NurseLogin = lazy(() => import('./pages/Admin/Login/NurseLogin'));
 const NurseDashboard = lazy(() => import('./pages/Admin/Dashboard/NurseDashboard'));
@@ -285,14 +285,33 @@ const useStudentHealthProfileStatus = () => {
     } catch (error) {
       /*
        * Do not expose raw Axios / SQL / Laravel messages.
+       * If we have a valid completed cache or the stored user
+       * indicates a completed profile, keep access open and
+       * retry silently instead of blocking the user.
        */
-      setState({
-        loading: false,
-        completed: false,
-        exists: false,
-        error:
-          'We could not verify your Health Profile. Please try again.',
-      });
+      const storedUser = getStoredStudent();
+      const storedCompleted = toBoolean(
+        storedUser?.profile?.health_profile_completed ||
+          storedUser?.health_profile_completed
+      );
+      const hasCache = hasCompletedStatusCache();
+
+      if (storedCompleted || hasCache) {
+        setState({
+          loading: false,
+          completed: true,
+          exists: true,
+          error: '',
+        });
+      } else {
+        setState({
+          loading: false,
+          completed: false,
+          exists: false,
+          error:
+            'We could not verify your Health Profile. Please try again.',
+        });
+      }
     }
   }, []);
 
@@ -525,9 +544,9 @@ function App() {
             path="/student"
             element={
               <ProtectedRoute role="student">
-                <StudentLayout>
+                <StudentLayoutForWebView>
                   <Outlet />
-                </StudentLayout>
+                </StudentLayoutForWebView>
               </ProtectedRoute>
             }
           >
@@ -644,9 +663,11 @@ function App() {
             ================================================== */}
 
             {/*
-              These routes are intentionally NOT sidebar items.
+              Account Center routes.
 
-              They are accessed from the upper-right Account menu.
+              Settings is also surfaced as a primary navigation tab (see
+              STUDENT_PRIMARY_LINKS). Help and About remain reachable from
+              the upper-right Account menu.
             */}
             <Route
               path="settings"
