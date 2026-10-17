@@ -3,10 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Check, Loader2, Heart, Shield, ClipboardList, AlertCircle, Info } from 'lucide-react';
 import api from '../../../services/api';
-
-const Skeleton = ({ className = '' }) => (
-  <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded-2xl ${className}`} />
-);
+import RouteLoading from '../../../components/RouteLoading';
+import ProfileSection from '../../../layouts/StudentLayout/student-shell/ProfileSection';
 
 const getManilaDateString = () => {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -264,60 +262,33 @@ const HealthProfile = () => {
     </div>
   );
 
+  /* Blank frame behind the RouteLoading curtain — the section renders at once when ready. */
   if (pageLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-6 lg:p-8">
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <Skeleton className="h-3 w-20" />
-              <Skeleton className="h-3 w-10" />
-            </div>
-            <Skeleton className="h-2 w-full rounded-full" />
-            <div className="flex justify-between mt-2">
-              {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-3 w-12" />)}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <Skeleton className="h-6 w-48" />
-            <Skeleton className="h-4 w-64" />
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-          </div>
-
-          <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
-            <Skeleton className="h-10 w-20" />
-            <Skeleton className="h-10 w-24" />
-          </div>
-        </div>
-      </div>
-    );
+    return <RouteLoading />;
   }
 
   if (loadFailed) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4 py-8">
-        <div role="alert" className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-6 lg:p-8 text-center space-y-4">
+      <ProfileSection>
+        <div role="alert" className="w-full max-w-lg rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 p-6 lg:p-8 text-center space-y-4">
           <AlertCircle className="w-10 h-10 text-red-600 mx-auto" aria-hidden="true" />
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">Unable to load health profile</h2>
           <p className="text-sm text-gray-700 dark:text-gray-200">Your saved information is safe. To avoid accidentally replacing existing medical information, editing is unavailable until your record loads.</p>
           <button type="button" onClick={() => setReloadKey(key => key + 1)} className="px-5 py-3 rounded-xl bg-maroon-800 text-white font-semibold hover:bg-maroon-900">Try again</button>
         </div>
-      </div>
+      </ProfileSection>
     );
   }
 
   if (showCompletion) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4 py-8">
+      <ProfileSection>
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.25 }}
           role="status"
-          className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-6 lg:p-8 text-center"
+          className="w-full max-w-lg rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 p-6 lg:p-8 text-center"
         >
           <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-5">
             <Check className="w-10 h-10 text-green-600 dark:text-green-400" strokeWidth={3} />
@@ -344,13 +315,14 @@ const HealthProfile = () => {
             </button>
           </div>
         </motion.div>
-      </div>
+      </ProfileSection>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-6 lg:p-8">
+    <ProfileSection>
+      <div className="flex justify-center py-2">
+      <div className="w-full max-w-lg rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 p-6 lg:p-8">
 
         {profileCompleted ? (
           <div className="mb-5 p-3 rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 text-sm text-green-700 dark:text-green-400 flex items-start space-x-2">
@@ -510,6 +482,7 @@ const HealthProfile = () => {
 
       </div>
     </div>
+    </ProfileSection>
   );
 };
 

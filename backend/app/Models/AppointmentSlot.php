@@ -67,8 +67,12 @@ class AppointmentSlot extends Model
                 $time
             );
 
+            /*
+             * "full" is about capacity only. A slot that already
+             * passed is reported separately via is_past so the UI
+             * can label it distinctly from a genuinely full slot.
+             */
             $isFull =
-                $isPast ||
                 $bookedCount >= self::MAX_SLOTS;
 
             $slots[] = [
@@ -88,6 +92,9 @@ class AppointmentSlot extends Model
                             self::MAX_SLOTS -
                             $bookedCount
                         ),
+
+                'is_past' =>
+                    $isPast,
 
                 /*
                  * Keep both formats temporarily

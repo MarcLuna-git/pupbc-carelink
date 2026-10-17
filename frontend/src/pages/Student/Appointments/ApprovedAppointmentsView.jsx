@@ -109,7 +109,7 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
       || (appointmentTime(a.appointment_date, a.time_slot)?.getTime() || 0) - (appointmentTime(b.appointment_date, b.time_slot)?.getTime() || 0))[0];
   const selectedSlot = availableSlots.find(slot => slot.time === form.time);
   const selectedInstant = appointmentTime(form.date, form.time);
-  const canBook = Boolean(form.service && form.date && form.time && selectedSlot && !selectedSlot.isFull && selectedInstant && selectedInstant >= new Date() && !slotsLoading && !loading);
+  const canBook = Boolean(form.service && form.date && form.time && selectedSlot && !selectedSlot.isFull && !selectedSlot.is_past && selectedInstant && selectedInstant >= new Date() && !slotsLoading && !loading);
   const progress = !form.date ? 1 : !form.time ? 2 : !form.service ? 3 : 4;
   return <>
     <AppointmentHero />
@@ -132,9 +132,14 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
             {slotsLoading ? <div className="ap-slots-loading" role="status"><div className="ap-slots-loading-grid" aria-hidden="true">{timeSlots.map(time => <span key={time} />)}</div><span className="ap-slots-loading-label"><Loader2 className="animate-spin" />Loading availability…</span></div> : <div className="ap-time-grid">{timeSlots.map(time => {
               const slot = availableSlots.find(item => item.time === time);
               const instant = appointmentTime(form.date, time);
-              const past = instant && instant < new Date();
-              const unavailable = !form.date || !slot || past || slot.isFull;
-              return <button key={time} type="button" disabled={loading || unavailable} aria-pressed={form.time === time} title={slot ? `${slot.available} remaining slots` : 'Availability has not been returned by the clinic'} className={`${form.time === time ? 'is-selected' : ''} ${slot?.isFull ? 'is-full' : ''}`} onClick={() => onChange({ target: { name: 'time', value: time } })}>{time}{slot?.isFull && <span>Full</span>}</button>;
+              // The server flags a slot that already occurred with is_past; fall back to client time if absent.
+              const isPast = Boolean(slot) && (slot.is_past ?? Boolean(instant && instant < new Date()));
+              const isFull = Boolean(slot?.isFull) && !isPast;
+              const unavailable = !form.date || !slot || isPast || isFull;
+              const hint = !slot ? 'Availability has not been returned by the clinic' : isPast ? 'This time has already passed.' : `${slot.available} slots available${slot.booked ? ` (${slot.booked} booked)` : ''}`;
+              // Default label while no availability data exists (no date picked yet / fresh reload).
+              const countLabel = !slot ? (isClinicSunday(clinicDate()) ? '0/0 no available slots' : '10/10 slots') : isPast ? 'Not available' : `${slot.available}/${slot.available + (slot.booked || 0)} slots`;
+              return <button key={time} type="button" disabled={loading || unavailable} aria-pressed={form.time === time} title={hint} className={`${form.time === time ? 'is-selected' : ''} ${isPast ? 'is-past' : ''} ${isFull ? 'is-full' : ''}`} onClick={() => onChange({ target: { name: 'time', value: time } })}>{time}<span className={isPast ? 'ap-slot-past-tag' : ''}>{countLabel}</span>{isFull && <span className="ap-slot-full-tag">Full</span>}</button>;
             })}</div>}
             {form.date && !slotsLoading && availableSlots.length === 0 && <p className="ap-availability-note">No availability returned. <button type="button" onClick={retrySlots}>Retry</button></p>}
             <p className="ap-column-footnote">Availability updates automatically.</p>

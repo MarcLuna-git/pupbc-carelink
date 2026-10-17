@@ -71,6 +71,19 @@ const StudentLayoutForDesktopView = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  /*
+   * Simple loading curtain: EVERY sidebar / bottom-nav tab change shows a
+   * small looping spinner for a beat (1200ms) — a light, non-intrusive
+   * loading cue. Actual chunk loads keep the Suspense fallback spinner up
+   * for as long as they need.
+   */
+  const [pageTransitioning, setPageTransitioning] = useState(false);
+  useEffect(() => {
+    setPageTransitioning(true);
+    const timer = setTimeout(() => setPageTransitioning(false), 1200);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+
   const profileMenuRef = useRef(null);
   const unreadRequestPending = useRef(false);
   const [query, setQuery] = useState('');
@@ -397,40 +410,39 @@ const StudentLayoutForDesktopView = ({ children }) => {
   const avatar = getAvatar(user);
 
   /*
-   * The page slot is shell-agnostic: both shells render the exact same markup
-   * so the routed page is never duplicated.
+   * The routed page renders once and is shared by both shells. The Profile
+   * pages assemble their own hero/tabs/card via ProfileSection AFTER their
+   * data loads — so during loading the frame is blank behind the curtain.
    */
+  const routedPage = (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        initial={{
+          opacity: 0,
+          y: 6,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+        }}
+        exit={{
+          opacity: 0,
+          y: -4,
+        }}
+        transition={{
+          duration: 0.16,
+        }}
+        className="student-page-content"
+      >
+        <Suspense fallback={<RouteLoading />}>{children}</Suspense>
+      </motion.div>
+    </AnimatePresence>
+  );
+
   const pageSlot = (
     <main id="student-main" tabIndex={-1} className="student-main">
-      {isActive('/student/profile') && (
-        <nav aria-label="Profile sections" className="student-profile-sections">
-          <Link to="/student/profile" aria-current={location.pathname.startsWith('/student/profile') ? 'page' : undefined}>Overview</Link>
-          <Link to="/student/health-profile" aria-current={location.pathname === '/student/health-profile' ? 'page' : undefined}>Health Profile</Link>
-        </nav>
-      )}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={location.pathname}
-          initial={{
-            opacity: 0,
-            y: 6,
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-          exit={{
-            opacity: 0,
-            y: -4,
-          }}
-          transition={{
-            duration: 0.16,
-          }}
-          className="student-page-content"
-        >
-          <Suspense fallback={<RouteLoading />}>{children}</Suspense>
-        </motion.div>
-      </AnimatePresence>
+      {routedPage}
     </main>
   );
 
@@ -521,6 +533,11 @@ const StudentLayoutForDesktopView = ({ children }) => {
       {/* Clinic assistant. Student portal only; conversation lives in memory.
           Hidden when the student turns it off in Settings → General. */}
       {widgetPrefs.chatWidget && <ChatWidget />}
+
+      {/* Simple loading curtain — raises the shared spinner overlay briefly
+          on every tab change (see pageTransitioning above). Renders nothing
+          on the page itself; the overlay host paints the only spinner. */}
+      {pageTransitioning && <RouteLoading />}
     </div>
     </StudentPortalSearchContext.Provider>
   );

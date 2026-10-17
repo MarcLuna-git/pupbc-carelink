@@ -55,9 +55,6 @@
 .student-account-caption small { font-size:9px;color:var(--sp-muted);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
 .student-main { flex:1 0 auto;min-height:100dvh;min-width:0;overflow:visible;overscroll-behavior:contain;padding:calc(var(--sp-header-height) + 16px) 22px 16px;scroll-behavior:smooth;scroll-padding-top:calc(var(--sp-header-height) + 16px); }
 .student-page-content { width:100%;max-width:1440px;margin:0 auto;min-width:0; }
-.student-profile-sections { display:flex;gap:5px;flex-wrap:wrap;margin:0 auto 16px;max-width:1440px;border-bottom:1px solid var(--sp-border);padding-bottom:10px; }
-.student-profile-sections a { border-radius:8px;font-size:13px;padding:10px 14px;color:var(--sp-muted); }
-.student-profile-sections a[aria-current=page] { color:var(--sp-accent);background:var(--sp-soft);font-weight:700; }
 .student-help-widget { position:fixed;z-index:45;left:calc(var(--sp-sidebar) + 22px);bottom:calc(18px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:10px;max-width:300px;padding:11px 14px;border-radius:14px;background:var(--sp-surface);border:1px solid var(--sp-border);box-shadow:0 12px 30px #3d12201f;font-size:11px;line-height:1.45;color:var(--sp-muted);transition:transform .18s ease,box-shadow .18s ease; }
 .student-help-widget:hover { transform:translateY(-2px);box-shadow:0 16px 34px #3d122029; }
 .student-help-widget .student-help-widget-icon { width:20px;height:20px;flex-shrink:0;color:var(--sp-accent); }

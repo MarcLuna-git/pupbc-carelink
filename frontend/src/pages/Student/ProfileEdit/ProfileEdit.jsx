@@ -2,10 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, MapPin, Camera, Save, Loader2, Hash, GraduationCap, Calendar, X, ArrowLeft } from 'lucide-react';
 import api from '../../../services/api';
-
-const Skeleton = ({ className = '' }) => (
-  <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded-2xl ${className}`} />
-);
+import RouteLoading from '../../../components/RouteLoading';
+import ProfileSection from '../../../layouts/StudentLayout/student-shell/ProfileSection';
 
 const ProfileEdit = () => {
   const navigate = useNavigate();
@@ -144,47 +142,14 @@ const ProfileEdit = () => {
   const inputClass = "w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-maroon-500 focus:border-transparent transition disabled:opacity-50 disabled:cursor-not-allowed";
   const labelClass = "text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5";
 
+  /* Blank frame behind the RouteLoading curtain — the section renders at once when ready. */
   if (fetching) {
-    return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <Skeleton className="h-7 w-36 mb-1.5" />
-            <Skeleton className="h-4 w-48" />
-          </div>
-          <Skeleton className="h-10 w-20 rounded-2xl" />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <div className="space-y-4">
-            <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-gray-100 dark:border-gray-700 text-center space-y-3">
-              <Skeleton className="w-24 h-24 rounded-full mx-auto" />
-              <Skeleton className="h-5 w-32 mx-auto" />
-              <Skeleton className="h-4 w-24 mx-auto" />
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-gray-100 dark:border-gray-700 space-y-3">
-              <Skeleton className="h-5 w-28" />
-              {[1,2,3].map(i => <Skeleton key={i} className="h-10 w-full rounded-xl" />)}
-            </div>
-          </div>
-          <div className="lg:col-span-2 space-y-4">
-            {[1,2].map(i => (
-              <div key={i} className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-gray-100 dark:border-gray-700 space-y-3">
-                <Skeleton className="h-5 w-40" />
-                <div className="grid grid-cols-2 gap-4">
-                  <Skeleton className="h-12 rounded-2xl" />
-                  <Skeleton className="h-12 rounded-2xl" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+    return <RouteLoading />;
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-5 pb-6">
-      
+    <ProfileSection>
+      <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
           <Link to="/student/profile" className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition flex-shrink-0">
@@ -290,6 +255,7 @@ const ProfileEdit = () => {
         </div>
       </div>
     </div>
+    </ProfileSection>
   );
 };
 

@@ -9,26 +9,19 @@ import {
   Download,
   Printer,
   Loader2,
-  Shield,
+  AlertTriangle,
   Smartphone,
   ChevronRight,
   Calendar,
   Clock,
   CheckCircle,
   Users,
-  AlertCircle,
   RefreshCw,
-  Info,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import clinicLogo from '../../../assets/clinic logo.jpg';
 import useVisiblePolling from '../../../hooks/useVisiblePolling';
-
-const Skeleton = ({ className = '' }) => (
-  <div
-    className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded-2xl ${className}`}
-  />
-);
+import RouteLoading from '../../../components/RouteLoading';
 
 const queueStatusLabel = (status) => {
   switch (status) {
@@ -454,60 +447,83 @@ const fetchQrData = async (signal) => {
     );
   }
 
+  /* Blank frame behind the RouteLoading curtain — the page renders at once when ready. */
   if (pageLoading) {
-    return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] mx-auto">
-        <div className="mb-6">
-          <Skeleton className="h-7 w-36 mb-2" />
-          <Skeleton className="h-4 w-56" />
-        </div>
-
-        <div className="grid lg:grid-cols-5 gap-6">
-          <div className="lg:col-span-3">
-            <Skeleton className="h-[470px] rounded-3xl" />
-          </div>
-
-          <div className="lg:col-span-2">
-            <Skeleton className="h-64 rounded-3xl" />
-          </div>
-        </div>
-      </div>
-    );
+    return <RouteLoading />;
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] mx-auto pb-8">
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            My QR Code
-          </h1>
+    <div className="space-y-5 max-w-[1200px] mx-auto">
+      {/* Hero header card */}
+      <div className="rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My QR Code</h1>
+            <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Use this for clinic check-in on the day of your approved appointment.</p>
+          </div>
 
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Use this for clinic check-in on
-            the day of your approved appointment.
-          </p>
+          <button
+            type="button"
+            onClick={() => fetchQrData()}
+            disabled={refreshing}
+            className="flex-shrink-0 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50"
+            title="Refresh"
+          >
+            <RefreshCw
+              className={`w-4 h-4 text-gray-500 ${
+                refreshing ? 'animate-spin' : ''
+              }`}
+            />
+          </button>
         </div>
-
-        <button
-          type="button"
-          onClick={() =>
-            fetchQrData()
-          }
-          disabled={refreshing}
-          className="p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50"
-          title="Refresh"
-        >
-          <RefreshCw
-            className={`w-4 h-4 text-gray-500 ${
-              refreshing
-                ? 'animate-spin'
-                : ''
-            }`}
-          />
-        </button>
       </div>
 
+      {/* How to Use */}
+      <div className="rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
+        <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <Smartphone className="w-5 h-5" />
+          How to Use
+        </h3>
+
+        <div className="space-y-4">
+          {[
+            {
+              step: 1,
+              title: 'Go to the Clinic',
+              desc: 'Arrive around 10–15 minutes before your approved appointment.',
+            },
+            {
+              step: 2,
+              title: 'Scan Your QR',
+              desc: 'Present the QR to the clinic kiosk to identify your appointment.',
+            },
+            {
+              step: 3,
+              title: 'Complete Check-in',
+              desc: 'Follow the kiosk instructions and complete triage.',
+            },
+            {
+              step: 4,
+              title: 'Wait for Your Turn',
+              desc: 'Your queue number and current queue status will appear here.',
+            },
+          ].map((item) => (
+            <div key={item.step} className="flex gap-3">
+              <div className="w-7 h-7 bg-maroon-200 dark:bg-maroon-800 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-xs font-bold text-maroon-800 dark:text-maroon-300">{item.step}</span>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{item.title}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">{item.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Main content card */}
+      <div className="rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
       {message && (
         <motion.div
           initial={{
@@ -531,11 +547,16 @@ const fetchQrData = async (signal) => {
         </motion.div>
       )}
 
-      <div className="grid lg:grid-cols-5 gap-6">
-        <div className="lg:col-span-3 space-y-4">
+        {/* Section header */}
+        <div className="mb-5">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Clinic Check-in QR</h2>
+          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Approved appointments become eligible for QR check-in on their scheduled date.</p>
+        </div>
+
+        {/* Nested container — the generated QR */}
+        <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 sm:p-8 dark:border-gray-700 dark:bg-gray-900/20">
           {canUseQr ? (
-            <>
-              <motion.div
+            <motion.div
                 initial={{
                   opacity: 0,
                   scale: 0.97,
@@ -544,7 +565,7 @@ const fetchQrData = async (signal) => {
                   opacity: 1,
                   scale: 1,
                 }}
-                className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8 border border-gray-100 dark:border-gray-700 text-center shadow-sm"
+                className="text-center"
               >
                 <div className="inline-flex items-center gap-2 mb-5 px-3 py-1.5 rounded-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-semibold">
                   <CheckCircle className="w-4 h-4" />
@@ -596,46 +617,8 @@ const fetchQrData = async (signal) => {
                     : ''}
                 </p>
               </motion.div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={handleDownload}
-                  disabled={
-                    downloading ||
-                    !qrDataUrl
-                  }
-                  className="flex items-center justify-center gap-2 py-3.5 bg-maroon-800 text-white font-semibold rounded-2xl hover:bg-maroon-900 transition shadow-lg shadow-maroon-800/20 disabled:opacity-50 text-sm sm:text-base"
-                >
-                  {downloading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Download className="w-4 h-4" />
-                  )}
-
-                  <span>
-                    {downloading
-                      ? 'Downloading...'
-                      : 'Download'}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handlePrint}
-                  disabled={!qrDataUrl}
-                  className="flex items-center justify-center gap-2 py-3.5 bg-white dark:bg-gray-800 border-2 border-maroon-800 dark:border-maroon-700 text-maroon-800 dark:text-maroon-400 font-semibold rounded-2xl hover:bg-maroon-50 dark:hover:bg-maroon-900/20 transition disabled:opacity-50 text-sm sm:text-base"
-                >
-                  <Printer className="w-4 h-4" />
-
-                  <span>
-                    Print
-                  </span>
-                </button>
-              </div>
-            </>
           ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-7 sm:p-10 text-center">
+            <div className="py-6 text-center">
               <div className="w-16 h-16 mx-auto rounded-2xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                 <QrCode className="w-8 h-8 text-gray-400" />
               </div>
@@ -670,9 +653,51 @@ const fetchQrData = async (signal) => {
           )}
         </div>
 
-        <div className="lg:col-span-2 space-y-4">
+        {canUseQr && (
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={handleDownload}
+              disabled={downloading || !qrDataUrl}
+              className="flex items-center justify-center gap-2 py-3.5 bg-maroon-800 text-white font-semibold rounded-2xl hover:bg-maroon-900 transition shadow-lg shadow-maroon-800/20 disabled:opacity-50 text-sm sm:text-base"
+            >
+              {downloading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+              <span>{downloading ? 'Downloading...' : 'Download'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePrint}
+              disabled={!qrDataUrl}
+              className="flex items-center justify-center gap-2 py-3.5 bg-white dark:bg-gray-800 border-2 border-maroon-800 dark:border-maroon-700 text-maroon-800 dark:text-maroon-400 font-semibold rounded-2xl hover:bg-maroon-50 dark:hover:bg-maroon-900/20 transition disabled:opacity-50 text-sm sm:text-base"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print</span>
+            </button>
+          </div>
+        )}
+
+        {/* Keep Your QR Private */}
+        <div className="mt-5 flex items-start gap-3">
+          <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+
+          <div>
+            <p className="text-xs font-semibold text-gray-900 dark:text-white">Keep Your QR Private</p>
+
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+              This QR identifies your student account at the clinic. Do not share screenshots or printed copies with other people. Medical information is not stored directly inside the QR.
+            </p>
+          </div>
+        </div>
+
+        {/* Today's appointment & queue status */}
+        <div className="mt-4 space-y-4">
           {todayAppointment && (
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl p-5 sm:p-6">
+            <div className="border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/20 rounded-2xl p-5 sm:p-6">
               <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-maroon-700 dark:text-maroon-400" />
                 Today's Appointment
@@ -815,100 +840,9 @@ const fetchQrData = async (signal) => {
               </div>
             </div>
           )}
-
-          <div className="bg-maroon-50 dark:bg-maroon-900/10 border border-maroon-200 dark:border-maroon-800/20 rounded-3xl p-5 sm:p-6">
-            <h3 className="font-bold text-maroon-900 dark:text-maroon-400 mb-4 flex items-center gap-2">
-              <Smartphone className="w-5 h-5" />
-              How to Use
-            </h3>
-
-            <div className="space-y-4">
-              {[
-                {
-                  step: 1,
-                  title: 'Go to the Clinic',
-                  desc:
-                    'Arrive around 10–15 minutes before your approved appointment.',
-                },
-                {
-                  step: 2,
-                  title: 'Scan Your QR',
-                  desc:
-                    'Present the QR to the clinic kiosk to identify your appointment.',
-                },
-                {
-                  step: 3,
-                  title: 'Complete Check-in',
-                  desc:
-                    'Follow the kiosk instructions and complete triage.',
-                },
-                {
-                  step: 4,
-                  title: 'Wait for Your Turn',
-                  desc:
-                    'Your queue number and current queue status will appear here.',
-                },
-              ].map((item) => (
-                <div
-                  key={item.step}
-                  className="flex gap-3"
-                >
-                  <div className="w-7 h-7 bg-maroon-200 dark:bg-maroon-800 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-bold text-maroon-800 dark:text-maroon-300">
-                      {item.step}
-                    </span>
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {item.title}
-                    </p>
-
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
-                      {item.desc}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 rounded-3xl p-5">
-            <div className="flex items-start gap-3">
-              <Shield className="w-5 h-5 text-yellow-600 dark:text-yellow-500 mt-0.5 flex-shrink-0" />
-
-              <div>
-                <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-400">
-                  Keep Your QR Private
-                </p>
-
-                <p className="text-xs text-yellow-700 dark:text-yellow-500 mt-1 leading-relaxed">
-                  This QR identifies your student
-                  account at the clinic. Do not
-                  share screenshots or printed
-                  copies with other people.
-                  Medical information is not stored
-                  directly inside the QR.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {!todayAppointment && (
-            <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl p-5">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
-
-                <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                  Future approved appointments will
-                  become eligible for QR check-in
-                  on their scheduled date.
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
+
     </div>
   );
 };

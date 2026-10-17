@@ -14,16 +14,11 @@ import {
   Shield,
   FileText,
   Edit3,
+  Loader2,
 } from 'lucide-react';
 import api from '../../../services/api';
-import { appointmentDate as normalizeDateValue, appointmentTime as parseAppointmentDateTime, isClinicSunday as isSunday, formatAppointmentDate as formatDate } from '../../../utils/appointmentDate';
+import { clinicDate, appointmentDate as normalizeDateValue, appointmentTime as parseAppointmentDateTime, isClinicSunday as isSunday, formatAppointmentDate as formatDate } from '../../../utils/appointmentDate';
 import useVisiblePolling from '../../../hooks/useVisiblePolling';
-
-const Skeleton = ({ className = '' }) => (
-  <div
-    className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded-2xl ${className}`}
-  />
-);
 
 const Appointments = () => {
   const user = JSON.parse(
@@ -32,6 +27,10 @@ const Appointments = () => {
 
   const healthProfileDone =
     Boolean(user?.profile?.health_profile_completed || user?.health_profile_completed);
+
+  /* Fresh-reload default: today pre-selected (unless the clinic is closed)
+     so the step 2 slot labels are populated without picking a date. */
+  const defaultDate = isSunday(clinicDate()) ? '' : clinicDate();
 
   const [showForm, setShowForm] = useState(true);
   const [editingId, setEditingId] = useState(null);
@@ -84,7 +83,7 @@ const Appointments = () => {
 
   const [form, setForm] = useState({
     service: '',
-    date: '',
+    date: defaultDate,
     time: '',
     concern: '',
   });
@@ -379,6 +378,7 @@ const Appointments = () => {
       return {
         available: 10,
         booked: 0,
+        is_past: false,
         isFull: false,
       };
     }
@@ -470,6 +470,26 @@ const Appointments = () => {
 
         setMessage(
           'This time slot is already full. Please select a different time.'
+        );
+
+        setTimeout(
+          () =>
+            setMessage(''),
+          3000
+        );
+
+        return;
+      }
+
+      if (
+        slotInfo.is_past
+      ) {
+        setMessageType(
+          'error'
+        );
+
+        setMessage(
+          'This time slot has already passed. Please select a different time.'
         );
 
         setTimeout(
@@ -590,16 +610,26 @@ const Appointments = () => {
 
           setForm({
             service: '',
-            date: '',
+            date: defaultDate,
             time: '',
             concern: '',
           });
 
-          setAvailableSlots(
-            []
-          );
-
           fetchAppointments();
+          if (form.time) {
+            setAvailableSlots((current) =>
+              current.map((slot) =>
+                slot.time === form.time
+                  ? {
+                      ...slot,
+                      available: Math.max(0, (slot.available ?? 10) - 1),
+                      booked: (slot.booked ?? 0) + 1,
+                      isFull: ((slot.available ?? 10) - 1) <= 0,
+                    }
+                  : slot
+              )
+            );
+          }
         }
       } catch (err) {
         setMessageType(
@@ -739,47 +769,9 @@ const Appointments = () => {
 
   if (pageLoading) {
     return (
-      <div className="space-y-5 max-w-3xl mx-auto px-4 sm:px-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <Skeleton className="h-7 w-40 mb-1" />
-            <Skeleton className="h-4 w-28" />
-          </div>
-
-          <Skeleton className="h-10 w-24 rounded-2xl" />
-        </div>
-
-        <div className="flex gap-2">
-          {[...Array(5)].map(
-            (_, i) => (
-              <Skeleton
-                key={i}
-                className="h-9 w-20 rounded-xl"
-              />
-            )
-          )}
-        </div>
-
-        <div className="space-y-3">
-          {[...Array(3)].map(
-            (_, i) => (
-              <div
-                key={i}
-                className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-gray-100 dark:border-gray-700"
-              >
-                <div className="flex justify-between">
-                  <div className="space-y-2">
-                    <Skeleton className="h-5 w-40" />
-                    <Skeleton className="h-3 w-24" />
-                    <Skeleton className="h-4 w-32" />
-                  </div>
-
-                  <Skeleton className="h-7 w-20 rounded-full" />
-                </div>
-              </div>
-            )
-          )}
-        </div>
+      <div className="ap-page-loading" role="status" aria-live="polite">
+        <Loader2 className="animate-spin" />
+        <p>Loading your appointments…</p>
       </div>
     );
   }
@@ -792,8 +784,7 @@ const Appointments = () => {
         availableSlots={availableSlots} slotsLoading={slotsLoading} loading={loading} message={message} messageType={messageType}
         retrySlots={() => fetchAvailableSlots(form.date)} onCancelEdit={() => {
           setEditingId(null);
-          setForm({ service: '', date: '', time: '', concern: '' });
-          setAvailableSlots([]);
+          setForm({ service: '', date: defaultDate, time: '', concern: '' });
         }} />
 
 

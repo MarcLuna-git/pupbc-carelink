@@ -104,7 +104,9 @@ Content-Type: application/json
         "max": 10,
         "booked": 5,
         "available": 5,
-        "is_full": false
+        "is_past": false,
+        "is_full": false,
+        "isFull": false
       }
     ]
   }
