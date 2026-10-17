@@ -14,8 +14,8 @@ import {
   Shield,
   FileText,
   Edit3,
-  Loader2,
 } from 'lucide-react';
+import RouteLoading from '../../../components/RouteLoading';
 import api from '../../../services/api';
 import { clinicDate, appointmentDate as normalizeDateValue, appointmentTime as parseAppointmentDateTime, isClinicSunday as isSunday, formatAppointmentDate as formatDate } from '../../../utils/appointmentDate';
 import useVisiblePolling from '../../../hooks/useVisiblePolling';
@@ -767,13 +767,9 @@ const Appointments = () => {
     );
   }
 
+  /* Blank frame behind the RouteLoading curtain — the page renders at once when ready. */
   if (pageLoading) {
-    return (
-      <div className="ap-page-loading" role="status" aria-live="polite">
-        <Loader2 className="animate-spin" />
-        <p>Loading your appointments…</p>
-      </div>
-    );
+    return <RouteLoading />;
   }
 
   return (

@@ -72,17 +72,11 @@ const StudentLayoutForDesktopView = ({ children }) => {
   const location = useLocation();
 
   /*
-   * Simple loading curtain: EVERY sidebar / bottom-nav tab change shows a
-   * small looping spinner for a beat (1200ms) — a light, non-intrusive
-   * loading cue. Actual chunk loads keep the Suspense fallback spinner up
-   * for as long as they need.
+   * Loading curtains are purely real-loading driven: the Suspense fallback
+   * covers lazy-chunk loads and pages mount <RouteLoading /> while their own
+   * data fetches run. No artificial timer — a spinner must never outlive
+   * the page it belongs to.
    */
-  const [pageTransitioning, setPageTransitioning] = useState(false);
-  useEffect(() => {
-    setPageTransitioning(true);
-    const timer = setTimeout(() => setPageTransitioning(false), 1200);
-    return () => clearTimeout(timer);
-  }, [location.pathname]);
 
   const profileMenuRef = useRef(null);
   const unreadRequestPending = useRef(false);
@@ -534,11 +528,9 @@ const StudentLayoutForDesktopView = ({ children }) => {
           Hidden when the student turns it off in Settings → General. */}
       {widgetPrefs.chatWidget && <ChatWidget />}
 
-      {/* Simple loading curtain — raises the shared spinner overlay briefly
-          on every tab change (see pageTransitioning above). Renders nothing
-          on the page itself; the overlay host paints the only spinner. */}
-      {pageTransitioning && <RouteLoading />}
-    </div>
+      {/* Loading curtains come only from real work: the Suspense fallback
+          (lazy chunks) and pages that mount <RouteLoading /> while fetching. */}
+     </div>
     </StudentPortalSearchContext.Provider>
   );
 };
