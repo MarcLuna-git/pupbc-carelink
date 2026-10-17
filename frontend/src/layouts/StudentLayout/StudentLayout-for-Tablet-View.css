@@ -1,0 +1,193 @@
+/*
+ * Tablet / desktop outer shell styles (viewport >= 768px).
+ *
+ * Split out of StudentLayout-for-Desktop-View.css. The shared chrome classes that
+ * BOTH shells reuse (the shell root, `.student-sidebar`, `.student-header`,
+ * `.student-main`, etc.) intentionally stay in StudentLayout-for-Desktop-View.css
+ * so the mobile shell can reuse them too. This file only owns the tablet-only
+ * pieces and the tablet/desktop breakpoints.
+ *
+ * Load order (StudentLayout-for-Desktop-View imports StudentLayout-for-Desktop-View.css,
+ * then StudentLayout-for-Tablet-View, then StudentLayout-for-Mobile-View) keeps
+ * these rules after the base and before the mobile overrides.
+ */
+
+/*
+ * Collapsible sidebar.
+ *
+ * The toggle button is ATTACHED to the sidebar: it sits flush against the
+ * sidebar's right edge (left = var(--sp-sidebar), no gap) and shares the
+ * sidebar's maroon gradient, so the sidebar and the button read as ONE
+ * shape — like a pull tab on the sidebar's edge. It is rendered OUTSIDE the
+ * <aside> (which has overflow:hidden) but visually merged with it.
+ *
+ * FOLDED (collapsed) = 76px icon rail — the DEFAULT on tablet widths
+ * (768-1099px, set from JS on mount/breakpoint change) AND on desktop.
+ * UNFOLDED (expanded) = the full desktop-style sidebar (198px with labels,
+ * tagline, campus image). The collapsed state is applied with plain sibling
+ * selectors (`.is-collapsed ~ ...`) instead of :has(), so it works in every
+ * browser: the aside width, the toggle button position, the body margin,
+ * and the fixed header all follow the sidebar edge.
+ */
+.student-sidebar { transition:width .28s ease; }
+.student-shell-body { transition:margin-left .28s ease; }
+.student-header { transition:left .28s ease; }
+/*
+ * Sidebar search field — sized to match the nav tabs (same height and
+ * width), sitting directly above the Appointments tab. Hidden while the
+ * sidebar is folded to the icon rail (an input cannot shrink to icon size).
+ */
+.student-sidebar-search { position:relative;display:flex;align-items:center;margin-bottom:10px; }
+/*
+ * The search icon mirrors the nav tab icons exactly. Positions here are
+ * relative to the FORM, which is already inset by the nav's 12px padding:
+ *   - tab icon left edge: 28px from sidebar = 16px from form
+ *   - tab label start:    59px from sidebar = 47px from form
+ */
+.student-sidebar-search svg { position:absolute;left:16px;width:20px;height:20px;color:#ffffff99;pointer-events:none; }
+.student-sidebar-search input { width:100%;min-height:45px;border:1px solid #ffffff26;border-radius:12px;background:#ffffff14;padding:0 12px 0 47px;font-family:inherit;font-size:13px;color:#fff;outline:none;transition:background .15s ease,border-color .15s ease; }
+.student-sidebar-search input::placeholder { color:#ffffff80; }
+.student-sidebar-search input:focus { background:#ffffff20;border-color:#ffffff59; }
+/* Folded rail: icon-only search — expands the sidebar on click. The icon
+   sits at the SAME fixed x-position as the expanded form's icon (16px from
+   the button's left edge = 28px from the sidebar edge, matching the nav tab
+   icons), so the form/button swap is seamless and the icon never moves
+   during the width transition. */
+.student-sidebar-search-collapsed { display:flex;align-items:center;justify-content:flex-start;width:100%;height:45px;margin-bottom:10px;border:0;border-radius:12px;background:transparent;color:#fff;cursor:pointer;transition:background .15s ease;padding-left:16px; }
+.student-sidebar-search-collapsed:hover { background:#ffffff20; }
+.student-sidebar-search-collapsed svg { width:20px;height:20px; }
+/*
+ * Icon column synchronization.
+ *
+ * In BOTH states every icon is centered on the same vertical axis —
+ * 38px from the sidebar's left edge (the folded rail's center line) —
+ * so toggling minimize/maximize never shifts the icons horizontally.
+ * Only the labels/text slide in and out:
+ *   - nav links:  icon left edge 28px (12px nav + 16px link padding)
+ *   - brand:      symbol left edge 21.5px (33px wide, centered at 38px)
+ *   - search:     icon left edge 30.5px (15px wide, centered at 38px)
+ * Vertical paddings are equalized too (16px nav / 22px brand), so the
+ * icons do not jump vertically either.
+ */
+.student-sidebar-nav { padding:16px 12px; }
+.student-sidebar-nav>a { padding-left:16px; }
+.student-sidebar-brand { padding:22px 18px 22px 21.5px; }
+/*
+ * The nav's base `overflow-y:auto` implies `overflow-x:auto` (CSS spec), so
+ * during the width transition the shrinking rail briefly shows a horizontal
+ * scrollbar just above the tagline. Clip horizontal overflow instead —
+ * vertical scrolling of the menu is unaffected.
+ *
+ * The vertical scrollbar is hidden entirely (the nav still scrolls by wheel
+ * on very short screens) — during the width transition the wrapping labels
+ * and tagline momentarily squeeze the nav, and that transient overflow must
+ * not flash a scrollbar. Matches the shell's hidden-scrollbar aesthetic.
+ */
+.student-sidebar-nav { overflow-x:hidden;overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none; }
+.student-sidebar-nav::-webkit-scrollbar { display:none; }
+/* Labels never wrap — link heights stay constant during the width
+   transition, so the menu cannot grow tall enough to overflow. Overflowing
+   text is clipped by the sidebar's own overflow:hidden instead. */
+.student-sidebar-nav>a span { white-space:nowrap;overflow:hidden;max-width:200px;opacity:1;transition:max-width .28s ease,opacity .18s ease; }
+.student-sidebar-brand a>div { white-space:nowrap;overflow:hidden;max-width:200px;opacity:1;transition:max-width .28s ease,opacity .18s ease; }
+.student-sidebar-campus { transition:opacity .28s ease; }
+/*
+ * Collapse animation: only the TEXT minimizes. The icon column is pinned
+ * (see sync rules above — same paddings apply in both states), so the
+ * icons never move; the labels shrink (max-width -> 0) and fade out while
+ * the sidebar narrows.
+ */
+.student-sidebar-toggle {
+  position:fixed;top:40px;left:var(--sp-sidebar);z-index:45;
+  transform:translateY(-50%);
+  display:flex;align-items:center;justify-content:center;
+  width:22px;height:52px;
+  border:0;border-radius:0 10px 10px 0;
+  /*
+   * Color sampled from the sidebar gradient at the button's CURRENT
+   * position (right edge, ~14-66px from the top = the light #8b2235 band
+   * of the 160deg gradient). A subtle vertical local gradient mimics the
+   * sidebar's shading at that band, so the tab blends seamlessly.
+   */
+  background:linear-gradient(180deg,#8b2235,#841c2f);
+  color:#fff0ef;
+  box-shadow:2px 2px 10px #3d122026;cursor:pointer;
+  transition:left .28s ease,color .15s ease,filter .15s ease;
+}
+/*
+ * Hover feedback lives on the ARROW only — the button's maroon background
+ * stays unchanged on hover.
+ */
+.student-sidebar-toggle svg { width:15px;height:15px;transition:color .15s ease; }
+.student-sidebar-toggle:hover svg { color:#fff; }
+.student-sidebar.is-collapsed { width:76px; }
+.student-sidebar.is-collapsed ~ .student-sidebar-toggle { left:76px; }
+.student-sidebar.is-collapsed ~ .student-shell-body { margin-left:76px; }
+.student-sidebar.is-collapsed ~ .student-shell-body .student-header { left:76px; }
+/* No padding/justification overrides here on purpose: the icon column
+   paddings from the sync rules above persist, so icons stay in place. */
+.student-sidebar.is-collapsed .student-sidebar-brand a>div { max-width:0;opacity:0; }
+.student-sidebar.is-collapsed .student-sidebar-tagline { display:none; }
+.student-sidebar.is-collapsed .student-sidebar-campus { opacity:0; }
+.student-sidebar.is-collapsed .student-sidebar-nav>a span { max-width:0;opacity:0; }
+
+@media (min-width:768px) and (max-width:1099px) {
+  .student-header-inner { padding:0 18px;gap:10px; }
+  .student-account-caption { display:none; }
+}
+@media (min-width:1100px) {
+  .student-header-page { flex:0 0 210px; }
+  .student-header-actions { margin-left:auto; }
+}
+
+/*
+ * The body is a fixed frame — the shell body is the scroll container, so the
+ * page-level body scrollbar is meaningless and must never appear (even a 1px
+ * overflow would flash a second scrollbar beside the custom one). Wheel /
+ * keyboard / touchpad scrolling happens inside the shell body. Pages outside
+ * the Student shell (login, nurse portal) are not affected.
+ *
+ * SCOPE: mobile (<= 767px) scrolls the DOCUMENT instead — its shell body just
+ * grows and the fixed header / bottom dock overlay it. This viewport lock
+ * must only exist where .student-shell-body is the scroll container; unscoped,
+ * it leaks into the mobile breakpoint and freezes all Student pages on phones.
+ */
+@media (min-width:768px) {
+  body:has(.student-approved-shell) { overflow:hidden; }
+}
+html:has(.student-approved-shell),
+body:has(.student-approved-shell) { scrollbar-width:none;-ms-overflow-style:none; }
+html:has(.student-approved-shell)::-webkit-scrollbar,
+body:has(.student-approved-shell)::-webkit-scrollbar { display:none; }
+
+/*
+ * Custom page scrollbar (simple & classic) — tablet/desktop only.
+ *
+ * The shell body becomes the scroll area PHYSICALLY BELOW the fixed
+ * header (margin-top = header height, height = the rest), so its
+ * scrollbar column starts at the header's bottom edge and can NEVER
+ * reach behind or above the header — no coverage tricks, no overlap.
+ * One shell-level fix: every standalone page gets it automatically.
+ */
+@media (min-width:768px) {
+  .student-shell-body {
+    min-height:0;
+    height:calc(100dvh - var(--sp-header-height));
+    margin-top:var(--sp-header-height);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    scroll-behavior:smooth;
+    scrollbar-width:thin;
+    scrollbar-color:#c9bfc2 transparent;
+  }
+  /* The scroll area already starts below the header, so the main content
+     only needs its own breathing room (no extra header offset). */
+  .student-main { min-height:100%;padding-top:16px; }
+  .student-shell-body::-webkit-scrollbar { width:10px; }
+  .student-shell-body::-webkit-scrollbar-track { background:transparent; }
+  .student-shell-body::-webkit-scrollbar-thumb { background-color:#c9bfc2;border-radius:8px;border:3px solid transparent;background-clip:content-box; }
+  .student-shell-body::-webkit-scrollbar-thumb:hover { background-color:#ab9ea2; }
+  .dark .student-shell-body { scrollbar-color:#4a4149 transparent; }
+  .dark .student-shell-body::-webkit-scrollbar-thumb { background-color:#4a4149; }
+  .dark .student-shell-body::-webkit-scrollbar-thumb:hover { background-color:#5c525b; }
+}

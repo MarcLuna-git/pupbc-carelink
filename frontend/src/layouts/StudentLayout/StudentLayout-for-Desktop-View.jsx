@@ -43,19 +43,19 @@ import {
  * stylesheet). Keeping this order bundles the shell rules after the base
  * rules, matching the original single stylesheet's cascade.
  */
-import './StudentLayout-for-Web-View.css';
-import StudentLayoutForLaptopView from './StudentLayout-for-Laptop-View';
+import './StudentLayout-for-Desktop-View.css';
+import StudentLayoutForTabletView from './StudentLayout-for-Tablet-View';
 import StudentLayoutForMobileView from './StudentLayout-for-Mobile-View';
 
 /*
- * Student portal outer shell / main frame (web view).
+ * Student portal outer shell / main frame (desktop view).
  *
  * This is the skeleton the routed Student pages live inside. It owns the
  * shared state and behaviour (logged-in user, notifications, theme, search,
  * account menu, logout) and the frame-level overlays (the floating help
  * widget, the logout dialog, and the clinic assistant). It then embeds ONE of
  * the two view shells, chosen with a JS media query:
- *   - StudentLayout-for-Laptop-View  (>= 768px)
+ *   - StudentLayout-for-Tablet-View  (>= 768px)
  *   - StudentLayout-for-Mobile-View  (<= 767px)
  * The routed page is passed to whichever shell is active through `children`.
  */
@@ -67,21 +67,19 @@ const getIsMobileView = () => {
   return window.matchMedia(MOBILE_QUERY).matches;
 };
 
-const StudentLayoutForWebView = ({ children }) => {
+const StudentLayoutForDesktopView = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const profileMenuRef = useRef(null);
   const unreadRequestPending = useRef(false);
-  const searchRef = useRef(null);
   const [query, setQuery] = useState('');
-  const [searchOpen, setSearchOpen] = useState(false);
 
   /*
    * Which shell to render. The frame picks a single shell with a JS media
    * query so only one of them is ever mounted:
-   *   - <= 767px : StudentLayout-for-Mobile-View (drawer + bottom nav)
-   *   - >= 768px : StudentLayout-for-Laptop-View (sidebar + header)
+   *   - <= 767px : StudentLayout-for-Mobile-View (header + bottom nav)
+   *   - >= 768px : StudentLayout-for-Tablet-View (sidebar + header)
    */
   const [isMobileView, setIsMobileView] = useState(getIsMobileView);
 
@@ -356,23 +354,7 @@ const StudentLayoutForWebView = ({ children }) => {
 
   useEffect(() => {
     setProfileMenuOpen(false);
-    setSearchOpen(false);
   }, [location.pathname]);
-
-  useEffect(() => {
-    const shortcut = event => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        setSearchOpen(true);
-        requestAnimationFrame(() => searchRef.current?.focus());
-      }
-      if (event.key === 'Escape') {
-        setSearchOpen(false);
-      }
-    };
-    document.addEventListener('keydown', shortcut);
-    return () => document.removeEventListener('keydown', shortcut);
-  }, []);
 
   /*
    * ------------------------------------------------
@@ -413,12 +395,6 @@ const StudentLayoutForWebView = ({ children }) => {
     getDisplayName(user);
 
   const avatar = getAvatar(user);
-
-  const handleSearchSubmit = (event) => {
-    event.preventDefault();
-    setSearchOpen(false);
-    navigate('/student/appointments');
-  };
 
   /*
    * The page slot is shell-agnostic: both shells render the exact same markup
@@ -480,28 +456,22 @@ const StudentLayoutForWebView = ({ children }) => {
           unreadCount={unreadCount}
           darkMode={darkMode}
           toggleDarkMode={toggleDarkMode}
-          query={query}
-          setQuery={setQuery}
-          searchOpen={searchOpen}
-          setSearchOpen={setSearchOpen}
-          searchRef={searchRef}
           profileMenuOpen={profileMenuOpen}
           setProfileMenuOpen={setProfileMenuOpen}
           profileMenuRef={profileMenuRef}
-          pageTitle={pageTitle}
-          onSearchSubmit={handleSearchSubmit}
           onLogout={handleLogout}
         >
           {pageSlot}
         </StudentLayoutForMobileView>
       ) : (
         /* ==================================================
-            LAPTOP / DESKTOP SHELL (>= 768px)
-            Sidebar + header live in StudentLayout-for-Laptop-View.
+            TABLET / DESKTOP SHELL (>= 768px)
+            Sidebar + header live in StudentLayout-for-Tablet-View.
             The tablet rail (768-1099px) is handled purely by CSS.
         ================================================== */
-        <StudentLayoutForLaptopView
-          showClinicStatus={widgetPrefs.clinicBadge}
+        <StudentLayoutForTabletView
+          query={query}
+          setQuery={setQuery}
           user={user}
           displayName={displayName}
           avatar={avatar}
@@ -512,20 +482,14 @@ const StudentLayoutForWebView = ({ children }) => {
           unreadCount={unreadCount}
           darkMode={darkMode}
           toggleDarkMode={toggleDarkMode}
-          query={query}
-          setQuery={setQuery}
-          searchOpen={searchOpen}
-          setSearchOpen={setSearchOpen}
-          searchRef={searchRef}
           profileMenuOpen={profileMenuOpen}
           setProfileMenuOpen={setProfileMenuOpen}
           profileMenuRef={profileMenuRef}
           pageTitle={pageTitle}
-          onSearchSubmit={handleSearchSubmit}
           onLogout={handleLogout}
         >
           {pageSlot}
-        </StudentLayoutForLaptopView>
+        </StudentLayoutForTabletView>
       )}
 
       {/* Floating Help widget. Part of the shell, never a page.
@@ -562,4 +526,4 @@ const StudentLayoutForWebView = ({ children }) => {
   );
 };
 
-export default StudentLayoutForWebView;
+export default StudentLayoutForDesktopView;

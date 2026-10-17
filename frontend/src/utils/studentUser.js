@@ -1,7 +1,7 @@
 /*
  * Shared helpers for reading the logged-in Student from storage.
  *
- * Used by the Student shell (StudentLayout-for-Web-View) and by the account menu.
+ * Used by the Student shell (StudentLayout-for-Desktop-View) and by the account menu.
  */
 
 export const getStoredUser = () => {

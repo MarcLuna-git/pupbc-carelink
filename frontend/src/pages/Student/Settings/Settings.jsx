@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Key, Mail, Shield, Eye, EyeOff, Loader2, Save, Moon, Lock, SlidersHorizontal, HelpCircle, MessageSquare, CalendarClock, ChevronDown, AlertTriangle, Trash2 } from 'lucide-react';
+import { Key, Mail, Shield, Eye, EyeOff, Loader2, Save, Moon, Lock, SlidersHorizontal, HelpCircle, MessageSquare, ChevronDown, AlertTriangle, Trash2 } from 'lucide-react';
 import api from '../../../services/api';
 import useStudentWidgetPrefs from '../../../hooks/useStudentWidgetPrefs';
 
@@ -10,9 +10,9 @@ import useStudentWidgetPrefs from '../../../hooks/useStudentWidgetPrefs';
  * no custom stylesheet) so it matches the rest of the Settings card styling.
  */
 const ToggleSwitch = ({ checked, onChange, label, description, icon: Icon }) => (
-  <div className="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 p-4">
+  <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 p-4">
     <div className="flex min-w-0 items-start gap-3">
-      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-maroon-800 shadow-sm dark:bg-gray-800 dark:text-maroon-300">
+      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-maroon-800 shadow-sm dark:bg-gray-800 dark:text-maroon-300">
         <Icon className="h-4 w-4" />
       </span>
       <div className="min-w-0">
@@ -196,14 +196,6 @@ const Settings = () => {
 
             <div className="space-y-3">
               <ToggleSwitch
-                icon={CalendarClock}
-                label="Clinic schedule badge"
-                description="Header shortcut to the appointment booking calendar."
-                checked={prefs.clinicBadge}
-                onChange={(value) => setPref('clinicBadge', value)}
-              />
-
-              <ToggleSwitch
                 icon={HelpCircle}
                 label="Help & Support widget"
                 description="Floating shortcut to clinic and portal guidance."
@@ -250,12 +242,12 @@ const Settings = () => {
               <button
                 type="button"
                 onClick={() => setShowResetConfirm(true)}
-                className="inline-flex items-center space-x-2 rounded-2xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/30">
+                className="inline-flex items-center space-x-2 rounded-lg border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/30">
                 <Trash2 className="w-4 h-4" />
                 <span>Reset data</span>
               </button>
             ) : (
-              <form onSubmit={handleResetData} className="space-y-3 rounded-2xl border border-red-200 bg-red-50/60 p-4 dark:border-red-900/60 dark:bg-red-950/20">
+              <form onSubmit={handleResetData} className="space-y-3 rounded-lg border border-red-200 bg-red-50/60 p-4 dark:border-red-900/60 dark:bg-red-950/20">
                 <p className="text-xs font-semibold text-red-700 dark:text-red-300">
                   This cannot be undone. Enter your current password to confirm.
                 </p>
@@ -265,18 +257,18 @@ const Settings = () => {
                     type="password"
                     value={resetPassword}
                     onChange={(e) => setResetPassword(e.target.value)}
-                    className="w-full border border-red-200 dark:border-red-900/60 dark:bg-gray-700 dark:text-white rounded-2xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full border border-red-200 dark:border-red-900/60 dark:bg-gray-700 dark:text-white rounded-lg pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                     placeholder="Enter current password" required />
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button type="submit" disabled={loading}
-                    className="inline-flex items-center space-x-2 rounded-2xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50">
+                    className="inline-flex items-center space-x-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                     <span>{loading ? 'Resetting...' : 'Confirm reset'}</span>
                   </button>
                   <button type="button" disabled={loading}
                     onClick={() => { setShowResetConfirm(false); setResetPassword(''); }}
-                    className="rounded-2xl px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700/50">
+                    className="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700/50">
                     Cancel
                   </button>
                 </div>
@@ -303,7 +295,7 @@ const Settings = () => {
                 type={showCurrentPassword ? 'text' : 'password'}
                 value={passwordForm.current_password}
                 onChange={(e) => setPasswordForm({...passwordForm, current_password: e.target.value})}
-                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-2xl pl-10 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500"
+                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg pl-10 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500"
                 placeholder="Enter current password" required />
               <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600">
@@ -320,7 +312,7 @@ const Settings = () => {
                 type={showNewPassword ? 'text' : 'password'}
                 value={passwordForm.new_password}
                 onChange={(e) => setPasswordForm({...passwordForm, new_password: e.target.value})}
-                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-2xl pl-10 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500"
+                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg pl-10 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500"
                 placeholder="Min 8 characters" required />
               <button type="button" onClick={() => setShowNewPassword(!showNewPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600">
@@ -337,13 +329,13 @@ const Settings = () => {
                 type="password"
                 value={passwordForm.new_password_confirmation}
                 onChange={(e) => setPasswordForm({...passwordForm, new_password_confirmation: e.target.value})}
-                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-2xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500"
+                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500"
                 placeholder="Re-enter new password" required />
             </div>
           </div>
 
           <button type="submit" disabled={loading}
-            className="w-full py-3 bg-maroon-800 text-white font-semibold rounded-2xl hover:bg-maroon-900 transition flex items-center justify-center space-x-2 disabled:opacity-50">
+            className="w-full py-3 bg-maroon-800 text-white font-semibold rounded-lg hover:bg-maroon-900 transition flex items-center justify-center space-x-2 disabled:opacity-50">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>{loading ? 'Saving...' : 'Update Password'}</span>
           </button>
@@ -361,20 +353,20 @@ const Settings = () => {
           <div>
             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5">Current Email</label>
             <input type="email" value={user.email || ''} disabled
-              className="w-full border border-gray-200 dark:border-gray-600 rounded-2xl px-4 py-3 text-sm bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed" />
+              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 text-sm bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed" />
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5">New Email</label>
             <input type="email" value={emailForm.new_email} onChange={(e) => setEmailForm({...emailForm, new_email: e.target.value})}
-              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
+              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5">Confirm Password</label>
             <input type="password" value={emailForm.password} onChange={(e) => setEmailForm({...emailForm, password: e.target.value})}
-              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
+              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
           </div>
           <button type="submit" disabled={loading}
-            className="w-full py-3 bg-maroon-800 text-white font-semibold rounded-2xl hover:bg-maroon-900 transition flex items-center justify-center space-x-2 disabled:opacity-50">
+            className="w-full py-3 bg-maroon-800 text-white font-semibold rounded-lg hover:bg-maroon-900 transition flex items-center justify-center space-x-2 disabled:opacity-50">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>{loading ? 'Saving...' : 'Update Email'}</span>
           </button>
@@ -390,15 +382,15 @@ const Settings = () => {
             <span>Privacy & Data</span>
           </h3>
           <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
-            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-2xl p-4">
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
               <p className="font-semibold text-gray-800 dark:text-white mb-1">Medical Records</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">Only authorized clinic staff can access your records.</p>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-2xl p-4">
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
               <p className="font-semibold text-gray-800 dark:text-white mb-1">Data Request</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">Contact the clinic administrator to request your data.</p>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-2xl p-4">
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
               <p className="font-semibold text-gray-800 dark:text-white mb-1">Data Privacy Act</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">Your data is protected under RA 10173 (Data Privacy Act of 2012).</p>
             </div>
@@ -413,28 +405,28 @@ const Settings = () => {
   return (
     <div className="space-y-5 max-w-5xl mx-auto">
 
-      <div className="rounded-3xl border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
+      <div className="rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage your account</p>
       </div>
 
       {message && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-          className={`p-3 rounded-2xl text-sm font-medium text-center ${
+          className={`p-3 rounded-lg text-sm font-medium text-center ${
             messageType === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
           }`}>
           {message}
         </motion.div>
       )}
 
-      <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-4 lg:p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 p-4 lg:p-6">
         <div className="grid gap-5 md:grid-cols-[220px_minmax(0,1fr)]">
           {/* Mobile: accordion — tapping a section slides its panel open beneath it */}
           <div className="space-y-2 md:hidden">
             {tabs.map(tab => {
               const isOpen = activeTab === tab.id;
               return (
-                <div key={tab.id} className="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700">
+                <div key={tab.id} className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
                   <button
                     type="button"
                     onClick={() => setActiveTab(isOpen ? '' : tab.id)}
@@ -474,12 +466,12 @@ const Settings = () => {
             })}
           </div>
 
-          {/* Desktop / laptop: vertical tab rail */}
+          {/* Desktop / tablet: vertical tab rail */}
           <nav aria-label="Settings sections" className="hidden md:flex md:flex-col">
             {tabs.map(tab => (
               <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)}
                 aria-current={activeTab === tab.id ? 'page' : undefined}
-                className={`flex w-full items-center gap-3 border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold transition-colors last:border-b-0 dark:border-gray-700 ${
+                className={`flex w-full items-center gap-3 rounded-lg border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold transition-colors last:border-b-0 dark:border-gray-700 ${
                   activeTab === tab.id ? 'bg-maroon-800 text-white' : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700/50'
                 }`}>
                 <tab.icon className="w-4 h-4 shrink-0" />
@@ -488,7 +480,7 @@ const Settings = () => {
             ))}
           </nav>
 
-          {/* Desktop / laptop: panel */}
+          {/* Desktop / tablet: panel */}
           <div className="hidden min-w-0 md:block md:border-l md:border-gray-300 md:pl-5 dark:border-gray-600">
             {renderPanel(activeTab)}
           </div>

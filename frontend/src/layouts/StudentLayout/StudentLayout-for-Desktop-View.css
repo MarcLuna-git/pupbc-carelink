@@ -1,11 +1,11 @@
 /*
- * Student portal outer shell / main frame styles (web view).
+ * Student portal outer shell / main frame styles (desktop view).
  *
  * Base chrome shared by BOTH view shells. The shells render the same class
  * names (`.student-sidebar`, `.student-header`, `.student-main`, ...), so
  * their default rules live here; each shell stylesheet then overrides them
  * inside its own breakpoint:
- *   - StudentLayout-for-Laptop-View.css  (>= 768px)
+ *   - StudentLayout-for-Tablet-View.css  (>= 768px)
  *   - StudentLayout-for-Mobile-View.css  (<= 767px)
  */
 .student-approved-shell {
@@ -34,27 +34,17 @@
 .student-sidebar-nav>a[aria-current=page] svg { color:white; }
 .student-sidebar-nav>a>svg:last-child:not(:first-child) { display:none; }
 .student-sidebar-campus { position:absolute;bottom:76px;left:0;width:100%;height:245px;object-fit:cover;filter:grayscale(1);mix-blend-mode:luminosity;opacity:.16;mask-image:linear-gradient(transparent,#000 35%);pointer-events:none; }
-.student-sidebar-tagline { position:relative;padding:22px 20px 29px;font-size:12px;line-height:1.6;color:#f7dadd; }
+.student-sidebar-tagline { position:relative;padding:22px 14px 29px;font-size:12px;line-height:1.6;color:#f7dadd;white-space:nowrap; }
 .student-shell-body { min-height:100dvh;min-width:0;margin-left:var(--sp-sidebar);display:flex;flex-direction:column;padding-bottom:calc(var(--sp-nav-height) + env(safe-area-inset-bottom));background:var(--sp-bg); }
 .student-header { position:fixed;top:0;left:var(--sp-sidebar);right:0;z-index:30;background:var(--sp-surface);border-bottom:1px solid var(--sp-border);box-shadow:0 2px 10px #3d12200a; }
 .student-header-inner { height:var(--sp-header-height);display:flex;align-items:center;gap:16px;padding:0 24px; }
 .student-header-page { flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;font-weight:700;color:var(--sp-accent); }
 .student-old-header-brand,.student-old-header-greeting { display:none; }
-.student-header-search { flex:1.65;max-width:420px;display:flex;align-items:center;gap:9px;min-width:130px;border:1px solid transparent;background:#f2edeb;border-radius:25px;padding:7px 12px; }
-.dark .student-header-search { background:#332b35; }
-.student-header-search>svg { width:15px;height:15px;color:var(--sp-muted);flex-shrink:0; }
-.student-header-search input { background:transparent;outline:none;border:none;font-size:11px;min-width:0;width:100%;color:var(--sp-text);height:25px; }
-.student-header-search input::placeholder { color:var(--sp-muted); }
-.student-header-search kbd { flex-shrink:0;font:10px Arial,sans-serif;color:var(--sp-muted);border-left:1px solid var(--sp-border);padding-left:8px; }
-.student-search-close,.student-mobile-search { display:none; }
-.student-mobile-menu,.student-sidebar-close,.student-sidebar-backdrop { display:none; }
 .student-header-actions { display:flex;align-items:center;gap:8px;flex-shrink:0; }
-.student-header-icon,.student-mobile-search { position:relative;align-items:center;justify-content:center;display:flex;width:38px;height:40px;border-radius:9px;color:var(--sp-text);cursor:pointer; }
-.student-mobile-search { display:none; }
-.student-header-icon:hover,.student-mobile-search:hover { background:var(--sp-soft);color:var(--sp-accent); }
-.student-header-icon svg,.student-mobile-search svg { width:19px;height:19px; }
+.student-header-icon { position:relative;align-items:center;justify-content:center;display:flex;width:38px;height:40px;border-radius:9px;color:var(--sp-text);cursor:pointer; }
+.student-header-icon:hover { background:var(--sp-soft);color:var(--sp-accent); }
+.student-header-icon svg { width:19px;height:19px; }
 .student-theme-toggle { width:44px; }
-.student-mobile-search { order:-1; }
 .student-theme-toggle { order:1; }
 .student-notification-bell { order:2; }
 .student-header-actions>.relative { order:3; }
@@ -79,8 +69,8 @@
 .student-approved-shell:has([aria-modal="true"]) :is(.carelink-assistant-launcher,.carelink-assistant-panel,.student-help-widget) { display:none; }
 
 /*
- * The laptop / desktop (>= 768px) breakpoints live in
- * StudentLayout-for-Laptop-View.css, and the mobile (<= 767px) breakpoint
+ * The tablet / desktop (>= 768px) breakpoints live in
+ * StudentLayout-for-Tablet-View.css, and the mobile (<= 767px) breakpoint
  * lives in StudentLayout-for-Mobile-View.css. Both are loaded after this
  * file so the cascade order is preserved.
  */

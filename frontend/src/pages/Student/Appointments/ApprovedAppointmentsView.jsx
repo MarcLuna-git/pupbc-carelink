@@ -28,47 +28,6 @@ function AppointmentHero() {
         <span><HeartPulse /><span>A healthier you<br />starts here</span></span>
       </div>
     </div>
-    <svg className="ap-hero-art" viewBox="0 0 620 260" aria-hidden="true" focusable="false">
-      <defs>
-        <linearGradient id="ap-art-rose" x1="0" x2="1"><stop stopColor="#f4d3cf" /><stop offset="1" stopColor="#c48280" /></linearGradient>
-        <linearGradient id="ap-art-hair" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#261b22" /><stop offset="1" stopColor="#632c39" /></linearGradient>
-      </defs>
-      <path d="M6 214Q18 166 60 162Q43 112 94 106Q93 53 142 78Q166 25 206 57Q249 8 278 54Q325 33 345 79Q394 45 416 90Q477 67 508 109Q576 81 608 133L620 260H0Z" fill="url(#ap-art-rose)" opacity=".42" />
-      <g opacity=".82" stroke="#ae6e70" strokeWidth="2">
-        <path d="M306 96 461 48 512 63 354 114Z" fill="#c28382" />
-        <path d="M312 103 461 59 461 220 312 232Z" fill="#ecd0c6" />
-        <path d="M461 59 512 74 512 231 461 220Z" fill="#b47174" />
-        <path d="M369 151 585 97 619 108 404 163Z" fill="#96515b" />
-        <path d="M404 164 619 110 619 255 404 255Z" fill="#e4bdb3" />
-        <path d="M361 176 404 164 404 255 361 241Z" fill="#b67576" />
-        {[0,1,2].map(row => <g key={row}>{[0,1,2,3].map(col => <path key={col} d={`M${324+col*29} ${114+row*29-col*7}v19l18-4v-19Z`} fill="#7f4855" stroke="#dcb2aa" />)}</g>)}
-        {[0,1].map(row => <g key={row}>{[0,1,2,3,4].map(col => <path key={col} d={`M${418+col*32} ${181+row*32-col*8}v24l23-5v-24Z`} fill="#753746" stroke="#d7a8a1" />)}</g>)}
-        <path d="M551 84 610 65 610 244 551 254Z" fill="#e6b5a9" />
-        <path d="M541 82 601 62 617 70 556 92Z" fill="#a35a63" />
-      </g>
-      <g fill="#823945" fontFamily="Arial,sans-serif" fontSize="12" fontWeight="700" transform="translate(564 133) rotate(-10)">
-        <text>CARE</text><text y="17">FOR A</text><text y="34">HEALTHIER</text><text y="51">TOMORROW</text>
-      </g>
-      <g transform="translate(108 0)">
-        <path d="M88 238Q74 207 84 167Q54 151 80 121Q60 82 92 42Q123 7 163 23Q202 12 217 57Q233 94 213 145Q242 166 228 206L225 260H88Z" fill="url(#ap-art-hair)" />
-        <path d="M154 152 182 147 202 179 204 260H77L86 194 134 163Z" fill="#edddcb" />
-        <path d="M154 136 156 171 180 179 188 160 182 129Z" fill="#dc9c87" />
-        <path d="M117 67Q128 40 163 52Q186 59 191 93L188 122Q181 151 158 154Q133 143 126 112Z" fill="#f4c7b1" />
-        <path d="M108 95Q101 49 134 37Q180 19 199 57Q202 73 189 91L183 66Q162 83 147 68Q132 62 122 98Z" fill="url(#ap-art-hair)" />
-        <path d="M180 86 193 108 181 114" fill="#edb29b" />
-        <path d="M151 94q8-5 14 0" fill="none" stroke="#59323a" strokeWidth="2.8" strokeLinecap="round" />
-        <path d="M161 91v6" stroke="#33212a" strokeWidth="3" strokeLinecap="round" />
-        <path d="M176 127q-10 8-18-1" fill="none" stroke="#b86468" strokeWidth="2.5" strokeLinecap="round" />
-        <path d="M131 143 126 187 145 212 161 172M188 151 202 185 178 212 165 178" fill="#fff1de" stroke="#c9aa9f" strokeWidth="2" />
-        <path d="M143 171Q128 208 152 224Q180 233 178 179" fill="none" stroke="#6c3946" strokeWidth="4" />
-        <circle cx="159" cy="224" r="8" fill="#e5b5ac" stroke="#6c3946" strokeWidth="3" />
-        <path d="M86 199Q105 177 130 191L154 260H75Z" fill="#7c1f34" />
-        <path d="M89 198Q105 174 122 194" fill="none" stroke="#a65062" strokeWidth="8" />
-        <path d="M185 211q-15 13-26 10l-9-11q-7-7-11-2l5 27q18 10 42-2" fill="#efbea8" />
-        <path d="M109 106Q94 146 116 165M96 74Q77 121 105 145" fill="none" stroke="#a66a6b" strokeWidth="3" opacity=".4" />
-      </g>
-      <path d="M0 252Q90 233 147 251Q230 235 301 255Q410 241 620 248V260H0Z" fill="#8d4350" opacity=".23" />
-    </svg>
   </section>;
 }
 
@@ -158,17 +117,18 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
     <UpcomingAppointment appointment={upcoming} onView={onView} onEdit={onEdit} />
     <section id="appointment-booking" className="ap-card ap-booking">
       <div className="ap-section-heading"><CalendarDays /><div><h2>{editingId ? 'Edit Appointment' : 'Book a New Appointment'}</h2><p>{editingId ? 'Update your pending appointment request.' : 'Choose a date, time, and service that works for you.'}</p></div>{editingId && <button type="button" className="ap-text-button" onClick={onCancelEdit}>Cancel editing</button>}</div>
-      {/* The four booking steps stack vertically: the numbered rail on the left
-          carries the progress, and each step keeps its own form section beside it. */}
+      {/* The four booking steps render as a vertical timeline: a numbered
+          spine (marker + connector line) on the left, one soft panel of
+          content per step on the right — left-aligned, never centered. */}
       <form className="ap-booking-steps" onSubmit={onSubmit} noValidate>
         <ol className="ap-booking-progress" aria-label="Booking progress">
           <li aria-current={progress === 1 ? 'step' : undefined} className={`ap-booking-step${progress >= 1 ? ' is-active' : ''}`}>
-            <span className="ap-step-marker">{progress > 1 ? <CheckCircle /> : 1}</span>
-            <h3 className="ap-step-label">Select Date</h3><section className="ap-booking-column"><CalendarPicker value={form.date} onChange={onChange} disabled={loading} /></section>
+            <header className="ap-step-heading"><span className="ap-step-marker">{progress > 1 ? <CheckCircle /> : 1}</span><h3 className="ap-step-label">Select Date</h3></header>
+            <section className="ap-booking-column"><CalendarPicker value={form.date} onChange={onChange} disabled={loading} /></section>
           </li>
           <li aria-current={progress === 2 ? 'step' : undefined} className={`ap-booking-step${progress >= 2 ? ' is-active' : ''}`}>
-            <span className="ap-step-marker">{progress > 2 ? <CheckCircle /> : 2}</span>
-            <h3 className="ap-step-label">Available Time Slots</h3><section className="ap-booking-column"><div className="ap-step-body" style={{ maxWidth:420, margin:'0 auto', width:'100%' }}><p className="ap-column-caption">{form.date ? formatAppointmentDate(form.date, { weekday: 'long' }) : 'Select an appointment date'}</p>
+            <header className="ap-step-heading"><span className="ap-step-marker">{progress > 2 ? <CheckCircle /> : 2}</span><h3 className="ap-step-label">Available Time Slots</h3></header>
+            <section className="ap-booking-column"><div className="ap-step-body"><p className="ap-column-caption">{form.date ? formatAppointmentDate(form.date, { weekday: 'long' }) : 'Select an appointment date'}</p>
             {slotsLoading ? <div className="ap-slots-loading" role="status"><div className="ap-slots-loading-grid" aria-hidden="true">{timeSlots.map(time => <span key={time} />)}</div><span className="ap-slots-loading-label"><Loader2 className="animate-spin" />Loading availability…</span></div> : <div className="ap-time-grid">{timeSlots.map(time => {
               const slot = availableSlots.find(item => item.time === time);
               const instant = appointmentTime(form.date, time);
@@ -181,15 +141,14 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
             </div></section>
           </li>
           <li aria-current={progress === 3 ? 'step' : undefined} className={`ap-booking-step${progress >= 3 ? ' is-active' : ''}`}>
-            <span className="ap-step-marker">{progress > 3 ? <CheckCircle /> : 3}</span>
-            <h3 className="ap-step-label">Select Service</h3><section className="ap-booking-column"><div className="ap-step-body" style={{ maxWidth:420, margin:'0 auto', width:'100%' }}><div className="ap-service-list" role="radiogroup" aria-label="Appointment service">{services.map((service, index) => <label key={service} className={form.service === service ? 'is-selected' : ''}>
+            <header className="ap-step-heading"><span className="ap-step-marker">{progress > 3 ? <CheckCircle /> : 3}</span><h3 className="ap-step-label">Select Service</h3></header>
+            <section className="ap-booking-column"><div className="ap-step-body"><div className="ap-service-list" role="radiogroup" aria-label="Appointment service">{services.map((service, index) => <label key={service} className={form.service === service ? 'is-selected' : ''}>
               <input type="radio" name="service" value={service} checked={form.service === service} onChange={onChange} disabled={loading} />
               {index === 0 ? <Stethoscope /> : <FileText />}<span><strong>{serviceTitle(service)}</strong><small>{SERVICE_NOTES[service]}</small></span>
             </label>)}</div><div className="ap-reason"><label htmlFor="appointment-reason">Add a reason <span>(optional)</span></label><textarea id="appointment-reason" name="concern" value={form.concern} onChange={onChange} rows={2} maxLength={1000} placeholder="Briefly describe your concern…" disabled={loading} /></div></div></section>
           </li>
           <li aria-current={progress === 4 ? 'step' : undefined} className={`ap-booking-step${progress >= 4 ? ' is-active' : ''}`}>
-            <span className="ap-step-marker">{progress > 4 ? <CheckCircle /> : 4}</span>
-            <h3 className="ap-step-label">Booking Summary</h3><section className="ap-booking-column ap-summary"><div className="ap-step-body" style={{ maxWidth:420, margin:'0 auto', width:'100%' }}>
+            <header className="ap-step-heading"><span className="ap-step-marker">{progress > 4 ? <CheckCircle /> : 4}</span><h3 className="ap-step-label">Booking Summary</h3></header><section className="ap-booking-column ap-summary"><div className="ap-step-body">
               <dl><div><CalendarDays /><span><dt>Date</dt><dd>{form.date ? formatAppointmentDate(form.date) : 'Choose a date'}</dd></span></div>
                 <div><Clock /><span><dt>Time · Asia/Manila</dt><dd>{form.time || 'Choose a time'}</dd></span></div>
                 <div><Stethoscope /><span><dt>Service</dt><dd>{form.service ? serviceTitle(form.service) : 'Choose a service'}</dd></span></div></dl>
@@ -203,11 +162,29 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
     <section className="ap-card ap-history">
       <div className="ap-section-heading"><Clock /><div><h2>Appointment History</h2><p>View your past and upcoming clinic visits.</p></div><label><span className="sr-only">Filter appointment history</span><select value={filter} onChange={event => onFilter(event.target.value)}><option value="all">All Appointments</option><option value="pending">Pending Requests</option><option value="approved">Approved Appointments</option><option value="past">Past Appointments</option></select></label></div>
       {history.length === 0 ? <div className="ap-history-empty"><CalendarDays /><p>{query ? 'No appointments match your search.' : 'No appointments to display yet.'}</p></div> : <>
-        <div className="ap-history-table-wrap"><table><thead><tr>{['Date', 'Service', 'Provider', 'Room', 'Status', 'Actions'].map(label => <th key={label} scope="col">{label}</th>)}</tr></thead><tbody>{rows.map(appointment => <tr key={appointment.id}>
-          <td data-label="Date"><strong>{formatAppointmentDate(appointment.appointment_date)}</strong><small>{appointment.time_slot || 'Not provided'}</small></td>
-          <td data-label="Service">{serviceTitle(appointment.service)}</td><td data-label="Provider">{providerName(appointment)}</td><td data-label="Room">{roomName(appointment)}</td><td data-label="Status"><StatusBadge status={appointment.status} />{appointment.queue?.status && <small>Queue: {appointment.queue.status.replaceAll('_', ' ')}</small>}</td>
-          <td data-label="Actions"><div className="ap-history-actions"><button type="button" onClick={() => onView(appointment)}><FileText />View Details</button>{appointment.status === 'approved' && appointmentDate(appointment.appointment_date) === clinicDate() && <Link to="/student/qr"><FileText />View QR Code</Link>}{appointment.status === 'pending' && <button type="button" onClick={() => onEdit(appointment)}><RotateCcw />Reschedule</button>}</div></td>
-        </tr>)}</tbody></table></div>
+        <div className="ap-history-list">
+          {rows.map(appointment => {
+            const date = appointmentDate(appointment.appointment_date);
+            return <article key={appointment.id} className="ap-history-item">
+              <div className="ap-date-tile"><span>{date ? formatAppointmentDate(date, { month: 'short', year: undefined, day: undefined }).toUpperCase() : 'DATE'}</span><strong>{date ? date.slice(-2) : '—'}</strong><small>{date ? formatAppointmentDate(date, { weekday: 'short', day: undefined, month: undefined, year: undefined }) : '—'}</small></div>
+              <div className="ap-history-info">
+                <strong>{serviceTitle(appointment.service)}</strong>
+                <p>{formatAppointmentDate(appointment.appointment_date)} · {appointment.time_slot || 'Time not set'}</p>
+                <p className="ap-history-meta">{providerName(appointment)} · {roomName(appointment)}</p>
+                {appointment.concern && <p className="ap-history-concern">“{appointment.concern}”</p>}
+              </div>
+              <div className="ap-history-side">
+                <StatusBadge status={appointment.status} />
+                {appointment.queue?.status && <small className="ap-queue-label">Queue: {appointment.queue.status.replaceAll('_', ' ')}</small>}
+                <div className="ap-history-actions">
+                  <button type="button" onClick={() => onView(appointment)}><FileText />View Details</button>
+                  {appointment.status === 'approved' && date === clinicDate() && <Link to="/student/qr"><FileText />View QR Code</Link>}
+                  {appointment.status === 'pending' && <button type="button" onClick={() => onEdit(appointment)}><RotateCcw />Reschedule</button>}
+                </div>
+              </div>
+            </article>;
+          })}
+        </div>
         <div className="ap-history-pagination"><p>Showing {(currentPage - 1) * 5 + 1}–{Math.min(currentPage * 5, history.length)} of {history.length} appointments</p><div><button type="button" disabled={currentPage === 1} onClick={() => setPage(current => current - 1)} aria-label="Previous history page"><ChevronLeft /></button><span aria-label={`History page ${currentPage} of ${pages}`}>{currentPage}</span><button type="button" disabled={currentPage === pages} onClick={() => setPage(current => current + 1)} aria-label="Next history page"><ChevronRight /></button></div></div>
       </>}
     </section>

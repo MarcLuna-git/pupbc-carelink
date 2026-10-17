@@ -19,7 +19,7 @@ const Welcome = lazy(() => import('./pages/Student/Welcome/Welcome'));
 const HealthProfile = lazy(() => import('./pages/Student/HealthProfile/HealthProfile'));
 const Appointments = lazy(() => import('./pages/Student/Appointments/Appointments'));
 const QR = lazy(() => import('./pages/Student/QR/QR'));
-const Profile = lazy(() => import('./pages/Student/Profile/Profile'));
+const Overview = lazy(() => import('./pages/Student/Overview/Overview'));
 const ProfileEdit = lazy(() => import('./pages/Student/ProfileEdit/ProfileEdit'));
 const Alerts = lazy(() => import('./pages/Student/Alerts/Alerts'));
 const Announcements = lazy(() => import('./pages/Student/Announcements/Announcements'));
@@ -28,7 +28,7 @@ const Settings = lazy(() => import('./pages/Student/Settings/Settings'));
 const Help = lazy(() => import('./pages/Student/Help/Help'));
 const About = lazy(() => import('./pages/Student/About/About'));
 
-const StudentLayoutForWebView = lazy(() => import('./layouts/StudentLayout/StudentLayout-for-Web-View'));
+const StudentLayoutForDesktopView = lazy(() => import('./layouts/StudentLayout/StudentLayout-for-Desktop-View'));
 
 const NurseLogin = lazy(() => import('./pages/Admin/Login/NurseLogin'));
 const NurseDashboard = lazy(() => import('./pages/Admin/Dashboard/NurseDashboard'));
@@ -544,9 +544,9 @@ function App() {
             path="/student"
             element={
               <ProtectedRoute role="student">
-                <StudentLayoutForWebView>
+                <StudentLayoutForDesktopView>
                   <Outlet />
-                </StudentLayoutForWebView>
+                </StudentLayoutForDesktopView>
               </ProtectedRoute>
             }
           >
@@ -614,7 +614,7 @@ function App() {
 
             <Route
               path="profile"
-              element={<Profile />}
+              element={<Overview />}
             />
 
             <Route

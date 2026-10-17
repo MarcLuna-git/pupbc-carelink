@@ -1,8 +1,15 @@
 .student-appointments { width:100%;min-width:0; }
 .approved-appointments-page { display:grid;gap:12px; }
 .ap-card { min-width:0;border:1px solid var(--sp-border,#eadfe1);border-radius:12px;background:var(--sp-surface,#fff);box-shadow:0 2px 7px #5a0b2004;overflow:hidden; }
-.ap-hero { position:relative;min-height:168px;overflow:hidden;border:1px solid var(--sp-border);border-radius:12px;background:linear-gradient(100deg,#fff9f4 10%,#fbeee9 70%,#f1d1c9); }
-.dark .ap-hero { background:linear-gradient(100deg,#30212b,#3f2934); }
+.ap-hero { position:relative;min-height:168px;overflow:hidden;border:1px solid var(--sp-border);border-radius:12px;background:#fbeee9 url('../../../assets/hero-appointment.png') center right/cover no-repeat; }
+/*
+ * Readability overlay: a soft left-to-right wash keeps the hero copy
+ * legible while the artwork (girl + PUP building, right side) stays
+ * visible. pointer-events:none so it never blocks the copy.
+ */
+.ap-hero::after { content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(255,249,244,.95) 0%,rgba(255,249,244,.78) 52%,rgba(255,249,244,.25) 100%); }
+.dark .ap-hero { background-color:#2a1c26;background-blend-mode:multiply; }
+.dark .ap-hero::after { background:linear-gradient(90deg,rgba(36,25,33,.95) 0%,rgba(36,25,33,.8) 52%,rgba(36,25,33,.35) 100%); }
 .ap-hero-copy { position:relative;z-index:1;padding:19px 24px;max-width:57%; }
 .ap-eyebrow { font-size:10px;color:#96604b;text-transform:uppercase;letter-spacing:1.7px;font-weight:700; }
 .dark .ap-eyebrow { color:#d5a99a; }
@@ -11,13 +18,12 @@
 .ap-hero-benefits { display:flex;gap:21px;margin-top:17px; }
 .ap-hero-benefits>span { display:flex;align-items:center;gap:8px;font-size:10px;line-height:1.45;color:var(--sp-muted); }
 .ap-hero-benefits svg { flex-shrink:0;width:30px;height:30px;padding:7px;border-radius:7px;background:#f6deda;color:#800000; }
-.ap-hero-art { position:absolute;right:0;bottom:0;height:100%;width:52%; }
 .ap-section-heading { display:flex;align-items:center;gap:8px;padding:12px 16px 10px;min-width:0; }
 .ap-section-heading>svg { flex-shrink:0;width:17px;height:17px;color:var(--sp-accent); }
-.ap-section-heading h2 { font-size:13px;font-weight:700;color:var(--sp-accent);line-height:1.3; }
-.ap-section-heading p { margin-top:2px;font-size:10px;color:var(--sp-muted); }
+.ap-section-heading h2 { font-size:15px;font-weight:700;color:var(--sp-accent);line-height:1.3; }
+.ap-section-heading p { margin-top:2px;font-size:12px;color:var(--sp-muted); }
 .ap-section-heading>button,.ap-section-heading>label { margin-left:auto; }
-.ap-section-heading select { border:1px solid var(--sp-border);border-radius:6px;background:var(--sp-surface);color:var(--sp-muted);font-size:10px;padding:5px 8px;max-width:180px; }
+.ap-section-heading select { border:1px solid var(--sp-border);border-radius:7px;background:var(--sp-surface);color:var(--sp-muted);font-size:12px;padding:6px 9px;max-width:200px; }
 .ap-message { padding:12px 16px;border-radius:9px;font-size:13px; }
 .ap-message.is-success { color:#176346;background:#e5f5ed; }
 .ap-message.is-error { color:#9b273b;background:#fce9ed; }
@@ -40,7 +46,7 @@
 .ap-upcoming-state { padding-left:14px;border-left:1px solid var(--sp-border); }
 .ap-upcoming-state p { font-size:9px;color:var(--sp-muted);line-height:1.5;margin-top:6px; }
 .ap-queue-label { display:block;font-size:10px;margin-top:4px;color:var(--sp-accent);text-transform:capitalize; }
-.ap-status { display:inline-flex;align-items:center;gap:5px;font-size:10px;line-height:1.5;padding:2px 8px;border-radius:6px;background:var(--sp-soft);color:var(--sp-accent);white-space:nowrap;font-weight:600; }
+.ap-status { display:inline-flex;align-items:center;gap:5px;font-size:11px;line-height:1.5;padding:3px 9px;border-radius:7px;background:var(--sp-soft);color:var(--sp-accent);white-space:nowrap;font-weight:600; }
 .ap-status>span { width:4px;height:4px;border-radius:50%;background:currentColor; }
 .ap-status-approved,.ap-status-completed { background:#e4f3e9;color:#2b7650; }
 .ap-status-pending { background:#fff0d3;color:#896013; }
@@ -63,23 +69,35 @@
 .ap-upcoming-empty h2 { font-size:14px;font-weight:700; }
 .ap-upcoming-empty p { font-size:12px;color:var(--sp-muted);margin-top:3px; }
 .ap-upcoming-empty>a { margin-left:auto;white-space:nowrap; }
-/* Booking steps run vertically: the numbered rail (with its connector line)
-   sits on the left and each step's form section sits beside its own number. */
-.ap-booking-steps { display:block;padding:14px 16px; }
-.ap-booking-progress { --ap-step-gap:18px;display:grid;gap:var(--ap-step-gap);max-width:860px;list-style:none;margin:0;padding:0;position:relative; }
-.ap-booking-progress li { position:relative;padding:0 0 0 146px;min-height:40px;align-items:center; }
-.ap-step-label { position:absolute;left:32px;top:50%;transform:translateY(-50%);width:115px;color:var(--sp-text);font-size:12px;line-height:19px;font-weight:700;display:flex;align-items:center;justify-content:center;text-align:center; }
-.ap-step-marker { position:absolute;left:13px;top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;flex-shrink:0;width:19px;height:19px;border:1px solid var(--sp-border);border-radius:50%;background:var(--sp-surface);font-size:9px;color:var(--sp-muted);z-index:1; }
-.ap-booking-progress::before { content:'';position:absolute;left:22px;top:14px;bottom:14px;width:1px;background:var(--sp-border);z-index:0; }
-.ap-booking-progress li.is-active .ap-step-marker { position:absolute;left:13px;top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;flex-shrink:0;width:19px;height:19px;border:1px solid #800000;border-radius:50%;background:#800000;color:white;z-index:1; }
-.ap-booking-progress li.is-active .ap-step-label { position:absolute;left:32px;top:50%;transform:translateY(-50%);width:115px;color:var(--sp-text);font-size:12px;line-height:19px;font-weight:700;display:flex;align-items:center;justify-content:center;text-align:center; }
-.ap-step-marker svg { width:13px;height:13px; }
-.ap-booking-column { min-width:0; }
-.ap-booking-column h3 { margin-bottom:8px;color:var(--sp-text);font-size:12px;line-height:19px;font-weight:700; }
+/*
+ * Booking flow = vertical TIMELINE. A numbered spine (circle marker +
+ * connector line) runs down the left gutter; each step's content sits in
+ * one soft, borderless panel directly below its label. The whole column
+ * (spine + 420px panels = 462px) is centered in the card via margin auto;
+ * text inside the panels stays left-aligned. Marker states:
+ * upcoming = gray outline, current (.is-active) = solid maroon with a soft
+ * ring, completed (check icon) = maroon outline + maroon check.
+ */
+.ap-booking-steps { display:block;padding:6px 16px 16px; }
+.ap-booking-progress { display:grid;gap:10px;max-width:462px;list-style:none;margin:0 auto;padding:0; }
+.ap-booking-progress li { position:relative;min-width:0;padding-left:42px; }
+/* Connector: every step except the last draws a segment from its marker's
+   center down into the gap; the next marker covers the rest, so the visible
+   line always runs marker-edge to marker-edge. */
+.ap-booking-progress li:not(:last-child)::before { content:'';position:absolute;left:13px;top:14px;bottom:-10px;width:2px;background:var(--sp-border); }
+.ap-step-heading { display:flex;align-items:center;min-height:28px;margin-bottom:8px; }
+.ap-step-marker { position:absolute;left:0;top:0;z-index:1;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border:2px solid var(--sp-border);border-radius:50%;background:var(--sp-surface);font-size:12px;font-weight:700;color:var(--sp-muted); }
+.ap-step-marker svg { width:14px;height:14px; }
+.ap-booking-progress li.is-active .ap-step-marker { border-color:#800000;background:#800000;color:white;box-shadow:0 0 0 3px var(--sp-soft); }
+.ap-booking-progress li .ap-step-marker:has(svg) { border-color:var(--sp-accent);background:var(--sp-surface);color:var(--sp-accent); }
+.ap-step-label { color:var(--sp-text);font-size:14px;line-height:28px;font-weight:700; }
+/* Upcoming steps (not current, not yet checked) get a quieter label. */
+.ap-booking-progress li:not(.is-active):not(:has(.ap-step-marker svg)) .ap-step-label { color:var(--sp-muted);font-weight:600; }
+.ap-booking-column { min-width:0;max-width:420px; }
 /* Every step's contents live in their own equally-wide container. */
-.ap-step-body { background:var(--sp-surface);border:1px solid var(--sp-border);border-radius:9px;padding:12px; }
+.ap-step-body { background:var(--sp-bg);border-radius:10px;padding:12px; }
 .ap-column-caption { font-size:9px;color:var(--sp-muted);min-height:16px;margin-bottom:7px; }
-.ap-calendar { max-width:420px;margin:0 auto;border:1px solid var(--sp-border);border-radius:9px;padding:8px; }
+.ap-calendar { background:var(--sp-bg);border-radius:10px;padding:12px; }
 .ap-calendar-month { display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:5px; }
 .ap-calendar-month strong { font-size:11px; }
 .ap-calendar-month>div { display:flex; }
@@ -129,31 +147,39 @@
 .ap-summary-note svg { width:12px;height:12px;flex-shrink:0; }
 .ap-confirm-booking { width:100%;font-size:10px;padding:9px 5px; }
 .ap-text-button { color:var(--sp-accent);font-size:11px;text-decoration:underline; }
-.ap-history-table-wrap { padding:0 16px; }
-.ap-history table { border-collapse:collapse;width:100%;table-layout:fixed; }
+/*
+ * History = card-row list (no table). Each row: date tile · service details
+ * · status + actions. Font sizes are deliberately readable (12-13px body),
+ * matching the rest of the page instead of the old 8-10px table text.
+ */
 .ap-history .ap-section-heading { padding-top:8px;padding-bottom:7px; }
-.ap-history .ap-section-heading p { font-size:9px;line-height:1.3; }
-.ap-history th { font-size:9px;text-align:left;color:var(--sp-muted);font-weight:500;background:var(--sp-bg);padding:5px 8px; }
-.ap-history th:first-child { width:14%; }
-.ap-history th:nth-child(2) { width:21%; }
-.ap-history th:nth-child(3) { width:17%; }
-.ap-history th:nth-child(4) { width:12%; }
-.ap-history th:nth-child(5) { width:14%; }
-.ap-history th:last-child { width:22%; }
-.ap-history td { border-bottom:1px solid var(--sp-border);padding:5px 8px;font-size:10px;vertical-align:middle;overflow-wrap:anywhere;color:var(--sp-text); }
-.ap-history td>strong { display:block;font-size:10px;line-height:1.25; }
-.ap-history td>small { display:block;font-size:8px;line-height:1.25;color:var(--sp-muted);margin-top:1px; }
-.ap-history-actions { display:flex;flex-wrap:wrap;align-items:center;gap:5px 9px; }
-.ap-history-actions button,.ap-history-actions a { display:inline-flex;align-items:center;gap:4px;font-size:9px;color:var(--sp-accent);white-space:nowrap; }
-.ap-history-actions svg { width:11px;height:11px; }
-.ap-history-pagination { display:flex;align-items:center;justify-content:space-between;padding:6px 16px;gap:8px; }
-.ap-history-pagination p { font-size:9px;color:var(--sp-muted); }
-.ap-history-pagination>div { display:flex;align-items:center;gap:5px; }
-.ap-history-pagination button,.ap-history-pagination span { min-width:23px;height:23px;display:flex;align-items:center;justify-content:center;border:1px solid var(--sp-border);border-radius:4px;font-size:9px; }
-.ap-history-pagination span { background:#800000;color:white; }
-.ap-history-pagination button:disabled { opacity:.35; }
-.ap-history-pagination svg { width:11px;height:11px; }
-.ap-history-empty { display:flex;align-items:center;justify-content:center;gap:10px;padding:25px;font-size:12px;color:var(--sp-muted); }
+.ap-history-list { display:grid;gap:8px;padding:10px 12px 6px; }
+.ap-history-item { display:flex;align-items:center;gap:14px;padding:12px 14px;border:1px solid var(--sp-border);border-radius:10px;background:var(--sp-surface);transition:background .15s ease,border-color .15s ease,box-shadow .15s ease; }
+/* Hover feedback: the row "lifts" — warm tint, dusty-rose border and a soft
+   shadow — so the pointer target reads clearly without shouting. */
+.ap-history-item:hover { background:#fdf3f0;border-color:#e5cbc4;box-shadow:0 3px 10px #5a0b2012; }
+.dark .ap-history-item:hover { background:var(--sp-soft);border-color:#4d3d49;box-shadow:0 3px 10px #00000033; }
+.ap-history-item .ap-date-tile { flex-shrink:0;min-width:60px; }
+.ap-history-item .ap-date-tile span { font-size:10px; }
+.ap-history-item .ap-date-tile strong { font-size:22px; }
+.ap-history-item .ap-date-tile small { font-size:10px; }
+.ap-history-info { flex:1;min-width:0; }
+.ap-history-info strong { display:block;font-size:13px;font-weight:700;color:var(--sp-text);line-height:1.3; }
+.ap-history-info p { margin-top:3px;font-size:12px;color:var(--sp-muted);line-height:1.4; }
+.ap-history-concern { white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:italic; }
+.ap-history-side { flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:6px; }
+.ap-history-actions { display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px 12px; }
+.ap-history-actions button,.ap-history-actions a { display:inline-flex;align-items:center;gap:5px;min-height:26px;font-size:12px;font-weight:600;color:var(--sp-accent);white-space:nowrap;cursor:pointer; }
+.ap-history-actions button:hover,.ap-history-actions a:hover { text-decoration:underline; }
+.ap-history-actions svg { width:13px;height:13px; }
+.ap-history-pagination { display:flex;align-items:center;justify-content:space-between;padding:10px 16px 14px;gap:8px; }
+.ap-history-pagination p { font-size:12px;color:var(--sp-muted); }
+.ap-history-pagination>div { display:flex;align-items:center;gap:6px; }
+.ap-history-pagination button,.ap-history-pagination span { min-width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:1px solid var(--sp-border);border-radius:7px;font-size:12px;font-weight:600; }
+.ap-history-pagination span { background:#800000;color:white;border-color:#800000; }
+.ap-history-pagination button:disabled { opacity:.35;cursor:not-allowed; }
+.ap-history-pagination svg { width:13px;height:13px; }
+.ap-history-empty { display:flex;align-items:center;justify-content:center;gap:10px;padding:25px;font-size:13px;color:var(--sp-muted); }
 .ap-history-empty svg { width:22px;height:22px; }
 .ap-policy-note { display:flex;align-items:flex-start;gap:7px;font-size:10px;line-height:1.5;color:var(--sp-muted);padding:0 4px; }
 .ap-policy-note svg { width:14px;height:14px;flex-shrink:0;margin-top:1px; }
@@ -177,7 +203,6 @@
   .ap-hero-copy { max-width:100%;padding:19px 17px; }
   .ap-hero h1 { font-size:29px; }
   .ap-hero-description { max-width:62%;font-size:12px;line-height:1.5; }
-  .ap-hero-art { width:52%;height:145px;right:-20px;opacity:.73; }
   .ap-hero-benefits { flex-wrap:wrap;gap:8px;max-width:58%;margin-top:12px; }
   .ap-hero-benefits>span { font-size:9px; }
   .ap-hero-benefits>span:last-child { display:none; }
@@ -192,14 +217,12 @@
   .ap-upcoming-empty { flex-wrap:wrap;padding:16px; }
   .ap-upcoming-empty>a { margin:0;width:100%; }
   .ap-booking-steps { padding:14px 12px; }
-  .ap-booking-progress { --ap-step-gap:16px; }
-  .ap-booking-progress li { position:relative;padding:0 0 0 146px;min-height:40px;align-items:center; }
   .ap-step-body { padding:10px; }
   .ap-section-heading { padding:12px; }
-  .ap-section-heading h2 { font-size:13px; }
-  .ap-section-heading p { font-size:10px; }
-  .ap-section-heading select { max-width:125px;min-height:34px;font-size:10px; }
-  .ap-booking-column h3 { font-size:13px; }
+  .ap-section-heading h2 { font-size:14px; }
+  .ap-section-heading p { font-size:12px; }
+  .ap-section-heading select { max-width:150px;min-height:34px;font-size:12px; }
+  .ap-step-label { font-size:13px; }
   .ap-calendar { padding:10px; }
   .ap-calendar-month button { width:36px;height:36px; }
   .ap-calendar-grid { gap:3px; }
@@ -219,16 +242,10 @@
   .ap-booking-column textarea { font-size:16px; }
   .ap-summary dt,.ap-summary-note { font-size:11px; }
   .ap-summary dd { font-size:14px; }
-  .ap-history table,.ap-history tbody,.ap-history tr { display:block;width:100%; }
-  .ap-history thead { position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%); }
-  .ap-history-table-wrap { padding:0 12px; }
-  .ap-history tr { padding:10px 0;border-bottom:1px solid var(--sp-border); }
-  .ap-history td { display:grid;grid-template-columns:75px minmax(0,1fr);gap:8px;border:0;padding:4px 0;font-size:11px; }
-  .ap-history td::before { content:attr(data-label);font-size:10px;color:var(--sp-muted); }
-  .ap-history td>strong { font-size:11px; }
-  .ap-history td>small { grid-column:2; }
-  .ap-history-actions button,.ap-history-actions a { font-size:11px;min-height:30px; }
-  .ap-history-pagination p { font-size:10px; }
-  .ap-history-pagination button,.ap-history-pagination span { min-width:32px;height:32px; }
+  .ap-history-item { flex-wrap:wrap;gap:12px;padding:12px; }
+  .ap-history-side { width:100%;flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px; }
+  .ap-history-actions { justify-content:flex-start; }
+  .ap-history-actions button,.ap-history-actions a { min-height:34px; }
+  .ap-history-pagination { padding:10px 12px; }
   .ap-policy-note { font-size:11px; }
 }

@@ -12,11 +12,17 @@ const normalizeProfile = (payload) => {
 };
 const Detail = ({ label, value, className = '' }) => <div className={`min-w-0 ${className}`}><dt className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</dt><dd className="mt-1 break-words text-sm font-medium text-gray-900 dark:text-gray-100">{valueOrDash(value)}</dd></div>;
 
-const Profile = () => {
+/*
+ * Standalone page for the "Overview" inner tab of the Profile section.
+ * Extracted from the former Profile.jsx — same content and behavior
+ * (including preserving the client-side health_profile_completed flag on
+ * reload, see loadOverview).
+ */
+const Overview = () => {
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const loadProfile = useCallback(async () => {
+  const loadOverview = useCallback(async () => {
     setLoading(true); setError('');
     try {
       const response = await api.get('/student/profile');
@@ -38,10 +44,10 @@ const Profile = () => {
     } catch { setError('We could not load your profile. Please try again.'); }
     finally { setLoading(false); }
   }, []);
-  useEffect(() => { loadProfile(); }, [loadProfile]);
+  useEffect(() => { loadOverview(); }, [loadOverview]);
 
   if (loading) return <div className="mx-auto max-w-5xl space-y-5 p-4 pb-28 sm:p-6 lg:pb-8"><div className="h-40 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800" /><div className="grid gap-5 lg:grid-cols-2"><div className="h-64 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800" /><div className="h-64 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800" /></div></div>;
-  if (error || !student) return <div className="mx-auto flex min-h-[50vh] max-w-lg flex-col items-center justify-center p-6 text-center"><AlertCircle className="h-10 w-10 text-red-500" /><h1 className="mt-3 text-lg font-semibold text-gray-900 dark:text-white">Profile unavailable</h1><p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{error}</p><button onClick={loadProfile} className="mt-4 inline-flex items-center gap-2 rounded-md bg-maroon-800 px-4 py-2 text-sm font-semibold text-white hover:bg-maroon-900"><RefreshCw className="h-4 w-4" /> Retry</button></div>;
+  if (error || !student) return <div className="mx-auto flex min-h-[50vh] max-w-lg flex-col items-center justify-center p-6 text-center"><AlertCircle className="h-10 w-10 text-red-500" /><h1 className="mt-3 text-lg font-semibold text-gray-900 dark:text-white">Profile unavailable</h1><p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{error}</p><button onClick={loadOverview} className="mt-4 inline-flex items-center gap-2 rounded-md bg-maroon-800 px-4 py-2 text-sm font-semibold text-white hover:bg-maroon-900"><RefreshCw className="h-4 w-4" /> Retry</button></div>;
 
   const profile = student.profile || {};
   const avatar = profile.profile_picture;
@@ -60,4 +66,5 @@ const Profile = () => {
     </div>
   );
 };
-export default Profile;
+
+export default Overview;

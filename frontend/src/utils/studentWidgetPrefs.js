@@ -4,7 +4,7 @@
  * Three shell-level elements can be shown or hidden from Settings → General:
  *   - the floating Help & Support widget
  *   - the floating CareLink chat assistant
- *   - the "Clinic schedule" badge in the laptop header
+ *   - the "Clinic schedule" badge in the tablet/desktop header
  *
  * The choice is stored in localStorage and broadcast with a custom event so
  * the layout frame (which renders the widgets) and the Settings page (which

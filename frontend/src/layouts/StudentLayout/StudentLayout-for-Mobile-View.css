@@ -1,35 +1,23 @@
 /*
  * Mobile outer shell styles (viewport <= 767px).
  *
- * Split out of StudentLayout-for-Web-View.css. These rules deliberately come
- * AFTER StudentLayout-for-Web-View.css in the bundle (StudentLayout-for-Web-View
- * imports StudentLayout-for-Web-View.css, then imports
+ * Split out of StudentLayout-for-Desktop-View.css. These rules deliberately come
+ * AFTER StudentLayout-for-Desktop-View.css in the bundle (StudentLayout-for-Desktop-View
+ * imports StudentLayout-for-Desktop-View.css, then imports
  * StudentLayout-for-Mobile-View, which imports this file), so the cascade order
  * matches the original single stylesheet.
  */
 
 @media (max-width:767px) {
   .student-approved-shell { --sp-sidebar:0px;--sp-nav-height:70px;--sp-header-height:58px; }
-  .student-sidebar { display:flex;width:min(82vw,300px);visibility:hidden;transform:translateX(-100%);transition:transform .28s ease,visibility .28s ease;z-index:60;box-shadow:0 10px 40px #00000059; }
-  .student-sidebar.is-open { visibility:visible;transform:translateX(0); }
-  .student-sidebar-close { display:flex;position:absolute;top:14px;right:12px;align-items:center;justify-content:center;width:34px;height:34px;border-radius:9px;color:#fff;background:#ffffff1f;cursor:pointer; }
-  .student-sidebar-close:hover { background:#ffffff33; }
-  .student-sidebar-close svg { width:18px;height:18px; }
-  .student-sidebar-backdrop { display:block;position:fixed;inset:0;z-index:55;border:0;padding:0;background:#1a000080;opacity:0;visibility:hidden;cursor:pointer;transition:opacity .28s ease,visibility .28s ease; }
-  .student-sidebar-backdrop.is-open { opacity:1;visibility:visible; }
-  .student-mobile-menu { display:flex;order:-2;flex-shrink:0;align-items:center;justify-content:center;width:44px;height:44px;border-radius:9px;color:var(--sp-text);cursor:pointer; }
-  .student-mobile-menu:hover { background:var(--sp-soft);color:var(--sp-accent); }
-  .student-mobile-menu svg { width:22px;height:22px; }
   .student-header-inner { padding:0 12px;gap:7px; }
+  .student-header-brand { display:flex;flex:1;min-width:0;align-items:center;gap:8px; }
+  .student-header-brand-symbol { width:28px;height:28px;flex-shrink:0;color:var(--sp-accent); }
+  .student-header-brand-name { display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px;font-weight:700;letter-spacing:-.4px;line-height:1.15;color:var(--sp-accent); }
+  .student-header-brand-caption { display:block;margin-top:1px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--sp-muted); }
   .student-header-page { font-size:13px; }
   .student-header-actions { gap:1px; }
-  .student-header-icon,.student-mobile-search { width:44px;height:44px; }
-  .student-mobile-search { display:flex; }
-  .student-header-search { display:none; }
-  .student-header-search.is-open { display:flex;position:absolute;top:64px;left:12px;right:12px;max-width:none;background:var(--sp-surface);border-color:var(--sp-border);box-shadow:0 10px 24px #2a001d20;border-radius:10px;padding:10px; }
-  .student-header-search input { font-size:16px; }
-  .student-header-search kbd { display:none; }
-  .student-search-close { display:block;width:32px;height:32px;font-size:24px; }
+  .student-header-icon { width:44px;height:44px; }
   .student-clinic-status,.student-account-caption { display:none; }
   .student-account-button { width:44px;min-height:44px;padding:0; }
   .student-main { padding:calc(var(--sp-header-height) + 12px) 12px 16px;scroll-padding-top:calc(var(--sp-header-height) + 12px); }

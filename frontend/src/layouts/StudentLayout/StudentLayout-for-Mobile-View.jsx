@@ -1,24 +1,22 @@
-import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Bell, Menu, Moon, Search, Sun } from 'lucide-react';
+import { Bell, HeartPulse, Moon, Sun } from 'lucide-react';
 
-import StudentSidebar from './student-shell/StudentSidebar';
-import StudentHeaderSearch from './student-shell/StudentHeaderSearch';
 import StudentAccountMenu from './student-shell/StudentAccountMenu';
 import './StudentLayout-for-Mobile-View.css';
 
 /*
  * Mobile outer shell for the Student portal (viewport <= 767px).
  *
- * StudentLayout-for-Web-View picks between this shell and the desktop/laptop shell with a
+ * StudentLayout-for-Desktop-View picks between this shell and the desktop/tablet shell with a
  * JS media query, so only one shell is ever mounted. This component owns the
  * mobile-only chrome:
- *   - slide-in drawer sidebar + backdrop (state lives here)
- *   - header with the hamburger, page title, search, alerts / theme / account
+ *   - header with the page title, search, alerts / theme / account
  *   - bottom tab bar
- * The page content is injected through `children`; shared data and handlers
- * are passed down from StudentLayout-for-Web-View so the two shells never duplicate logic.
+ * There is no drawer sidebar on mobile — navigation happens through the
+ * bottom dock. Page content is injected through `children`; shared data and
+ * handlers are passed down from StudentLayout-for-Desktop-View so the two shells
+ * never duplicate logic.
  */
 const StudentLayoutForMobileView = ({
   children,
@@ -32,108 +30,25 @@ const StudentLayoutForMobileView = ({
   unreadCount,
   darkMode,
   toggleDarkMode,
-  query,
-  setQuery,
-  searchOpen,
-  setSearchOpen,
-  searchRef,
   profileMenuOpen,
   setProfileMenuOpen,
   profileMenuRef,
-  pageTitle,
-  onSearchSubmit,
   onLogout,
 }) => {
-  const location = useLocation();
-  const [navOpen, setNavOpen] = useState(false);
-
-  const closeNav = () => setNavOpen(false);
-
-  /* Close the drawer whenever the route changes. */
-  useEffect(() => {
-    setNavOpen(false);
-  }, [location.pathname]);
-
-  /* Close the drawer with the Escape key. */
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') setNavOpen(false);
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  /* Lock page scroll while the drawer is open. */
-  useEffect(() => {
-    if (!navOpen) return undefined;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [navOpen]);
-
   return (
     <>
-      <StudentSidebar
-        navItems={navItems}
-        isActive={isActive}
-        isOpen={navOpen}
-        onNavigate={closeNav}
-        onClose={closeNav}
-      />
-
-      <button
-        type="button"
-        aria-label="Close navigation"
-        tabIndex={navOpen ? 0 : -1}
-        className={`student-sidebar-backdrop ${navOpen ? 'is-open' : ''}`}
-        onClick={closeNav}
-      />
-
       <div className="student-shell-body">
         <header className="student-header">
           <div className="student-header-inner">
-            <button
-              type="button"
-              className="student-mobile-menu"
-              aria-label="Open navigation"
-              aria-expanded={navOpen}
-              aria-controls="student-sidebar"
-              onClick={() => setNavOpen(true)}
-            >
-              <Menu aria-hidden="true" />
-            </button>
-
-            <p className="student-header-page">{pageTitle}</p>
-
-            <StudentHeaderSearch
-              query={query}
-              setQuery={setQuery}
-              searchOpen={searchOpen}
-              setSearchOpen={setSearchOpen}
-              searchRef={searchRef}
-              onSubmit={onSearchSubmit}
-            />
+            <div className="student-header-brand">
+              <HeartPulse className="student-header-brand-symbol" aria-hidden="true" />
+              <span className="min-w-0">
+                <span className="student-header-brand-name">CareLink</span>
+                <span className="student-header-brand-caption">Student Portal</span>
+              </span>
+            </div>
 
             <div className="student-header-actions">
-              <button
-                type="button"
-                className="student-mobile-search"
-                aria-label="Open appointment search"
-                aria-expanded={searchOpen}
-                onClick={() => {
-                  setSearchOpen((value) => !value);
-                  requestAnimationFrame(() => searchRef.current?.focus());
-                }}
-              >
-                <Search />
-              </button>
-
               <Link
                 to="/student/alerts"
                 aria-label="Open notifications and announcements"
