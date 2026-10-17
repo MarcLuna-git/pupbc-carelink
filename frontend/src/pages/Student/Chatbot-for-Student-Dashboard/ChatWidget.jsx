@@ -11,11 +11,80 @@ const GREETING = "Hi, I'm the CareLink Assistant. How can I help you?";
 // (not on the very first greeting, and not in the header).
 const ASSISTANT_NAME = 'CareLink Assistant';
 
-const SUGGESTIONS = [
+// The three permanent opening chips. Always shown, always English: the first
+// two cover common questions, the third invites the student to describe how
+// they feel. These never change and are never randomized.
+const STARTER_SUGGESTIONS = [
   'How do I book an appointment?',
   'What time is the clinic open?',
-  'What is my queue status?',
+  "I'm not feeling well",
 ];
+
+// Portal page / feature questions for the second follow-up slot, so it always
+// points the student at another part of the dashboard (queue, QR code, health
+// records, appointments) instead of repeating the reply's topic. English is the
+// default; the assistant's own first follow-up already follows the student's
+// language.
+const PORTAL_FEATURE_QUESTIONS = [
+  'How do I check my queue status?',
+  'Where can I find my QR code?',
+  'How do I view my health records?',
+  'How do I see my appointments?',
+  'How do I reschedule my appointment?',
+  'How do I update my profile?',
+  'Where can I see my appointment history?',
+];
+
+// Questions for the third follow-up slot: one about the clinic schedule or
+// hours, or one about a symptom. One is picked at random each time.
+const EXTRA_SCHEDULE_QUESTIONS = [
+  'What are the clinic hours?',
+  'When is the clinic open?',
+  'Is the clinic open today?',
+  'What time does the clinic close?',
+  'What is the clinic schedule this week?',
+];
+
+const EXTRA_SYMPTOM_QUESTIONS = [
+  'What should I do if I have a fever?',
+  'Is my headache something to worry about?',
+  'What can I do for a cough and cold?',
+  'What should I do for a stomach ache?',
+  'Should I see the nurse for a sore throat?',
+  'How do I care for a toothache?',
+  'What should I do for a minor wound?',
+  'What if I feel dizzy?',
+];
+
+const EXTRA_FOLLOW_UPS = [...EXTRA_SCHEDULE_QUESTIONS, ...EXTRA_SYMPTOM_QUESTIONS];
+
+function pickRandom(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+function pickRandomOther(list, taken) {
+  const pool = list.filter((question) => !taken.includes(question));
+
+  return pickRandom(pool.length > 0 ? pool : list);
+}
+
+// The follow-up row is exactly three and always in this order:
+//   1. the assistant's own first follow-up (the next step on its reply);
+//   2. a question about another portal page or feature (queue, QR code, health
+//      records, appointments);
+//   3. a random extra about the clinic hours or a symptom.
+// The second and third are chosen here so they never drift back to the reply's
+// topic, and no chip repeats an earlier one.
+function buildFollowUps(base) {
+  const replyQuestion = base[0];
+  const featureQuestion = pickRandomOther(PORTAL_FEATURE_QUESTIONS, [replyQuestion]);
+  const extraQuestion = pickRandomOther(EXTRA_FOLLOW_UPS, [
+    replyQuestion,
+    featureQuestion,
+  ]);
+
+  return [replyQuestion, featureQuestion, extraQuestion];
+}
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
@@ -23,7 +92,7 @@ export default function ChatWidget() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
-  const [suggestions, setSuggestions] = useState(SUGGESTIONS);
+  const [suggestions, setSuggestions] = useState(STARTER_SUGGESTIONS);
   const [isTyping, setIsTyping] = useState(false);
 
   const scrollRef = useRef(null);
@@ -106,19 +175,34 @@ export default function ChatWidget() {
       setSending(true);
 
       try {
-        const { reply, degraded, suggestions: next } = await chatbotService.sendMessage(
-          text,
-          history
-        );
+        const {
+          reply,
+          degraded,
+          suggestions: next,
+          symptom,
+          triage,
+          recommendation,
+        } = await chatbotService.sendMessage(text, history);
 
-        // Keep guiding the student: use the assistant's follow-ups, or fall
-        // back to the starter set if the backend sent none. The chips are
-        // stored on the message so they travel with the history next time.
-        const shown = next.length > 0 ? next : SUGGESTIONS;
+        // Keep guiding the student: use the assistant's own follow-ups plus the
+        // extra clinic-hours and symptom questions, or fall back to the starter
+        // chips if the backend sent none. The chips are stored on the message so
+        // they travel with the history next time.
+        const shown = next.length > 0 ? buildFollowUps(next) : STARTER_SUGGESTIONS;
 
+        // Symptom categorization + triage travel with the message so the badge
+        // and its call to action survive re-renders and older turns.
         setMessages((current) => [
           ...current,
-          { role: 'assistant', text: reply, degraded, suggestions: shown },
+          {
+            role: 'assistant',
+            text: reply,
+            degraded,
+            suggestions: shown,
+            symptom,
+            triage,
+            recommendation,
+          },
         ]);
 
         setSuggestions(shown);
@@ -153,7 +237,7 @@ export default function ChatWidget() {
   const clearConversation = () => {
     setMessages([]);
     setError('');
-    setSuggestions(SUGGESTIONS);
+    setSuggestions(STARTER_SUGGESTIONS);
     inputRef.current?.focus();
   };
 
@@ -227,7 +311,7 @@ const lastAssistantIndex = messages.reduce(
                   chips at the bottom-right. Once a conversation starts, the
                   greeting stays at the top of the transcript. */}
               <div className={messages.length === 0 ? 'mt-auto' : ''}>
-                <ChatMessage role="assistant" text={GREETING} />
+                <ChatMessage role="assistant" text={GREETING} mood="happy" />
               </div>
 
               {messages.map((message, index) => (
@@ -243,6 +327,14 @@ const lastAssistantIndex = messages.reduce(
                     message.role === 'assistant' &&
                     index === lastAssistantIndex
                       ? 'new'
+                      : undefined
+                  }
+                  triage={
+                    message.role === 'assistant' ? message.triage : undefined
+                  }
+                  recommendation={
+                    message.role === 'assistant'
+                      ? message.recommendation
                       : undefined
                   }
                   animate={

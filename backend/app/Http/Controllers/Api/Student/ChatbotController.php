@@ -59,6 +59,12 @@ class ChatbotController extends Controller
                 'reply' => $result['reply'],
                 'degraded' => !$result['ok'],
                 'suggestions' => $result['suggestions'] ?? [],
+                // Symptom categorization + triage. Null triage (and a "none"
+                // category) means the message was not about the student's own
+                // symptoms, so the widget shows no badge.
+                'symptom' => $result['symptom'] ?? null,
+                'triage' => $result['triage'] ?? null,
+                'recommendation' => $result['recommendation'] ?? null,
             ],
         ]);
     }

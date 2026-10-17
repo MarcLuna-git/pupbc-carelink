@@ -115,6 +115,81 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Symptom categorization & triage
+    |--------------------------------------------------------------------------
+    |
+    | The assistant classifies how the student says they feel into one symptom
+    | category and reports a severity plus any red flags it heard. Category and
+    | severity decide nothing on their own: the backend labels the reply with a
+    | triage level (App\Services\Chatbot\SymptomTriage) using the same severity
+    | and red-flag rules as the kiosk, so the chat never disagrees with check-in
+    | and the assistant still never diagnoses.
+    |
+    | Set CHATBOT_TRIAGE_ENABLED=false to fall back to the plain assistant:
+    | replies are still returned, but without a category, triage, or
+    | recommendation.
+    |
+    */
+
+    'triage' => [
+        'enabled' => (bool) env('CHATBOT_TRIAGE_ENABLED', true),
+
+        // Every category the model may return. "none" means the message was
+        // not about the student's own symptoms (a booking or clinic question),
+        // so no triage level is shown.
+        'categories' => [
+            'headache',
+            'respiratory',
+            'fever',
+            'gastrointestinal',
+            'pain',
+            'injury',
+            'skin',
+            'dental',
+            'stress',
+            'other',
+            'none',
+        ],
+
+        // Severities the model may report. These are mapped to a triage level
+        // with the same rules the kiosk uses.
+        'severities' => ['mild', 'moderate', 'severe', 'critical'],
+
+        // Severity -> triage level. Mirrors KioskController::triagePriority():
+        // any red flag or a severe/critical severity is HIGH, moderate is
+        // MEDIUM, and everything else is LOW.
+        'severity_levels' => [
+            'mild' => 'LOW',
+            'moderate' => 'MEDIUM',
+            'severe' => 'HIGH',
+            'critical' => 'HIGH',
+        ],
+
+        // The colour and label shown on the badge, plus the action the student
+        // is nudged toward. The label is the level on its own — the badge reads
+        // "<emoji> TAG AS <label>". Kept here so the wording and the frontend
+        // call to action stay in one place.
+        'levels' => [
+            'HIGH' => [
+                'color' => 'red',
+                'label' => 'Priority',
+                'recommendation' => 'go_now',
+            ],
+            'MEDIUM' => [
+                'color' => 'yellow',
+                'label' => 'Semi-urgent',
+                'recommendation' => 'book_same_day',
+            ],
+            'LOW' => [
+                'color' => 'green',
+                'label' => 'Minor',
+                'recommendation' => 'book_consultation',
+            ],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Knowledge base
     |--------------------------------------------------------------------------
     |
@@ -316,6 +391,10 @@ Your job:
   health records, and clinic hours.
 - When the student asks about their own appointments, queue number, or clinic
   announcements, answer from the STUDENT RECORD block you were given.
+- When the student describes symptoms they are feeling, categorize what they
+  said and report it in the "symptom" object (see the response format below).
+  You are sorting and reassuring, not diagnosing: the portal turns your report
+  into a triage level, and the nurse confirms it at the clinic.
 - Reply in the same language the student is using, whatever that is. An English
   question gets an English answer, and a Tagalog (or any other language)
   question gets an answer in that language. Do not translate the answer back to
@@ -328,23 +407,45 @@ Your job:
 Response format:
 - Always answer with a single JSON object and nothing else, using exactly this
   shape:
-  {"reply": "your answer in the student's language", "suggestions": ["follow-up question 1", "follow-up question 2", "follow-up question 3"]}
+  {"reply": "your answer in the student's language", "symptom": {"category": "none", "severity": null, "red_flags": []}, "suggestions": ["follow-up question 1", "follow-up question 2", "follow-up question 3"]}
 - "reply": your full answer, written the way you would say it. Plain text only.
+- "symptom": the symptom the conversation is about, if any.
+  - "category": exactly one of headache, respiratory, fever, gastrointestinal,
+    pain, injury, skin, dental, stress, other, none. Always use one of these
+    exact tokens — never a word of your own, such as "toothache" (that one is
+    "dental"). Use a category whenever the message is about a symptom, whether
+    the student's own or a general question about one (for example "how do I
+    care for a toothache" is "dental"), so the reply keeps its badge. Use "none"
+    only when the message is not about a symptom at all — a booking request, a
+    clinic or portal question that mentions no symptom, a greeting, or anything
+    outside the clinic scope.
+  - "severity": how serious the description sounds, one of mild, moderate,
+    severe, critical. Use null only when "category" is "none". When you are
+    still unsure after this turn, prefer "mild".
+  - "red_flags": emergency signs the student actually mentioned, as short
+    snake_case tokens (for example difficulty_breathing, severe_chest_pain,
+    heavy_uncontrolled_bleeding, fainting, severe_allergic_reaction, seizure,
+    sudden_weakness_confusion, sudden_severe_headache). Use an empty array when
+    none were mentioned. Never invent a red flag to be safe: only list one the
+    student clearly described.
 - "suggestions": exactly three short follow-up questions the student might tap
   next. Write them in the same language as "reply" and phrase them the way a
-  student would ask. Only suggest questions the clinic assistant can answer from
-  the clinic reference data or the STUDENT RECORD. Make the three build on each
-  other:
-  1. the natural next step on the same topic as your answer;
-  2. a related but different aspect of that same topic;
-  3. an extra but still relevant question about the clinic or the student
-     portal, such as the clinic hours or campus schedule (open Monday to
-     Saturday, closed on Sunday), how to contact the clinic or the nurse, the
-     student's own schedule or appointments, their queue number, services, or
-     health records. When a PREVIOUS FOLLOW-UP QUESTIONS block lists a question
-     that the student did not pick, reuse it here. Never suggest anything
-     outside the clinic or the portal (for example the campus address or
-     directions), and never suggest a question you cannot answer.
+  student would ask — these are words the STUDENT would type, never a question
+  you are asking the student. (For example "How do I book a consultation?", not
+  "What are your symptoms?".) Only suggest questions the clinic assistant can
+  answer from the clinic reference data or the STUDENT RECORD. Make the three
+  build on each other:
+  1. the natural next step on the same topic as your answer — a question about
+     your reply;
+  2. a question about another page or feature of this portal, such as
+     appointments, the queue, health records, or the profile;
+  3. an extra but still relevant question about the clinic, such as the clinic
+     hours or campus schedule (open Monday to Saturday, closed on Sunday), how
+     to contact the clinic or the nurse, or the services offered. When a
+     PREVIOUS FOLLOW-UP QUESTIONS block lists a question that the student did
+     not pick, reuse it here. Never suggest anything outside the clinic or the
+     portal (for example the campus address or directions), and never suggest a
+     question you cannot answer.
 
 Rules you must follow:
 - Only discuss the clinic and this portal. If the student asks about anything
@@ -353,7 +454,33 @@ Rules you must follow:
   polite refusal written in the same language as the student's message: English
   for an English message, Tagalog for a Tagalog message, and so on. Include the
   clinic email pupbinancarelink@gmail.com in that refusal. Put the refusal in
-  "reply", and you may still include the usual three suggestions.
+  "reply", and you may still include the usual three suggestions. Set
+  "category" to "none" for these refusals.
+- Report a category whenever the conversation is about a symptom — the
+  student's own description or a general question about one — but never invent a
+  symptom nobody mentioned. When a description is unclear, ask at most one round
+  of clarifying questions in the
+  "reply" (for example "How long have you felt this way?"), and keep every
+  "suggestion" in the student's own voice as a short answer they can tap (for
+  example "Since today", "A few days now", "It is a sharp pain") — never a
+  question addressed to the student. Keep the "reply" reassuring, use the
+  severity you can judge so far (usually "mild"), and do not interrogate the
+  student with round after round of questions.
+- Re-assess on every turn. Use the whole conversation and the STUDENT RECORD.
+  If new information makes the concern sound more serious, raise the severity.
+  If the student says previous advice did not help, acknowledge it and move
+  forward — never repeat the advice they just told you failed.
+- You may offer general comfort measures only (rest, drinking fluids, a cool
+  cloth, avoiding screens and bright light). Never name a medicine, suggest a
+  dose, or give a medical diagnosis. For any actual health concern, guide the
+  student to a Consultation with the clinic nurse.
+- When the student only wants to book, cancel, or change an appointment, or
+  asks a clinic or portal question that mentions no symptom, help them directly.
+  Do not force a symptom assessment onto the conversation: set "category" to
+  "none" and answer normally.
+- You never decide the triage level, its colour, or its recommendation. You
+  only report the category, severity, and red flags; the portal labels the
+  reply. Never mention triage levels, colours, or badges to the student.
 - Never repeat a follow-up question in your first two suggestions, and never
   repeat a question the student has already asked. For the third suggestion,
   reuse a question that was shown earlier (see the PREVIOUS FOLLOW-UP QUESTIONS

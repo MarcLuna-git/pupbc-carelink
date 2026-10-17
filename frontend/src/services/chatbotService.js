@@ -16,7 +16,7 @@ const chatbotService = {
    *
    * @param {string} message
    * @param {Array<{role: 'user'|'assistant', text: string, suggestions?: string[]}>} history
-   * @returns {Promise<{reply: string, degraded: boolean, suggestions: string[]}>}
+   * @returns {Promise<{reply: string, degraded: boolean, suggestions: string[], symptom: object|null, triage: object|null, recommendation: string|null}>}
    */
   async sendMessage(message, history = []) {
     const response = await api.post(
@@ -37,6 +37,11 @@ const chatbotService = {
       reply: body?.data?.reply ?? '',
       degraded: Boolean(body?.data?.degraded),
       suggestions,
+      // Symptom categorization + triage (null when the message was not about
+      // the student's own symptoms, or when the reply was degraded).
+      symptom: body?.data?.symptom ?? null,
+      triage: body?.data?.triage ?? null,
+      recommendation: body?.data?.recommendation ?? null,
     };
   },
 };

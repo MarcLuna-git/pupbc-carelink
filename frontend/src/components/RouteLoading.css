@@ -1,0 +1,31 @@
+/*
+ * Simple looping spinner loading UI (owner's choice — nothing fancier).
+ *
+ * The spinner lives ONLY inside the fixed overlay — nothing ever spins on
+ * the page itself (owner's rule): loading sources just raise the shared
+ * overlay through the counter store.
+ *
+ * The overlay backdrop is FULLY TRANSPARENT — no color tint at all, just a
+ * slight blur of the page behind the spinner.
+ */
+.route-loading-overlay {
+  position:fixed;inset:0;z-index:9999;
+  display:flex;align-items:center;justify-content:center;
+  background:transparent;
+  backdrop-filter:blur(2px);
+  -webkit-backdrop-filter:blur(2px);
+  cursor:progress;
+}
+
+.route-loading-spinner {
+  width:40px;height:40px;border-radius:50%;
+  border:3px solid rgba(128,0,0,.18);
+  border-top-color:#800000;
+  animation:route-loading-spin .8s linear infinite;
+}
+.dark .route-loading-spinner {
+  border-color:rgba(239,176,189,.2);
+  border-top-color:#efb0bd;
+}
+
+@keyframes route-loading-spin { to { transform:rotate(360deg); } }

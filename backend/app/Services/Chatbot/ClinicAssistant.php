@@ -20,15 +20,18 @@ class ClinicAssistant
 
     private StudentContext $context;
 
-    public function __construct(GeminiClient $client, StudentContext $context)
+    private SymptomTriage $triage;
+
+    public function __construct(GeminiClient $client, StudentContext $context, SymptomTriage $triage)
     {
         $this->client = $client;
         $this->context = $context;
+        $this->triage = $triage;
     }
 
     /**
      * @param  array<int, array{role?: string, text?: string}>  $history
-     * @return array{reply: string, ok: bool, error: string|null, suggestions: array<int, string>}
+     * @return array{reply: string, ok: bool, error: string|null, suggestions: array<int, string>, symptom: array{category: string, severity: string|null, red_flags: array<int, string>}, triage: array{level: string, color: string, label: string, recommendation: string}|null, recommendation: string|null}
      */
     public function reply(string $message, array $history = []): array
     {
@@ -43,15 +46,23 @@ class ClinicAssistant
         $fallbackSuggestions = $this->suggestions($message, $history);
 
         if (!$result['ok']) {
+            // A degraded reply has no model assessment behind it, so it is left
+            // deliberately free of a category and triage level rather than
+            // guessing one.
             return [
                 'reply' => $this->fallbackReply($result['reason'] ?? null),
                 'ok' => false,
                 'error' => $result['error'],
                 'suggestions' => $this->finalizeSuggestions($fallbackSuggestions, $history),
+                'symptom' => $this->triage->normalize([]),
+                'triage' => null,
+                'recommendation' => null,
             ];
         }
 
         $parsed = $this->parseStructuredReply($result['text']);
+        $symptom = $this->triage->normalize($parsed['symptom']);
+        $triage = $this->triage->classify($symptom);
 
         return [
             'reply' => $parsed['reply'],
@@ -61,6 +72,9 @@ class ClinicAssistant
                 $parsed['suggestions'] !== [] ? $parsed['suggestions'] : $fallbackSuggestions,
                 $history
             ),
+            'symptom' => $symptom,
+            'triage' => $triage,
+            'recommendation' => $triage['recommendation'] ?? null,
         ];
     }
 
@@ -300,13 +314,13 @@ class ClinicAssistant
      * Split a model answer into the reply text and the follow-up questions.
      *
      * The assistant is asked to return a JSON object such as
-     * {"reply": "...", "suggestions": ["...", "...", "..."]}, which lets the
-     * reply and its questions stay in the same language. When the model answers
-     * in plain text instead (an older model, a disabled JSON mode, or a
-     * degraded provider), the whole text becomes the reply and the curated
-     * English follow-ups are used instead.
+     * {"reply": "...", "symptom": {"category": "...", "severity": "...", "red_flags": []}, "suggestions": ["...", "...", "..."]},
+     * which lets the reply, its symptom report, and its questions stay in the
+     * same language. When the model answers in plain text instead (an older
+     * model, a disabled JSON mode, or a degraded provider), the whole text
+     * becomes the reply and the curated English follow-ups are used instead.
      *
-     * @return array{reply: string, suggestions: array<int, string>}
+     * @return array{reply: string, symptom: array<string, mixed>, suggestions: array<int, string>}
      */
     private function parseStructuredReply(string $text): array
     {
@@ -319,19 +333,20 @@ class ClinicAssistant
             // sees a raw JSON fragment.
             $partial = str_starts_with($text, '{') ? $this->extractPartialReply($text) : null;
 
-            return ['reply' => $partial ?? $text, 'suggestions' => []];
+            return ['reply' => $partial ?? $text, 'symptom' => [], 'suggestions' => []];
         }
 
         $reply = trim($decoded['reply']);
 
         if ($reply === '') {
-            return ['reply' => $text, 'suggestions' => []];
+            return ['reply' => $text, 'symptom' => [], 'suggestions' => []];
         }
 
         $limit = max(1, (int) config('chatbot.follow_ups.limit', 3));
 
         return [
             'reply' => $reply,
+            'symptom' => is_array($decoded['symptom'] ?? null) ? $decoded['symptom'] : [],
             'suggestions' => array_slice(
                 $this->cleanSuggestions((array) ($decoded['suggestions'] ?? [])),
                 0,

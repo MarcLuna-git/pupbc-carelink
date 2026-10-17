@@ -49,7 +49,7 @@ const KioskPage = lazy(() => import('./pages/Kiosk/KioskPage'));
 import AppErrorBoundary from './components/AppErrorBoundary';
 
 import api from './services/api';
-import RouteLoading from './components/RouteLoading';
+import RouteLoading, { RouteLoadingOverlay } from './components/RouteLoading';
 
 /*
  * ============================================================
@@ -329,27 +329,12 @@ const useStudentHealthProfileStatus = () => {
  * ============================================================
  * LOADING STATE
  * ============================================================
+ *
+ * The customized heartbeat loading overlay was PERMANENTLY REMOVED (owner's
+ * decision) — there is no loading effect UI anywhere in the app anymore.
+ * While a guard is checking, it renders nothing; lazy routes simply pop in
+ * when their chunk finishes loading (Suspense fallback renders nothing).
  */
-
-const StudentRouteLoading = ({
-  message = 'Preparing your student portal...',
-}) => (
-  <div className="flex min-h-[55vh] items-center justify-center px-4">
-    <div className="w-full max-w-sm text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-maroon-50 dark:bg-maroon-950/30">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-maroon-200 border-t-maroon-700 dark:border-maroon-900 dark:border-t-maroon-300" />
-      </div>
-
-      <p className="mt-4 text-sm font-semibold text-gray-800 dark:text-gray-100">
-        {message}
-      </p>
-
-      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-        Checking your clinic profile...
-      </p>
-    </div>
-  </div>
-);
 
 /*
  * ============================================================
@@ -407,9 +392,7 @@ const StudentHomeRedirect = () => {
   } = useStudentHealthProfileStatus();
 
   if (loading) {
-    return (
-      <StudentRouteLoading message="Opening your student portal..." />
-    );
+    return <RouteLoading />;
   }
 
   if (error) {
@@ -462,9 +445,7 @@ const HealthProfileRequired = ({ children }) => {
   } = useStudentHealthProfileStatus();
 
   if (loading) {
-    return (
-      <StudentRouteLoading message="Checking clinic access..." />
-    );
+    return <RouteLoading />;
   }
 
   if (error) {
@@ -486,6 +467,11 @@ const HealthProfileRequired = ({ children }) => {
 function App() {
   return (
     <AppErrorBoundary>
+      {/* The ONE spinner overlay — the only loading UI in the app (owner's
+          rule: nothing spins on the page itself). Loading sources (Suspense
+          fallbacks, guards, the shells' tab-click curtain) just raise it
+          through the shared counter. */}
+      <RouteLoadingOverlay />
       <BrowserRouter>
         <Suspense fallback={<RouteLoading />}>
         <Routes>
