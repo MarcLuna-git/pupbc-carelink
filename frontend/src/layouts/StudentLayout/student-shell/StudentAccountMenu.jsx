@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 import { getInitials } from '../../../utils/studentUser';
+import { preloadForPath } from '../../../utils/preloadStudentPages';
 
 /*
  * Account button + dropdown.
@@ -117,6 +118,8 @@ const StudentAccountMenu = ({
             <Link
               to="/student/profile"
               role="menuitem"
+              onMouseEnter={() => preloadForPath('/student/profile')}
+              onFocus={() => preloadForPath('/student/profile')}
               className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800">
@@ -144,6 +147,8 @@ const StudentAccountMenu = ({
             <Link
               to="/student/settings"
               role="menuitem"
+              onMouseEnter={() => preloadForPath('/student/settings')}
+              onFocus={() => preloadForPath('/student/settings')}
               className="mt-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800">

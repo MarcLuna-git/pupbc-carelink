@@ -2,7 +2,35 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, FileText, Calendar, User, Stethoscope, ClipboardList, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import api from '../../../services/api';
-import RouteLoading from '../../../components/RouteLoading';
+import RouteLoadingBar from '../../../components/RouteLoadingBar';
+
+/*
+ * ROUTE LOADING — same restored effect as the Settings / Profile pages,
+ * scoped to this page. TEMP DEMO TIMER: holds the loading phase so the
+ * animation is visible even when the API answers quickly on localhost.
+ */
+const ROUTE_LOADING_DELAY = 1600;
+
+const Skeleton = ({ className = '' }) => (
+  <div className={`animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 ${className}`} />
+);
+
+/* Ghost of one record row. */
+const SkeletonRecord = () => (
+  <div className="flex items-start justify-between gap-3 rounded-2xl border border-gray-100 bg-white p-4 dark:border-gray-700/50 dark:bg-gray-800 sm:p-5">
+    <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+      <Skeleton className="h-10 w-10 shrink-0 rounded-xl sm:h-11 sm:w-11" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <Skeleton className="h-4 w-44 max-w-full" />
+        <Skeleton className="h-3 w-56 max-w-full" />
+      </div>
+    </div>
+    <div className="flex shrink-0 items-center gap-2">
+      <Skeleton className="h-5 w-16 rounded-full" />
+      <Skeleton className="h-4 w-4 rounded" />
+    </div>
+  </div>
+);
 
 const HealthRecords = () => {
   const [records, setRecords] = useState([]);
@@ -13,9 +41,17 @@ const HealthRecords = () => {
   const [filterYear, setFilterYear] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [category, setCategory] = useState('all');
+  /* Cosmetic hold for the route-loading animation — see ROUTE LOADING note. */
+  const [routeReady, setRouteReady] = useState(false);
 
   useEffect(() => {
     fetchRecords();
+  }, []);
+
+  /* Demo timer: keeps the loading phase on screen long enough to see it. */
+  useEffect(() => {
+    const timer = setTimeout(() => setRouteReady(true), ROUTE_LOADING_DELAY);
+    return () => clearTimeout(timer);
   }, []);
 
   const fetchRecords = async () => {
@@ -109,11 +145,72 @@ const HealthRecords = () => {
     return date.toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', hour12: true });
   };
 
-  /* Blank frame behind the RouteLoading curtain — the page renders at once when ready. */
-  if (loading) return <RouteLoading />;
+  /*
+   * LOADING PHASE — the hero card is real, with the looping progress bar on
+   * its bottom edge ONLY (same as the Settings hero — never on the forms).
+   * The search/filter and records cards render as 1:1 ghosts. Skipped
+   * entirely on error so the Retry banner appears right away.
+   */
+  if (loading || (!routeReady && !error)) {
+    return (
+      <div className="space-y-5 max-w-[1400px] mx-auto">
+        {/* Hero header card — real, with the looping bar */}
+        <div className="relative overflow-hidden rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Health Records</h1>
+          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Your complete clinic visit history, from consultations to emergencies.</p>
+
+          {/* Route-loading bar — full-width fill/drain loop, hero only. */}
+          <RouteLoadingBar />
+        </div>
+
+        {/* Ghost of the search & filters card */}
+        <div className="space-y-4 rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
+          <Skeleton className="h-11 w-full rounded-xl" />
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Skeleton className="h-10 w-full rounded-xl" />
+            <Skeleton className="h-10 w-full rounded-xl" />
+            <Skeleton className="h-10 w-full rounded-xl" />
+          </div>
+        </div>
+
+        {/* Ghost of the main contents card */}
+        <div className="rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
+          <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-3 w-64 max-w-full" />
+            </div>
+            <Skeleton className="h-3 w-28" />
+          </div>
+
+          <div className="mb-5 grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-gray-200 bg-gray-200 dark:border-gray-700 dark:bg-gray-700 sm:grid-cols-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="space-y-2 bg-white p-4 dark:bg-gray-800">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-5 w-20" />
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900/20 sm:p-4">
+            <div className="space-y-3">
+              <SkeletonRecord />
+              <SkeletonRecord />
+              <SkeletonRecord />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-5 max-w-[1400px] mx-auto">
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+      className="space-y-5 max-w-[1400px] mx-auto"
+    >
       {/* Hero header card */}
       <div className="rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Health Records</h1>
@@ -350,7 +447,7 @@ const HealthRecords = () => {
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

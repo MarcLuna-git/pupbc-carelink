@@ -55,15 +55,10 @@
 .student-account-caption small { font-size:9px;color:var(--sp-muted);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
 .student-main { flex:1 0 auto;min-height:100dvh;min-width:0;overflow:visible;overscroll-behavior:contain;padding:calc(var(--sp-header-height) + 16px) 22px 16px;scroll-behavior:smooth;scroll-padding-top:calc(var(--sp-header-height) + 16px); }
 .student-page-content { width:100%;max-width:1440px;margin:0 auto;min-width:0; }
-.student-help-widget { position:fixed;z-index:45;left:calc(var(--sp-sidebar) + 22px);bottom:calc(18px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:10px;max-width:300px;padding:11px 14px;border-radius:14px;background:var(--sp-surface);border:1px solid var(--sp-border);box-shadow:0 12px 30px #3d12201f;font-size:11px;line-height:1.45;color:var(--sp-muted);transition:transform .18s ease,box-shadow .18s ease; }
-.student-help-widget:hover { transform:translateY(-2px);box-shadow:0 16px 34px #3d122029; }
-.student-help-widget .student-help-widget-icon { width:20px;height:20px;flex-shrink:0;color:var(--sp-accent); }
-.student-help-widget strong { display:block;font-size:12px;color:var(--sp-accent); }
-.student-help-widget .student-help-widget-arrow { width:16px;height:16px;flex-shrink:0;color:var(--sp-muted); }
 .student-bottom-nav { display:none; }
 .student-approved-shell .carelink-assistant-launcher { bottom:calc(var(--sp-nav-height) + env(safe-area-inset-bottom) + 10px);right:18px;width:52px;height:52px; }
 .student-approved-shell .carelink-assistant-panel { bottom:calc(var(--sp-nav-height) + env(safe-area-inset-bottom) + 78px);right:18px;width:min(380px,calc(100vw - 32px));height:min(510px,calc(100dvh - var(--sp-nav-height) - 150px)); }
-.student-approved-shell:has([aria-modal="true"]) :is(.carelink-assistant-launcher,.carelink-assistant-panel,.student-help-widget) { display:none; }
+.student-approved-shell:has([aria-modal="true"]) :is(.carelink-assistant-launcher,.carelink-assistant-panel) { display:none; }
 
 /*
  * The tablet / desktop (>= 768px) breakpoints live in

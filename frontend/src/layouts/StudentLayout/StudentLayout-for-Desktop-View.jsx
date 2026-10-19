@@ -7,17 +7,13 @@ import {
   useRef,
   useState,
 } from 'react';
-import RouteLoading from '../../components/RouteLoading';
 import {
-  Link,
   useLocation,
   useNavigate,
 } from 'react-router-dom';
 import {
   Calendar,
-  ChevronRight,
   FileText,
-  HelpCircle,
   QrCode,
   Settings,
   User,
@@ -30,7 +26,6 @@ import {
 import authService from '../../services/authService';
 import api from '../../services/api';
 import ChatWidget from '../../pages/Student/Chatbot-for-Student-Dashboard/ChatWidget';
-import { StudentPortalSearchContext } from '../../components/StudentPortalSearchContext';
 import { STUDENT_PRIMARY_LINKS, isStudentNavActive, studentPageTitle } from '../../utils/studentPortalNavigation';
 import {
   getStoredUser,
@@ -51,9 +46,9 @@ import StudentLayoutForMobileView from './StudentLayout-for-Mobile-View';
  * Student portal outer shell / main frame (desktop view).
  *
  * This is the skeleton the routed Student pages live inside. It owns the
- * shared state and behaviour (logged-in user, notifications, theme, search,
- * account menu, logout) and the frame-level overlays (the floating help
- * widget, the logout dialog, and the clinic assistant). It then embeds ONE of
+ * shared state and behaviour (logged-in user, notifications, theme,
+ * account menu, logout) and the frame-level overlays (the logout dialog
+ * and the clinic assistant). It then embeds ONE of
  * the two view shells, chosen with a JS media query:
  *   - StudentLayout-for-Tablet-View  (>= 768px)
  *   - StudentLayout-for-Mobile-View  (<= 767px)
@@ -72,15 +67,13 @@ const StudentLayoutForDesktopView = ({ children }) => {
   const location = useLocation();
 
   /*
-   * Loading curtains are purely real-loading driven: the Suspense fallback
-   * covers lazy-chunk loads and pages mount <RouteLoading /> while their own
-   * data fetches run. No artificial timer — a spinner must never outlive
-   * the page it belongs to.
+   * No loading UI anywhere: lazy chunks simply pop in when ready (the
+   * Suspense fallback is null) and pages render nothing until their own
+   * data fetches finish. No artificial timer, no spinner.
    */
 
   const profileMenuRef = useRef(null);
   const unreadRequestPending = useRef(false);
-  const [query, setQuery] = useState('');
 
   /*
    * Which shell to render. The frame picks a single shell with a JS media
@@ -406,7 +399,7 @@ const StudentLayoutForDesktopView = ({ children }) => {
   /*
    * The routed page renders once and is shared by both shells. The Profile
    * pages assemble their own hero/tabs/card via ProfileSection AFTER their
-   * data loads — so during loading the frame is blank behind the curtain.
+   * data loads — so during loading the frame simply stays blank.
    */
   const routedPage = (
     <AnimatePresence mode="wait">
@@ -429,7 +422,7 @@ const StudentLayoutForDesktopView = ({ children }) => {
         }}
         className="student-page-content"
       >
-        <Suspense fallback={<RouteLoading />}>{children}</Suspense>
+        <Suspense fallback={null}>{children}</Suspense>
       </motion.div>
     </AnimatePresence>
   );
@@ -441,7 +434,6 @@ const StudentLayoutForDesktopView = ({ children }) => {
   );
 
   return (
-    <StudentPortalSearchContext.Provider value={{ query, setQuery }}>
     <div className="student-portal student-approved-shell min-h-screen text-gray-900 dark:text-gray-100">
       <a href="#student-main" className="student-skip-link">Skip to content</a>
 
@@ -476,8 +468,6 @@ const StudentLayoutForDesktopView = ({ children }) => {
             The tablet rail (768-1099px) is handled purely by CSS.
         ================================================== */
         <StudentLayoutForTabletView
-          query={query}
-          setQuery={setQuery}
           user={user}
           displayName={displayName}
           avatar={avatar}
@@ -498,19 +488,6 @@ const StudentLayoutForDesktopView = ({ children }) => {
         </StudentLayoutForTabletView>
       )}
 
-      {/* Floating Help widget. Part of the shell, never a page.
-          Hidden when the student turns it off in Settings → General. */}
-      {widgetPrefs.helpWidget && (
-        <Link to="/student/help" className="student-help-widget">
-          <HelpCircle className="student-help-widget-icon" aria-hidden="true" />
-          <span>
-            <strong>Need help?</strong>
-            Visit Help &amp; Support for clinic and portal guidance.
-          </span>
-          <ChevronRight className="student-help-widget-arrow" aria-hidden="true" />
-        </Link>
-      )}
-
       {showLogoutConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" role="presentation">
           <section role="dialog" aria-modal="true" aria-labelledby="student-logout-title" className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
@@ -528,10 +505,9 @@ const StudentLayoutForDesktopView = ({ children }) => {
           Hidden when the student turns it off in Settings → General. */}
       {widgetPrefs.chatWidget && <ChatWidget />}
 
-      {/* Loading curtains come only from real work: the Suspense fallback
-          (lazy chunks) and pages that mount <RouteLoading /> while fetching. */}
+      {/* No loading UI: lazy chunks load silently and pages render nothing
+          until their own data fetches finish. */}
      </div>
-    </StudentPortalSearchContext.Provider>
   );
 };
 

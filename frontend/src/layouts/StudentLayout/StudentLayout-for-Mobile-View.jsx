@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Bell, HeartPulse, Moon, Sun } from 'lucide-react';
 
 import StudentAccountMenu from './student-shell/StudentAccountMenu';
+import { preloadForPath } from '../../utils/preloadStudentPages';
 import './StudentLayout-for-Mobile-View.css';
 
 /*
@@ -11,7 +12,7 @@ import './StudentLayout-for-Mobile-View.css';
  * StudentLayout-for-Desktop-View picks between this shell and the desktop/tablet shell with a
  * JS media query, so only one shell is ever mounted. This component owns the
  * mobile-only chrome:
- *   - header with the page title, search, alerts / theme / account
+ *   - header with the page title, alerts / theme / account
  *   - bottom tab bar
  * There is no drawer sidebar on mobile — navigation happens through the
  * bottom dock. Page content is injected through `children`; shared data and
@@ -108,6 +109,8 @@ const StudentLayoutForMobileView = ({
               <Link
                 key={item.path}
                 to={item.path}
+                onMouseEnter={() => preloadForPath(item.path)}
+                onFocus={() => preloadForPath(item.path)}
                 aria-label={item.label}
                 aria-current={active ? 'page' : undefined}
                 className={`relative flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-xl px-1 transition-all ${

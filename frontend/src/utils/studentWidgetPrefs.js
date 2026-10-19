@@ -1,8 +1,7 @@
 /*
  * Student portal shell preferences.
  *
- * Three shell-level elements can be shown or hidden from Settings → General:
- *   - the floating Help & Support widget
+ * Two shell-level elements can be shown or hidden from Settings → General:
  *   - the floating CareLink chat assistant
  *   - the "Clinic schedule" badge in the tablet/desktop header
  *
@@ -16,13 +15,11 @@ export const STUDENT_WIDGET_PREFS_EVENT = 'studentWidgetPrefsUpdated';
 
 /* localStorage key per widget, kept in a fixed order for storage listeners. */
 export const STUDENT_WIDGET_PREF_STORAGE_KEYS = [
-  'studentHelpWidgetEnabled',
   'studentChatWidgetEnabled',
   'studentClinicBadgeEnabled',
 ];
 
 const STORAGE_KEY_BY_WIDGET = {
-  helpWidget: 'studentHelpWidgetEnabled',
   chatWidget: 'studentChatWidgetEnabled',
   clinicBadge: 'studentClinicBadgeEnabled',
 };
@@ -38,7 +35,6 @@ const readFlag = (key) => {
 };
 
 export const getStudentWidgetPrefs = () => ({
-  helpWidget: readFlag(STORAGE_KEY_BY_WIDGET.helpWidget),
   chatWidget: readFlag(STORAGE_KEY_BY_WIDGET.chatWidget),
   clinicBadge: readFlag(STORAGE_KEY_BY_WIDGET.clinicBadge),
 });

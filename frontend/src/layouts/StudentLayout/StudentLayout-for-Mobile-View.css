@@ -25,8 +25,6 @@
   .student-bottom-nav { display:block;position:fixed;bottom:0;left:0;right:0;z-index:40;min-height:70px;background:var(--sp-surface);border-top:1px solid var(--sp-border);padding-bottom:env(safe-area-inset-bottom); }
   .student-bottom-nav>div { max-width:500px;margin:auto;padding:6px 4px; }
   .student-bottom-nav a { min-height:56px; }
-  .student-help-widget { left:12px;bottom:calc(var(--sp-nav-height) + env(safe-area-inset-bottom) + 11px);max-width:min(240px,calc(100vw - 92px));padding:9px 11px;border-radius:12px; }
-  .student-help-widget .student-help-widget-arrow { display:none; }
   .student-approved-shell .carelink-assistant-launcher { right:14px;width:48px;height:48px;bottom:calc(70px + env(safe-area-inset-bottom) + 11px); }
   .student-approved-shell .carelink-assistant-panel { right:12px;width:calc(100vw - 24px); }
 

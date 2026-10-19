@@ -4,7 +4,6 @@ import KioskWelcome from './KioskWelcome';
 import KioskTerms from './KioskTerms';
 import KioskOptions from './KioskOptions';
 const KioskScan = lazy(() => import('./KioskScan'));
-import RouteLoading from '../../components/RouteLoading';
 import KioskConfirm from './KioskConfirm';
 import KioskQueue from './KioskQueue';
 
@@ -60,7 +59,7 @@ const KioskPage = () => {
       {step === 'welcome' && <KioskWelcome onStart={handleStart} />}
       {step === 'terms' && <KioskTerms onAgree={handleAgree} onDecline={handleDecline} onBack={handleBack} />}
       {step === 'options' && <KioskOptions onScanQR={handleScanQR} onEnterID={handleEnterID} onBack={handleBack} />}
-      {step === 'scan' && <Suspense fallback={<RouteLoading />}><KioskScan onStudentFound={handleStudentFound} onBack={handleBack} method={scanMethod} /></Suspense>}
+      {step === 'scan' && <Suspense fallback={null}><KioskScan onStudentFound={handleStudentFound} onBack={handleBack} method={scanMethod} /></Suspense>}
       {step === 'confirm' && studentData && <KioskConfirm data={studentData} onCheckedIn={handleCheckedIn} onBack={handleBack} onDone={handleDone} />}
       {step === 'queue' && checkinData && <KioskQueue checkin={checkinData} onDone={handleDone} />}
     </>

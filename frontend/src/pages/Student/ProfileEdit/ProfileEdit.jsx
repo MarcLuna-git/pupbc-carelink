@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, MapPin, Camera, Save, Loader2, Hash, GraduationCap, Calendar, X, ArrowLeft } from 'lucide-react';
 import api from '../../../services/api';
-import RouteLoading from '../../../components/RouteLoading';
 import ProfileSection from '../../../layouts/StudentLayout/student-shell/ProfileSection';
+import { preloadForPath } from '../../../utils/preloadStudentPages';
 
 const ProfileEdit = () => {
   const navigate = useNavigate();
@@ -142,9 +142,9 @@ const ProfileEdit = () => {
   const inputClass = "w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-maroon-500 focus:border-transparent transition disabled:opacity-50 disabled:cursor-not-allowed";
   const labelClass = "text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5";
 
-  /* Blank frame behind the RouteLoading curtain — the section renders at once when ready. */
+  /* Hold the page blank (no loading UI) — the section renders at once when ready. */
   if (fetching) {
-    return <RouteLoading />;
+    return null;
   }
 
   return (
@@ -152,7 +152,7 @@ const ProfileEdit = () => {
       <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Link to="/student/profile" className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition flex-shrink-0">
+          <Link to="/student/profile" onMouseEnter={() => preloadForPath('/student/profile')} onFocus={() => preloadForPath('/student/profile')} className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition flex-shrink-0">
             <ArrowLeft className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </Link>
           <div>
@@ -246,7 +246,11 @@ const ProfileEdit = () => {
           <div className="rounded-3xl border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
             <h3 className="font-semibold text-gray-900 dark:text-white">Email address</h3>
             <p className="mt-2 break-all text-sm text-gray-600 dark:text-gray-300">{user.email}</p>
-            <Link to="/student/settings?tab=email" className="mt-3 inline-flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-maroon-800 dark:text-maroon-300">Change email</Link>
+            <Link
+              to="/student/settings?tab=email"
+              onMouseEnter={() => preloadForPath('/student/settings')}
+              onFocus={() => preloadForPath('/student/settings')}
+              className="mt-3 inline-flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-maroon-800 dark:text-maroon-300">Change email</Link>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400">Your emergency contact is saved in your Health Profile. Update it there when needed.</p>
           <Link to="/student/health-profile" className="block w-full text-center py-3 bg-maroon-50 dark:bg-maroon-900/20 text-maroon-700 dark:text-maroon-400 rounded-2xl font-semibold text-sm hover:bg-maroon-100 dark:hover:bg-maroon-900/30 transition">

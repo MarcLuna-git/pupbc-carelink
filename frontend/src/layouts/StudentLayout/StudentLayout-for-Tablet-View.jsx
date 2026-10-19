@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Bell, ChevronsLeft, ChevronsRight, Moon, Sun } from 'lucide-react';
 
 import StudentSidebar from './student-shell/StudentSidebar';
@@ -13,7 +13,7 @@ import './StudentLayout-for-Tablet-View.css';
  * query, so only one shell is ever mounted. This component owns the
  * tablet-only chrome:
  *   - fixed sidebar (rendered via the shared StudentSidebar)
- *   - header with search, clinic status, alerts / theme / account (no page
+ *   - header with clinic status, alerts / theme / account (no page
  *     title — pages show their own headings)
  * The page content is injected through `children`; shared data and handlers
  * are passed down from StudentLayout-for-Desktop-View so logic is never duplicated.
@@ -32,20 +32,11 @@ const StudentLayoutForTabletView = ({
   unreadCount,
   darkMode,
   toggleDarkMode,
-  query,
-  setQuery,
   profileMenuOpen,
   setProfileMenuOpen,
   profileMenuRef,
   onLogout,
 }) => {
-  const navigate = useNavigate();
-
-  /* Sidebar search: submitting jumps to Appointments, which filters by `query`. */
-  const handleSearchSubmit = (event) => {
-    event.preventDefault();
-    navigate('/student/appointments');
-  };
   /*
    * Toggle button vertical position: measured from the brand symbol's
    * ACTUAL rendered center (getBoundingClientRect), so the pull tab is
@@ -96,10 +87,6 @@ const StudentLayoutForTabletView = ({
         navItems={navItems}
         isActive={isActive}
         collapsed={sidebarCollapsed}
-        searchValue={query}
-        onSearchChange={(event) => setQuery(event.target.value)}
-        onSearchSubmit={handleSearchSubmit}
-        onSearchExpand={() => setSidebarCollapsed(false)}
       />
 
       {/*
@@ -126,7 +113,7 @@ const StudentLayoutForTabletView = ({
       <header className="student-header">
         <div className="student-header-inner">
           {/* Invisible spacer: holds the header layout balance now that the
-              page-title text and search field are removed. */}
+              page-title text is removed. */}
           <div className="student-header-page" aria-hidden="true" />
 
           {/* Header actions */}

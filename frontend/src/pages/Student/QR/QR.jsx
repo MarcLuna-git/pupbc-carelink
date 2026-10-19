@@ -2,7 +2,7 @@ import api from '../../../services/api';
 import { clinicDate as getManilaDateString, groupAppointments, formatAppointmentDate } from '../../../utils/appointmentDate';
 const formatDate = (value) => formatAppointmentDate(value, { month: 'long' });
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   QrCode,
@@ -11,7 +11,6 @@ import {
   Loader2,
   AlertTriangle,
   Smartphone,
-  ChevronRight,
   Calendar,
   Clock,
   CheckCircle,
@@ -21,7 +20,9 @@ import {
 import QRCode from 'qrcode';
 import clinicLogo from '../../../assets/clinic logo.jpg';
 import useVisiblePolling from '../../../hooks/useVisiblePolling';
-import RouteLoading from '../../../components/RouteLoading';
+import RouteLoadingBar from '../../../components/RouteLoadingBar';
+import HealthProfileVerifyError from '../../../components/HealthProfileVerifyError';
+import { useStudentHealthProfileStatus } from '../../../hooks/useStudentHealthProfileStatus';
 
 const queueStatusLabel = (status) => {
   switch (status) {
@@ -44,15 +45,44 @@ const queueStatusLabel = (status) => {
   }
 };
 
+/*
+ * ROUTE LOADING — same restored effect as the Settings / Profile / Records
+ * pages, scoped to this page. TEMP DEMO TIMER: holds the loading phase so
+ * the animation is visible even when the API answers quickly on localhost.
+ */
+const ROUTE_LOADING_DELAY = 1600;
+
+const Skeleton = ({ className = '' }) => (
+  <div className={`animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 ${className}`} />
+);
+
+/* Ghost of one "How to Use" step row. */
+const SkeletonStep = () => (
+  <div className="flex gap-3">
+    <Skeleton className="h-7 w-7 shrink-0 rounded-full" />
+    <div className="min-w-0 flex-1 space-y-2 pt-0.5">
+      <Skeleton className="h-3.5 w-32 max-w-full" />
+      <Skeleton className="h-3 w-56 max-w-full" />
+    </div>
+  </div>
+);
+
 const QR = () => {
   const user = JSON.parse(
     localStorage.getItem('user') || '{}'
   );
 
-  const healthProfileDone =
-    user?.profile?.health_profile_completed === true ||
-    user?.profile?.health_profile_completed === 1 ||
-    user?.profile?.health_profile_completed === '1';
+  /*
+   * Health Profile gate — backend-authoritative (moved from the App.jsx
+   * route guard so this page's own skeleton covers the verification:
+   * ONE loading phase, same flow as the unguarded pages).
+   */
+  const {
+    loading: verifyingProfile,
+    completed: profileVerified,
+    error: verifyError,
+    retry: retryVerification,
+  } = useStudentHealthProfileStatus();
 
   const [pageLoading, setPageLoading] =
     useState(true);
@@ -97,6 +127,15 @@ const today = getManilaDateString();
   // Check-in window state
   const [checkinOpensAt, setCheckinOpensAt] = useState(null);
   const [checkinDeadlineAt, setCheckinDeadlineAt] = useState(null);
+
+  /* Cosmetic hold for the route-loading animation — see ROUTE LOADING note. */
+  const [routeReady, setRouteReady] = useState(false);
+
+  /* Demo timer: keeps the loading phase on screen long enough to see it. */
+  useEffect(() => {
+    const timer = setTimeout(() => setRouteReady(true), ROUTE_LOADING_DELAY);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Helper to format time for display
   const formatTime = (isoString) => {
@@ -143,7 +182,7 @@ const fetchQrData = async (signal) => {
     }
   };
 
-  useVisiblePolling(fetchQrData, 10000, healthProfileDone);
+  useVisiblePolling(fetchQrData, 10000, profileVerified);
 
   useEffect(() => {
     let cancelled = false;
@@ -405,55 +444,121 @@ const fetchQrData = async (signal) => {
     printWindow.document.close();
   };
 
-  if (!healthProfileDone) {
+  /*
+   * LOADING PHASE — ONE phase for everything: the backend Health Profile
+   * verification AND this page's first data + demo timer. The hero card is
+   * real, with the looping progress bar on its bottom edge ONLY (same as
+   * Settings / Records — never on the forms). The How-to-Use and main cards
+   * render as 1:1 ghosts. Incomplete students never reach this skeleton.
+   */
+  if (verifyingProfile || pageLoading || !routeReady) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center p-4">
-        <motion.div
-          initial={{
-            opacity: 0,
-            y: 20,
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-          className="text-center max-w-md bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-lg border border-gray-100 dark:border-gray-700"
-        >
-          <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <QrCode className="w-8 h-8 text-yellow-600 dark:text-yellow-500" />
+      <div className="space-y-5 max-w-[1200px] mx-auto">
+        {/* Hero header card — real, with the looping bar */}
+        <div className="relative overflow-hidden rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My QR Code</h1>
+              <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Use this for clinic check-in on the day of your approved appointment.</p>
+            </div>
+            <Skeleton className="h-10 w-10 shrink-0 rounded-xl" />
           </div>
 
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            Health Profile Required
-          </h2>
+          {/* Route-loading bar — full-width fill/drain loop, hero only. */}
+          <RouteLoadingBar />
+        </div>
 
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-            Complete your Health Profile
-            before using clinic check-in.
-          </p>
+        {/* Ghost of the How to Use card */}
+        <div className="rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <Skeleton className="h-5 w-5 rounded-md" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+          <div className="space-y-4">
+            <SkeletonStep />
+            <SkeletonStep />
+            <SkeletonStep />
+            <SkeletonStep />
+          </div>
+        </div>
 
-          <Link
-            to="/student/health-profile"
-            className="inline-flex items-center space-x-2 mt-5 px-6 py-3 bg-maroon-800 text-white font-semibold rounded-2xl hover:bg-maroon-900 transition"
-          >
-            <span>
-              Complete Health Profile
-            </span>
+        {/* Ghost of the main content card */}
+        <div className="rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
+          <div className="mb-5 space-y-2">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-3 w-72 max-w-full" />
+          </div>
 
-            <ChevronRight className="w-4 h-4" />
-          </Link>
-        </motion.div>
+          {/* QR placeholder — same nested container + centered square ghost */}
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 dark:border-gray-700 dark:bg-gray-900/20 sm:p-8">
+            <div className="flex flex-col items-center gap-3 py-6">
+              <Skeleton className="h-44 w-44 rounded-2xl sm:h-56 sm:w-56 lg:h-64 lg:w-64 xl:h-72 xl:w-72" />
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-3 w-28" />
+              <Skeleton className="h-3 w-36" />
+            </div>
+          </div>
+
+          {/* Download / Print buttons ghost */}
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <Skeleton className="h-12 w-full rounded-2xl" />
+            <Skeleton className="h-12 w-full rounded-2xl" />
+          </div>
+
+          {/* Keep Your QR Private ghost */}
+          <div className="mt-5 flex items-start gap-3">
+            <Skeleton className="h-4 w-4 shrink-0 rounded" />
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <Skeleton className="h-3 w-32" />
+              <Skeleton className="h-3 w-3/4 max-w-full" />
+            </div>
+          </div>
+
+          {/* Today's appointment ghost */}
+          <div className="mt-4 space-y-4">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-900/20 sm:p-6">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-5 w-5 rounded-md" />
+                <Skeleton className="h-4 w-40" />
+              </div>
+              <div className="mt-4 space-y-3">
+                <div className="space-y-1.5">
+                  <Skeleton className="h-2.5 w-12" />
+                  <Skeleton className="h-4 w-36" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-2.5 w-10" />
+                    <Skeleton className="h-4 w-28" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-2.5 w-10" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
-  /* Blank frame behind the RouteLoading curtain — the page renders at once when ready. */
-  if (pageLoading) {
-    return <RouteLoading />;
+  if (verifyError) {
+    return <HealthProfileVerifyError retry={retryVerification} />;
+  }
+
+  if (!profileVerified) {
+    return <Navigate to="/student/health-profile" replace />;
   }
 
   return (
-    <div className="space-y-5 max-w-[1200px] mx-auto">
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+      className="space-y-5 max-w-[1200px] mx-auto"
+    >
       {/* Hero header card */}
       <div className="rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
         <div className="flex items-start justify-between gap-4">
@@ -843,7 +948,7 @@ const fetchQrData = async (signal) => {
         </div>
       </div>
 
-    </div>
+    </motion.div>
   );
 };
 

@@ -33,30 +33,6 @@
 .student-shell-body { transition:margin-left .28s ease; }
 .student-header { transition:left .28s ease; }
 /*
- * Sidebar search field — sized to match the nav tabs (same height and
- * width), sitting directly above the Appointments tab. Hidden while the
- * sidebar is folded to the icon rail (an input cannot shrink to icon size).
- */
-.student-sidebar-search { position:relative;display:flex;align-items:center;margin-bottom:10px; }
-/*
- * The search icon mirrors the nav tab icons exactly. Positions here are
- * relative to the FORM, which is already inset by the nav's 12px padding:
- *   - tab icon left edge: 28px from sidebar = 16px from form
- *   - tab label start:    59px from sidebar = 47px from form
- */
-.student-sidebar-search svg { position:absolute;left:16px;width:20px;height:20px;color:#ffffff99;pointer-events:none; }
-.student-sidebar-search input { width:100%;min-height:45px;border:1px solid #ffffff26;border-radius:12px;background:#ffffff14;padding:0 12px 0 47px;font-family:inherit;font-size:13px;color:#fff;outline:none;transition:background .15s ease,border-color .15s ease; }
-.student-sidebar-search input::placeholder { color:#ffffff80; }
-.student-sidebar-search input:focus { background:#ffffff20;border-color:#ffffff59; }
-/* Folded rail: icon-only search — expands the sidebar on click. The icon
-   sits at the SAME fixed x-position as the expanded form's icon (16px from
-   the button's left edge = 28px from the sidebar edge, matching the nav tab
-   icons), so the form/button swap is seamless and the icon never moves
-   during the width transition. */
-.student-sidebar-search-collapsed { display:flex;align-items:center;justify-content:flex-start;width:100%;height:45px;margin-bottom:10px;border:0;border-radius:12px;background:transparent;color:#fff;cursor:pointer;transition:background .15s ease;padding-left:16px; }
-.student-sidebar-search-collapsed:hover { background:#ffffff20; }
-.student-sidebar-search-collapsed svg { width:20px;height:20px; }
-/*
  * Icon column synchronization.
  *
  * In BOTH states every icon is centered on the same vertical axis —
@@ -65,7 +41,6 @@
  * Only the labels/text slide in and out:
  *   - nav links:  icon left edge 28px (12px nav + 16px link padding)
  *   - brand:      symbol left edge 21.5px (33px wide, centered at 38px)
- *   - search:     icon left edge 30.5px (15px wide, centered at 38px)
  * Vertical paddings are equalized too (16px nav / 22px brand), so the
  * icons do not jump vertically either.
  */

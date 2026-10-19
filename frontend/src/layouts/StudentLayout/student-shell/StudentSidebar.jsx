@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { ChevronRight, HeartPulse, Search, X } from 'lucide-react';
+import { ChevronRight, HeartPulse, X } from 'lucide-react';
 import campusBackground from '../../../assets/pup-binan-hero.jpg';
+import { preloadForPath } from '../../../utils/preloadStudentPages';
 
 /*
  * The primary Student navigation.
@@ -14,10 +15,6 @@ const StudentSidebar = ({
   isActive = () => false,
   isOpen = false,
   collapsed = false,
-  searchValue = '',
-  onSearchChange,
-  onSearchSubmit,
-  onSearchExpand,
   onNavigate,
   onClose,
 }) => (
@@ -62,32 +59,6 @@ const StudentSidebar = ({
     </div>
 
     <nav aria-label="Primary student navigation" className="student-sidebar-nav">
-      {/* Search — sits directly above the first nav tab (Appointments).
-          Expanded: full input. Folded (icon rail): icon-only button that
-          expands the sidebar. */}
-      {collapsed ? (
-        <button
-          type="button"
-          className="student-sidebar-search-collapsed"
-          aria-label="Expand sidebar to search"
-          title="Search"
-          onClick={onSearchExpand}
-        >
-          <Search aria-hidden="true" />
-        </button>
-      ) : (
-        <form className="student-sidebar-search" onSubmit={onSearchSubmit}>
-          <Search className="student-sidebar-search-icon" aria-hidden="true" />
-          <input
-            type="text"
-            value={searchValue}
-            onChange={onSearchChange}
-            placeholder="Search..."
-            aria-label="Search"
-          />
-        </form>
-      )}
-
       <p className="px-4 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/70">
         Main Menu
       </p>
@@ -101,6 +72,8 @@ const StudentSidebar = ({
             key={item.path}
             to={item.path}
             onClick={onNavigate}
+            onMouseEnter={() => preloadForPath(item.path)}
+            onFocus={() => preloadForPath(item.path)}
             aria-label={item.label}
             aria-current={active ? 'page' : undefined}
             title={item.label}

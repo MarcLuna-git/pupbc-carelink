@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Check, Loader2, Heart, Shield, ClipboardList, AlertCircle, Info } from 'lucide-react';
 import api from '../../../services/api';
-import RouteLoading from '../../../components/RouteLoading';
 import ProfileSection from '../../../layouts/StudentLayout/student-shell/ProfileSection';
 
 const getManilaDateString = () => {
@@ -262,9 +261,9 @@ const HealthProfile = () => {
     </div>
   );
 
-  /* Blank frame behind the RouteLoading curtain — the section renders at once when ready. */
+  /* Hold the page blank (no loading UI) — the section renders at once when ready. */
   if (pageLoading) {
-    return <RouteLoading />;
+    return null;
   }
 
   if (loadFailed) {

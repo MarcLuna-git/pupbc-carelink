@@ -6,7 +6,7 @@ import {
   Navigate,
 } from 'react-router-dom';
 
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense } from 'react';
 
 const Landing = lazy(() => import('./pages/Landing/Landing'));
 
@@ -44,330 +44,35 @@ const CourseManagement = lazy(() => import('./pages/Admin/Academic/CourseManagem
 
 const AdminLayout = lazy(() => import('./layouts/AdminLayout'));
 import ProtectedRoute from './components/ProtectedRoute';
+import HealthProfileVerifyError from './components/HealthProfileVerifyError';
+import { useStudentHealthProfileStatus } from './hooks/useStudentHealthProfileStatus';
 
 const KioskPage = lazy(() => import('./pages/Kiosk/KioskPage'));
 import AppErrorBoundary from './components/AppErrorBoundary';
 
-import api from './services/api';
-import RouteLoading, { RouteLoadingOverlay } from './components/RouteLoading';
-
-/*
- * ============================================================
- * HEALTH PROFILE STATUS
- * ============================================================
- *
- * IMPORTANT:
- * The backend/database is the source of truth.
- *
- * We do NOT rely only on:
- * user.profile.health_profile_completed
- *
- * because localStorage can be stale on:
- * - another device
- * - another browser
- * - an old login session
- *
- * Backend endpoint:
- * GET /api/student/health-profile/status
- *
- * Expected:
- * {
- *   success: true,
- *   data: {
- *     exists: true|false,
- *     completed: true|false
- *   }
- * }
- */
-
-/*
- * Cache only COMPLETED=true results.
- *
- * Why:
- * - completed students avoid a second duplicate request when
- *   /student redirects immediately to /student/appointments.
- *
- * We intentionally DO NOT cache incomplete=false.
- *
- * This prevents this sequence:
- * 1. student is incomplete
- * 2. backend returns false
- * 3. student completes Health Profile
- * 4. old cached false incorrectly blocks Appointments
- *
- * Cache is also tied to the current auth token so another
- * student cannot inherit another user's result.
- */
-let completedHealthProfileCache = {
-  token: null,
-  completed: false,
-  fetchedAt: 0,
-};
-
-const COMPLETED_STATUS_CACHE_MS = 60 * 1000;
-const hasCompletedStatusCache = () => completedHealthProfileCache.token === localStorage.getItem('token') &&
-  completedHealthProfileCache.completed && Date.now() - completedHealthProfileCache.fetchedAt < COMPLETED_STATUS_CACHE_MS;
-window.addEventListener('carelink:health-profile-saved', () => {
-  completedHealthProfileCache = { token: null, completed: false, fetchedAt: 0 };
-});
-
-/*
- * Safely read the locally stored authenticated user.
- *
- * Local data is used only for UI synchronization.
- * It is NOT the final authority for Health Profile completion.
- */
-const getStoredStudent = () => {
-  try {
-    const storedUser = localStorage.getItem('user');
-
-    if (!storedUser) {
-      return null;
-    }
-
-    return JSON.parse(storedUser);
-  } catch {
-    return null;
-  }
-};
-
-/*
- * Normalize boolean/integer/string representations.
- */
-const toBoolean = (value) =>
-  value === true ||
-  value === 1 ||
-  value === '1' ||
-  value === 'true';
-
-/*
- * Synchronize the backend result into localStorage.
- *
- * This keeps older Student pages that still read:
- *
- * user.profile.health_profile_completed
- *
- * consistent with the actual DB value.
- */
-const syncStoredHealthProfileStatus = (completed) => {
-  try {
-    const currentUser = getStoredStudent();
-
-    if (!currentUser) {
-      return;
-    }
-
-    const updatedUser = {
-      ...currentUser,
-
-      profile: {
-        ...(currentUser.profile || {}),
-        health_profile_completed: Boolean(completed),
-      },
-    };
-
-    localStorage.setItem(
-      'user',
-      JSON.stringify(updatedUser)
-    );
-
-    /*
-     * Same-tab storage events do not fire automatically,
-     * so notify any Student components listening for updates.
-     */
-    window.dispatchEvent(
-      new CustomEvent('carelink:student-user-updated', {
-        detail: {
-          user: updatedUser,
-        },
-      })
-    );
-  } catch {
-    /*
-     * Failure to synchronize localStorage must never block
-     * the actual backend-derived routing decision.
-     */
-  }
-};
-
-/*
- * Fetch authoritative completion state.
- */
-const fetchHealthProfileStatus = async () => {
-  const token = localStorage.getItem('token');
-
-  if (!token) {
-    throw new Error('No authenticated Student session.');
-  }
-
-  const now = Date.now();
-
-  const hasValidCompletedCache =
-    completedHealthProfileCache.token === token &&
-    completedHealthProfileCache.completed === true &&
-    now - completedHealthProfileCache.fetchedAt <
-      COMPLETED_STATUS_CACHE_MS;
-
-  if (hasValidCompletedCache) {
-    return {
-      exists: true,
-      completed: true,
-    };
-  }
-
-  const response = await api.get(
-    '/student/health-profile/status'
-  );
-  if (localStorage.getItem('token') !== token) throw new Error('Session changed.');
-
-  const data = response.data?.data || {};
-
-  const status = {
-    exists: toBoolean(data.exists),
-    completed: toBoolean(data.completed),
-  };
-
-  /*
-   * Cache TRUE only.
-   */
-  if (status.completed) {
-    completedHealthProfileCache = {
-      token,
-      completed: true,
-      fetchedAt: now,
-    };
-  } else {
-    /*
-     * Never preserve an incomplete result.
-     */
-    completedHealthProfileCache = {
-      token: null,
-      completed: false,
-      fetchedAt: 0,
-    };
-  }
-
-  syncStoredHealthProfileStatus(status.completed);
-
-  return status;
-};
-
-/*
- * ============================================================
- * STATUS HOOK
- * ============================================================
- */
-
-const useStudentHealthProfileStatus = () => {
-  const [state, setState] = useState(() => ({
-    loading: !hasCompletedStatusCache(),
-    completed: hasCompletedStatusCache(),
-    exists: hasCompletedStatusCache(),
-    error: '',
-  }));
-
-  const checkStatus = useCallback(async () => {
-    setState((current) => ({
-      ...current,
-      loading: !hasCompletedStatusCache(),
-      error: '',
-    }));
-
-    try {
-      const status = await fetchHealthProfileStatus();
-
-      setState({
-        loading: false,
-        completed: status.completed,
-        exists: status.exists,
-        error: '',
-      });
-    } catch (error) {
-      /*
-       * Do not expose raw Axios / SQL / Laravel messages.
-       * If we have a valid completed cache or the stored user
-       * indicates a completed profile, keep access open and
-       * retry silently instead of blocking the user.
-       */
-      const storedUser = getStoredStudent();
-      const storedCompleted = toBoolean(
-        storedUser?.profile?.health_profile_completed ||
-          storedUser?.health_profile_completed
-      );
-      const hasCache = hasCompletedStatusCache();
-
-      if (storedCompleted || hasCache) {
-        setState({
-          loading: false,
-          completed: true,
-          exists: true,
-          error: '',
-        });
-      } else {
-        setState({
-          loading: false,
-          completed: false,
-          exists: false,
-          error:
-            'We could not verify your Health Profile. Please try again.',
-        });
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    checkStatus();
-  }, [checkStatus]);
-
-  return {
-    ...state,
-    retry: checkStatus,
-  };
-};
 
 /*
  * ============================================================
  * LOADING STATE
  * ============================================================
  *
- * The customized heartbeat loading overlay was PERMANENTLY REMOVED (owner's
- * decision) — there is no loading effect UI anywhere in the app anymore.
- * While a guard is checking, it renders nothing; lazy routes simply pop in
- * when their chunk finishes loading (Suspense fallback renders nothing).
+ * Owner decision (updated): each page owns its route-loading
+ * phase — a real hero with the looping RouteLoadingBar over 1:1
+ * content ghosts — while its first data loads. The clinic-service
+ * pages (Appointments, QR) cover the backend Health Profile
+ * verification inside that same phase (no separate guard phase).
+ * Lazy routes pop in when their chunk finishes loading
+ * (Suspense fallback is null; chunks are preloaded on hover).
  */
 
 /*
  * ============================================================
  * SAFE STATUS ERROR
  * ============================================================
+ *
+ * Moved to src/components/HealthProfileVerifyError.jsx — shared by
+ * the /student redirect and the clinic-service pages.
  */
-
-const StudentRouteStatusError = ({ retry }) => (
-  <div className="flex min-h-[55vh] items-center justify-center px-4">
-    <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm dark:border-gray-800 dark:bg-gray-900">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-xl dark:bg-red-950/30">
-        !
-      </div>
-
-      <h2 className="mt-4 text-base font-bold text-gray-900 dark:text-white">
-        Unable to verify your Health Profile
-      </h2>
-
-      <p className="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
-        Please check your connection and try again. Your saved
-        information has not been changed.
-      </p>
-
-      <button
-        type="button"
-        onClick={retry}
-        className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-maroon-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-maroon-800 focus:outline-none focus:ring-2 focus:ring-maroon-500/30"
-      >
-        Try Again
-      </button>
-    </div>
-  </div>
-);
 
 /*
  * ============================================================
@@ -392,11 +97,11 @@ const StudentHomeRedirect = () => {
   } = useStudentHealthProfileStatus();
 
   if (loading) {
-    return <RouteLoading />;
+    return null;
   }
 
   if (error) {
-    return <StudentRouteStatusError retry={retry} />;
+    return <HealthProfileVerifyError retry={retry} />;
   }
 
   return (
@@ -424,56 +129,11 @@ const HealthProfileOnboardingRoute = () => {
   return <HealthProfile />;
 };
 
-/*
- * ============================================================
- * CLINIC SERVICE GUARD
- * ============================================================
- *
- * Appointments / QR require a completed Health Profile.
- *
- * Backend/database remains authoritative.
- *
- * This guard deliberately performs the real status check
- * instead of trusting old localStorage data.
- */
-const HealthProfileRequired = ({ children }) => {
-  const {
-    loading,
-    completed,
-    error,
-    retry,
-  } = useStudentHealthProfileStatus();
-
-  if (loading) {
-    return <RouteLoading />;
-  }
-
-  if (error) {
-    return <StudentRouteStatusError retry={retry} />;
-  }
-
-  if (!completed) {
-    return (
-      <Navigate
-        to="/student/health-profile"
-        replace
-      />
-    );
-  }
-
-  return children;
-};
-
 function App() {
   return (
     <AppErrorBoundary>
-      {/* The ONE spinner overlay — the only loading UI in the app (owner's
-          rule: nothing spins on the page itself). Loading sources (Suspense
-          fallbacks, guards, the shells' tab-click curtain) just raise it
-          through the shared counter. */}
-      <RouteLoadingOverlay />
       <BrowserRouter>
-        <Suspense fallback={<RouteLoading />}>
+        <Suspense fallback={null}>
         <Routes>
           {/* ==================================================
               PUBLIC
@@ -574,24 +234,22 @@ function App() {
             />
 
             {/*
-              Clinic services requiring completed Health Profile.
+              Clinic services gated on a completed Health Profile.
+
+              The backend-verified check lives INSIDE each page
+              (useStudentHealthProfileStatus) so the page's own
+              loading skeleton covers the verification — one
+              loading phase, no separate guard phase. Incomplete
+              students are redirected to /student/health-profile.
             */}
             <Route
               path="appointments"
-              element={
-                <HealthProfileRequired>
-                  <Appointments />
-                </HealthProfileRequired>
-              }
+              element={<Appointments />}
             />
 
             <Route
               path="qr"
-              element={
-                <HealthProfileRequired>
-                  <QR />
-                </HealthProfileRequired>
-              }
+              element={<QR />}
             />
 
             {/* ==================================================

@@ -1,7 +1,7 @@
-import ApprovedAppointmentsView from './ApprovedAppointmentsView';
+import ApprovedAppointmentsView, { AppointmentHero } from './ApprovedAppointmentsView';
 import './appointments.css';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar,
@@ -11,22 +11,133 @@ import {
   CheckCircle,
   XCircle,
   Stethoscope,
-  Shield,
   FileText,
   Edit3,
 } from 'lucide-react';
-import RouteLoading from '../../../components/RouteLoading';
 import api from '../../../services/api';
 import { clinicDate, appointmentDate as normalizeDateValue, appointmentTime as parseAppointmentDateTime, isClinicSunday as isSunday, formatAppointmentDate as formatDate } from '../../../utils/appointmentDate';
 import useVisiblePolling from '../../../hooks/useVisiblePolling';
+import HealthProfileVerifyError from '../../../components/HealthProfileVerifyError';
+import { useStudentHealthProfileStatus } from '../../../hooks/useStudentHealthProfileStatus';
+
+/*
+ * ROUTE LOADING — same restored effect as the Settings / Profile / Records /
+ * QR pages, scoped to this page. TEMP DEMO TIMER: holds the loading phase so
+ * the animation is visible even when the API answers quickly on localhost.
+ */
+const ROUTE_LOADING_DELAY = 1600;
+
+const Skeleton = ({ className = '' }) => (
+  <div className={`animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 ${className}`} />
+);
+
+/* Ghost of the Upcoming Appointment card — reuses the real 5-column grid so
+   the ghost blocks land exactly where the loaded content will. */
+const SkeletonUpcoming = () => (
+  <section className="ap-card ap-upcoming">
+    <div className="ap-section-heading ap-upcoming-heading">
+      <Skeleton className="h-5 w-5 shrink-0 rounded-md" />
+      <Skeleton className="h-4 w-44" />
+      <Skeleton className="ml-auto h-5 w-8 rounded" />
+    </div>
+    <div className="ap-upcoming-content">
+      <Skeleton className="h-16 w-full rounded-lg" />
+      <Skeleton className="h-12 w-full rounded-lg" />
+      <Skeleton className="h-12 w-full rounded-lg" />
+      <Skeleton className="h-14 w-full rounded-lg" />
+      <Skeleton className="h-9 w-full rounded-lg" />
+    </div>
+  </section>
+);
+
+/* Ghost of the 4-step booking form — same timeline markup (markers, spine
+   and columns ride the real CSS). */
+const SkeletonBooking = () => (
+  <section className="ap-card ap-booking">
+    <div className="ap-section-heading">
+      <Skeleton className="h-5 w-5 shrink-0 rounded-md" />
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <Skeleton className="h-4 w-44" />
+        <Skeleton className="h-3 w-64 max-w-full" />
+      </div>
+    </div>
+    <div className="ap-booking-steps">
+      <ol className="ap-booking-progress">
+        <li className="ap-booking-step is-active">
+          <header className="ap-step-heading"><span className="ap-step-marker">1</span><Skeleton className="h-3.5 w-20" /></header>
+          <section className="ap-booking-column"><div className="ap-step-body grid grid-cols-7 gap-1.5">
+            {[...Array(28)].map((_, i) => <Skeleton key={i} className="h-7 w-full rounded-md" />)}
+          </div></section>
+        </li>
+        <li className="ap-booking-step">
+          <header className="ap-step-heading"><span className="ap-step-marker">2</span><Skeleton className="h-3.5 w-32" /></header>
+          <section className="ap-booking-column"><div className="ap-step-body">
+            <div className="ap-time-grid">
+              {[...Array(16)].map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
+            </div>
+          </div></section>
+        </li>
+        <li className="ap-booking-step">
+          <header className="ap-step-heading"><span className="ap-step-marker">3</span><Skeleton className="h-3.5 w-24" /></header>
+          <section className="ap-booking-column"><div className="ap-service-list">
+            {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}
+          </div></section>
+        </li>
+        <li className="ap-booking-step">
+          <header className="ap-step-heading"><span className="ap-step-marker">4</span><Skeleton className="h-3.5 w-28" /></header>
+          <section className="ap-booking-column"><div className="ap-step-body space-y-2.5">
+            <Skeleton className="h-4 w-full rounded" />
+            <Skeleton className="h-4 w-full rounded" />
+            <Skeleton className="h-4 w-full rounded" />
+            <Skeleton className="h-10 w-full rounded-xl" />
+          </div></section>
+        </li>
+      </ol>
+    </div>
+  </section>
+);
+
+/* Ghost of the Appointment History card. */
+const SkeletonHistory = () => (
+  <section className="ap-card ap-history">
+    <div className="ap-section-heading">
+      <Skeleton className="h-5 w-5 shrink-0 rounded-md" />
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-3 w-56 max-w-full" />
+      </div>
+      <Skeleton className="h-9 w-40 shrink-0 rounded-lg" />
+    </div>
+    <div className="ap-history-list">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="ap-history-item">
+          <Skeleton className="h-14 w-14 shrink-0 rounded-lg" />
+          <div className="ap-history-info space-y-1.5">
+            <Skeleton className="h-3.5 w-36 max-w-full" />
+            <Skeleton className="h-3 w-48 max-w-full" />
+          </div>
+          <div className="ap-history-side">
+            <Skeleton className="h-5 w-20 rounded-full" />
+            <Skeleton className="h-3 w-16" />
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+);
 
 const Appointments = () => {
-  const user = JSON.parse(
-    localStorage.getItem('user') || '{}'
-  );
-
-  const healthProfileDone =
-    Boolean(user?.profile?.health_profile_completed || user?.health_profile_completed);
+  /*
+   * Health Profile gate — backend-authoritative (moved from the App.jsx
+   * route guard so this page's own skeleton covers the verification:
+   * ONE loading phase, same flow as the unguarded pages).
+   */
+  const {
+    loading: verifyingProfile,
+    completed: profileVerified,
+    error: verifyError,
+    retry: retryVerification,
+  } = useStudentHealthProfileStatus();
 
   /* Fresh-reload default: today pre-selected (unless the clinic is closed)
      so the step 2 slot labels are populated without picking a date. */
@@ -58,6 +169,9 @@ const Appointments = () => {
     selectedAppointment,
     setSelectedAppointment,
   ] = useState(null);
+
+  /* Cosmetic hold for the route-loading animation — see ROUTE LOADING note. */
+  const [routeReady, setRouteReady] = useState(false);
 
   const [message, setMessage] = useState('');
 
@@ -203,6 +317,12 @@ const Appointments = () => {
     );
 
   useVisiblePolling(fetchAppointments, 30000);
+
+  /* Demo timer: keeps the loading phase on screen long enough to see it. */
+  useEffect(() => {
+    const timer = setTimeout(() => setRouteReady(true), ROUTE_LOADING_DELAY);
+    return () => clearTimeout(timer);
+  }, []);
 
   const slotPollingRef = useRef(null);
   useEffect(() => {
@@ -726,54 +846,41 @@ const Appointments = () => {
       );
     };
 
-  if (!healthProfileDone) {
+  /*
+   * LOADING PHASE — ONE phase for everything: the backend Health Profile
+   * verification AND this page's first data + demo timer. The hero is real,
+   * with the looping progress bar on its bottom edge ONLY (same as
+   * Settings / Records / QR — never on the forms). The upcoming card,
+   * booking steps and history render as 1:1 ghosts. Incomplete students
+   * never reach this skeleton.
+   */
+  if (verifyingProfile || pageLoading || !routeReady) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center p-4">
-        <motion.div
-          initial={{
-            opacity: 0,
-            y: 20,
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-          className="text-center max-w-md bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-lg border border-gray-100 dark:border-gray-700"
-        >
-          <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Shield className="w-8 h-8 text-yellow-600 dark:text-yellow-500" />
-          </div>
-
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            Health Profile Required
-          </h2>
-
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-            You must complete your Health Profile before booking appointments.
-          </p>
-
-          <Link
-            to="/student/health-profile"
-            className="inline-flex items-center space-x-2 mt-5 px-6 py-3 bg-maroon-800 text-white font-semibold rounded-2xl hover:bg-maroon-900 transition"
-          >
-            <span>
-              Complete Health Profile
-            </span>
-
-            <AlertCircle className="w-4 h-4" />
-          </Link>
-        </motion.div>
+      <div className="student-appointments approved-appointments-page">
+        <AppointmentHero loading />
+        <SkeletonUpcoming />
+        <SkeletonBooking />
+        <SkeletonHistory />
+        <p className="ap-policy-note"><AlertCircle />Loading your clinic schedule…</p>
       </div>
     );
   }
 
-  /* Blank frame behind the RouteLoading curtain — the page renders at once when ready. */
-  if (pageLoading) {
-    return <RouteLoading />;
+  if (verifyError) {
+    return <HealthProfileVerifyError retry={retryVerification} />;
+  }
+
+  if (!profileVerified) {
+    return <Navigate to="/student/health-profile" replace />;
   }
 
   return (
-    <div className="student-appointments approved-appointments-page">
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+      className="student-appointments approved-appointments-page"
+    >
       <ApprovedAppointmentsView appointments={orderedAppointments} filteredAppointments={filteredAppointments}
         form={form} onChange={handleChange} onSubmit={handleSubmit} onView={setSelectedAppointment} onEdit={handleEditClick}
         filter={filter} onFilter={setFilter} editingId={editingId} services={services} timeSlots={timeSlots}
@@ -1234,7 +1341,7 @@ const Appointments = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 };
 

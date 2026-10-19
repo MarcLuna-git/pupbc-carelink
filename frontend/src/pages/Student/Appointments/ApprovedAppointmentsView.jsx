@@ -1,7 +1,7 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import RouteLoadingBar from '../../../components/RouteLoadingBar';
 import { ArrowRight, CalendarDays, CheckCircle, ChevronLeft, ChevronRight, Clock, FileText, HeartPulse, HelpCircle, Loader2, MapPin, RotateCcw, ShieldCheck, Stethoscope, UserRound } from 'lucide-react';
-import { StudentPortalSearchContext } from '../../../components/StudentPortalSearchContext';
 import { appointmentDate, appointmentTime, clinicDate, formatAppointmentDate, isClinicSunday } from '../../../utils/appointmentDate';
 
 const SERVICE_TITLES = { Consultation: 'General Consultation', 'Follow-up Checkup': 'Follow-up Check-up' };
@@ -16,7 +16,7 @@ const roomName = appointment => (typeof appointment.room === 'string' ? appointm
 const clinicTime = value => value && !Number.isNaN(new Date(value).getTime())
   ? new Intl.DateTimeFormat('en-PH', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila' }).format(new Date(value)) : null;
 
-function AppointmentHero() {
+export function AppointmentHero({ loading = false }) {
   return <section className="ap-hero" aria-labelledby="appointments-title">
     <div className="ap-hero-copy">
       <p className="ap-eyebrow">Student clinic</p>
@@ -28,6 +28,8 @@ function AppointmentHero() {
         <span><HeartPulse /><span>A healthier you<br />starts here</span></span>
       </div>
     </div>
+    {/* Route-loading bar — full-width fill/drain loop, hero only. */}
+    {loading && <RouteLoadingBar />}
   </section>;
 }
 
@@ -93,14 +95,11 @@ function UpcomingAppointment({ appointment, onView, onEdit }) {
 
 export default function ApprovedAppointmentsView({ appointments, filteredAppointments, form, onChange, onSubmit, onView, onEdit,
   filter, onFilter, editingId, onCancelEdit, services, timeSlots, availableSlots, slotsLoading, loading, message, messageType, retrySlots }) {
-  const { query } = useContext(StudentPortalSearchContext);
   const [page, setPage] = useState(1);
-  useEffect(() => setPage(1), [filter, query]);
-  const history = useMemo(() => {
-    const search = query.trim().toLowerCase();
-    return filteredAppointments.filter(item => !search || [item.service, item.reference_number, item.concern, item.status, item.time_slot, providerName(item)]
-      .filter(Boolean).join(' ').toLowerCase().includes(search));
-  }, [filteredAppointments, query]);
+  useEffect(() => setPage(1), [filter]);
+  /* Appointment history — formerly filtered by the sidebar search box,
+     which has been removed from the portal shell. */
+  const history = filteredAppointments;
   const pages = Math.max(1, Math.ceil(history.length / 5));
   const currentPage = Math.min(page, pages);
   const rows = history.slice((currentPage - 1) * 5, currentPage * 5);
@@ -166,7 +165,7 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
     </section>
     <section className="ap-card ap-history">
       <div className="ap-section-heading"><Clock /><div><h2>Appointment History</h2><p>View your past and upcoming clinic visits.</p></div><label><span className="sr-only">Filter appointment history</span><select value={filter} onChange={event => onFilter(event.target.value)}><option value="all">All Appointments</option><option value="pending">Pending Requests</option><option value="approved">Approved Appointments</option><option value="past">Past Appointments</option></select></label></div>
-      {history.length === 0 ? <div className="ap-history-empty"><CalendarDays /><p>{query ? 'No appointments match your search.' : 'No appointments to display yet.'}</p></div> : <>
+      {history.length === 0 ? <div className="ap-history-empty"><CalendarDays /><p>No appointments to display yet.</p></div> : <>
         <div className="ap-history-list">
           {rows.map(appointment => {
             const date = appointmentDate(appointment.appointment_date);

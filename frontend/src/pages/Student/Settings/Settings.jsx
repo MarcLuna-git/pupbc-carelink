@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Key, Mail, Shield, Eye, EyeOff, Loader2, Save, Moon, Lock, SlidersHorizontal, HelpCircle, MessageSquare, ChevronDown, AlertTriangle, Trash2 } from 'lucide-react';
+import { Key, Mail, Shield, Eye, EyeOff, Loader2, Save, Moon, Lock, SlidersHorizontal, MessageSquare, ChevronDown, AlertTriangle, Trash2 } from 'lucide-react';
 import api from '../../../services/api';
 import useStudentWidgetPrefs from '../../../hooks/useStudentWidgetPrefs';
+import RouteLoadingBar from '../../../components/RouteLoadingBar';
 
 /*
  * Small on/off switch used by the General tab. Plain Tailwind (this page has
@@ -39,11 +40,61 @@ const ToggleSwitch = ({ checked, onChange, label, description, icon: Icon }) => 
   </div>
 );
 
+/*
+ * Route-loading ghost blocks. Shimmer-only (no spinner) — same
+ * `animate-pulse` pattern the Alerts / Dashboard pages use.
+ */
+const Skeleton = ({ className = '' }) => (
+  <div className={`animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 ${className}`} />
+);
+
+/* Ghost of a ToggleSwitch row — mirrors the real switch's exact layout. */
+const SkeletonToggle = () => (
+  <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/50">
+    <div className="flex min-w-0 items-start gap-3">
+      <Skeleton className="h-9 w-9 shrink-0 rounded-lg" />
+      <div className="min-w-0 flex-1 space-y-2 pt-1">
+        <Skeleton className="h-3 w-32" />
+        <Skeleton className="h-2.5 w-48 max-w-full" />
+      </div>
+    </div>
+    <Skeleton className="h-6 w-11 shrink-0 rounded-full" />
+  </div>
+);
+
+/* Ghost of a section heading (icon + label). */
+const SkeletonHeading = () => (
+  <div className="flex items-center gap-2">
+    <Skeleton className="h-5 w-5 rounded-md" />
+    <Skeleton className="h-4 w-24" />
+  </div>
+);
+
 const Settings = () => {
   const [params] = useSearchParams();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const { prefs, setPref } = useStudentWidgetPrefs();
   const [activeTab, setActiveTab] = useState(params.get('tab') || 'general');
+
+  /*
+   * ROUTE LOADING — the restored loading effect, scoped to this page.
+   * LOADING PHASE: only the hero section is visible (with a progress bar),
+   * the tab rail and panel area render as shimmering ghosts.
+   * LOADED PHASE: the real content fades in.
+   *
+   * TEMP DEMO TIMER: ROUTE_LOADING_DELAY holds the loading phase so the
+   * animation is visible. The lazy chunk is already preloaded on
+   * hover/focus, so this state is purely cosmetic — shorten or remove the
+   * delay once the final timing is decided.
+   */
+  const ROUTE_LOADING_DELAY = 1600;
+  const [routeLoading, setRouteLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setRouteLoading(false), ROUTE_LOADING_DELAY);
+    return () => clearTimeout(timer);
+  }, []);
+
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
   const [loading, setLoading] = useState(false);
@@ -191,18 +242,10 @@ const Settings = () => {
               <span>General</span>
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Turn the Student portal widgets and header helpers on or off.
+              Turn the Student portal floating widgets on or off.
             </p>
 
             <div className="space-y-3">
-              <ToggleSwitch
-                icon={HelpCircle}
-                label="Help & Support widget"
-                description="Floating shortcut to clinic and portal guidance."
-                checked={prefs.helpWidget}
-                onChange={(value) => setPref('helpWidget', value)}
-              />
-
               <ToggleSwitch
                 icon={MessageSquare}
                 label="CareLink chat assistant"
@@ -402,8 +445,87 @@ const Settings = () => {
     return null;
   };
 
+  /*
+   * LOADING PHASE — only the hero section is real. The tab rail and panel
+   * area render as shimmering ghosts, and a progress bar sweeps across the
+   * bottom edge of the hero until the timer flips to the loaded phase.
+   */
+  if (routeLoading) {
+    return (
+      <div className="space-y-5 max-w-[1440px] mx-auto">
+
+        <div className="relative overflow-hidden rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage your account</p>
+
+          {/* Route-loading bar — full-width fill/drain loop, hero only. */}
+          <RouteLoadingBar />
+        </div>
+
+        <div className="rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
+          {/* Content-card ghost — mirrors the loaded layout 1:1 (same grid,
+              same DOM order, same General-tab stack) so the reveal is
+              seamless with no layout jump. */}
+          <div className="grid gap-5 md:grid-cols-[220px_minmax(0,1fr)]">
+            {/* Ghost of the mobile accordion (hidden on md+, like the real one) */}
+            <div className="space-y-2 md:hidden">
+              {desktopTabs.map((tab) => (
+                <div key={tab.id} className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+                    <span className="flex items-center gap-3">
+                      <Skeleton className="h-4 w-4 rounded-md" />
+                      <Skeleton className="h-3 w-24" />
+                    </span>
+                    <Skeleton className="h-4 w-4 rounded-md" />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Ghost of the desktop tab rail — first row shows the active maroon tab */}
+            <div className="hidden md:flex md:flex-col">
+              {desktopTabs.map((tab, index) => {
+                const active = index === 0;
+                return (
+                  <div key={tab.id} className={`flex w-full items-center gap-3 rounded-lg border-b border-gray-100 px-4 py-3 last:border-b-0 dark:border-gray-700 ${active ? 'bg-maroon-800' : ''}`}>
+                    <Skeleton className={`h-4 w-4 shrink-0 rounded-md ${active ? 'bg-white/40' : ''}`} />
+                    <Skeleton className={`h-3 w-24 ${active ? 'bg-white/40' : ''}`} />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Ghost of the panel — mirrors the General tab's real stack:
+                General (toggle) → Appearance (toggle) → Reset data (button) */}
+            <div className="hidden min-w-0 md:block md:border-l md:border-gray-300 md:pl-5 dark:border-gray-600">
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <SkeletonHeading />
+                  <Skeleton className="h-3 w-64 max-w-full" />
+                  <SkeletonToggle />
+                </div>
+
+                <div className="space-y-4 border-t border-gray-100 pt-5 dark:border-gray-700">
+                  <SkeletonHeading />
+                  <SkeletonToggle />
+                </div>
+
+                <div className="space-y-4 border-t border-gray-100 pt-5 dark:border-gray-700">
+                  <SkeletonHeading />
+                  <Skeleton className="h-3 w-3/4 max-w-full" />
+                  <Skeleton className="h-10 w-28 rounded-lg" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-5 max-w-5xl mx-auto">
+    <div className="space-y-5 max-w-[1440px] mx-auto">
 
       <div className="rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
@@ -419,7 +541,13 @@ const Settings = () => {
         </motion.div>
       )}
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 p-4 lg:p-6">
+      {/* LOADED PHASE — the real tabs and panels fade in once route loading completes. */}
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+        className="bg-white dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 p-4 lg:p-6"
+      >
         <div className="grid gap-5 md:grid-cols-[220px_minmax(0,1fr)]">
           {/* Mobile: accordion — tapping a section slides its panel open beneath it */}
           <div className="space-y-2 md:hidden">
@@ -485,7 +613,7 @@ const Settings = () => {
             {renderPanel(activeTab)}
           </div>
         </div>
-      </div>
+      </motion.div>
 
     </div>
   );
