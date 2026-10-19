@@ -22,7 +22,7 @@ services:
       - key: APP_URL
         value: https://pupbc-carelink-api.onrender.com
       - key: FRONTEND_URL
-        value: https://www.pupbccarelink.org
+        value: https://pupbc-carelink.onrender.com
       - key: LOG_CHANNEL
         value: stderr
 
@@ -85,7 +85,7 @@ services:
         value: local
 
       - key: SANCTUM_STATEFUL_DOMAINS
-        value: pupbccarelink.org,www.pupbccarelink.org,pupbc-carelink.onrender.com
+        value: pupbc-carelink.onrender.com
 
       - key: SEED_NURSE_PASSWORD
         sync: false

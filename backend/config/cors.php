@@ -26,10 +26,6 @@ return [
 
         env('FRONTEND_URL', 'http://localhost:5173'),
 
-        // Custom domain (Vercel frontend). Parehong apex at www.
-        'https://pupbccarelink.org',
-        'https://www.pupbccarelink.org',
-
         'https://pupbc-carelink-testing.vercel.app',
 
         'https://pup-carelink-testing-frontend.onrender.com',
