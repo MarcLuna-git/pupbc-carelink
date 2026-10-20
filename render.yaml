@@ -146,3 +146,6 @@ services:
         value: https://pupbccarelink.org/api
       - key: VITE_APP_NAME
         value: "PUPBC CareLink"
+
+# for z.com = value: https://pupbccarelink.org/api
+# for render = value: https://pupbc-carelink-api.onrender.com/api
