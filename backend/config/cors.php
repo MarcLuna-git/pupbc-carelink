@@ -4,6 +4,7 @@ return [
 
     'paths' => [
         'api/*',
+        'auth/*', 
         'sanctum/csrf-cookie',
         'kiosk/*',
     ],
@@ -18,21 +19,21 @@ return [
         'OPTIONS',
     ],
 
-    'allowed_origins' => [
-        env('APP_URL', 'http://127.0.0.1:8000'),
-
-        'http://localhost:5173',
-        'http://127.0.0.1:5173',
-
-        env('FRONTEND_URL', 'http://localhost:5173'),
-
-        'https://pupbc-carelink-testing.vercel.app',
-
-        'https://pup-carelink-testing-frontend.onrender.com',
-        'https://pup-carelink-testing-backend.onrender.com',
-        'https://carelink-frontend.onrender.com',
-        'https://carelink-backend.onrender.com',
-    ],
+'allowed_origins' => [
+    env('APP_URL', 'http://127.0.0.1:8000'),
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    env('FRONTEND_URL', 'http://localhost:5173'),
+    
+    // Existing
+    'https://pupbc-carelink-testing.vercel.app',
+    'https://pup-carelink-testing-frontend.onrender.com',
+    'https://carelink-frontend.onrender.com',
+    
+    // ✅ ADD THESE (production custom domain)
+    'https://www.pupbccarelink.org',
+    'https://pupbccarelink.org',
+],
 
     'allowed_origins_patterns' => [
 
