@@ -19,8 +19,9 @@ import { motion } from 'framer-motion';
  * the bar must look identical on every hero.
  *
  * Place inside a `relative overflow-hidden` hero, pinned to its bottom edge.
+ * `className` lets a hero lift the bar above its own overlays.
  */
-export default function RouteLoadingBar() {
+export default function RouteLoadingBar({ className = '' }) {
   return (
     <motion.div
       initial={{ left: '0%', width: '0%' }}
@@ -35,7 +36,7 @@ export default function RouteLoadingBar() {
         repeat: Infinity,
         repeatDelay: 0.15,
       }}
-      className="absolute bottom-0 h-1 rounded-full bg-maroon-800"
+      className={`absolute bottom-0 h-1 rounded-full bg-maroon-800 ${className}`}
     />
   );
 }

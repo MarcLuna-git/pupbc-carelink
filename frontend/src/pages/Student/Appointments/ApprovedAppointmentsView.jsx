@@ -29,7 +29,7 @@ export function AppointmentHero({ loading = false }) {
       </div>
     </div>
     {/* Route-loading bar — full-width fill/drain loop, hero only. */}
-    {loading && <RouteLoadingBar />}
+    {loading && <RouteLoadingBar className="ap-hero-loading-bar" />}
   </section>;
 }
 
@@ -116,9 +116,9 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
     <UpcomingAppointment appointment={upcoming} onView={onView} onEdit={onEdit} />
     <section id="appointment-booking" className="ap-card ap-booking">
       <div className="ap-section-heading"><CalendarDays /><div><h2>{editingId ? 'Edit Appointment' : 'Book a New Appointment'}</h2><p>{editingId ? 'Update your pending appointment request.' : 'Choose a date, time, and service that works for you.'}</p></div>{editingId && <button type="button" className="ap-text-button" onClick={onCancelEdit}>Cancel editing</button>}</div>
-      {/* The four booking steps render as a vertical timeline: a numbered
-          spine (marker + connector line) on the left, one soft panel of
-          content per step on the right — left-aligned, never centered. */}
+      {/* The four booking steps render as a timeline: horizontal (four
+          columns) on desktop/laptop, a vertical numbered spine on tablet and
+          mobile — content left-aligned, never centered. */}
       <form className="ap-booking-steps" onSubmit={onSubmit} noValidate>
         <ol className="ap-booking-progress" aria-label="Booking progress">
           <li aria-current={progress === 1 ? 'step' : undefined} className={`ap-booking-step${progress >= 1 ? ' is-active' : ''}`}>

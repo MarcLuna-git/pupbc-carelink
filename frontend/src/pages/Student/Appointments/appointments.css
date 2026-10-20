@@ -10,6 +10,10 @@
 .ap-hero::after { content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(255,249,244,.95) 0%,rgba(255,249,244,.78) 52%,rgba(255,249,244,.25) 100%); }
 .dark .ap-hero { background-color:#2a1c26;background-blend-mode:multiply; }
 .dark .ap-hero::after { background:linear-gradient(90deg,rgba(36,25,33,.95) 0%,rgba(36,25,33,.8) 52%,rgba(36,25,33,.35) 100%); }
+/* The loading bar sits ABOVE the overlay so it stays solid maroon instead of
+   being washed pink; isolation keeps that z-index local to the hero. */
+.ap-hero { isolation:isolate; }
+.ap-hero-loading-bar { z-index:2; }
 .ap-hero-copy { position:relative;z-index:1;padding:19px 24px;max-width:57%; }
 .ap-eyebrow { font-size:10px;color:#96604b;text-transform:uppercase;letter-spacing:1.7px;font-weight:700; }
 .dark .ap-eyebrow { color:#d5a99a; }
@@ -199,6 +203,27 @@
   .ap-upcoming-actions { grid-column:4;grid-row:1/3; }
   .ap-hero h1 { font-size:33px; }
   .ap-hero-benefits { gap:10px; }
+}
+/*
+ * Desktop / laptop: the booking timeline lies down — four equal columns side
+ * by side, with the connector running horizontally from each marker toward the
+ * next step instead of down the left gutter. Tablet and mobile keep the
+ * vertical timeline above.
+ */
+@media (min-width:1024px) {
+  .ap-booking-steps { padding:6px 16px 16px; }
+  .ap-booking-progress { grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;max-width:none; }
+  .ap-booking-progress li { display:flex;flex-direction:column;padding-left:0; }
+  .ap-booking-progress li:not(:last-child)::before { content:none; }
+  .ap-step-heading { gap:8px; }
+  .ap-step-marker { position:relative;flex-shrink:0; }
+  .ap-step-label { white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  /* Connector: fills the rest of the heading row and bridges the column gap. */
+  .ap-booking-progress li:not(:last-child) .ap-step-heading::after { content:'';flex:1;min-width:12px;height:2px;margin-right:-14px;background:var(--sp-border); }
+  .ap-booking-column { display:flex;flex-direction:column;flex:1;max-width:none; }
+  .ap-booking-column>.ap-step-body,.ap-booking-column>.ap-calendar { flex:1; }
+  .ap-service-list { grid-template-columns:minmax(0,1fr);gap:6px; }
+  .ap-summary dl>div { padding:12px 0; }
 }
 @media (max-width:767px) {
   .approved-appointments-page { gap:12px; }
