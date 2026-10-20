@@ -586,11 +586,12 @@ const Login = () => {
               />
             </div>
 
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+            {/* Sits on the maroon photo overlay in both themes, so it stays light. */}
+            <h1 className="text-2xl font-bold text-white drop-shadow-sm">
               PUPBC CareLink
             </h1>
 
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-sm font-medium text-white/90 mt-1">
               Student Portal
             </p>
           </div>

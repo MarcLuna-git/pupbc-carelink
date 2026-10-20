@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { Bell, ChevronsLeft, ChevronsRight, Moon, Sun } from 'lucide-react';
 
 import StudentSidebar from './student-shell/StudentSidebar';
-import StudentAccountMenu from './student-shell/StudentAccountMenu';
 import './StudentLayout-for-Tablet-View.css';
 
 /*
@@ -12,9 +11,10 @@ import './StudentLayout-for-Tablet-View.css';
  * StudentLayout-for-Desktop-View picks between this shell and the mobile shell with a JS media
  * query, so only one shell is ever mounted. This component owns the
  * tablet-only chrome:
- *   - fixed sidebar (rendered via the shared StudentSidebar)
- *   - header with clinic status, alerts / theme / account (no page
- *     title — pages show their own headings)
+ *   - fixed sidebar (rendered via the shared StudentSidebar), with the
+ *     user account button + dropdown at its foot
+ *   - header with clinic status, alerts / theme (no page title — pages
+ *     show their own headings)
  * The page content is injected through `children`; shared data and handlers
  * are passed down from StudentLayout-for-Desktop-View so logic is never duplicated.
  *
@@ -22,20 +22,11 @@ import './StudentLayout-for-Tablet-View.css';
  */
 const StudentLayoutForTabletView = ({
   children,
-  user,
-  displayName,
-  avatar,
-  avatarFailed,
-  setAvatarFailed,
   navItems,
   isActive,
   unreadCount,
   darkMode,
   toggleDarkMode,
-  profileMenuOpen,
-  setProfileMenuOpen,
-  profileMenuRef,
-  onLogout,
 }) => {
   /*
    * Toggle button vertical position: measured from the brand symbol's
@@ -121,14 +112,14 @@ const StudentLayoutForTabletView = ({
             {/* Combined Notifications + Announcements */}
             <Link
               to="/student/alerts"
-              aria-label="Open notifications and announcements"
+              aria-label={unreadCount > 0 ? `Open notifications and announcements (${unreadCount} unread)` : 'Open notifications and announcements'}
               title="Notifications & Announcements"
-              className="student-header-icon student-notification-bell"
+              className={`student-header-icon student-notification-bell${unreadCount > 0 ? ' has-unread' : ''}`}
             >
               <Bell className="h-5 w-5" />
 
               {unreadCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white ring-2 ring-white dark:ring-gray-900">
+                <span className="student-bell-count" aria-hidden="true">
                   {unreadCount > 99
                     ? '99+'
                     : unreadCount}
@@ -159,20 +150,6 @@ const StudentLayoutForTabletView = ({
               )}
             </button>
 
-            {/* Account menu */}
-            <StudentAccountMenu
-              user={user}
-              displayName={displayName}
-              avatar={avatar}
-              avatarFailed={avatarFailed}
-              setAvatarFailed={setAvatarFailed}
-              profileMenuOpen={profileMenuOpen}
-              setProfileMenuOpen={setProfileMenuOpen}
-              profileMenuRef={profileMenuRef}
-              darkMode={darkMode}
-              toggleDarkMode={toggleDarkMode}
-              onLogout={onLogout}
-            />
           </div>
         </div>
       </header>

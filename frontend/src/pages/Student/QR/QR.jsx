@@ -23,6 +23,7 @@ import useVisiblePolling from '../../../hooks/useVisiblePolling';
 import RouteLoadingBar from '../../../components/RouteLoadingBar';
 import HealthProfileVerifyError from '../../../components/HealthProfileVerifyError';
 import { useStudentHealthProfileStatus } from '../../../hooks/useStudentHealthProfileStatus';
+import { formatPersonName } from '../../../utils/studentUser';
 
 const queueStatusLabel = (status) => {
   switch (status) {
@@ -301,8 +302,9 @@ const fetchQrData = async (signal) => {
       return;
     }
 
-    const safeName =
-      `${user.first_name || ''} ${user.last_name || ''}`.trim();
+    const safeName = formatPersonName(
+      `${user.first_name || ''} ${user.last_name || ''}`.trim()
+    );
 
     printWindow.document.write(`
       <!doctype html>
@@ -704,8 +706,8 @@ const fetchQrData = async (signal) => {
                 </div>
 
                 <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
-                  {user.first_name}{' '}
-                  {user.last_name}
+                  {formatPersonName(user.first_name)}{' '}
+                  {formatPersonName(user.last_name)}
                 </h2>
 
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">

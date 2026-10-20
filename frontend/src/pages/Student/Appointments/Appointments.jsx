@@ -13,6 +13,7 @@ import {
   Stethoscope,
   FileText,
   Edit3,
+  Loader2,
 } from 'lucide-react';
 import api from '../../../services/api';
 import { clinicDate, appointmentDate as normalizeDateValue, appointmentTime as parseAppointmentDateTime, isClinicSunday as isSunday, formatAppointmentDate as formatDate } from '../../../utils/appointmentDate';
@@ -38,6 +39,7 @@ const SkeletonUpcoming = () => (
     <div className="ap-section-heading ap-upcoming-heading">
       <Skeleton className="h-5 w-5 shrink-0 rounded-md" />
       <Skeleton className="h-4 w-44" />
+      <Skeleton className="h-5 w-20 rounded-md" />
       <Skeleton className="ml-auto h-5 w-8 rounded" />
     </div>
     <div className="ap-upcoming-content">
@@ -164,6 +166,7 @@ const Appointments = () => {
 
   const [confirmCancel, setConfirmCancel] =
     useState(null);
+  const [cancelling, setCancelling] = useState(false);
 
   const [
     selectedAppointment,
@@ -790,53 +793,55 @@ const Appointments = () => {
 
   const handleCancel =
     async () => {
-      if (!confirmCancel) {
+      if (!confirmCancel || cancelling) {
         return;
       }
 
-      try {
-        const token =
-          localStorage.getItem(
-            'token'
-          );
-
-        await api.patch(
-          `/student/appointments/${confirmCancel}/cancel`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        setMessageType(
-          'success'
-        );
-
-        setMessage(
-          'Appointment cancelled.'
-        );
-
-        setConfirmCancel(
-          null
-        );
-
-        setSelectedAppointment(
-          null
-        );
-
+      const appointmentId = confirmCancel;
+      const succeed = () => {
+        setMessageType('success');
+        setMessage('Appointment cancelled.');
+        setConfirmCancel(null);
+        setSelectedAppointment(null);
         fetchAppointments();
-      } catch (err) {
-        setMessageType(
-          'error'
+      };
+
+      setCancelling(true);
+
+      try {
+        await api.patch(
+          `/student/appointments/${appointmentId}/cancel`
         );
 
-        setMessage(
-          err.response?.data
-            ?.message ||
-            'Failed to cancel appointment.'
-        );
+        succeed();
+      } catch (err) {
+        /* A timeout / dropped connection does not mean the cancel failed —
+           the server may have committed it. Re-read the appointment before
+           reporting an error. */
+        let alreadyCancelled = false;
+
+        if (!err.response) {
+          try {
+            const check = await api.get(`/student/appointments/${appointmentId}`);
+            alreadyCancelled = check.data?.data?.status === 'cancelled';
+          } catch {
+            alreadyCancelled = false;
+          }
+        }
+
+        if (alreadyCancelled) {
+          succeed();
+        } else {
+          setMessageType('error');
+          setMessage(
+            err.response?.data?.message ||
+              (err.response
+                ? 'Failed to cancel appointment.'
+                : 'The clinic server is slow to respond. Please check your connection and try again.')
+          );
+        }
+      } finally {
+        setCancelling(false);
       }
 
       setTimeout(
@@ -885,6 +890,7 @@ const Appointments = () => {
         form={form} onChange={handleChange} onSubmit={handleSubmit} onView={setSelectedAppointment} onEdit={handleEditClick}
         filter={filter} onFilter={setFilter} editingId={editingId} services={services} timeSlots={timeSlots}
         availableSlots={availableSlots} slotsLoading={slotsLoading} loading={loading} message={message} messageType={messageType}
+        onDismissMessage={() => setMessage('')}
         retrySlots={() => fetchAvailableSlots(form.date)} onCancelEdit={() => {
           setEditingId(null);
           setForm({ service: '', date: defaultDate, time: '', concern: '' });
@@ -1277,11 +1283,10 @@ const Appointments = () => {
             }}
             className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4"
             role="dialog" aria-modal="true" aria-label="Confirm appointment cancellation"
-            onClick={() =>
-              setConfirmCancel(
-                null
-              )
-            }
+            aria-busy={cancelling}
+            onClick={() => {
+              if (!cancelling) setConfirmCancel(null);
+            }}
           >
             <motion.div
               initial={{
@@ -1318,23 +1323,27 @@ const Appointments = () => {
 
               <div className="flex gap-3 mt-6">
                 <button
+                  type="button"
                   onClick={() =>
                     setConfirmCancel(
                       null
                     )
                   }
-                  className="flex-1 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
+                  disabled={cancelling}
+                  className="flex-1 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Keep
                 </button>
 
                 <button
+                  type="button"
                   onClick={
                     handleCancel
                   }
-                  className="flex-1 py-3 bg-red-500 text-white font-semibold rounded-2xl hover:bg-red-600 transition text-sm"
+                  disabled={cancelling}
+                  className="flex-1 py-3 bg-red-500 text-white font-semibold rounded-2xl hover:bg-red-600 transition text-sm flex items-center justify-center gap-2 disabled:cursor-wait disabled:opacity-80"
                 >
-                  Cancel
+                  {cancelling ? <><Loader2 className="w-4 h-4 animate-spin" />Cancelling…</> : 'Cancel'}
                 </button>
               </div>
             </motion.div>

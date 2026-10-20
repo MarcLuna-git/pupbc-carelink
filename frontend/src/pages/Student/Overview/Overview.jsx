@@ -5,9 +5,10 @@ import { AlertCircle, CalendarDays, GraduationCap, Mail, Pencil, Phone, RefreshC
 import api from '../../../services/api';
 import ProfileSection from '../../../layouts/StudentLayout/student-shell/ProfileSection';
 import { preloadForPath } from '../../../utils/preloadStudentPages';
+import { formatPersonName } from '../../../utils/studentUser';
 
 const valueOrDash = (value) => value || 'Not provided';
-const fullName = (user) => [user.first_name, user.middle_name, user.last_name, user.suffix].filter(Boolean).join(' ');
+const fullName = (user) => [user.first_name, user.middle_name, user.last_name, user.suffix].filter(Boolean).map(formatPersonName).join(' ');
 const normalizeProfile = (payload) => {
   const user = payload?.user || {};
   const profile = payload?.profile || user.profile || {};

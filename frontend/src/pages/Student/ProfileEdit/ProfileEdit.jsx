@@ -4,6 +4,7 @@ import { User, Mail, Phone, MapPin, Camera, Save, Loader2, Hash, GraduationCap, 
 import api from '../../../services/api';
 import ProfileSection from '../../../layouts/StudentLayout/student-shell/ProfileSection';
 import { preloadForPath } from '../../../utils/preloadStudentPages';
+import { formatPersonName } from '../../../utils/studentUser';
 
 const ProfileEdit = () => {
   const navigate = useNavigate();
@@ -189,7 +190,7 @@ const ProfileEdit = () => {
               <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageChange} className="hidden" />
             </div>
             {fieldErrors.avatar && <p role="alert" className="mt-1 text-xs text-red-600 dark:text-red-400">{fieldErrors.avatar.join(' ')}</p>}
-            <h2 className="font-bold text-gray-900 dark:text-white">{user.first_name} {user.last_name}</h2>
+            <h2 className="font-bold text-gray-900 dark:text-white">{formatPersonName(user.first_name)} {formatPersonName(user.last_name)}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">{user.student_id}</p>
             <p className="text-xs text-gray-400 dark:text-gray-400 mt-1">{user.course} - {user.year}{user.section}</p>
           </div>

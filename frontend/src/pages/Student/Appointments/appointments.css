@@ -28,13 +28,46 @@
 .ap-section-heading p { margin-top:2px;font-size:12px;color:var(--sp-muted); }
 .ap-section-heading>button,.ap-section-heading>label { margin-left:auto; }
 .ap-section-heading select { border:1px solid var(--sp-border);border-radius:7px;background:var(--sp-surface);color:var(--sp-muted);font-size:12px;padding:6px 9px;max-width:200px; }
-.ap-message { padding:12px 16px;border-radius:9px;font-size:13px; }
-.ap-message.is-success { color:#176346;background:#e5f5ed; }
-.ap-message.is-error { color:#9b273b;background:#fce9ed; }
-.dark .ap-message.is-success { color:#a6e0bf;background:#223b32; }
-.dark .ap-message.is-error { color:#f1bac5;background:#482631; }
+/*
+ * Booking toast — fixed top-right, just under the portal header, so it never
+ * shares a corner with the chatbot (bottom-right) and the two stay fully
+ * independent. It lives in <body> (portal), outside the shell's --sp-* tokens,
+ * so colors are explicit with a .dark variant.
+ */
+.ap-toast { position:fixed;right:18px;top:calc(62px + env(safe-area-inset-top) + 12px);z-index:60;display:flex;align-items:flex-start;gap:10px;width:min(360px,calc(100vw - 36px));padding:12px 12px 12px 14px;border:1px solid;border-left-width:4px;border-radius:10px;background:#fff;box-shadow:0 10px 28px #2a0a1426;font-family:Arial,Helvetica,sans-serif;animation:ap-toast-in .22s ease-out; }
+.ap-toast p { flex:1;min-width:0;font-size:13px;line-height:1.45;color:#382a2e;overflow-wrap:anywhere; }
+.ap-toast-icon { flex-shrink:0;width:18px;height:18px;margin-top:1px; }
+.ap-toast.is-success { border-color:#bfe3cf;border-left-color:#2b7650; }
+.ap-toast.is-success .ap-toast-icon { color:#2b7650; }
+.ap-toast.is-error { border-color:#f1c6cf;border-left-color:#a13e51; }
+.ap-toast.is-error .ap-toast-icon { color:#a13e51; }
+.ap-toast-close { flex-shrink:0;display:flex;align-items:center;justify-content:center;width:24px;height:24px;margin:-2px -2px 0 0;border-radius:6px;color:#6f6166;cursor:pointer; }
+.ap-toast-close:hover { background:#faeeec;color:#800000; }
+.ap-toast-close svg { width:15px;height:15px; }
+.dark .ap-toast { background:#242029;box-shadow:0 10px 28px #00000066; }
+.dark .ap-toast p { color:#f6edf0; }
+.dark .ap-toast.is-success { border-color:#2f4a3e;border-left-color:#7ccf9f; }
+.dark .ap-toast.is-success .ap-toast-icon { color:#7ccf9f; }
+.dark .ap-toast.is-error { border-color:#5a3340;border-left-color:#e7acbc; }
+.dark .ap-toast.is-error .ap-toast-icon { color:#e7acbc; }
+.dark .ap-toast-close { color:#c1acb5; }
+.dark .ap-toast-close:hover { background:#36232c;color:#efb0bd; }
+@keyframes ap-toast-in { from { opacity:0;transform:translateY(-10px); } to { opacity:1;transform:none; } }
+@media (prefers-reduced-motion:reduce) { .ap-toast { animation:none; } }
 .ap-upcoming-heading { padding-top:8px;padding-bottom:5px; }
-.ap-upcoming-heading button { font-size:19px;line-height:1;color:var(--sp-muted);padding:4px 8px; }
+/* "More" (···) button: always carries a light shade so it reads as clickable
+   at rest; slightly deeper shade on hover. Shown in both card states. */
+.ap-more-button { margin-left:auto;font-size:19px;line-height:1;color:var(--sp-accent);padding:4px 8px;border-radius:7px;background:var(--sp-soft);cursor:pointer;transition:background-color .15s ease; }
+.ap-more-button:hover { background:var(--sp-border); }
+.ap-more-button:focus-visible { outline:2px solid var(--sp-accent);outline-offset:2px; }
+/* "Nothing to show" note under the ··· button when no appointment is booked.
+   The empty card stays overflow-visible so the note is never clipped. */
+.ap-card.ap-upcoming.is-empty { overflow:visible; }
+.ap-more-popover-root { position:relative;margin-left:auto; }
+.ap-more-popover { position:absolute;top:calc(100% + 8px);right:0;z-index:20;display:flex;align-items:flex-start;gap:10px;width:min(280px,calc(100vw - 48px));padding:12px 14px;border:1px solid var(--sp-border);border-radius:10px;background:var(--sp-surface);box-shadow:0 10px 26px #2a0a1422; }
+.ap-more-popover>svg { flex-shrink:0;width:18px;height:18px;margin-top:1px;color:var(--sp-muted); }
+.ap-more-popover strong { display:block;font-size:13px;font-weight:700;color:var(--sp-text); }
+.ap-more-popover p { margin-top:3px;font-size:12px;line-height:1.45;color:var(--sp-muted); }
 .ap-upcoming-content { display:grid;grid-template-columns:60px minmax(130px,1.2fr) minmax(120px,1fr) minmax(140px,1fr) 158px;align-items:center;gap:16px;padding:0 16px 12px; }
 .ap-date-tile { text-align:center;border:1px solid var(--sp-border);border-radius:9px;background:var(--sp-soft);color:var(--sp-accent);padding:6px 7px; }
 .ap-date-tile span { display:block;font-size:11px;font-weight:700; }
@@ -48,7 +81,9 @@
 .ap-upcoming-place { display:grid;gap:8px; }
 .ap-upcoming-place>div { display:flex;align-items:flex-start;gap:6px; }
 .ap-upcoming-state { padding-left:14px;border-left:1px solid var(--sp-border); }
-.ap-upcoming-state p { font-size:9px;color:var(--sp-muted);line-height:1.5;margin-top:6px; }
+/* The status badge lives in the card heading (same spot as the empty card's
+   "Not booked"), so this cell holds only the check-in window + queue. */
+.ap-upcoming-state p { font-size:9px;color:var(--sp-muted);line-height:1.5;margin:0; }
 .ap-queue-label { display:block;font-size:10px;margin-top:4px;color:var(--sp-accent);text-transform:capitalize; }
 .ap-status { display:inline-flex;align-items:center;gap:5px;font-size:11px;line-height:1.5;padding:3px 9px;border-radius:7px;background:var(--sp-soft);color:var(--sp-accent);white-space:nowrap;font-weight:600; }
 .ap-status>span { width:4px;height:4px;border-radius:50%;background:currentColor; }
@@ -68,11 +103,13 @@
 .ap-button-outline:hover:not(:disabled) { color:white; }
 .ap-upcoming-actions { display:grid;gap:5px; }
 .ap-upcoming-actions .ap-button { min-height:31px; }
-.ap-upcoming-empty { display:flex;align-items:center;gap:14px;padding:20px; }
-.ap-upcoming-empty>svg { flex-shrink:0;color:var(--sp-accent);width:24px;height:24px; }
-.ap-upcoming-empty h2 { font-size:14px;font-weight:700; }
-.ap-upcoming-empty p { font-size:12px;color:var(--sp-muted);margin-top:3px; }
-.ap-upcoming-empty>a { margin-left:auto;white-space:nowrap; }
+/* Empty upcoming card: same grid, placeholder values in muted tones. */
+.ap-upcoming.is-empty .ap-date-tile { background:var(--sp-bg);color:var(--sp-muted);border-style:dashed; }
+/* No check-in data yet (no booking, or the clinic hasn't set a window): the
+   cell stays in the grid on desktop but drops its divider. */
+.ap-upcoming-state:empty { border-left:0; }
+.ap-upcoming.is-empty .ap-upcoming-details>svg,.ap-upcoming.is-empty .ap-upcoming-place svg { color:var(--sp-muted); }
+.ap-upcoming.is-empty .ap-upcoming-details span,.ap-upcoming.is-empty .ap-upcoming-place strong { color:var(--sp-muted); }
 /*
  * Booking flow = vertical TIMELINE. A numbered spine (circle marker +
  * connector line) runs down the left gutter; each step's content sits in
@@ -110,10 +147,15 @@
 .ap-calendar-month svg { width:12px;height:12px; }
 .ap-calendar-grid { display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px; }
 .ap-calendar-weekday { font-size:8px;color:var(--sp-muted);text-align:center;line-height:23px; }
-.ap-calendar-grid button { min-width:0;min-height:30px;border-radius:5px;font-size:10px;color:var(--sp-text);border:1px solid transparent; }
-.ap-calendar-grid button:hover:not(:disabled) { background:var(--sp-soft);border-color:var(--sp-border); }
-.ap-calendar-grid button.is-selected { background:#800000;color:white; }
-.ap-calendar-grid button.is-today:not(.is-selected) { border-color:#c67c8a;color:var(--sp-accent); }
+/* Date states, all drawn from the theme tokens so text stays readable in light
+   and dark: hover = soft tint + accent text; selected = solid maroon + white
+   text, and hovering it only deepens the maroon (never swaps to the tint). */
+.ap-calendar-grid button { min-width:0;min-height:30px;border-radius:5px;font-size:10px;color:var(--sp-text);border:1px solid transparent;transition:background-color .12s ease,border-color .12s ease,color .12s ease; }
+.ap-calendar-grid button:hover:not(:disabled):not(.is-selected) { background:var(--sp-soft);border-color:var(--sp-border);color:var(--sp-accent); }
+.ap-calendar-grid button.is-selected { background:#800000;border-color:#800000;color:#fff;font-weight:700; }
+.ap-calendar-grid button.is-selected:hover:not(:disabled) { background:#650015;border-color:#650015; }
+.ap-calendar-grid button.is-today:not(.is-selected) { border-color:#c67c8a;color:var(--sp-accent);font-weight:700; }
+.ap-calendar-grid button:focus-visible { outline:2px solid var(--sp-accent);outline-offset:1px; }
 .ap-calendar-grid button:disabled { opacity:.33;cursor:not-allowed; }
 .ap-calendar-note { margin-top:9px;font-size:8px;color:var(--sp-muted);text-align:center; }
 .ap-time-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:5px; }
@@ -162,10 +204,10 @@
 .ap-history .ap-section-heading { padding-top:8px;padding-bottom:7px; }
 .ap-history-list { display:grid;gap:8px;padding:10px 12px 6px; }
 .ap-history-item { display:flex;align-items:center;gap:14px;padding:12px 14px;border:1px solid var(--sp-border);border-radius:10px;background:var(--sp-surface);transition:background .15s ease,border-color .15s ease,box-shadow .15s ease; }
-/* Hover feedback: the row "lifts" — warm tint, dusty-rose border and a soft
-   shadow — so the pointer target reads clearly without shouting. */
-.ap-history-item:hover { background:#fdf3f0;border-color:#e5cbc4;box-shadow:0 3px 10px #5a0b2012; }
-.dark .ap-history-item:hover { background:var(--sp-soft);border-color:#4d3d49;box-shadow:0 3px 10px #00000033; }
+/* Hover feedback: the card "lifts" — the same neutral gray as a hovered list
+   row (--sp-bg), a plain gray border and a soft shadow; no pink tint. */
+.ap-history-item:hover { background:var(--sp-bg);border-color:#d6d3d1;box-shadow:0 3px 10px #0000000f; }
+.dark .ap-history-item:hover { border-color:#4b4650;box-shadow:0 3px 10px #00000033; }
 .ap-history-item .ap-date-tile { flex-shrink:0;min-width:60px; }
 .ap-history-item .ap-date-tile span { font-size:10px; }
 .ap-history-item .ap-date-tile strong { font-size:22px; }
@@ -179,6 +221,44 @@
 .ap-history-actions button,.ap-history-actions a { display:inline-flex;align-items:center;gap:5px;min-height:26px;font-size:12px;font-weight:600;color:var(--sp-accent);white-space:nowrap;cursor:pointer; }
 .ap-history-actions button:hover,.ap-history-actions a:hover { text-decoration:underline; }
 .ap-history-actions svg { width:13px;height:13px; }
+/* History heading controls: filter select + layout (cards / list) menu. The
+   card stays overflow-visible so the layout dropdown is never clipped. */
+.ap-card.ap-history { overflow:visible; }
+.ap-history-controls { display:flex;align-items:center;gap:8px;margin-left:auto; }
+.ap-view-menu { position:relative; }
+.ap-view-menu-button { display:flex;align-items:center;gap:4px;height:31px;padding:0 7px 0 9px;border:1px solid var(--sp-border);border-radius:7px;background:var(--sp-surface);color:var(--sp-accent);cursor:pointer;transition:background-color .15s ease,border-color .15s ease; }
+.ap-view-menu-button:hover,.ap-view-menu-button.is-open { background:var(--sp-soft);border-color:#c67c8a; }
+.ap-view-menu-button svg { width:15px;height:15px; }
+.ap-view-menu-button .ap-view-menu-chevron { width:13px;height:13px;color:var(--sp-muted);transition:transform .15s ease; }
+.ap-view-menu-button.is-open .ap-view-menu-chevron { transform:rotate(180deg); }
+.ap-view-menu-list { position:absolute;top:calc(100% + 6px);right:0;z-index:20;min-width:170px;padding:5px;border:1px solid var(--sp-border);border-radius:10px;background:var(--sp-surface);box-shadow:0 10px 26px #2a0a1422;animation:ap-toast-in .15s ease-out; }
+.ap-view-menu-list button { display:flex;width:100%;align-items:center;gap:9px;padding:8px 9px;border-radius:7px;font-size:12px;color:var(--sp-text);text-align:left;cursor:pointer; }
+.ap-view-menu-list button:hover { background:color-mix(in srgb,var(--sp-bg) 94%,#000); }
+.ap-view-menu-list button.is-selected { color:var(--sp-accent);font-weight:700; }
+.ap-view-menu-list svg { width:15px;height:15px;flex-shrink:0; }
+.ap-view-menu-list span { flex:1; }
+.ap-view-menu-check { color:var(--sp-accent); }
+/* List layout: one compact row per appointment under a column header. */
+.ap-history-table { padding:8px 12px 4px; }
+.ap-history-table-head,.ap-history-row { display:grid;grid-template-columns:minmax(120px,1fr) minmax(150px,1.3fr) minmax(130px,1.1fr) 112px minmax(150px,auto);align-items:center;gap:12px;padding:0 12px; }
+.ap-history-table-head { padding-top:8px;padding-bottom:8px;border-radius:8px;background:color-mix(in srgb,var(--sp-bg) 94%,#000);font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.4px; }
+.ap-history-row { min-height:54px;padding-top:9px;padding-bottom:9px;border-bottom:1px solid var(--sp-border);font-size:12px;color:var(--sp-text);transition:background-color .15s ease; }
+.ap-history-row:last-child { border-bottom:0; }
+/* Neutral grays, no pink: the column header takes the darker shade of
+   --sp-bg and a hovered row the lighter --sp-bg itself. Both derive from the
+   token so they track light / dark theme. */
+.ap-history-row:hover { background:var(--sp-bg); }
+.ap-history-row>span { min-width:0; }
+.ap-history-row strong { display:block;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.ap-history-row small { display:block;margin-top:2px;font-size:11px;color:var(--sp-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.ap-history-row-service small { font-style:italic; }
+.ap-history-row-meta { overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.ap-history-row .ap-history-actions { justify-content:flex-end; }
+/* Tablet: drop the Staff · Room column (still in View Details). */
+@media (min-width:768px) and (max-width:1023px) {
+  .ap-history-table-head,.ap-history-row { grid-template-columns:minmax(110px,1fr) minmax(130px,1.3fr) 104px auto; }
+  .ap-history-table-head>:nth-child(3),.ap-history-row-meta { display:none; }
+}
 .ap-history-pagination { display:flex;align-items:center;justify-content:space-between;padding:10px 16px 14px;gap:8px; }
 .ap-history-pagination p { font-size:12px;color:var(--sp-muted); }
 .ap-history-pagination>div { display:flex;align-items:center;gap:6px; }
@@ -201,6 +281,7 @@
   .ap-upcoming-state { grid-column:2/4;border-left:0;padding-left:0;display:flex;gap:12px;align-items:center; }
   .ap-upcoming-state p { margin:0; }
   .ap-upcoming-actions { grid-column:4;grid-row:1/3; }
+  .ap-upcoming-state:empty { display:none; }
   .ap-hero h1 { font-size:33px; }
   .ap-hero-benefits { gap:10px; }
 }
@@ -227,6 +308,8 @@
 }
 @media (max-width:767px) {
   .approved-appointments-page { gap:12px; }
+  /* Full-width toast just under the mobile header. */
+  .ap-toast { top:calc(58px + env(safe-area-inset-top) + 10px);left:12px;right:12px;width:auto; }
   .ap-hero { min-height:202px; }
   .ap-hero-copy { max-width:100%;padding:19px 17px; }
   .ap-hero h1 { font-size:29px; }
@@ -242,8 +325,6 @@
   .ap-button { min-height:42px;font-size:12px; }
   .ap-upcoming-details strong,.ap-upcoming-place strong { font-size:12px; }
   .ap-upcoming-details small,.ap-upcoming-place small,.ap-upcoming-state p { font-size:10px; }
-  .ap-upcoming-empty { flex-wrap:wrap;padding:16px; }
-  .ap-upcoming-empty>a { margin:0;width:100%; }
   .ap-booking-steps { padding:14px 12px; }
   .ap-step-body { padding:10px; }
   .ap-section-heading { padding:12px; }
@@ -275,5 +356,14 @@
   .ap-history-actions { justify-content:flex-start; }
   .ap-history-actions button,.ap-history-actions a { min-height:34px; }
   .ap-history-pagination { padding:10px 12px; }
+  .ap-history-controls { gap:6px; }
+  .ap-view-menu-button { height:34px; }
+  /* List layout on phones: no column header; each row stacks into
+     date + status on top, service, then staff · room and actions. */
+  .ap-history-table { padding:6px 10px 2px; }
+  .ap-history-table-head { display:none; }
+  .ap-history-row { grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:10px 4px; }
+  .ap-history-row-service,.ap-history-row-meta { grid-column:1/-1; }
+  .ap-history-row .ap-history-actions { grid-column:1/-1;justify-content:flex-start; }
   .ap-policy-note { font-size:11px; }
 }

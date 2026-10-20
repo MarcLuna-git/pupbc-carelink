@@ -64,6 +64,11 @@
    transition, so the menu cannot grow tall enough to overflow. Overflowing
    text is clipped by the sidebar's own overflow:hidden instead. */
 .student-sidebar-nav>a span { white-space:nowrap;overflow:hidden;max-width:200px;opacity:1;transition:max-width .28s ease,opacity .18s ease; }
+/* Account button: the 32px avatar sits on the same 38px icon axis as the nav
+   (12px foot + 1px border + 9px padding + 16px half-avatar); name, course
+   and chevron fold away with the rail. */
+.student-sidebar .student-account-button { padding-left:9px; }
+.student-sidebar :is(.student-account-caption,.student-account-chevron) { max-width:200px;opacity:1;transition:max-width .28s ease,opacity .18s ease; }
 .student-sidebar-brand a>div { white-space:nowrap;overflow:hidden;max-width:200px;opacity:1;transition:max-width .28s ease,opacity .18s ease; }
 .student-sidebar-campus { transition:opacity .28s ease; }
 /*
@@ -102,13 +107,13 @@
 /* No padding/justification overrides here on purpose: the icon column
    paddings from the sync rules above persist, so icons stay in place. */
 .student-sidebar.is-collapsed .student-sidebar-brand a>div { max-width:0;opacity:0; }
-.student-sidebar.is-collapsed .student-sidebar-tagline { display:none; }
 .student-sidebar.is-collapsed .student-sidebar-campus { opacity:0; }
 .student-sidebar.is-collapsed .student-sidebar-nav>a span { max-width:0;opacity:0; }
+.student-sidebar.is-collapsed :is(.student-account-caption,.student-account-chevron) { max-width:0;opacity:0;overflow:hidden; }
+.student-sidebar.is-collapsed .student-account-button { gap:0;border-color:transparent;background:transparent; }
 
 @media (min-width:768px) and (max-width:1099px) {
   .student-header-inner { padding:0 18px;gap:10px; }
-  .student-account-caption { display:none; }
 }
 @media (min-width:1100px) {
   .student-header-page { flex:0 0 210px; }
@@ -129,6 +134,17 @@
  */
 @media (min-width:768px) {
   body:has(.student-approved-shell) { overflow:hidden; }
+  /*
+   * The frame must be EXACTLY one viewport tall. Without flow-root, the shell
+   * body's margin-top (header height) collapses through .student-approved-shell
+   * (min-height:100dvh), making the document 100dvh + header tall.
+   * overflow:hidden only hides that extra strip from the user — anchor jumps
+   * and scrollIntoView (Book a Visit, ···, Edit appointment) still scroll the
+   * document by it, shifting the whole frame up and exposing a blank white
+   * band at the bottom that never goes away. flow-root stops the collapse and
+   * the fixed height + clip keep the document from ever exceeding the viewport.
+   */
+  .student-approved-shell { display:flow-root;height:100dvh;min-height:0;overflow:clip; }
 }
 html:has(.student-approved-shell),
 body:has(.student-approved-shell) { scrollbar-width:none;-ms-overflow-style:none; }

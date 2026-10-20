@@ -6,6 +6,7 @@ import {
   RefreshCw, ShieldCheck, UserRound, X,
 } from 'lucide-react';
 import authService from '../../services/authService';
+import { formatPersonName } from '../../utils/studentUser';
 import COURSES from '../../data/registration-academics.json';
 import clinicLogo from '../../assets/clinic logo.jpg';
 import campusPhoto from '../../assets/pup-binan-hero.jpg';
@@ -176,7 +177,7 @@ export default function Register() {
     let next = type === 'checkbox' ? checked : value;
     if (name === 'section' && value && !availableSections.includes(value)) return;
     if (['first_name', 'middle_name', 'last_name'].includes(name)) {
-      next = value.replace(/[^\p{L}\s\-'.]/gu, '');
+      next = formatPersonName(value.replace(/[^\p{L}\s\-'.]/gu, ''));
     }
     if (name === 'student_id') next = formatStudentId(value);
     if (name === 'mobile_number') {

@@ -124,6 +124,40 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(AuditLog::class);
     }
 
+    /*
+     * Formal name casing on every save: capitalize the first letter of each
+     * word (after a space or hyphen), keep the rest as typed — "jerome" is
+     * stored as "Jerome", "McDonald" / "DELA CRUZ" are left untouched.
+     * Mirrors formatPersonName() in the frontend.
+     */
+    public static function formatPersonName(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        return preg_replace_callback(
+            '/(^|[\s\-])(\p{Ll})/u',
+            fn (array $match) => $match[1] . mb_strtoupper($match[2]),
+            $value
+        );
+    }
+
+    public function setFirstNameAttribute($value): void
+    {
+        $this->attributes['first_name'] = static::formatPersonName($value);
+    }
+
+    public function setMiddleNameAttribute($value): void
+    {
+        $this->attributes['middle_name'] = static::formatPersonName($value);
+    }
+
+    public function setLastNameAttribute($value): void
+    {
+        $this->attributes['last_name'] = static::formatPersonName($value);
+    }
+
     public function getFullNameAttribute()
     {
         return trim(

@@ -12,29 +12,20 @@ import './StudentLayout-for-Mobile-View.css';
  * StudentLayout-for-Desktop-View picks between this shell and the desktop/tablet shell with a
  * JS media query, so only one shell is ever mounted. This component owns the
  * mobile-only chrome:
- *   - header with the page title, alerts / theme / account
+ *   - header with the page title, alerts / theme / account menu
  *   - bottom tab bar
  * There is no drawer sidebar on mobile — navigation happens through the
- * bottom dock. Page content is injected through `children`; shared data and
+ * bottom dock; Settings, Help, About and Sign Out are in the account menu. Page content is injected through `children`; shared data and
  * handlers are passed down from StudentLayout-for-Desktop-View so the two shells
  * never duplicate logic.
  */
 const StudentLayoutForMobileView = ({
   children,
-  user,
-  displayName,
-  avatar,
-  avatarFailed,
-  setAvatarFailed,
   navItems,
   isActive,
   unreadCount,
   darkMode,
   toggleDarkMode,
-  profileMenuOpen,
-  setProfileMenuOpen,
-  profileMenuRef,
-  onLogout,
 }) => {
   return (
     <>
@@ -52,14 +43,14 @@ const StudentLayoutForMobileView = ({
             <div className="student-header-actions">
               <Link
                 to="/student/alerts"
-                aria-label="Open notifications and announcements"
+                aria-label={unreadCount > 0 ? `Open notifications and announcements (${unreadCount} unread)` : 'Open notifications and announcements'}
                 title="Notifications & Announcements"
-                className="student-header-icon student-notification-bell"
+                className={`student-header-icon student-notification-bell${unreadCount > 0 ? ' has-unread' : ''}`}
               >
                 <Bell className="h-5 w-5" />
 
                 {unreadCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white ring-2 ring-white dark:ring-gray-900">
+                  <span className="student-bell-count" aria-hidden="true">
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </span>
                 )}
@@ -79,19 +70,10 @@ const StudentLayoutForMobileView = ({
                 )}
               </button>
 
-              <StudentAccountMenu
-                user={user}
-                displayName={displayName}
-                avatar={avatar}
-                avatarFailed={avatarFailed}
-                setAvatarFailed={setAvatarFailed}
-                profileMenuOpen={profileMenuOpen}
-                setProfileMenuOpen={setProfileMenuOpen}
-                profileMenuRef={profileMenuRef}
-                darkMode={darkMode}
-                toggleDarkMode={toggleDarkMode}
-                onLogout={onLogout}
-              />
+              {/* User account (avatar only on mobile): the same dropdown as
+                  the desktop sidebar — Settings, Appearance, Help, About,
+                  Sign Out. */}
+              <StudentAccountMenu variant="header" />
             </div>
           </div>
         </header>
@@ -100,8 +82,10 @@ const StudentLayoutForMobileView = ({
       </div>
 
       <nav aria-label="Mobile student navigation" className="student-bottom-nav">
-        <div className="mx-auto grid max-w-xl grid-cols-5 px-1.5 py-1.5">
-          {navItems.map((item) => {
+        {/* Settings stays out of the dock on mobile — it's reached through the
+            account menu in the header. */}
+        <div className="mx-auto grid max-w-xl grid-cols-4 px-1.5 py-1.5">
+          {navItems.filter((item) => item.key !== 'settings').map((item) => {
             const active = isActive(item.path);
             const Icon = item.icon;
 

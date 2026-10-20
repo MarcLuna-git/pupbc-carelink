@@ -1,7 +1,9 @@
-import { Link } from 'react-router-dom';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  ClipboardPlus,
+  ChevronsUpDown,
   HelpCircle,
   Info,
   LogOut,
@@ -9,202 +11,254 @@ import {
   Palette,
   Settings,
   Sun,
-  User,
 } from 'lucide-react';
 
-import { getInitials } from '../../../utils/studentUser';
+import { getAvatar, getCourseSection, getDisplayName, getInitials, getStoredUser } from '../../../utils/studentUser';
 import { preloadForPath } from '../../../utils/preloadStudentPages';
+import { STUDENT_LOGOUT_REQUEST_EVENT } from '../../../utils/studentPortalNavigation';
 
 /*
- * Account button + dropdown.
+ * User account button + dropdown.
  *
- * Shared by the desktop header and the mobile header, so the menu markup is
- * defined once. The root keeps `className="relative"` (instead of a wrapper)
- * because the header CSS targets `.student-header-actions > .relative` for
- * ordering.
+ * Lives at the foot of the sidebar (tablet / desktop, opens upward) and in
+ * the mobile header (avatar only, opens downward). Self-contained: it reads the
+ * stored user, follows profile / theme updates, and asks the portal frame to
+ * confirm Sign Out via STUDENT_LOGOUT_REQUEST_EVENT.
+ *
+ * The dropdown is portaled to <body> with fixed positioning measured from the
+ * button, because the sidebar clips overflow (and folds to a 76px rail).
  */
-const StudentAccountMenu = ({
-  user,
-  displayName,
-  avatar,
-  avatarFailed,
-  setAvatarFailed,
-  profileMenuOpen,
-  setProfileMenuOpen,
-  profileMenuRef,
-  darkMode,
-  toggleDarkMode,
-  onLogout,
-}) => (
-  <div ref={profileMenuRef} className="relative">
-    <button
-      type="button"
-      onClick={() => setProfileMenuOpen((current) => !current)}
-      aria-expanded={profileMenuOpen}
-      aria-haspopup="menu"
-      aria-label="Open account menu"
-      title={displayName}
-      className={`student-account-button ${
-        profileMenuOpen
-          ? 'border-maroon-200 bg-maroon-50 dark:border-maroon-800 dark:bg-maroon-950/35'
-          : 'border-transparent hover:border-gray-200 hover:bg-gray-50 dark:hover:border-gray-700 dark:hover:bg-gray-800'
-      }`}
-    >
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-maroon-100 text-xs font-bold text-maroon-800 ring-1 ring-maroon-200 dark:bg-maroon-950 dark:text-maroon-200 dark:ring-maroon-800">
-        {avatar && !avatarFailed ? (
-          <img
-            src={avatar}
-            alt={`${displayName} profile`}
-            className="h-full w-full object-cover"
-            onError={() => setAvatarFailed(true)}
-          />
-        ) : (
-          getInitials(user)
-        )}
-      </div>
+const MENU_WIDTH = 288;
+const GAP = 8;
+const EDGE = 12;
 
-      <span className="student-account-caption">
-        <strong>{displayName}</strong>
-        <small>{user?.course || user?.profile?.course || 'Student account'}</small>
-      </span>
-    </button>
+const readDarkMode = () => {
+  try {
+    return localStorage.getItem('darkMode') === 'true';
+  } catch {
+    return false;
+  }
+};
 
+const StudentAccountMenu = ({ variant = 'sidebar', collapsed = false }) => {
+  const location = useLocation();
+  const buttonRef = useRef(null);
+  const menuRef = useRef(null);
+  const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState(null);
+  const [user, setUser] = useState(getStoredUser);
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  const [darkMode, setDarkMode] = useState(readDarkMode);
+
+  const displayName = getDisplayName(user);
+  const avatar = getAvatar(user);
+  const course = getCourseSection(user);
+  const opensUp = variant === 'sidebar';
+
+  // Keep the name / avatar / theme label in sync with the rest of the portal.
+  useEffect(() => {
+    const refreshUser = () => {
+      setUser(getStoredUser());
+      setAvatarFailed(false);
+    };
+    const onStorage = (event) => {
+      if (event.key === 'user' || event.key === null) refreshUser();
+      if (event.key === 'darkMode' || event.key === null) setDarkMode(readDarkMode());
+    };
+    const onTheme = () => setDarkMode(readDarkMode());
+
+    window.addEventListener('studentProfileUpdated', refreshUser);
+    window.addEventListener('carelink:student-user-updated', refreshUser);
+    window.addEventListener('darkModeChange', onTheme);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener('studentProfileUpdated', refreshUser);
+      window.removeEventListener('carelink:student-user-updated', refreshUser);
+      window.removeEventListener('darkModeChange', onTheme);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, []);
+
+  // Close on navigation.
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
+  // Place the dropdown next to the button (above it in the sidebar).
+  useLayoutEffect(() => {
+    if (!open) return undefined;
+
+    const place = () => {
+      const rect = buttonRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const width = Math.min(MENU_WIDTH, window.innerWidth - EDGE * 2);
+      // Sidebar: grow rightward from the button; header: right-aligned to it.
+      const anchor = opensUp ? rect.left : rect.right - width;
+      const left = Math.min(Math.max(EDGE, anchor), window.innerWidth - width - EDGE);
+      setPosition(
+        opensUp
+          ? { left, width, bottom: window.innerHeight - rect.top + GAP }
+          : { left, width, top: rect.bottom + GAP }
+      );
+    };
+
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [open, opensUp]);
+
+  // Outside click / Escape closes it.
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const onPointerDown = (event) => {
+      if (buttonRef.current?.contains(event.target) || menuRef.current?.contains(event.target)) return;
+      setOpen(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        buttonRef.current?.focus();
+      }
+    };
+
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  // Same mechanism as useAccountTheme's toggle; the frame's hook picks up
+  // the event and applies the class.
+  const toggleDarkMode = () => {
+    const next = !readDarkMode();
+    try {
+      localStorage.setItem('darkMode', String(next));
+    } catch {
+      /* Keep the current session usable. */
+    }
+    window.dispatchEvent(new Event('darkModeChange'));
+    setDarkMode(next);
+  };
+
+  // Picking a destination always folds the dropdown — even when it's the
+  // page already open (no route change, so the pathname effect won't fire).
+  const closeMenu = () => setOpen(false);
+
+  const signOut = () => {
+    setOpen(false);
+    window.dispatchEvent(new Event(STUDENT_LOGOUT_REQUEST_EVENT));
+  };
+
+  const renderAvatar = (size) => (
+    <span className={`student-account-avatar ${size}`}>
+      {avatar && !avatarFailed ? (
+        <img src={avatar} alt="" onError={() => setAvatarFailed(true)} />
+      ) : (
+        getInitials(user)
+      )}
+    </span>
+  );
+
+  const itemClass =
+    'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800';
+  const iconBox =
+    'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800';
+
+  const menu = (
     <AnimatePresence>
-      {profileMenuOpen && (
+      {open && position && (
         <motion.div
-          initial={{ opacity: 0, y: -8, scale: 0.98 }}
+          ref={menuRef}
+          initial={{ opacity: 0, y: opensUp ? 8 : -8, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -6, scale: 0.98 }}
+          exit={{ opacity: 0, y: opensUp ? 6 : -6, scale: 0.98 }}
           transition={{ duration: 0.15 }}
           role="menu"
-          className="student-account-menu absolute right-0 top-[calc(100%+0.6rem)] w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl shadow-black/15 dark:border-gray-700 dark:bg-gray-900"
+          aria-label="Account menu"
+          style={{ position: 'fixed', ...position }}
+          className="student-account-menu z-[90] max-h-[calc(100dvh-24px)] overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-2xl shadow-black/15 dark:border-gray-700 dark:bg-gray-900"
         >
           {/* Account summary */}
           <div className="border-b border-gray-100 bg-gradient-to-br from-maroon-50 to-white p-4 dark:border-gray-800 dark:from-maroon-950/30 dark:to-gray-900">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-maroon-100 text-sm font-bold text-maroon-800 ring-2 ring-white shadow-sm dark:bg-maroon-950 dark:text-maroon-200 dark:ring-gray-800">
-                {avatar && !avatarFailed ? (
-                  <img
-                    src={avatar}
-                    alt=""
-                    className="h-full w-full object-cover"
-                    onError={() => setAvatarFailed(true)}
-                  />
-                ) : (
-                  getInitials(user)
-                )}
-              </div>
-
+              {renderAvatar('is-large')}
               <div className="min-w-0">
-                <p className="truncate text-sm font-bold text-gray-950 dark:text-white">
-                  {displayName}
-                </p>
-
+                <p className="truncate text-sm font-bold text-gray-950 dark:text-white">{displayName}</p>
                 <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">
                   {user?.student_id || 'Student Account'}
                 </p>
-
-                {(user?.course || user?.profile?.course) && (
-                  <p className="mt-0.5 truncate text-[11px] text-gray-400 dark:text-gray-500">
-                    {user?.course || user?.profile?.course}
-                  </p>
+                {course && (
+                  <p className="mt-0.5 truncate text-[11px] text-gray-400 dark:text-gray-500">{course}</p>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Menu */}
           <div className="p-2">
-            <Link
-              to="/student/profile"
-              role="menuitem"
-              onMouseEnter={() => preloadForPath('/student/profile')}
-              onFocus={() => preloadForPath('/student/profile')}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-            >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800">
-                <User className="h-4 w-4" />
-              </div>
-
-              <div>
-                <p className="font-semibold">Profile</p>
-
-                <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                  View and edit your information
-                </p>
-              </div>
-            </Link>
-
-            <Link
-              to="/student/health-profile"
-              role="menuitem"
-              className="mt-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-            >
-              <ClipboardPlus className="h-5 w-5" />
-              <span>Health Profile</span>
-            </Link>
-
             <Link
               to="/student/settings"
               role="menuitem"
+              onClick={closeMenu}
               onMouseEnter={() => preloadForPath('/student/settings')}
               onFocus={() => preloadForPath('/student/settings')}
-              className="mt-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+              className={itemClass}
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800">
-                <Settings className="h-4 w-4" />
-              </div>
-
-              <div>
-                <p className="font-semibold">Settings</p>
-
-                <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                  Manage account preferences
-                </p>
-              </div>
+              <span className={iconBox}><Settings className="h-4 w-4" /></span>
+              <span>
+                <span className="block font-semibold">Settings</span>
+                <span className="block text-[11px] text-gray-500 dark:text-gray-400">Manage account preferences</span>
+              </span>
             </Link>
 
-            <button
-              type="button"
-              onClick={toggleDarkMode}
-              role="menuitem"
-              className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-            >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800">
-                <Palette className="h-4 w-4" />
-              </div>
-
-              <div className="flex-1">
-                <p className="font-semibold">Appearance</p>
-
-                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+            {/* Appearance: the row itself is static; only the switch acts. */}
+            <div className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+              <span className={iconBox}><Palette className="h-4 w-4" /></span>
+              <span className="min-w-0 flex-1">
+                <span id="student-appearance-label" className="block font-semibold">Appearance</span>
+                <span className="block text-[11px] text-gray-500 dark:text-gray-400">
                   {darkMode ? 'Dark mode is on' : 'Light mode is on'}
-                </p>
-              </div>
-
-              {darkMode ? (
-                <Moon className="h-4 w-4 text-maroon-700 dark:text-maroon-300" />
-              ) : (
-                <Sun className="h-4 w-4 text-amber-500" />
-              )}
-            </button>
+                </span>
+              </span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={darkMode}
+                aria-labelledby="student-appearance-label"
+                title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                onClick={toggleDarkMode}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maroon-600 ${
+                  darkMode ? 'bg-maroon-800' : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+              >
+                <span
+                  className={`flex h-5 w-5 items-center justify-center rounded-full bg-white shadow transition-transform ${
+                    darkMode ? 'translate-x-[22px]' : 'translate-x-0.5'
+                  }`}
+                >
+                  {darkMode ? (
+                    <Moon className="h-3 w-3 text-maroon-800" />
+                  ) : (
+                    <Sun className="h-3 w-3 text-amber-500" />
+                  )}
+                </span>
+              </button>
+            </div>
 
             <div className="my-2 border-t border-gray-100 dark:border-gray-800" />
 
-            <Link
-              to="/student/help"
-              role="menuitem"
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-            >
+            <Link to="/student/help" role="menuitem" onClick={closeMenu} className={itemClass}>
               <HelpCircle className="h-4 w-4 text-gray-500" />
               <span className="font-medium">Help &amp; Support</span>
             </Link>
 
-            <Link
-              to="/student/about"
-              role="menuitem"
-              className="mt-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-            >
+            <Link to="/student/about" role="menuitem" onClick={closeMenu} className={`mt-1 ${itemClass}`}>
               <Info className="h-4 w-4 text-gray-500" />
               <span className="font-medium">About CareLink</span>
             </Link>
@@ -213,25 +267,45 @@ const StudentAccountMenu = ({
 
             <button
               type="button"
-              onClick={onLogout}
               role="menuitem"
+              onClick={signOut}
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
             >
               <LogOut className="h-4 w-4" />
-
-              <div>
-                <p>Sign Out</p>
-
-                <p className="text-[11px] font-normal text-red-500/70 dark:text-red-400/70">
-                  End your current session
-                </p>
-              </div>
+              <span>
+                <span className="block">Sign Out</span>
+                <span className="block text-[11px] font-normal text-red-500/70 dark:text-red-400/70">End your current session</span>
+              </span>
             </button>
           </div>
         </motion.div>
       )}
     </AnimatePresence>
-  </div>
-);
+  );
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`Account menu for ${displayName}`}
+        title={collapsed ? displayName : undefined}
+        className={`student-account-button is-${variant}${open ? ' is-open' : ''}`}
+      >
+        {renderAvatar('is-small')}
+        <span className="student-account-caption">
+          <strong>{displayName}</strong>
+          <small>{course || 'Student account'}</small>
+        </span>
+        <ChevronsUpDown className="student-account-chevron" aria-hidden="true" />
+      </button>
+
+      {createPortal(menu, document.body)}
+    </>
+  );
+};
 
 export default StudentAccountMenu;

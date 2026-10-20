@@ -6,7 +6,11 @@ export const STUDENT_PRIMARY_LINKS = [
   { key: 'settings', path: '/student/settings', label: 'Settings' },
 ];
 
-const matches = (pathname, path) => pathname === path || pathname.startsWith(`${path}/`);
+/* Ask the portal frame to open its Sign out confirmation (used by pages that
+   sit outside the frame's props, e.g. Settings on mobile). */
+export const STUDENT_LOGOUT_REQUEST_EVENT = 'carelink:student-logout-request';
+
+const matches =(pathname, path) => pathname === path || pathname.startsWith(`${path}/`);
 
 export function isStudentNavActive(pathname, path) {
   if (path === '/student/profile') {

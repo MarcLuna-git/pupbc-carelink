@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Heart, Clock, Shield, ArrowRight, ClipboardList } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { formatPersonName } from '../../../utils/studentUser';
 
 const Welcome = () => {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ const Welcome = () => {
         </div>
 
         <h1 className="text-2xl lg:text-3xl font-extrabold text-gray-900 dark:text-white">
-          Welcome to PUPBC CareLink, {user.first_name}!
+          Welcome to PUPBC CareLink, {formatPersonName(user.first_name)}!
         </h1>
         <p className="text-gray-500 dark:text-gray-400 mt-3 text-sm leading-relaxed">
           Before using the system, please complete your <strong>Health Profile</strong>. 

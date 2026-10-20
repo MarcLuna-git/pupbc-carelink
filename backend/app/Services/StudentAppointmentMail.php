@@ -18,18 +18,34 @@ class StudentAppointmentMail
         $mail = new StudentAppointmentStatusMail($appointment, $event);
 
         DB::afterCommit(function () use ($recipient, $mail) {
-            try {
-                Mail::to($recipient)->send($mail);
-            } catch (Throwable $exception) {
-                // The appointment is already committed. Do not turn a transport
-                // failure into a failed booking response or retry the transaction.
-                Log::error('Student appointment email delivery failed.', [
-                    'appointment_id' => $mail->appointmentId,
-                    'status' => $mail->status,
-                    'event' => $mail->event,
-                    'exception_class' => get_class($exception),
-                ]);
+            // SMTP takes seconds (TLS + auth) and can stall up to MAIL_TIMEOUT.
+            // During a web request, send it AFTER the response has gone out
+            // (kernel terminate; the client already has the full body thanks
+            // to SetContentLength), so a slow relay never delays — or times
+            // out — the student's booking/cancel request. Console runs (tests,
+            // scheduled expiry) have no response to wait on: send right away.
+            if (app()->runningInConsole()) {
+                $this->send($recipient, $mail);
+                return;
             }
+
+            app()->terminating(fn () => $this->send($recipient, $mail));
         });
+    }
+
+    private function send(string $recipient, StudentAppointmentStatusMail $mail): void
+    {
+        try {
+            Mail::to($recipient)->send($mail);
+        } catch (Throwable $exception) {
+            // The appointment is already committed. Do not turn a transport
+            // failure into a failed booking response or retry the transaction.
+            Log::error('Student appointment email delivery failed.', [
+                'appointment_id' => $mail->appointmentId,
+                'status' => $mail->status,
+                'event' => $mail->event,
+                'exception_class' => get_class($exception),
+            ]);
+        }
     }
 }

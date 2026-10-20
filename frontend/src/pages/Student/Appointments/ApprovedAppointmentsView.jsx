@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import RouteLoadingBar from '../../../components/RouteLoadingBar';
-import { ArrowRight, CalendarDays, CheckCircle, ChevronLeft, ChevronRight, Clock, FileText, HeartPulse, HelpCircle, Loader2, MapPin, RotateCcw, ShieldCheck, Stethoscope, UserRound } from 'lucide-react';
+import { AlertCircle, ArrowRight, CalendarDays, Check, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Clock, FileText, HeartPulse, HelpCircle, LayoutGrid, List, Loader2, MapPin, RotateCcw, ShieldCheck, Stethoscope, UserRound, X } from 'lucide-react';
 import { appointmentDate, appointmentTime, clinicDate, formatAppointmentDate, isClinicSunday } from '../../../utils/appointmentDate';
 
 const SERVICE_TITLES = { Consultation: 'General Consultation', 'Follow-up Checkup': 'Follow-up Check-up' };
@@ -13,8 +15,6 @@ const personName = person => typeof person === 'object' && person
   ? person.name || [person.first_name, person.last_name].filter(Boolean).join(' ') : '';
 const providerName = appointment => personName(appointment.doctor) || personName(appointment.nurse) || personName(appointment.approved_by) || 'Not provided';
 const roomName = appointment => (typeof appointment.room === 'string' ? appointment.room : appointment.room?.name) || appointment.location || 'Not provided';
-const clinicTime = value => value && !Number.isNaN(new Date(value).getTime())
-  ? new Intl.DateTimeFormat('en-PH', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila' }).format(new Date(value)) : null;
 
 export function AppointmentHero({ loading = false }) {
   return <section className="ap-hero" aria-labelledby="appointments-title">
@@ -31,6 +31,70 @@ export function AppointmentHero({ loading = false }) {
     {/* Route-loading bar — full-width fill/drain loop, hero only. */}
     {loading && <RouteLoadingBar className="ap-hero-loading-bar" />}
   </section>;
+}
+
+/* Booking feedback as a floating toast (bottom-right; above the bottom nav on
+   mobile) so the page never shifts when a message appears or clears. Portaled
+   to <body> because the page wrappers animate `transform`, which would break
+   position:fixed. While it's open, the CSS lifts the chatbot launcher above it. */
+function AppointmentToast({ message, type, onDismiss }) {
+  if (!message) return null;
+  const isSuccess = type === 'success';
+  return createPortal(
+    <div role={isSuccess ? 'status' : 'alert'} aria-live={isSuccess ? 'polite' : 'assertive'} className={`ap-toast ${isSuccess ? 'is-success' : 'is-error'}`}>
+      {isSuccess ? <CheckCircle className="ap-toast-icon" /> : <AlertCircle className="ap-toast-icon" />}
+      <p>{message}</p>
+      {onDismiss && <button type="button" className="ap-toast-close" aria-label="Dismiss message" onClick={onDismiss}><X /></button>}
+    </div>,
+    document.body,
+  );
+}
+
+/* Appointment history layout: cards (default) or a compact list. The choice
+   is remembered per browser. */
+const HISTORY_VIEW_KEY = 'carelink.student.appointmentHistoryView';
+const HISTORY_VIEWS = [
+  { value: 'cards', label: 'View in rows', icon: LayoutGrid },
+  { value: 'list', label: 'View in list', icon: List },
+];
+const readHistoryView = () => {
+  try {
+    return localStorage.getItem(HISTORY_VIEW_KEY) === 'list' ? 'list' : 'cards';
+  } catch {
+    return 'cards';
+  }
+};
+
+function HistoryViewMenu({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef(null);
+  const current = HISTORY_VIEWS.find(view => view.value === value) || HISTORY_VIEWS[0];
+  const CurrentIcon = current.icon;
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onPointerDown = event => { if (!rootRef.current?.contains(event.target)) setOpen(false); };
+    const onKeyDown = event => { if (event.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  return <div ref={rootRef} className="ap-view-menu">
+    <button type="button" className={`ap-view-menu-button${open ? ' is-open' : ''}`} aria-haspopup="menu" aria-expanded={open}
+      aria-label={`History layout: ${current.label}`} title="Change layout" onClick={() => setOpen(isOpen => !isOpen)}>
+      <CurrentIcon /><ChevronDown className="ap-view-menu-chevron" />
+    </button>
+    {open && <div role="menu" aria-label="History layout" className="ap-view-menu-list">
+      {HISTORY_VIEWS.map(({ value: option, label, icon: Icon }) => <button key={option} type="button" role="menuitemradio" aria-checked={option === value}
+        className={option === value ? 'is-selected' : ''} onClick={() => { onChange(option); setOpen(false); }}>
+        <Icon /><span>{label}</span>{option === value && <Check className="ap-view-menu-check" />}
+      </button>)}
+    </div>}
+  </div>;
 }
 
 function StatusBadge({ status }) {
@@ -72,31 +136,88 @@ function CalendarPicker({ value, onChange, disabled }) {
   </div>;
 }
 
+/* The ··· button with no appointment booked: instead of jumping anywhere, it
+   opens a small note under the button that there is nothing to show yet. */
+function EmptyDetailsPopover() {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onPointerDown = event => { if (!rootRef.current?.contains(event.target)) setOpen(false); };
+    const onKeyDown = event => { if (event.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  return <div ref={rootRef} className="ap-more-popover-root">
+    <button type="button" className="ap-more-button" aria-haspopup="dialog" aria-expanded={open}
+      aria-label="Upcoming appointment details" title="View details" onClick={() => setOpen(isOpen => !isOpen)}>···</button>
+    {/* Folds away with the same motion it opened with (fade + 10px slide). */}
+    <AnimatePresence>
+      {open && <motion.div role="status" className="ap-more-popover"
+        initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.15, ease: 'easeOut' }}>
+        <CalendarDays />
+        <div><strong>No appointment to show</strong><p>You don&apos;t have an upcoming appointment yet. Book one below to see its details here.</p></div>
+      </motion.div>}
+    </AnimatePresence>
+  </div>;
+}
+
+/* ONE upcoming card for every state. The markup never changes — heading
+   (title · status badge · ···), date tile, details, place, check-in cell and
+   the same two action slots; only the values swap between placeholders (no
+   appointment yet) and the real booking. */
 function UpcomingAppointment({ appointment, onView, onEdit }) {
-  if (!appointment) return <section className="ap-card ap-upcoming-empty"><CalendarDays /><div><h2>No upcoming appointment</h2><p>Choose a date and service below to request a clinic visit.</p></div><a href="#appointment-booking" className="ap-button">Book a visit <ArrowRight /></a></section>;
-  const date = appointmentDate(appointment.appointment_date);
-  const opening = clinicTime(appointment.checkin_opens_at);
-  const deadline = clinicTime(appointment.checkin_deadline_at);
-  const canViewQr = appointment.status === 'approved' && date === clinicDate();
-  return <section className="ap-card ap-upcoming">
-    <div className="ap-section-heading ap-upcoming-heading"><CalendarDays /><h2>Your Upcoming Appointment</h2><button type="button" aria-label="View upcoming appointment details" onClick={() => onView(appointment)}>···</button></div>
+  const hasAppointment = Boolean(appointment);
+  const date = hasAppointment ? appointmentDate(appointment.appointment_date) : null;
+  const queueStatus = appointment?.queue?.status;
+  const canViewQr = appointment?.status === 'approved' && date === clinicDate();
+  const qrHint = 'QR is available on the day of an approved appointment.';
+  return <section className={`ap-card ap-upcoming${hasAppointment ? '' : ' is-empty'}`}>
+    <div className="ap-section-heading ap-upcoming-heading"><CalendarDays /><h2>Your Upcoming Appointment</h2>
+      {hasAppointment ? <StatusBadge status={appointment.status} /> : <span className="ap-status ap-status-expired"><span />Not booked</span>}
+      {hasAppointment
+        ? <button type="button" className="ap-more-button" aria-label="View upcoming appointment details" title="View details" onClick={() => onView(appointment)}>···</button>
+        : <EmptyDetailsPopover />}
+    </div>
     <div className="ap-upcoming-content">
-      <div className="ap-date-tile"><span>{date ? formatAppointmentDate(date, { month: 'short', year: undefined, day: undefined }).toUpperCase() : 'DATE'}</span><strong>{date ? date.slice(-2) : '—'}</strong><small>{date ? formatAppointmentDate(date, { weekday: 'short', day: undefined, month: undefined, year: undefined }) : 'Not provided'}</small></div>
-      <div className="ap-upcoming-details"><Stethoscope /><div><strong>{serviceTitle(appointment.service)}</strong><small>{appointment.concern || 'Scheduled clinic visit'}</small></div><UserRound /><div><span>{providerName(appointment)}</span><small>Clinic staff</small></div></div>
-      <div className="ap-upcoming-place"><div><MapPin /><span><strong>{roomName(appointment)}</strong><small>Campus clinic</small></span></div><div><Clock /><span><strong>{appointment.time_slot || 'Not provided'}</strong><small>Asia/Manila</small></span></div></div>
-      <div className="ap-upcoming-state"><StatusBadge status={appointment.status} /><p>{opening && deadline ? <>Check-in opens {opening}<br />Closes strictly at {deadline}</> : 'Check-in window is provided by the clinic.'}</p>{appointment.queue?.status && <span className="ap-queue-label">Queue: {appointment.queue.status.replaceAll('_', ' ')}</span>}</div>
+      <div className="ap-date-tile" aria-hidden={!date}><span>{date ? formatAppointmentDate(date, { month: 'short', year: undefined, day: undefined }).toUpperCase() : 'DATE'}</span><strong>{date ? date.slice(-2) : '—'}</strong><small>{date ? formatAppointmentDate(date, { weekday: 'short', day: undefined, month: undefined, year: undefined }) : '—'}</small></div>
+      <div className="ap-upcoming-details"><Stethoscope /><div><strong>{hasAppointment ? serviceTitle(appointment.service) : 'No appointment yet'}</strong><small>{hasAppointment ? appointment.concern || 'Scheduled clinic visit' : 'Choose a date and service below'}</small></div><UserRound /><div><span>{hasAppointment ? providerName(appointment) : 'Not assigned'}</span><small>Clinic staff</small></div></div>
+      <div className="ap-upcoming-place"><div><MapPin /><span><strong>{hasAppointment ? roomName(appointment) : 'Campus clinic'}</strong><small>{hasAppointment ? 'Campus clinic' : 'Room assigned on approval'}</small></span></div><div><Clock /><span><strong>{appointment?.time_slot || 'No time selected'}</strong><small>Asia/Manila</small></span></div></div>
+      {/* State cell: only the live queue status. Left empty otherwise — never
+          a filler sentence — so the card reads the same either way. */}
+      <div className="ap-upcoming-state">
+        {queueStatus && <span className="ap-queue-label">Queue: {queueStatus.replaceAll('_', ' ')}</span>}
+      </div>
+      {/* Same two slots always: QR (primary) · Reschedule / Book a Visit. */}
       <div className="ap-upcoming-actions">
-        {canViewQr ? <Link to="/student/qr" className="ap-button"><FileText />View QR Code</Link> : <button type="button" className="ap-button" disabled title="QR is available on the day of an approved appointment."><FileText />View QR Code</button>}
-        <button type="button" className="ap-button ap-button-outline" disabled={appointment.status !== 'pending'} title={appointment.status === 'pending' ? 'Edit your pending request' : 'Contact the clinic to reschedule an approved visit'} onClick={() => onEdit(appointment)}><RotateCcw />Reschedule</button>
+        {canViewQr ? <Link to="/student/qr" className="ap-button"><FileText />View QR Code</Link> : <button type="button" className="ap-button" disabled title={qrHint}><FileText />View QR Code</button>}
+        {hasAppointment
+          ? <button type="button" className="ap-button ap-button-outline" disabled={appointment.status !== 'pending'} title={appointment.status === 'pending' ? 'Edit your pending request' : 'Contact the clinic to reschedule an approved visit'} onClick={() => onEdit(appointment)}><RotateCcw />Reschedule</button>
+          : <a href="#appointment-booking" className="ap-button ap-button-outline"><CalendarDays />Book a Visit</a>}
       </div>
     </div>
   </section>;
 }
 
 export default function ApprovedAppointmentsView({ appointments, filteredAppointments, form, onChange, onSubmit, onView, onEdit,
-  filter, onFilter, editingId, onCancelEdit, services, timeSlots, availableSlots, slotsLoading, loading, message, messageType, retrySlots }) {
+  filter, onFilter, editingId, onCancelEdit, services, timeSlots, availableSlots, slotsLoading, loading, message, messageType, onDismissMessage, retrySlots }) {
   const [page, setPage] = useState(1);
   useEffect(() => setPage(1), [filter]);
+  const [historyView, setHistoryView] = useState(readHistoryView);
+  useEffect(() => {
+    try {
+      localStorage.setItem(HISTORY_VIEW_KEY, historyView);
+    } catch {
+      /* Remembering the layout is a per-browser convenience only. */
+    }
+  }, [historyView]);
   /* Appointment history — formerly filtered by the sidebar search box,
      which has been removed from the portal shell. */
   const history = filteredAppointments;
@@ -112,7 +233,7 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
   const progress = !form.date ? 1 : !form.time ? 2 : !form.service ? 3 : 4;
   return <>
     <AppointmentHero />
-    {message && <div role="status" aria-live="polite" className={`ap-message ${messageType === 'success' ? 'is-success' : 'is-error'}`}>{message}</div>}
+    <AppointmentToast message={message} type={messageType} onDismiss={onDismissMessage} />
     <UpcomingAppointment appointment={upcoming} onView={onView} onEdit={onEdit} />
     <section id="appointment-booking" className="ap-card ap-booking">
       <div className="ap-section-heading"><CalendarDays /><div><h2>{editingId ? 'Edit Appointment' : 'Book a New Appointment'}</h2><p>{editingId ? 'Update your pending appointment request.' : 'Choose a date, time, and service that works for you.'}</p></div>{editingId && <button type="button" className="ap-text-button" onClick={onCancelEdit}>Cancel editing</button>}</div>
@@ -164,9 +285,32 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
       </form>
     </section>
     <section className="ap-card ap-history">
-      <div className="ap-section-heading"><Clock /><div><h2>Appointment History</h2><p>View your past and upcoming clinic visits.</p></div><label><span className="sr-only">Filter appointment history</span><select value={filter} onChange={event => onFilter(event.target.value)}><option value="all">All Appointments</option><option value="pending">Pending Requests</option><option value="approved">Approved Appointments</option><option value="past">Past Appointments</option></select></label></div>
+      <div className="ap-section-heading"><Clock /><div><h2>Appointment History</h2><p>View your past and upcoming clinic visits.</p></div>
+        <div className="ap-history-controls">
+          <label><span className="sr-only">Filter appointment history</span><select value={filter} onChange={event => onFilter(event.target.value)}><option value="all">All Appointments</option><option value="pending">Pending Requests</option><option value="approved">Approved Appointments</option><option value="past">Past Appointments</option></select></label>
+          <HistoryViewMenu value={historyView} onChange={setHistoryView} />
+        </div>
+      </div>
       {history.length === 0 ? <div className="ap-history-empty"><CalendarDays /><p>No appointments to display yet.</p></div> : <>
-        <div className="ap-history-list">
+        {historyView === 'list' ? <div className="ap-history-table" role="table" aria-label="Appointment history">
+          <div className="ap-history-table-head" role="row">
+            <span role="columnheader">Date</span><span role="columnheader">Service</span><span role="columnheader">Staff · Room</span><span role="columnheader">Status</span><span role="columnheader" className="sr-only">Actions</span>
+          </div>
+          {rows.map(appointment => {
+            const date = appointmentDate(appointment.appointment_date);
+            return <div key={appointment.id} className="ap-history-row" role="row">
+              <span role="cell" className="ap-history-row-date"><strong>{formatAppointmentDate(appointment.appointment_date)}</strong><small>{appointment.time_slot || 'Time not set'}</small></span>
+              <span role="cell" className="ap-history-row-service"><strong>{serviceTitle(appointment.service)}</strong>{appointment.concern && <small>“{appointment.concern}”</small>}</span>
+              <span role="cell" className="ap-history-row-meta">{providerName(appointment)}<small>{roomName(appointment)}</small></span>
+              <span role="cell"><StatusBadge status={appointment.status} /></span>
+              <span role="cell" className="ap-history-actions">
+                <button type="button" onClick={() => onView(appointment)}><FileText />Details</button>
+                {appointment.status === 'approved' && date === clinicDate() && <Link to="/student/qr"><FileText />QR</Link>}
+                {appointment.status === 'pending' && <button type="button" onClick={() => onEdit(appointment)}><RotateCcw />Reschedule</button>}
+              </span>
+            </div>;
+          })}
+        </div> : <div className="ap-history-list">
           {rows.map(appointment => {
             const date = appointmentDate(appointment.appointment_date);
             return <article key={appointment.id} className="ap-history-item">
@@ -188,7 +332,7 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
               </div>
             </article>;
           })}
-        </div>
+        </div>}
         <div className="ap-history-pagination"><p>Showing {(currentPage - 1) * 5 + 1}–{Math.min(currentPage * 5, history.length)} of {history.length} appointments</p><div><button type="button" disabled={currentPage === 1} onClick={() => setPage(current => current - 1)} aria-label="Previous history page"><ChevronLeft /></button><span aria-label={`History page ${currentPage} of ${pages}`}>{currentPage}</span><button type="button" disabled={currentPage === pages} onClick={() => setPage(current => current + 1)} aria-label="Next history page"><ChevronRight /></button></div></div>
       </>}
     </section>

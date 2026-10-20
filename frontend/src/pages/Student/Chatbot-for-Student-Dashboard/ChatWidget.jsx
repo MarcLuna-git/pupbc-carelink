@@ -4,6 +4,42 @@ import { Bot, Loader2, Send, Trash2, X } from 'lucide-react';
 
 import ChatMessage from './ChatMessage';
 import chatbotService from '../../../services/chatbotService';
+import { setStudentWidgetPref } from '../../../utils/studentWidgetPrefs';
+
+// Where the student dragged the launcher, as an offset from its default
+// bottom-right spot. Remembered per browser.
+const DOCK_OFFSET_KEY = 'studentChatWidgetOffset';
+const DRAG_THRESHOLD = 4;
+const VIEWPORT_MARGIN = 8;
+
+const readDockOffset = () => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(DOCK_OFFSET_KEY) || 'null');
+    return Number.isFinite(saved?.x) && Number.isFinite(saved?.y) ? saved : { x: 0, y: 0 };
+  } catch {
+    return { x: 0, y: 0 };
+  }
+};
+
+// Keep the dock fully on screen: its default rect (without any translate)
+// plus the offset must stay inside the viewport.
+const clampDockOffset = (offset, node) => {
+  if (!node) return offset;
+  const rect = node.getBoundingClientRect();
+  const [shiftX = 0, shiftY = 0] = (getComputedStyle(node).translate || '')
+    .split(' ')
+    .map((value) => parseFloat(value) || 0);
+  const baseLeft = rect.left - shiftX;
+  const baseTop = rect.top - shiftY;
+  const minX = VIEWPORT_MARGIN - baseLeft;
+  const maxX = window.innerWidth - VIEWPORT_MARGIN - rect.width - baseLeft;
+  const minY = VIEWPORT_MARGIN - baseTop;
+  const maxY = window.innerHeight - VIEWPORT_MARGIN - rect.height - baseTop;
+  return {
+    x: Math.min(Math.max(offset.x, minX), maxX),
+    y: Math.min(Math.max(offset.y, minY), maxY),
+  };
+};
 
 const GREETING = "Hi, I'm the CareLink Assistant. How can I help you?";
 
@@ -97,6 +133,84 @@ export default function ChatWidget() {
 
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Draggable launcher: pointer drag moves the dock; a drag past the
+  // threshold swallows the click so it doesn't also toggle the panel.
+  const dockRef = useRef(null);
+  const dragRef = useRef(null);
+  const suppressClickRef = useRef(false);
+  const [dockOffset, setDockOffset] = useState(readDockOffset);
+  const [dragging, setDragging] = useState(false);
+
+  // Re-clamp on mount and whenever the viewport changes size.
+  useEffect(() => {
+    const reclamp = () => setDockOffset((current) => clampDockOffset(current, dockRef.current));
+    reclamp();
+    window.addEventListener('resize', reclamp);
+    return () => window.removeEventListener('resize', reclamp);
+  }, []);
+
+  const onDockPointerDown = (event) => {
+    if (event.button !== 0) return;
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      origin: dockOffset,
+      moved: false,
+    };
+  };
+
+  const onDockPointerMove = (event) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    if (!drag.moved) {
+      if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+      drag.moved = true;
+      setDragging(true);
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+    }
+    setDockOffset(clampDockOffset({ x: drag.origin.x + dx, y: drag.origin.y + dy }, dockRef.current));
+  };
+
+  const onDockPointerUp = (event) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    dragRef.current = null;
+    if (drag.moved) {
+      // Swallow only the click that immediately follows this drag (if the
+      // pointer ended off the button no click comes, so release it anyway).
+      suppressClickRef.current = true;
+      setTimeout(() => {
+        suppressClickRef.current = false;
+      }, 0);
+      setDragging(false);
+      setDockOffset((current) => {
+        try {
+          localStorage.setItem(DOCK_OFFSET_KEY, JSON.stringify(current));
+        } catch {
+          /* Remembering the spot is best-effort. */
+        }
+        return current;
+      });
+    }
+  };
+
+  const onLauncherClick = () => {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
+    setOpen((current) => !current);
+  };
+
+  // The small X hides the assistant; Settings → General turns it back on.
+  const hideAssistant = () => {
+    setOpen(false);
+    setStudentWidgetPref('chatWidget', false);
+  };
 
   // Keep the newest message in view. While the AI is typing, lock the
   // transcript to the bottom so the newest words stay visible (the
@@ -251,20 +365,42 @@ const lastAssistantIndex = messages.reduce(
 
   return (
     <>
-      {/* Launcher */}
-      <button
-        type="button"
-        onClick={() => setOpen((current) => !current)}
-        aria-label={open ? 'Close clinic assistant' : 'Open clinic assistant'}
-        aria-expanded={open}
-        className="carelink-assistant-launcher fixed z-50 flex h-14 w-14 items-center justify-center rounded-full bg-maroon-800 text-white shadow-xl shadow-maroon-950/30 transition-transform hover:scale-105 active:scale-95"
+      {/* Launcher dock: draggable anywhere on screen; the small X (shown on
+          hover / keyboard focus, always on touch screens) hides the assistant. */}
+      <div
+        ref={dockRef}
+        className={`carelink-assistant-dock fixed z-50 h-14 w-14${dragging ? ' is-dragging' : ''}`}
+        style={{ '--chat-dx': `${dockOffset.x}px`, '--chat-dy': `${dockOffset.y}px` }}
       >
-        {open ? (
-          <X className="h-6 w-6" />
-        ) : (
-          <Bot className="h-7 w-7" />
-        )}
-      </button>
+        <button
+          type="button"
+          onClick={onLauncherClick}
+          onPointerDown={onDockPointerDown}
+          onPointerMove={onDockPointerMove}
+          onPointerUp={onDockPointerUp}
+          onPointerCancel={onDockPointerUp}
+          aria-label={open ? 'Close clinic assistant' : 'Open clinic assistant'}
+          aria-expanded={open}
+          title="Drag to move"
+          className="carelink-assistant-launcher flex h-full w-full items-center justify-center rounded-full bg-maroon-800 text-white shadow-xl shadow-maroon-950/30 transition-transform hover:scale-105 active:scale-95"
+        >
+          {open ? (
+            <X className="h-6 w-6" />
+          ) : (
+            <Bot className="h-7 w-7" />
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={hideAssistant}
+          aria-label="Hide clinic assistant"
+          title="Hide assistant (turn it back on in Settings)"
+          className="carelink-assistant-hide"
+        >
+          <X />
+        </button>
+      </div>
 
       <AnimatePresence>
         {open && (

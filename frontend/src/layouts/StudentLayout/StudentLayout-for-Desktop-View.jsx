@@ -26,12 +26,7 @@ import {
 import authService from '../../services/authService';
 import api from '../../services/api';
 import ChatWidget from '../../pages/Student/Chatbot-for-Student-Dashboard/ChatWidget';
-import { STUDENT_PRIMARY_LINKS, isStudentNavActive, studentPageTitle } from '../../utils/studentPortalNavigation';
-import {
-  getStoredUser,
-  getDisplayName,
-  getAvatar,
-} from '../../utils/studentUser';
+import { STUDENT_LOGOUT_REQUEST_EVENT, STUDENT_PRIMARY_LINKS, isStudentNavActive, studentPageTitle } from '../../utils/studentPortalNavigation';
 
 /*
  * Base layout styles first, then the two shells (each imports its own
@@ -46,8 +41,8 @@ import StudentLayoutForMobileView from './StudentLayout-for-Mobile-View';
  * Student portal outer shell / main frame (desktop view).
  *
  * This is the skeleton the routed Student pages live inside. It owns the
- * shared state and behaviour (logged-in user, notifications, theme,
- * account menu, logout) and the frame-level overlays (the logout dialog
+ * shared state and behaviour (notifications, theme, logout) and the
+ * frame-level overlays (the logout dialog
  * and the clinic assistant). It then embeds ONE of
  * the two view shells, chosen with a JS media query:
  *   - StudentLayout-for-Tablet-View  (>= 768px)
@@ -72,7 +67,6 @@ const StudentLayoutForDesktopView = ({ children }) => {
    * data fetches finish. No artificial timer, no spinner.
    */
 
-  const profileMenuRef = useRef(null);
   const unreadRequestPending = useRef(false);
 
   /*
@@ -83,18 +77,8 @@ const StudentLayoutForDesktopView = ({ children }) => {
    */
   const [isMobileView, setIsMobileView] = useState(getIsMobileView);
 
-  const [user, setUser] = useState(
-    getStoredUser
-  );
-
   const { darkMode, toggleDarkMode } = useAccountTheme();
   const { prefs: widgetPrefs } = useStudentWidgetPrefs();
-
-  const [
-    profileMenuOpen,
-    setProfileMenuOpen,
-  ] = useState(false);
-
 
   const [
     unreadCount,
@@ -103,11 +87,6 @@ const StudentLayoutForDesktopView = ({ children }) => {
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
-
-  const [
-    avatarFailed,
-    setAvatarFailed,
-  ] = useState(false);
 
   /*
    * ------------------------------------------------
@@ -127,58 +106,6 @@ const StudentLayoutForDesktopView = ({ children }) => {
 
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
-
-  /*
-   * ------------------------------------------------
-   * User / profile synchronization
-   * ------------------------------------------------
-   */
-
-  const refreshStoredUser =
-    useCallback(() => {
-      const latestUser =
-        getStoredUser();
-
-      setUser(latestUser);
-      setAvatarFailed(false);
-    }, []);
-
-  useEffect(() => {
-    const handleProfileUpdated = () => {
-      refreshStoredUser();
-    };
-
-    const handleStorage = (event) => {
-      if (
-        event.key === 'user' ||
-        event.key === null
-      ) {
-        refreshStoredUser();
-      }
-    };
-
-    window.addEventListener(
-      'studentProfileUpdated',
-      handleProfileUpdated
-    );
-
-    window.addEventListener(
-      'storage',
-      handleStorage
-    );
-
-    return () => {
-      window.removeEventListener(
-        'studentProfileUpdated',
-        handleProfileUpdated
-      );
-
-      window.removeEventListener(
-        'storage',
-        handleStorage
-      );
-    };
-  }, [refreshStoredUser]);
 
   /*
    * ------------------------------------------------
@@ -307,65 +234,19 @@ const StudentLayoutForDesktopView = ({ children }) => {
 
   /*
    * ------------------------------------------------
-   * Profile menu
-   * ------------------------------------------------
-   */
-
-  useEffect(() => {
-    const handleOutsideClick = (event) => {
-      if (
-        profileMenuRef.current &&
-        !profileMenuRef.current.contains(
-          event.target
-        )
-      ) {
-        setProfileMenuOpen(false);
-      }
-    };
-
-    const handleEscape = (event) => {
-      if (event.key === 'Escape') {
-        setProfileMenuOpen(false);
-      }
-    };
-
-    document.addEventListener(
-      'mousedown',
-      handleOutsideClick
-    );
-
-    document.addEventListener(
-      'keydown',
-      handleEscape
-    );
-
-    return () => {
-      document.removeEventListener(
-        'mousedown',
-        handleOutsideClick
-      );
-
-      document.removeEventListener(
-        'keydown',
-        handleEscape
-      );
-    };
-  }, []);
-
-  useEffect(() => {
-    setProfileMenuOpen(false);
-  }, [location.pathname]);
-
-  /*
-   * ------------------------------------------------
    * Logout
+   *
+   * The account menu's Sign Out (sidebar on tablet / desktop, Settings page
+   * on mobile) dispatches STUDENT_LOGOUT_REQUEST_EVENT; it opens the confirm
+   * dialog below.
    * ------------------------------------------------
    */
 
-  const handleLogout = () => {
-    setProfileMenuOpen(false);
-    setShowLogoutConfirm(true);
-  };
+  useEffect(() => {
+    const openLogoutConfirm = () => setShowLogoutConfirm(true);
+    window.addEventListener(STUDENT_LOGOUT_REQUEST_EVENT, openLogoutConfirm);
+    return () => window.removeEventListener(STUDENT_LOGOUT_REQUEST_EVENT, openLogoutConfirm);
+  }, []);
 
   const confirmLogout = async () => {
     setLogoutLoading(true);
@@ -390,11 +271,6 @@ const StudentLayoutForDesktopView = ({ children }) => {
   const navItems = STUDENT_PRIMARY_LINKS.map(item => ({ ...item, icon: navIcons[item.key] }));
   const isActive = path => isStudentNavActive(location.pathname, path);
   const pageTitle = studentPageTitle(location.pathname);
-
-  const displayName =
-    getDisplayName(user);
-
-  const avatar = getAvatar(user);
 
   /*
    * The routed page renders once and is shared by both shells. The Profile
@@ -444,20 +320,11 @@ const StudentLayoutForDesktopView = ({ children }) => {
             StudentLayout-for-Mobile-View.
         ================================================== */
         <StudentLayoutForMobileView
-          user={user}
-          displayName={displayName}
-          avatar={avatar}
-          avatarFailed={avatarFailed}
-          setAvatarFailed={setAvatarFailed}
           navItems={navItems}
           isActive={isActive}
           unreadCount={unreadCount}
           darkMode={darkMode}
           toggleDarkMode={toggleDarkMode}
-          profileMenuOpen={profileMenuOpen}
-          setProfileMenuOpen={setProfileMenuOpen}
-          profileMenuRef={profileMenuRef}
-          onLogout={handleLogout}
         >
           {pageSlot}
         </StudentLayoutForMobileView>
@@ -468,21 +335,12 @@ const StudentLayoutForDesktopView = ({ children }) => {
             The tablet rail (768-1099px) is handled purely by CSS.
         ================================================== */
         <StudentLayoutForTabletView
-          user={user}
-          displayName={displayName}
-          avatar={avatar}
-          avatarFailed={avatarFailed}
-          setAvatarFailed={setAvatarFailed}
           navItems={navItems}
           isActive={isActive}
           unreadCount={unreadCount}
           darkMode={darkMode}
           toggleDarkMode={toggleDarkMode}
-          profileMenuOpen={profileMenuOpen}
-          setProfileMenuOpen={setProfileMenuOpen}
-          profileMenuRef={profileMenuRef}
           pageTitle={pageTitle}
-          onLogout={handleLogout}
         >
           {pageSlot}
         </StudentLayoutForTabletView>
