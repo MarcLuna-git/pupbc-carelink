@@ -3,7 +3,7 @@ services:
   - type: web
     name: pupbc-carelink-api
     runtime: docker
-    region: singapore # pinakamalapit na Render region sa Supabase (Sydney)
+    region: singapore # Supabase session pooler: Tokyo (ap-northeast-1)
     plan: free
     # Relative sa repo root ang mga path na ito.
     dockerfilePath: ./backend/Dockerfile
@@ -18,7 +18,7 @@ services:
         value: "false"
       - key: APP_KEY
         # Format: base64:xxxx (tingnan ang docs/RENDER_DEPLOYMENT.md).
-        sync: false
+        value: base64:yRmcAo4tuqFY1YozMSoARzYIhLcIL67/08gCwMYYA0k=
       - key: APP_URL
         value: https://pupbc-carelink-api.onrender.com
       - key: FRONTEND_URL
@@ -30,27 +30,27 @@ services:
       - key: DB_CONNECTION
         value: pgsql
       - key: DB_HOST
-        value: aws-0-ap-southeast-2.pooler.supabase.com
+        value: aws-0-ap-northeast-1.pooler.supabase.com
       - key: DB_PORT
         value: "5432"
       - key: DB_DATABASE
         value: postgres
       - key: DB_USERNAME
-        sync: false
+        value: postgres.lhjgbxdcwltnokcouoia
       - key: DB_PASSWORD
-        sync: false
+        value: tiGUcnAzECglrZoG
       - key: DB_SSLMODE
         value: require
       - key: DB_PERSISTENT
         value: "true"
 
       - key: JWT_SECRET
-        generateValue: true
+        value: hbwfznN5JnuqXNRCufWM5X8H22SaFVTWLHcOSHoi6hWPd3AZ4dXOLSPWmyDyhl2S
       - key: JWT_TTL
         value: "1440"
       - key: KIOSK_DEVICE_TOKEN
         # Makikita sa Render dashboard; ito ang ilalagay sa kiosk device.
-        generateValue: true
+        value: IdLAhVviI37MwGEv4Vt3tilIbMvRjJlXof/jcpREyN4=
 
       # Brevo SMTP. Bina-block ng Render free ang 25/465/587, kaya 2525.
       - key: MAIL_MAILER
@@ -60,13 +60,13 @@ services:
       - key: MAIL_PORT
         value: "2525"
       - key: MAIL_USERNAME
-        sync: false
+        value: bd6a71001@smtp-brevo.com
       - key: MAIL_PASSWORD
-        sync: false
+        value: xsmtpsib-b2cc970e83919ea45c21f3527c9e635d7f6936e880f9f9a4b2b7ae67342b2055-N8QFEdsFpUW11NGy
       - key: MAIL_ENCRYPTION
         value: tls
       - key: MAIL_FROM_ADDRESS
-        value: pupbinancarelink@gmail.com
+        value: jjjjema098@gmail.com
       - key: MAIL_FROM_NAME
         value: "PUPBC CareLink"
       - key: MAIL_TIMEOUT
@@ -74,11 +74,15 @@ services:
       # Staging switch: kapag true, lahat ng email ay napupunta sa test recipient.
       - key: EMAIL_TEST_MODE
         value: "false"
+      - key: EMAIL_TEST_RECIPIENT
+        value: delivered@resend.dev
 
       - key: CACHE_DRIVER
         value: file
       - key: SESSION_DRIVER
         value: file
+      - key: SESSION_LIFETIME
+        value: "120"
       - key: QUEUE_CONNECTION
         value: sync
       - key: FILESYSTEM_DRIVER
@@ -88,7 +92,7 @@ services:
         value: pupbc-carelink.onrender.com
 
       - key: SEED_NURSE_PASSWORD
-        sync: false
+        value: nurse
 
       - key: SLOT_MAX
         value: "10"
@@ -110,7 +114,7 @@ services:
 
       # Clinic assistant (AI chatbot). Get a free key at https://aistudio.google.com
       - key: GEMINI_API_KEY
-        sync: false
+        value: AQ.Ab8RN6I6vmR5FB-iienzyb_N0H8s7HM2eHGrO3-8Tb9DFUe_fQ
       - key: GEMINI_MODEL
         value: "gemini-3.5-flash-lite"
       - key: GEMINI_FALLBACK_MODELS
@@ -118,7 +122,7 @@ services:
       - key: GEMINI_RATE_LIMIT_COOLDOWN
         value: "60"
       - key: GEMINI_TIMEOUT
-        value: "15"
+        value: "25"
       - key: GEMINI_MAX_OUTPUT_TOKENS
         value: "1024"
       - key: CHATBOT_ENABLED
@@ -127,6 +131,10 @@ services:
         value: "20"
       - key: CHATBOT_DAILY_LIMIT
         value: "100"
+
+      # Public clinic contact address shown by the chatbot.
+      - key: CLINIC_EMAIL
+        value: pupbinancarelink@gmail.com
 
   # Frontend: React/Vite bilang static site (libre, hindi natutulog, global CDN).
   - type: web
