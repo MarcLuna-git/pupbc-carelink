@@ -143,7 +143,7 @@ services:
       - key: NODE_VERSION # Vite 8 needs Node 20.19+ / 22.12+
         value: "22"
       - key: VITE_API_URL
-        value: https://pupbccarelink.org/api
+        value: https://pupbc-carelink-api.onrender.com/api
       - key: VITE_APP_NAME
         value: "PUPBC CareLink"
 
