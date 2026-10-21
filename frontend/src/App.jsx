@@ -49,6 +49,7 @@ import { useStudentHealthProfileStatus } from './hooks/useStudentHealthProfileSt
 
 const KioskPage = lazy(() => import('./pages/Kiosk/KioskPage'));
 import AppErrorBoundary from './components/AppErrorBoundary';
+import ScrollToTop from './components/ScrollToTop';
 
 
 /*
@@ -133,6 +134,7 @@ function App() {
   return (
     <AppErrorBoundary>
       <BrowserRouter>
+        <ScrollToTop />
         <Suspense fallback={null}>
         <Routes>
           {/* ==================================================

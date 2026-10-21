@@ -99,7 +99,7 @@ const StudentLayoutForTabletView = ({
         {sidebarCollapsed ? <ChevronsRight aria-hidden="true" /> : <ChevronsLeft aria-hidden="true" />}
       </button>
 
-      <div className="student-shell-body">
+      <div className="student-shell-body" data-route-scroll>
       {/* Header */}
       <header className="student-header">
         <div className="student-header-inner">

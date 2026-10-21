@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Check, Loader2, Heart, Shield, ClipboardList, AlertCircle, Info } from 'lucide-react';
 import api from '../../../services/api';
@@ -41,7 +41,12 @@ const HealthProfile = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isFemale = user.gender === 'female' || user.gender === 'Female';
 
-  const [step, setStep] = useState(1);
+  // `?step=N` opens a section directly (the Profile page's Edit buttons).
+  const [searchParams] = useSearchParams();
+  const [step, setStep] = useState(() => {
+    const requested = Number(searchParams.get('step'));
+    return Number.isInteger(requested) && requested >= 1 && requested <= 6 ? requested : 1;
+  });
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);

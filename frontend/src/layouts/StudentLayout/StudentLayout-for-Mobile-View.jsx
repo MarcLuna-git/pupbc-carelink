@@ -29,7 +29,7 @@ const StudentLayoutForMobileView = ({
 }) => {
   return (
     <>
-      <div className="student-shell-body">
+      <div className="student-shell-body" data-route-scroll>
         <header className="student-header">
           <div className="student-header-inner">
             <div className="student-header-brand">

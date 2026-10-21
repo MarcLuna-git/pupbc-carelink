@@ -1,6 +1,10 @@
 import api from '../../../services/api';
-import { clinicDate as getManilaDateString, groupAppointments, formatAppointmentDate } from '../../../utils/appointmentDate';
-const formatDate = (value) => formatAppointmentDate(value, { month: 'long' });
+import {
+  clinicDate as getManilaDateString,
+  groupAppointments,
+  formatAppointmentDate,
+  appointmentTime,
+} from '../../../utils/appointmentDate';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -10,39 +14,67 @@ import {
   Printer,
   Loader2,
   AlertTriangle,
-  Smartphone,
-  Calendar,
+  CalendarDays,
   Clock,
-  CheckCircle,
+  CircleCheck,
   Users,
-  RefreshCw,
+  LogIn,
+  IdCard,
+  Info,
+  Stethoscope,
+  FileText,
+  Hash,
+  History,
+  ArrowRight,
 } from 'lucide-react';
 import QRCode from 'qrcode';
-import clinicLogo from '../../../assets/clinic logo.jpg';
 import useVisiblePolling from '../../../hooks/useVisiblePolling';
-import RouteLoadingBar from '../../../components/RouteLoadingBar';
+import StudentPageHero, { HeroRefreshButton } from '../../../components/StudentPageHero';
 import HealthProfileVerifyError from '../../../components/HealthProfileVerifyError';
 import { useStudentHealthProfileStatus } from '../../../hooks/useStudentHealthProfileStatus';
 import { formatPersonName } from '../../../utils/studentUser';
+import { escapeHtml } from '../../../utils/escapeHtml';
 
-const queueStatusLabel = (status) => {
-  switch (status) {
+const formatDate = (value) => formatAppointmentDate(value, { month: 'long' });
+const formatDateWithWeekday = (value) =>
+  formatAppointmentDate(value, { month: 'long', weekday: 'long' });
+
+// Check-in window times come back as ISO instants; show them in clinic time.
+const formatTime = (isoString) => {
+  if (!isoString) return null;
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleTimeString('en-US', {
+    timeZone: 'Asia/Manila',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+};
+
+const queueTypeLabel = (type) =>
+  type
+    ? `${type.replaceAll('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase())} Queue`
+    : 'Regular Queue';
+
+/* Check-in tracker: one step per queue state, in visit order. */
+const CHECKIN_STEPS = [
+  { title: 'Not yet checked in', desc: 'Scan your QR code at the clinic kiosk.' },
+  { title: 'Checked in', desc: 'Your slot is reserved in the queue.' },
+  { title: 'Now Serving', desc: 'Proceed to the consultation room.' },
+  { title: 'Completed', desc: 'Your clinic visit is finished.' },
+];
+
+const checkinStepIndex = (queue) => {
+  switch (queue?.status) {
     case 'waiting':
-      return 'Waiting';
+      return 1;
     case 'serving':
-      return 'Now Serving';
+      return 2;
     case 'completed':
-      return 'Completed';
-    case 'no_show':
-      return 'No Show';
+      return 3;
     default:
-      return status
-        ? status
-            .replaceAll('_', ' ')
-            .replace(/\b\w/g, (char) =>
-              char.toUpperCase()
-            )
-        : 'Not checked in';
+      return 0;
   }
 };
 
@@ -53,24 +85,55 @@ const queueStatusLabel = (status) => {
  */
 const ROUTE_LOADING_DELAY = 1600;
 
+const LOAD_ERROR = 'Unable to load your QR information. Please try again.';
+
+const CARD =
+  'rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)] p-5 lg:p-6';
+
 const Skeleton = ({ className = '' }) => (
   <div className={`animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 ${className}`} />
 );
 
-/* Ghost of one "How to Use" step row. */
-const SkeletonStep = () => (
-  <div className="flex gap-3">
-    <Skeleton className="h-7 w-7 shrink-0 rounded-full" />
-    <div className="min-w-0 flex-1 space-y-2 pt-0.5">
-      <Skeleton className="h-3.5 w-32 max-w-full" />
-      <Skeleton className="h-3 w-56 max-w-full" />
+const QR_HERO = {
+  id: 'qr-title',
+  title: 'QR Code',
+  description: 'Use your QR code for a faster and easier clinic check-in at the PUP Student Clinic.',
+};
+
+const CardTitle = ({ icon: Icon, children, action }) => (
+  <div className="mb-5 flex items-center justify-between gap-3">
+    <h2 className="flex items-center gap-2.5 text-lg font-bold text-maroon-800 dark:text-maroon-300">
+      <Icon className="h-6 w-6" />
+      {children}
+    </h2>
+    {action}
+  </div>
+);
+
+/* Icon tile + label/value row used in the QR card and summary. */
+const DetailRow = ({ icon: Icon, label, value, hint }) => (
+  <div className="flex items-start gap-3.5">
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-maroon-50 text-maroon-700 dark:bg-maroon-900/30 dark:text-maroon-300">
+      <Icon className="h-5 w-5" />
+    </div>
+    <div className="min-w-0">
+      <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
+      <p className="text-sm font-semibold text-gray-900 dark:text-white">{value}</p>
+      {hint && <p className="text-xs text-gray-500 dark:text-gray-400">{hint}</p>}
     </div>
   </div>
 );
 
+const CHECKIN_TIPS = [
+  { icon: IdCard, title: 'Bring your PUP ID', desc: 'Present your valid PUP ID at the kiosk.' },
+  { icon: Clock, title: 'Arrive early', desc: 'Check in within the valid time window.' },
+  { icon: Info, title: 'Use the clinic kiosk', desc: 'Scan your QR code at the Student Clinic kiosk.' },
+];
+
 const QR = () => {
-  const user = JSON.parse(
-    localStorage.getItem('user') || '{}'
+  const user = useMemo(
+    () => JSON.parse(localStorage.getItem('user') || '{}'),
+    []
   );
 
   /*
@@ -85,49 +148,47 @@ const QR = () => {
     retry: retryVerification,
   } = useStudentHealthProfileStatus();
 
-  const [pageLoading, setPageLoading] =
-    useState(true);
-  const [refreshing, setRefreshing] =
-    useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('info');
+  const [qrCodeHash, setQrCodeHash] = useState('');
+  const [qrUsable, setQrUsable] = useState(false);
+  const [appointments, setAppointments] = useState([]);
+  const [qrDataUrl, setQrDataUrl] = useState('');
 
-  const [downloading, setDownloading] =
-    useState(false);
+  // Check-in window state
+  const [checkinOpensAt, setCheckinOpensAt] = useState(null);
+  const [checkinDeadlineAt, setCheckinDeadlineAt] = useState(null);
 
-  const [message, setMessage] =
-    useState('');
-
-  const [messageType, setMessageType] =
-    useState('info');
-
-  const [qrCodeHash, setQrCodeHash] =
-    useState('');
-
-  const [qrUsable, setQrUsable] =
-    useState(false);
-
-  const [appointments, setAppointments] =
-    useState([]);
-
-  const [qrDataUrl, setQrDataUrl] =
-    useState('');
-
-const today = getManilaDateString();
+  const today = getManilaDateString();
   const todayAppointment = useMemo(
     () => groupAppointments(appointments).today[0] || null,
+    // `today` re-evaluates the grouping when the clinic day rolls over.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [appointments, today]
   );
 
-  const queue =
-    todayAppointment?.queue || null;
+  const queue = todayAppointment?.queue || null;
 
   const canUseQr =
     Boolean(qrUsable) &&
     Boolean(qrCodeHash) &&
     Boolean(todayAppointment);
 
-  // Check-in window state
-  const [checkinOpensAt, setCheckinOpensAt] = useState(null);
-  const [checkinDeadlineAt, setCheckinDeadlineAt] = useState(null);
+  /* Minutes between check-in opening and the appointment's start time. */
+  const minutesBeforeStart = useMemo(() => {
+    if (!todayAppointment || !checkinOpensAt) return null;
+    const start = appointmentTime(
+      todayAppointment.appointment_date,
+      todayAppointment.time_slot
+    );
+    const opens = new Date(checkinOpensAt);
+    if (!start || Number.isNaN(opens.getTime())) return null;
+    const minutes = Math.round((start - opens) / 60000);
+    return minutes > 0 ? minutes : null;
+  }, [todayAppointment, checkinOpensAt]);
 
   /* Cosmetic hold for the route-loading animation — see ROUTE LOADING note. */
   const [routeReady, setRouteReady] = useState(false);
@@ -138,14 +199,7 @@ const today = getManilaDateString();
     return () => clearTimeout(timer);
   }, []);
 
-  // Helper to format time for display
-  const formatTime = (isoString) => {
-    if (!isoString) return null;
-    const date = new Date(isoString);
-    return date.toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit', hour12: true });
-  };
-
-const fetchQrData = async (signal) => {
+  const fetchQrData = async (signal) => {
     setRefreshing(true);
     try {
       const response = await api.get('/student/qr', { signal });
@@ -153,30 +207,21 @@ const fetchQrData = async (signal) => {
       const qrData = response?.data?.data || null;
 
       setQrCodeHash(qrData?.qr_code_hash || '');
-
-      setQrUsable(
-        Boolean(
-          qrData?.available &&
-            qrData?.qr_code_hash
-        )
-      );
+      setQrUsable(Boolean(qrData?.available && qrData?.qr_code_hash));
 
       // Store check-in window times
       setCheckinOpensAt(qrData?.appointment?.checkin_opens_at || null);
       setCheckinDeadlineAt(qrData?.appointment?.checkin_deadline_at || null);
 
       const appointmentPayload = qrData?.appointment;
-      const normalizedAppointments = Array.isArray(appointmentPayload)
-        ? [appointmentPayload]
-        : appointmentPayload ? [appointmentPayload] : [];
-
-      setAppointments(normalizedAppointments);
-      setMessage('');
+      setAppointments(appointmentPayload ? [appointmentPayload] : []);
+      // Clear only a previous load failure; keep e.g. the download notice.
+      setMessage((current) => (current === LOAD_ERROR ? '' : current));
     } catch (error) {
       if (error.name === 'CanceledError') return;
       console.error('QR data load error:', error);
       setMessageType('error');
-      setMessage('Unable to load your QR information. Please try again.');
+      setMessage(LOAD_ERROR);
     } finally {
       setPageLoading(false);
       setRefreshing(false);
@@ -196,41 +241,31 @@ const fetchQrData = async (signal) => {
 
       const qrValue = JSON.stringify({
         student_id: user.student_id,
-        name:
-          `${user.first_name || ''} ${user.last_name || ''}`.trim(),
+        name: `${user.first_name || ''} ${user.last_name || ''}`.trim(),
         hash: qrCodeHash,
       });
 
       try {
-        const dataUrl =
-          await QRCode.toDataURL(
-            qrValue,
-            {
-              width: 400,
-              margin: 2,
-              color: {
-                dark: '#5E1224',
-                light: '#FFFFFF',
-              },
-              errorCorrectionLevel: 'H',
-            }
-          );
+        const dataUrl = await QRCode.toDataURL(qrValue, {
+          width: 400,
+          margin: 2,
+          color: {
+            dark: '#111111',
+            light: '#FFFFFF',
+          },
+          errorCorrectionLevel: 'H',
+        });
 
         if (!cancelled) {
           setQrDataUrl(dataUrl);
         }
       } catch (error) {
-        console.error(
-          'QR generation error:',
-          error
-        );
+        console.error('QR generation error:', error);
 
         if (!cancelled) {
           setQrDataUrl('');
           setMessageType('error');
-          setMessage(
-            'Unable to generate your QR code.'
-          );
+          setMessage('Unable to generate your QR code.');
         }
       }
     };
@@ -240,13 +275,7 @@ const fetchQrData = async (signal) => {
     return () => {
       cancelled = true;
     };
-  }, [
-    canUseQr,
-    qrCodeHash,
-    user.student_id,
-    user.first_name,
-    user.last_name,
-  ]);
+  }, [canUseQr, qrCodeHash, user.student_id, user.first_name, user.last_name]);
 
   const handleDownload = () => {
     if (!qrDataUrl || !canUseQr) {
@@ -256,55 +285,43 @@ const fetchQrData = async (signal) => {
     setDownloading(true);
 
     try {
-      const link =
-        document.createElement('a');
+      const link = document.createElement('a');
 
       link.href = qrDataUrl;
-      link.download =
-        `PUPBC-QR-${user.student_id}.png`;
+      link.download = `PUPBC-QR-${user.student_id}.png`;
 
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
       setMessageType('success');
-      setMessage(
-        'QR code downloaded successfully.'
-      );
+      setMessage('QR code downloaded successfully.');
 
-      setTimeout(
-        () => setMessage(''),
-        2500
-      );
+      setTimeout(() => setMessage(''), 2500);
     } finally {
       setDownloading(false);
     }
   };
 
   const handlePrint = () => {
-    if (
-      !qrDataUrl ||
-      !canUseQr ||
-      !todayAppointment
-    ) {
+    if (!qrDataUrl || !canUseQr || !todayAppointment) {
       return;
     }
 
-    const printWindow =
-      window.open('', '_blank');
+    const printWindow = window.open('', '_blank');
 
     if (!printWindow) {
       setMessageType('error');
-      setMessage(
-        'Pop-up was blocked. Please allow pop-ups to print your QR code.'
-      );
+      setMessage('Pop-up was blocked. Please allow pop-ups to print your QR code.');
 
       return;
     }
 
-    const safeName = formatPersonName(
-      `${user.first_name || ''} ${user.last_name || ''}`.trim()
+    const safeName = escapeHtml(
+      formatPersonName(`${user.first_name || ''} ${user.last_name || ''}`.trim())
     );
+    const opens = formatTime(checkinOpensAt);
+    const deadline = formatTime(checkinDeadlineAt);
 
     printWindow.document.write(`
       <!doctype html>
@@ -349,7 +366,7 @@ const fetchQrData = async (signal) => {
               width: 250px;
               height: 250px;
               padding: 10px;
-              border: 3px solid #5E1224;
+              border: 1px solid #e5e7eb;
               border-radius: 18px;
             }
 
@@ -385,51 +402,30 @@ const fetchQrData = async (signal) => {
 
         <body>
           <div class="card">
-            <p class="title">
-              PUPBC CareLink
-            </p>
+            <p class="title">PUPBC CareLink</p>
+            <p class="subtitle">Clinic Check-in QR</p>
 
-            <p class="subtitle">
-              Clinic Check-in QR
-            </p>
+            <img class="qr" src="${qrDataUrl}" alt="QR Code" />
 
-            <img
-              class="qr"
-              src="${qrDataUrl}"
-              alt="QR Code"
-            />
-
-            <p class="name">
-              ${safeName}
-            </p>
-
-            <p class="meta">
-              ${user.student_id || ''}
-            </p>
+            <p class="name">${safeName}</p>
+            <p class="meta">${escapeHtml(user.student_id)}</p>
 
             <div class="appointment">
-              <strong>
-                Today's Approved Appointment
-              </strong>
+              <strong>Today's Approved Appointment</strong>
               <br />
-              ${todayAppointment.service || 'Appointment'}
+              ${escapeHtml(todayAppointment.service || 'Appointment')}
               <br />
-              ${formatDate(
-                todayAppointment.appointment_date
-              )}
-              •
-              ${todayAppointment.time_slot || 'N/A'}
-              ${checkinOpensAt && checkinDeadlineAt ? (
-                `<br /><br />
-                <strong>Check-in Window:</strong><br />
-                Opens: ${checkinOpensAt}<br />
-                Deadline: ${checkinDeadlineAt}`
-              ) : ''}
+              ${escapeHtml(formatDate(todayAppointment.appointment_date))}
+              &bull;
+              ${escapeHtml(todayAppointment.time_slot || 'N/A')}
+              ${opens && deadline ? `<br /><br />
+              <strong>Check-in Window:</strong><br />
+              Opens: ${escapeHtml(opens)}<br />
+              Deadline: ${escapeHtml(deadline)}` : ''}
             </div>
 
             <p class="notice">
-              Valid for clinic identification and
-              today's approved appointment only.
+              Valid for clinic identification and today's approved appointment only.
             </p>
           </div>
 
@@ -448,98 +444,87 @@ const fetchQrData = async (signal) => {
 
   /*
    * LOADING PHASE — ONE phase for everything: the backend Health Profile
-   * verification AND this page's first data + demo timer. The hero card is
-   * real, with the looping progress bar on its bottom edge ONLY (same as
-   * Settings / Records — never on the forms). The How-to-Use and main cards
-   * render as 1:1 ghosts. Incomplete students never reach this skeleton.
+   * verification AND this page's first data + demo timer. The hero is real,
+   * with the looping progress bar on its bottom edge ONLY (same as
+   * Settings / Records — never on the cards). The cards render as 1:1
+   * ghosts. Incomplete students never reach this skeleton.
    */
   if (verifyingProfile || pageLoading || !routeReady) {
     return (
-      <div className="space-y-5 max-w-[1200px] mx-auto">
-        {/* Hero header card — real, with the looping bar */}
-        <div className="relative overflow-hidden rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My QR Code</h1>
-              <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Use this for clinic check-in on the day of your approved appointment.</p>
+      <div className="w-full min-w-0 space-y-3">
+        <StudentPageHero {...QR_HERO} loading />
+
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+          {/* Ghost of the QR card */}
+          <div className={CARD}>
+            <div className="mb-5 flex items-center justify-between">
+              <Skeleton className="h-6 w-36" />
+              <Skeleton className="h-11 w-36 rounded-xl" />
             </div>
-            <Skeleton className="h-10 w-10 shrink-0 rounded-xl" />
-          </div>
-
-          {/* Route-loading bar — full-width fill/drain loop, hero only. */}
-          <RouteLoadingBar />
-        </div>
-
-        {/* Ghost of the How to Use card */}
-        <div className="rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <Skeleton className="h-5 w-5 rounded-md" />
-            <Skeleton className="h-4 w-24" />
-          </div>
-          <div className="space-y-4">
-            <SkeletonStep />
-            <SkeletonStep />
-            <SkeletonStep />
-            <SkeletonStep />
-          </div>
-        </div>
-
-        {/* Ghost of the main content card */}
-        <div className="rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
-          <div className="mb-5 space-y-2">
-            <Skeleton className="h-5 w-40" />
-            <Skeleton className="h-3 w-72 max-w-full" />
-          </div>
-
-          {/* QR placeholder — same nested container + centered square ghost */}
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 dark:border-gray-700 dark:bg-gray-900/20 sm:p-8">
-            <div className="flex flex-col items-center gap-3 py-6">
-              <Skeleton className="h-44 w-44 rounded-2xl sm:h-56 sm:w-56 lg:h-64 lg:w-64 xl:h-72 xl:w-72" />
-              <Skeleton className="h-5 w-40" />
-              <Skeleton className="h-3 w-28" />
-              <Skeleton className="h-3 w-36" />
+            <div className="flex flex-col items-center gap-3">
+              <Skeleton className="h-56 w-56 rounded-2xl" />
+              <Skeleton className="h-5 w-44" />
+              <Skeleton className="h-3.5 w-36" />
+              <Skeleton className="h-3.5 w-32" />
             </div>
-          </div>
-
-          {/* Download / Print buttons ghost */}
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <Skeleton className="h-12 w-full rounded-2xl" />
-            <Skeleton className="h-12 w-full rounded-2xl" />
-          </div>
-
-          {/* Keep Your QR Private ghost */}
-          <div className="mt-5 flex items-start gap-3">
-            <Skeleton className="h-4 w-4 shrink-0 rounded" />
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <Skeleton className="h-3 w-32" />
-              <Skeleton className="h-3 w-3/4 max-w-full" />
-            </div>
-          </div>
-
-          {/* Today's appointment ghost */}
-          <div className="mt-4 space-y-4">
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-900/20 sm:p-6">
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-5 w-5 rounded-md" />
-                <Skeleton className="h-4 w-40" />
-              </div>
-              <div className="mt-4 space-y-3">
-                <div className="space-y-1.5">
-                  <Skeleton className="h-2.5 w-12" />
-                  <Skeleton className="h-4 w-36" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Skeleton className="h-2.5 w-10" />
-                    <Skeleton className="h-4 w-28" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Skeleton className="h-2.5 w-10" />
-                    <Skeleton className="h-4 w-20" />
+            <div className="mt-6 space-y-5 border-t border-gray-100 pt-5 dark:border-gray-700">
+              {[0, 1, 2].map((key) => (
+                <div key={key} className="flex gap-3.5">
+                  <Skeleton className="h-10 w-10 shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-3 w-28" />
+                    <Skeleton className="h-4 w-48 max-w-full" />
                   </div>
                 </div>
+              ))}
+            </div>
+            {/* Keep Your QR Private ghost */}
+            <div className="mt-6 flex items-start gap-3 rounded-xl bg-gray-50 p-3 dark:bg-gray-900/30">
+              <Skeleton className="h-4 w-4 shrink-0 rounded" />
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-3 w-32" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-3/4" />
               </div>
             </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {/* Ghost of Check-in Information */}
+            <div className={CARD}>
+              <Skeleton className="mb-5 h-6 w-48" />
+              <Skeleton className="h-28 w-full rounded-xl" />
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                <Skeleton className="h-20 rounded-xl" />
+                <Skeleton className="h-20 rounded-xl" />
+                <Skeleton className="h-20 rounded-xl" />
+              </div>
+            </div>
+
+            {/* Ghost of Appointment Summary — stretches like the real card */}
+            <div className={`${CARD} flex flex-1 flex-col`}>
+              <div className="mb-5 flex items-center justify-between gap-3">
+                <Skeleton className="h-6 w-52" />
+                <Skeleton className="h-8 w-44 rounded-lg" />
+              </div>
+              <Skeleton className="min-h-48 w-full flex-1 rounded-xl" />
+            </div>
+          </div>
+        </div>
+
+        {/* Ghost of Check-in Status */}
+        <div className={CARD}>
+          <Skeleton className="mb-5 h-6 w-40" />
+          <div className="grid gap-4 sm:grid-cols-4">
+            {[0, 1, 2, 3].map((key) => (
+              <div key={key} className="flex gap-3">
+                <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-3.5 w-28" />
+                  <Skeleton className="h-3 w-32 max-w-full" />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -554,402 +539,361 @@ const fetchQrData = async (signal) => {
     return <Navigate to="/student/health-profile" replace />;
   }
 
+  const fullName = `${formatPersonName(user.first_name)} ${formatPersonName(user.last_name)}`.trim();
+  const courseLine = [user.course, user.year, user.section].filter(Boolean).join(' • ');
+  const currentStep = checkinStepIndex(queue);
+  const isNoShow = queue?.status === 'no_show';
+  const opensLabel = formatTime(checkinOpensAt);
+  const deadlineLabel = formatTime(checkinDeadlineAt);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
-      className="space-y-5 max-w-[1200px] mx-auto"
+      className="w-full min-w-0 space-y-3"
     >
-      {/* Hero header card */}
-      <div className="rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My QR Code</h1>
-            <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Use this for clinic check-in on the day of your approved appointment.</p>
-          </div>
-
-          <button
-            type="button"
+      <StudentPageHero
+        {...QR_HERO}
+        action={
+          <HeroRefreshButton
             onClick={() => fetchQrData()}
-            disabled={refreshing}
-            className="flex-shrink-0 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50"
-            title="Refresh"
-          >
-            <RefreshCw
-              className={`w-4 h-4 text-gray-500 ${
-                refreshing ? 'animate-spin' : ''
-              }`}
-            />
-          </button>
-        </div>
-      </div>
+            refreshing={refreshing}
+            label="Refresh QR information"
+          />
+        }
+      />
 
-      {/* How to Use */}
-      <div className="rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
-        <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <Smartphone className="w-5 h-5" />
-          How to Use
-        </h3>
-
-        <div className="space-y-4">
-          {[
-            {
-              step: 1,
-              title: 'Go to the Clinic',
-              desc: 'Arrive around 10–15 minutes before your approved appointment.',
-            },
-            {
-              step: 2,
-              title: 'Scan Your QR',
-              desc: 'Present the QR to the clinic kiosk to identify your appointment.',
-            },
-            {
-              step: 3,
-              title: 'Complete Check-in',
-              desc: 'Follow the kiosk instructions and complete triage.',
-            },
-            {
-              step: 4,
-              title: 'Wait for Your Turn',
-              desc: 'Your queue number and current queue status will appear here.',
-            },
-          ].map((item) => (
-            <div key={item.step} className="flex gap-3">
-              <div className="w-7 h-7 bg-maroon-200 dark:bg-maroon-800 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-xs font-bold text-maroon-800 dark:text-maroon-300">{item.step}</span>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">{item.title}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">{item.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Main content card */}
-      <div className="rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
       {message && (
         <motion.div
-          initial={{
-            opacity: 0,
-            y: -8,
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-          className={`mb-5 p-3 rounded-2xl text-sm font-medium border ${
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          role={messageType === 'error' ? 'alert' : 'status'}
+          className={`rounded-xl border p-3 text-sm font-medium ${
             messageType === 'error'
-              ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800/30'
-              : messageType ===
-                  'success'
-                ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800/30'
-                : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800/30'
+              ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-800/30 dark:bg-red-900/20 dark:text-red-400'
+              : messageType === 'success'
+                ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-800/30 dark:bg-green-900/20 dark:text-green-400'
+                : 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800/30 dark:bg-blue-900/20 dark:text-blue-400'
           }`}
         >
           {message}
         </motion.div>
       )}
 
-        {/* Section header */}
-        <div className="mb-5">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Clinic Check-in QR</h2>
-          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Approved appointments become eligible for QR check-in on their scheduled date.</p>
-        </div>
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+        {/* Your QR Code */}
+        <div className={CARD}>
+          <CardTitle
+            icon={QrCode}
+            action={
+              canUseQr && (
+                <div className="flex items-center gap-2 rounded-xl bg-green-50 px-3 py-2 dark:bg-green-900/20">
+                  <CircleCheck className="h-5 w-5 fill-green-600 text-white dark:fill-green-500 dark:text-green-950" />
+                  <div className="leading-tight">
+                    <p className="text-sm font-semibold text-green-700 dark:text-green-400">Approved</p>
+                    <p className="text-[11px] text-green-700/80 dark:text-green-500/80">Ready for Check-in</p>
+                  </div>
+                </div>
+              )
+            }
+          >
+            Your QR Code
+          </CardTitle>
 
-        {/* Nested container — the generated QR */}
-        <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 sm:p-8 dark:border-gray-700 dark:bg-gray-900/20">
           {canUseQr ? (
             <motion.div
-                initial={{
-                  opacity: 0,
-                  scale: 0.97,
-                }}
-                animate={{
-                  opacity: 1,
-                  scale: 1,
-                }}
-                className="text-center"
-              >
-                <div className="inline-flex items-center gap-2 mb-5 px-3 py-1.5 rounded-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-semibold">
-                  <CheckCircle className="w-4 h-4" />
-                  Approved for today's visit
-                </div>
-
-                <div className="relative inline-block mb-5">
-                  <div className="bg-white border-[3px] border-maroon-800 dark:border-maroon-700 rounded-2xl p-3 sm:p-4 shadow-lg">
-                    {qrDataUrl ? (
-                      <img
-                        src={qrDataUrl}
-                        alt="Clinic QR Code"
-                        className="w-44 h-44 sm:w-56 sm:h-56 lg:w-64 lg:h-64 xl:w-72 xl:h-72"
-                      />
-                    ) : (
-                      <div className="w-44 h-44 sm:w-56 sm:h-56 lg:w-64 lg:h-64 xl:w-72 xl:h-72 flex items-center justify-center">
-                        <Loader2 className="w-8 h-8 animate-spin text-maroon-800" />
-                      </div>
-                    )}
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center"
+            >
+              <div className="inline-block rounded-2xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-600">
+                {qrDataUrl ? (
+                  <img
+                    src={qrDataUrl}
+                    alt="Clinic check-in QR code"
+                    className="h-48 w-48 sm:h-56 sm:w-56"
+                  />
+                ) : (
+                  <div className="flex h-48 w-48 items-center justify-center sm:h-56 sm:w-56">
+                    <Loader2 className="h-8 w-8 animate-spin text-maroon-800" />
                   </div>
-
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-white rounded-full shadow-md flex items-center justify-center border-2 border-maroon-800 overflow-hidden">
-                      <img
-                        src={clinicLogo}
-                        alt="PUPBC CareLink"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
-                  {formatPersonName(user.first_name)}{' '}
-                  {formatPersonName(user.last_name)}
-                </h2>
-
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {user.student_id}
-                </p>
-
-                <p className="text-xs sm:text-sm text-gray-400 dark:text-gray-500">
-                  {user.course || '—'}
-                  {user.year
-                    ? ` • ${user.year}`
-                    : ''}
-                  {user.section
-                    ? ` • ${user.section}`
-                    : ''}
-                </p>
-              </motion.div>
-          ) : (
-            <div className="py-6 text-center">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                <QrCode className="w-8 h-8 text-gray-400" />
+                )}
               </div>
 
-              <h2 className="mt-5 text-lg font-bold text-gray-900 dark:text-white">
-                QR Check-in Not Available
-              </h2>
+              <h3 className="mt-4 text-xl font-bold text-maroon-800 dark:text-maroon-300">{fullName}</h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Student ID: {user.student_id}</p>
+              {courseLine && <p className="text-sm text-gray-500 dark:text-gray-400">{courseLine}</p>}
 
-              {!qrUsable ? (
-                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                  Your QR credential is currently
-                  unavailable. Please contact the
-                  clinic if this continues.
-                </p>
-              ) : (
-                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                  You need an approved appointment
-                  scheduled for today before the QR
-                  can be used at the clinic kiosk.
-                </p>
-              )}
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={handleDownload}
+                  disabled={downloading || !qrDataUrl}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-maroon-800 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900 disabled:opacity-50"
+                >
+                  {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                  <span>{downloading ? 'Downloading...' : 'Download'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  disabled={!qrDataUrl}
+                  className="flex items-center justify-center gap-2 rounded-xl border border-maroon-800 bg-white py-2.5 text-sm font-semibold text-maroon-800 transition hover:bg-maroon-50 disabled:opacity-50 dark:border-maroon-700 dark:bg-gray-800 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
+                >
+                  <Printer className="h-4 w-4" />
+                  <span>Print</span>
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            <div className="py-6 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-700">
+                <QrCode className="h-8 w-8 text-gray-400" />
+              </div>
+
+              <h3 className="mt-5 text-lg font-bold text-gray-900 dark:text-white">QR Check-in Not Available</h3>
+
+              <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500 dark:text-gray-400">
+                {todayAppointment
+                  ? 'Your QR credential is currently unavailable. Please contact the clinic if this continues.'
+                  : 'You need an approved appointment scheduled for today before the QR can be used at the clinic kiosk.'}
+              </p>
 
               <Link
                 to="/student/appointments"
-                className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 rounded-xl bg-maroon-800 text-white text-sm font-semibold hover:bg-maroon-900 transition"
+                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-maroon-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900"
               >
-                <Calendar className="w-4 h-4" />
-
+                <CalendarDays className="h-4 w-4" />
                 View Appointments
               </Link>
             </div>
           )}
-        </div>
 
-        {canUseQr && (
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={handleDownload}
-              disabled={downloading || !qrDataUrl}
-              className="flex items-center justify-center gap-2 py-3.5 bg-maroon-800 text-white font-semibold rounded-2xl hover:bg-maroon-900 transition shadow-lg shadow-maroon-800/20 disabled:opacity-50 text-sm sm:text-base"
-            >
-              {downloading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4" />
-              )}
-              <span>{downloading ? 'Downloading...' : 'Download'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handlePrint}
-              disabled={!qrDataUrl}
-              className="flex items-center justify-center gap-2 py-3.5 bg-white dark:bg-gray-800 border-2 border-maroon-800 dark:border-maroon-700 text-maroon-800 dark:text-maroon-400 font-semibold rounded-2xl hover:bg-maroon-50 dark:hover:bg-maroon-900/20 transition disabled:opacity-50 text-sm sm:text-base"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Print</span>
-            </button>
-          </div>
-        )}
-
-        {/* Keep Your QR Private */}
-        <div className="mt-5 flex items-start gap-3">
-          <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
-
-          <div>
-            <p className="text-xs font-semibold text-gray-900 dark:text-white">Keep Your QR Private</p>
-
-            <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
-              This QR identifies your student account at the clinic. Do not share screenshots or printed copies with other people. Medical information is not stored directly inside the QR.
-            </p>
-          </div>
-        </div>
-
-        {/* Today's appointment & queue status */}
-        <div className="mt-4 space-y-4">
           {todayAppointment && (
-            <div className="border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/20 rounded-2xl p-5 sm:p-6">
-              <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-maroon-700 dark:text-maroon-400" />
-                Today's Appointment
-              </h3>
+            <div className="mt-6 space-y-5 border-t border-gray-100 pt-5 dark:border-gray-700">
+              <DetailRow
+                icon={CalendarDays}
+                label="Appointment Date & Time"
+                value={`${formatAppointmentDate(todayAppointment.appointment_date, { month: 'long', weekday: 'short' })}  |  ${todayAppointment.time_slot || 'N/A'}`}
+              />
+              <DetailRow
+                icon={Stethoscope}
+                label="Service"
+                value={todayAppointment.service || 'Appointment'}
+                hint={todayAppointment.concern}
+              />
+              <DetailRow
+                icon={Users}
+                label="Queue Type"
+                value={queue ? queueTypeLabel(queue.queue_type) : 'Assigned at check-in'}
+                hint={queue?.queue_number ? `Queue number ${queue.queue_number}` : 'Set by the kiosk after triage'}
+              />
+            </div>
+          )}
 
-              <div className="mt-4 space-y-3">
-                <div>
-                  <p className="text-[11px] uppercase tracking-wider text-gray-400">
-                    Service
-                  </p>
+          {/* Keep Your QR Private */}
+          <div className="mt-6 flex items-start gap-3 rounded-xl bg-gray-50 p-3 dark:bg-gray-900/30">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+            <div>
+              <p className="text-xs font-semibold text-gray-900 dark:text-white">Keep Your QR Private</p>
+              <p className="mt-1 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
+                This QR identifies your student account at the clinic. Do not share screenshots or printed copies with other people. Medical information is not stored directly inside the QR.
+              </p>
+            </div>
+          </div>
+        </div>
 
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {todayAppointment.service ||
-                      'Appointment'}
-                  </p>
-                </div>
+        <div className="flex flex-col gap-3">
+          {/* Check-in Information */}
+          <div className={CARD}>
+            <CardTitle icon={Clock}>Check-in Information</CardTitle>
 
-                <div className="grid grid-cols-2 gap-3">
+            {opensLabel && deadlineLabel ? (
+              <div className="grid gap-4 rounded-xl bg-maroon-50/70 p-5 dark:bg-maroon-900/20 sm:grid-cols-2 sm:divide-x sm:divide-maroon-100 dark:sm:divide-maroon-900/40">
+                <div className="flex items-start gap-3.5">
+                  <LogIn className="mt-1 h-7 w-7 shrink-0 text-maroon-700 dark:text-maroon-300" />
                   <div>
-                    <p className="text-[11px] uppercase tracking-wider text-gray-400">
-                      Date
-                    </p>
-
-                    <p className="text-sm text-gray-700 dark:text-gray-300">
-                      {formatDate(
-                        todayAppointment.appointment_date
-                      )}
+                    <p className="text-sm font-medium text-maroon-800 dark:text-maroon-300">Check-in Opens</p>
+                    <p className="text-3xl font-bold text-maroon-800 dark:text-maroon-200">{opensLabel}</p>
+                    <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                      {minutesBeforeStart
+                        ? `${minutesBeforeStart} minutes before your appointment`
+                        : 'Before your appointment'}
                     </p>
                   </div>
-
+                </div>
+                <div className="flex items-start gap-3.5 sm:pl-5">
+                  <Clock className="mt-1 h-7 w-7 shrink-0 text-maroon-700 dark:text-maroon-300" />
                   <div>
-                    <p className="text-[11px] uppercase tracking-wider text-gray-400">
-                      Time
-                    </p>
-
-                    <p className="text-sm text-gray-700 dark:text-gray-300">
-                      {todayAppointment.time_slot ||
-                        'N/A'}
+                    <p className="text-sm font-medium text-maroon-800 dark:text-maroon-300">Check-in Deadline</p>
+                    <p className="text-3xl font-bold text-maroon-800 dark:text-maroon-200">{deadlineLabel}</p>
+                    <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                      After this time, your slot may be forfeited.
                     </p>
                   </div>
                 </div>
+              </div>
+            ) : (
+              <div className="rounded-xl bg-maroon-50/70 p-5 text-sm text-gray-600 dark:bg-maroon-900/20 dark:text-gray-400">
+                Your check-in window will appear here on the day of an approved appointment.
+              </div>
+            )}
 
-                {checkinOpensAt && checkinDeadlineAt && (
-                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100 dark:border-gray-700">
-                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30 rounded-xl p-3">
-                      <p className="text-[10px] uppercase tracking-wider text-green-700 dark:text-green-400">
-                        Check-in Opens
-                      </p>
-                      <p className="text-sm font-semibold text-green-900 dark:text-green-300 mt-1">
-                        {formatTime(checkinOpensAt)}
-                      </p>
-                    </div>
-                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 rounded-xl p-3">
-                      <p className="text-[10px] uppercase tracking-wider text-yellow-700 dark:text-yellow-400">
-                        Check-in Deadline
-                      </p>
-                      <p className="text-sm font-semibold text-yellow-900 dark:text-yellow-300 mt-1">
-                        {formatTime(checkinDeadlineAt)}
-                      </p>
-                    </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              {CHECKIN_TIPS.map(({ icon: Icon, title, desc }) => (
+                <div
+                  key={title}
+                  className="flex items-start gap-3 rounded-xl bg-maroon-50/50 p-3.5 dark:bg-maroon-900/10"
+                >
+                  <Icon className="mt-0.5 h-6 w-6 shrink-0 text-maroon-700 dark:text-maroon-300" />
+                  <div>
+                    <p className="text-sm font-semibold text-maroon-800 dark:text-maroon-300">{title}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-gray-600 dark:text-gray-400">{desc}</p>
                   </div>
-                )}
-
-                <div>
-                  <p className="text-[11px] uppercase tracking-wider text-gray-400">
-                    Reference
-                  </p>
-
-                  <p className="text-sm font-mono text-gray-700 dark:text-gray-300">
-                    {todayAppointment.reference_number ||
-                      'N/A'}
-                  </p>
                 </div>
-              </div>
+              ))}
             </div>
-          )}
+          </div>
 
-          {queue && (
-            <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/30 rounded-3xl p-5 sm:p-6">
-              <h3 className="font-bold text-green-900 dark:text-green-400 flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Queue Status
-              </h3>
+          {/* Appointment Summary */}
+          <div className={`${CARD} flex flex-1 flex-col`}>
+            <CardTitle
+              icon={CalendarDays}
+              action={
+                <Link
+                  to="/student/appointments"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-maroon-800 px-3 py-2 text-xs font-semibold text-maroon-800 transition hover:bg-maroon-50 dark:border-maroon-700 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
+                >
+                  View Appointment Details
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              }
+            >
+              Appointment Summary
+            </CardTitle>
 
-              <div className="mt-4">
-                <p className="text-xs text-green-700 dark:text-green-500">
-                  Queue Number
-                </p>
-
-                <p className="text-3xl font-black text-green-900 dark:text-green-300 mt-1">
-                  {queue.queue_number ||
-                    '—'}
-                </p>
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-[11px] uppercase tracking-wider text-green-700/70 dark:text-green-500/70">
-                    Type
-                  </p>
-
-                  <p className="text-sm font-semibold text-green-900 dark:text-green-300 capitalize">
-                    {queue.queue_type ||
-                      'Regular'}
-                  </p>
+            {todayAppointment ? (
+              <div className="grid flex-1 content-center gap-5 rounded-xl border border-gray-100 p-5 dark:border-gray-700 sm:grid-cols-2 sm:divide-x sm:divide-gray-100 dark:sm:divide-gray-700">
+                <div className="space-y-5">
+                  <DetailRow
+                    icon={CalendarDays}
+                    label="Date"
+                    value={formatDateWithWeekday(todayAppointment.appointment_date)}
+                  />
+                  <DetailRow
+                    icon={Clock}
+                    label="Time"
+                    value={todayAppointment.time_slot || 'N/A'}
+                  />
                 </div>
-
-                <div>
-                  <p className="text-[11px] uppercase tracking-wider text-green-700/70 dark:text-green-500/70">
-                    Status
-                  </p>
-
-                  <p className="text-sm font-semibold text-green-900 dark:text-green-300">
-                    {queueStatusLabel(
-                      queue.status
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {todayAppointment && !queue && (
-            <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 rounded-3xl p-5">
-              <div className="flex gap-3">
-                <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-
-                <div>
-                  <p className="text-sm font-semibold text-blue-900 dark:text-blue-400">
-                    Not checked in yet
-                  </p>
-
-                  <p className="text-xs text-blue-700 dark:text-blue-500 mt-1 leading-relaxed">
-                    Scan your QR at the clinic kiosk
-                    when you arrive. Your queue
-                    number will appear here after
-                    check-in and triage.
-                  </p>
+                <div className="space-y-5 sm:pl-5">
+                  <DetailRow
+                    icon={FileText}
+                    label="Appointment Type"
+                    value={todayAppointment.service || 'Appointment'}
+                    hint={todayAppointment.concern}
+                  />
+                  <DetailRow
+                    icon={Hash}
+                    label="Reference"
+                    value={<span className="font-mono">{todayAppointment.reference_number || 'N/A'}</span>}
+                  />
                 </div>
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                <CalendarDays className="h-8 w-8 text-gray-300 dark:text-gray-600" />
+                <p>No approved appointment scheduled for today.</p>
+                <Link
+                  to="/student/appointments"
+                  className="text-xs font-semibold text-maroon-800 hover:underline dark:text-maroon-300"
+                >
+                  Book an appointment
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Check-in Status */}
+      <div className={CARD}>
+          <CardTitle icon={History}>Check-in Status</CardTitle>
+
+          {!todayAppointment && (
+            <p className="-mt-2 mb-4 text-xs text-gray-500 dark:text-gray-400">
+              Your progress will be tracked here on the day of an approved appointment.
+            </p>
+          )}
+
+          {isNoShow ? (
+            <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-800/30 dark:bg-red-900/20">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
+              <div>
+                <p className="text-sm font-semibold text-red-800 dark:text-red-300">Marked as No Show</p>
+                <p className="mt-0.5 text-xs text-red-700 dark:text-red-400">
+                  You were not present when called. Please approach the clinic staff for assistance.
+                </p>
+              </div>
+            </div>
+          ) : (
+            /* Progress tracker: horizontal on desktop, vertical below lg.
+               A connector fills maroon once the step before it is done. */
+            <ol className="flex flex-col lg:flex-row lg:gap-3">
+              {CHECKIN_STEPS.map((step, index) => {
+                const active = Boolean(todayAppointment) && index === currentStep;
+                const done = index < currentStep;
+                const isLast = index === CHECKIN_STEPS.length - 1;
+                const connectorColor = done
+                  ? 'bg-maroon-800 dark:bg-maroon-500'
+                  : 'bg-gray-200 dark:bg-gray-700';
+                return (
+                  <li
+                    key={step.title}
+                    className={`relative flex items-start gap-3 ${isLast ? 'lg:flex-none' : 'pb-6 lg:flex-1 lg:pb-0'}`}
+                    aria-current={active ? 'step' : undefined}
+                  >
+                    {!isLast && (
+                      <span
+                        aria-hidden="true"
+                        className={`absolute bottom-0 left-5 top-10 w-0.5 -translate-x-1/2 lg:hidden ${connectorColor}`}
+                      />
+                    )}
+                    <span
+                      className={`relative z-[1] flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                        active
+                          ? 'bg-maroon-800 text-white'
+                          : done
+                            ? 'bg-maroon-100 text-maroon-800 dark:bg-maroon-900/40 dark:text-maroon-300'
+                            : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                      }`}
+                    >
+                      {done ? <CircleCheck className="h-5 w-5" /> : index + 1}
+                    </span>
+                    <div className="min-w-0 lg:max-w-[10.5rem]">
+                      <p
+                        className={`text-sm font-semibold ${
+                          active ? 'text-maroon-800 dark:text-maroon-300' : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {step.title}
+                      </p>
+                      <p className="mt-0.5 text-xs leading-relaxed text-gray-500 dark:text-gray-400">{step.desc}</p>
+                    </div>
+                    {!isLast && (
+                      <span
+                        aria-hidden="true"
+                        className={`mt-5 hidden h-0.5 min-w-6 flex-1 rounded-full lg:block ${connectorColor}`}
+                      />
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+      </div>
     </motion.div>
   );
 };

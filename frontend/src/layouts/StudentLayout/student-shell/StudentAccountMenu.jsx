@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  ChevronsUpDown,
   HelpCircle,
   Info,
   LogOut,
@@ -300,7 +299,6 @@ const StudentAccountMenu = ({ variant = 'sidebar', collapsed = false }) => {
           <strong>{displayName}</strong>
           <small>{course || 'Student account'}</small>
         </span>
-        <ChevronsUpDown className="student-account-chevron" aria-hidden="true" />
       </button>
 
       {createPortal(menu, document.body)}
