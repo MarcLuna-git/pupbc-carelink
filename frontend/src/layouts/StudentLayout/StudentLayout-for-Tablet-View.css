@@ -133,6 +133,7 @@
  * it leaks into the mobile breakpoint and freezes all Student pages on phones.
  */
 @media (min-width:768px) {
+  html:has(.student-approved-shell),
   body:has(.student-approved-shell) { overflow:hidden; }
   /*
    * The frame must be EXACTLY one viewport tall. Without flow-root, the shell
@@ -145,6 +146,14 @@
    * the fixed height + clip keep the document from ever exceeding the viewport.
    */
   .student-approved-shell { display:flow-root;height:100dvh;min-height:0;overflow:clip; }
+  /*
+   * Pin the frame to the viewport. Even with the clip above, the DOCUMENT
+   * could still be scrolled a little (something outside the frame, a resized
+   * viewport in device emulators, an anchor jump), which lifted the whole
+   * frame and left a white band at the bottom. A fixed frame is not moved by
+   * document scrolling at all, so that band can no longer appear.
+   */
+  .student-approved-shell { position:fixed;inset:0;height:auto; }
 }
 html:has(.student-approved-shell),
 body:has(.student-approved-shell) { scrollbar-width:none;-ms-overflow-style:none; }

@@ -31,6 +31,74 @@ import api from '../../services/api';
 import clinicLogo from '../../assets/clinic logo.jpg';
 import campusPhoto from '../../assets/pup-binan-hero.jpg';
 import clinicScene from '../../assets/clinic-waiting-area.jpg';
+import pupStatue from '../../assets/pupstatue.jpg';
+
+const HERO_SLIDES = [
+  {
+    src: campusPhoto,
+    alt: 'Polytechnic University of the Philippines Biñan Campus building',
+    position: 'object-[60%_center] lg:object-center',
+    caption: 'PUP Biñan Campus',
+  },
+  {
+    src: pupStatue,
+    alt: 'PUP statue at the Biñan Campus',
+    position: 'object-[65%_center] lg:object-[center_35%]',
+    caption: 'Iskolar ng Bayan',
+  },
+  {
+    src: clinicScene,
+    alt: 'PUP Biñan Campus clinic waiting area',
+    position: 'object-center',
+    caption: 'Campus Clinic',
+  },
+];
+
+const HERO_INTERVAL_MS = 6000;
+
+// lucide-react v1 dropped brand icons, so these are inline lucide-style SVGs.
+// TODO: replace the '#' hrefs with the official PUP Biñan pages.
+const SOCIAL_LINKS = [
+  {
+    label: 'Facebook',
+    href: '#',
+    icon: (
+      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+    ),
+  },
+  {
+    label: 'Instagram',
+    href: '#',
+    icon: (
+      <>
+        <rect x="2" y="2" width="20" height="20" rx="5" />
+        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+        <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+      </>
+    ),
+  },
+  {
+    label: 'YouTube',
+    href: '#',
+    icon: (
+      <>
+        <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17" />
+        <path d="m10 15 5-3-5-3z" />
+      </>
+    ),
+  },
+  {
+    label: 'LinkedIn',
+    href: '#',
+    icon: (
+      <>
+        <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+        <rect x="2" y="9" width="4" height="12" />
+        <circle cx="4" cy="4" r="2" />
+      </>
+    ),
+  },
+];
 
 const NAVIGATION = [
   { label: 'Home', href: '#home' },
@@ -232,6 +300,86 @@ function FeatureCard({ feature }) {
   );
 }
 
+function HeroCarousel() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const total = HERO_SLIDES.length;
+
+  const goTo = useCallback(
+    (index) => setActiveIndex((index + total) % total),
+    [total],
+  );
+
+  useEffect(() => {
+    const reduceMotion = window.matchMedia?.(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+
+    if (paused || reduceMotion) return undefined;
+
+    const timer = window.setTimeout(
+      () => setActiveIndex((index) => (index + 1) % total),
+      HERO_INTERVAL_MS,
+    );
+
+    return () => window.clearTimeout(timer);
+  }, [activeIndex, paused, total]);
+
+  return (
+    // No z-index on the wrapper so the images can sit behind the gradient
+    // overlays while the controls stay above them.
+    <div
+      className="pointer-events-none absolute inset-0"
+      role="region"
+      aria-roledescription="carousel"
+      aria-label="Campus photos"
+    >
+      {HERO_SLIDES.map((slide, index) => (
+        <img
+          key={slide.caption}
+          src={slide.src}
+          alt={index === activeIndex ? slide.alt : ''}
+          aria-hidden={index !== activeIndex}
+          className={`absolute inset-0 -z-20 h-full w-full object-cover ${slide.position} transition-[opacity,transform] duration-[1200ms] ease-out motion-reduce:transition-none ${
+            index === activeIndex
+              ? 'scale-100 opacity-100'
+              : 'scale-105 opacity-0'
+          }`}
+          fetchPriority={index === 0 ? 'high' : 'low'}
+          loading={index === 0 ? 'eager' : 'lazy'}
+        />
+      ))}
+
+      <div
+        className="pointer-events-auto absolute bottom-5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 sm:bottom-6"
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+        onFocus={() => setPaused(true)}
+        onBlur={() => setPaused(false)}
+        onKeyDown={(event) => {
+          if (event.key === 'ArrowLeft') goTo(activeIndex - 1);
+          if (event.key === 'ArrowRight') goTo(activeIndex + 1);
+        }}
+      >
+        {HERO_SLIDES.map((slide, index) => (
+          <button
+            key={slide.caption}
+            type="button"
+            onClick={() => goTo(index)}
+            aria-label={`Show photo ${index + 1}: ${slide.caption}`}
+            aria-current={index === activeIndex}
+            className={`h-2 rounded-full transition-all ${
+              index === activeIndex
+                ? 'w-6 bg-white'
+                : 'w-2 bg-white/45 hover:bg-white/70'
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Landing() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
@@ -307,10 +455,10 @@ export default function Landing() {
   return (
     <div
       id="home"
-      className="min-h-screen overflow-x-hidden bg-[#f8f9fc] text-slate-900 dark:bg-gray-900 dark:text-gray-100"
+      className="landing-page min-h-screen overflow-x-hidden md:flex md:h-dvh md:min-h-0 md:flex-col md:overflow-hidden bg-[#f8f9fc] text-slate-900 dark:bg-gray-900 dark:text-gray-100"
     >
       {/* HEADER */}
-      <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/95 dark:bg-gray-900/95 shadow-sm backdrop-blur-xl">
+      <header className="sticky top-0 z-50 shrink-0 border-b border-slate-100 bg-white/95 dark:bg-gray-900/95 shadow-sm backdrop-blur-xl">
         <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
           <Link
             to="/"
@@ -423,23 +571,25 @@ export default function Landing() {
         )}
       </header>
 
+      {/* On tablet/desktop the page scrolls inside this area (like the
+          dashboard's .student-shell-body) so the scrollbar starts below the
+          header instead of running behind it. */}
+      <div
+        className="landing-scroll md:min-h-0 md:flex-1 md:overflow-y-auto md:overflow-x-hidden"
+        data-route-scroll
+      >
       {/* HERO */}
       <section
         className="relative isolate min-h-[540px] overflow-hidden bg-[#4d0d1b] sm:min-h-[570px] lg:min-h-[500px]"
         aria-labelledby="landing-title"
       >
-        <img
-          src={campusPhoto}
-          alt="Polytechnic University of the Philippines Biñan Campus building"
-          className="absolute inset-0 -z-20 h-full w-full object-cover object-[60%_center] lg:object-center"
-          fetchPriority="high"
-        />
+        <HeroCarousel />
 
         <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#4d0d1b]/98 via-[#611322]/90 to-[#741126]/35 lg:via-[#611322]/78 lg:to-[#4d0d1b]/10" />
 
         <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#4d0d1b]/75 via-transparent to-transparent" />
 
-        <div className="mx-auto flex min-h-[540px] max-w-[1440px] flex-col justify-center px-5 py-14 sm:min-h-[570px] sm:px-8 lg:min-h-[500px] lg:px-14 lg:py-16">
+        <div className="mx-auto flex min-h-[540px] max-w-[1440px] flex-col justify-center px-5 py-14 sm:min-h-[570px] sm:px-8 lg:min-h-[500px] lg:px-14 lg:py-16 max-lg:pb-20">
           <div className="max-w-[690px]">
             <p className="text-[10px] font-bold uppercase leading-5 tracking-[0.19em] text-rose-100 sm:text-xs">
               Polytechnic University of the Philippines
@@ -450,8 +600,6 @@ export default function Landing() {
                 Biñan Campus
               </span>
             </p>
-
-            <div className="mt-3 h-0.5 w-14 bg-rose-200/80" />
 
             <h1
               id="landing-title"
@@ -468,7 +616,7 @@ export default function Landing() {
             <p className="mt-5 max-w-xl text-[13px] leading-6 text-rose-50/90 sm:text-[15px] sm:leading-7">
               Book appointments, check in with QR, access
               your clinic health records and receive
-              important updates — all in one place.
+              important updates, all in one place.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 min-[410px]:flex-row">
@@ -489,7 +637,7 @@ export default function Landing() {
               </a>
             </div>
 
-            <div className="mt-9 grid max-w-xl grid-cols-3 gap-3 border-t border-white/20 pt-5 text-white">
+            <div className="mt-9 grid max-w-xl grid-cols-3 gap-3 text-white">
               <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15">
                   <Smartphone size={17} />
@@ -544,7 +692,7 @@ export default function Landing() {
       {/* FEATURE CARDS */}
       <section
         aria-label="CareLink features"
-        className="relative z-10 mx-auto -mt-6 max-w-[1440px] px-4 sm:px-6 lg:px-10"
+        className="relative z-10 mx-auto mt-8 max-w-[1440px] sm:mt-10 px-4 sm:px-6 lg:px-10"
       >
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map((feature) => (
@@ -559,12 +707,12 @@ export default function Landing() {
       {/* HOW CARELINK WORKS + CLINIC PHOTO */}
       <section
         id="about"
-        className="mx-auto max-w-[1440px] scroll-mt-24 px-4 pt-12 sm:px-6 lg:px-10 lg:pt-16"
+        className="mx-auto max-w-[1440px] scroll-mt-24 md:scroll-mt-4 px-4 pt-12 sm:px-6 lg:px-10 lg:pt-16"
       >
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.85fr)]">
           <div
             id="how-it-works"
-            className="scroll-mt-24 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7"
+            className="scroll-mt-24 md:scroll-mt-4 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7"
           >
             <SectionTitle
               eyebrow="Get Started"
@@ -659,7 +807,7 @@ export default function Landing() {
       {/* SERVICES + ANNOUNCEMENTS */}
       <section
         id="services"
-        className="mx-auto max-w-[1440px] scroll-mt-24 px-4 py-7 sm:px-6 lg:px-10"
+        className="mx-auto max-w-[1440px] scroll-mt-24 md:scroll-mt-4 px-4 py-7 sm:px-6 lg:px-10"
       >
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.85fr)]">
           <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7">
@@ -708,7 +856,7 @@ export default function Landing() {
 
           <div
             id="announcements"
-            className="scroll-mt-24 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7"
+            className="scroll-mt-24 md:scroll-mt-4 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7"
           >
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
@@ -952,7 +1100,7 @@ export default function Landing() {
       {/* CONTACT + FOOTER */}
       <footer
         id="contact"
-        className="scroll-mt-24 bg-white"
+        className="scroll-mt-24 md:scroll-mt-4 bg-white"
       >
         <div className="mx-auto grid max-w-[1440px] gap-8 px-5 py-9 sm:px-8 md:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr] lg:px-14">
           <div>
@@ -973,6 +1121,34 @@ export default function Landing() {
               with Self-service Triage Kiosk for
               PUP Biñan Campus.
             </p>
+
+            <div className="mt-4 flex items-center gap-2">
+              {SOCIAL_LINKS.map((social) => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={social.label}
+                  title={social.label}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-50 text-[#741126] transition hover:-translate-y-0.5 hover:bg-[#741126] hover:text-white dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-800 dark:hover:text-white"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="17"
+                    height="17"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    {social.icon}
+                  </svg>
+                </a>
+              ))}
+            </div>
           </div>
 
           <div>
@@ -1035,6 +1211,7 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 }

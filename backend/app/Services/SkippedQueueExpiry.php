@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Appointment;
 use App\Models\AppointmentCheckin;
+use App\Support\TimeGuard;
 use Illuminate\Support\Facades\DB;
 
 class SkippedQueueExpiry
@@ -11,6 +12,11 @@ class SkippedQueueExpiry
     /** Reconcile only students still skipped, using their original slot deadline. */
     public function run(): int
     {
+        // Nurse → Developer Tools → Remove time Guard: keep skipped patients skipped.
+        if (TimeGuard::nursePortalBypassed()) {
+            return 0;
+        }
+
         $count = 0;
         AppointmentCheckin::where('status', 'skipped')->where('is_walk_in', false)
             ->with('appointment')->orderBy('id')->chunkById(100, function ($checkins) use (&$count) {

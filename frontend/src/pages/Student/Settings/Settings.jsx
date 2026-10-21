@@ -1,10 +1,21 @@
+import { getToken, getUser, setUser } from '../../../services/session';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Key, Mail, Shield, Eye, EyeOff, Loader2, Save, Moon, Lock, SlidersHorizontal, MessageSquare, ChevronDown, AlertTriangle, Trash2 } from 'lucide-react';
+import { Key, Mail, Shield, Eye, EyeOff, Loader2, Save, Moon, Lock, SlidersHorizontal, MessageSquare, ChevronDown, Trash2, Wrench, Clock, Settings as SettingsIcon } from 'lucide-react';
 import api from '../../../services/api';
 import useStudentWidgetPrefs from '../../../hooks/useStudentWidgetPrefs';
-import RouteLoadingBar from '../../../components/RouteLoadingBar';
+import { readDarkMode, saveDarkMode } from '../../../hooks/useAccountTheme';
+import StudentPageHero from '../../../components/StudentPageHero';
+import { fetchDevTools, updateTimeGuardBypass, useTimeGuardBypass } from '../../../services/devTools';
+
+// Same hero as the other Student pages (aurora + tab icon).
+const SETTINGS_HERO = {
+  id: 'settings-title',
+  title: 'Settings',
+  description: 'Manage your account, security, and portal preferences.',
+  art: SettingsIcon,
+};
 
 /*
  * Small on/off switch used by the General tab. Plain Tailwind (this page has
@@ -72,7 +83,7 @@ const SkeletonHeading = () => (
 
 const Settings = () => {
   const [params] = useSearchParams();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = getUser('student');
   const { prefs, setPref } = useStudentWidgetPrefs();
   const [activeTab, setActiveTab] = useState(params.get('tab') || 'general');
 
@@ -100,7 +111,7 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  const [darkMode, setDarkMode] = useState(() => readDarkMode('student'));
   const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
 
   const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '', new_password_confirmation: '' });
@@ -108,9 +119,62 @@ const Settings = () => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [resetPassword, setResetPassword] = useState('');
 
+  // Developer Tools → Remove time Guard.
+  const timeGuardOff = useTimeGuardBypass();
+  const [devToolsAvailable, setDevToolsAvailable] = useState(true);
+  const [showDevPassword, setShowDevPassword] = useState(false);
+  const [devPassword, setDevPassword] = useState('');
+  const [devError, setDevError] = useState('');
+  const [devSaving, setDevSaving] = useState(false);
+
+  useEffect(() => {
+    fetchDevTools()
+      .then((data) => setDevToolsAvailable(data?.available !== false))
+      .catch(() => {});
+  }, []);
+
+  const handleTimeGuardToggle = async (turnOn) => {
+    setDevError('');
+    if (turnOn) {
+      // Turning the time guard off for testing needs the developer password.
+      setShowDevPassword(true);
+      return;
+    }
+    setDevSaving(true);
+    try {
+      const response = await updateTimeGuardBypass(false);
+      setMessageType('success');
+      setMessage(response?.message || 'Time guard restored.');
+    } catch (err) {
+      setMessageType('error');
+      setMessage(err.response?.data?.message || 'Could not restore the time guard.');
+    } finally {
+      setDevSaving(false);
+      setTimeout(() => setMessage(''), 4000);
+    }
+  };
+
+  const confirmTimeGuardBypass = async (e) => {
+    e.preventDefault();
+    setDevSaving(true);
+    setDevError('');
+    try {
+      const response = await updateTimeGuardBypass(true, devPassword);
+      setShowDevPassword(false);
+      setDevPassword('');
+      setMessageType('success');
+      setMessage(response?.message || 'Time guard removed.');
+      setTimeout(() => setMessage(''), 4000);
+    } catch (err) {
+      setDevError(err.response?.data?.errors?.password?.[0] || err.response?.data?.message || 'Could not remove the time guard.');
+    } finally {
+      setDevSaving(false);
+    }
+  };
+
   const applyDarkMode = (value) => {
     setDarkMode(value);
-    localStorage.setItem('darkMode', value.toString());
+    saveDarkMode(value, 'student');
     if (value) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
     window.dispatchEvent(new Event('darkModeChange'));
@@ -133,7 +197,7 @@ const Settings = () => {
 
     setLoading(true); setMessage('');
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('student');
       await api.post('/auth/change-password', {
         email: user.email,
         current_password: passwordForm.current_password,
@@ -158,8 +222,8 @@ const Settings = () => {
     setLoading(true); setMessage('');
     try {
       const response = await api.patch('/student/profile/email', { email: emailForm.new_email, password: emailForm.password });
-      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-      localStorage.setItem('user', JSON.stringify({ ...storedUser, email: response.data.data.email }));
+      const storedUser = getUser('student');
+      setUser({ ...storedUser, email: response.data.data.email }, 'student');
       window.dispatchEvent(new Event('studentProfileUpdated'));
       setMessageType('success');
       setMessage('Email updated successfully. Use your updated email the next time you log in.');
@@ -184,7 +248,7 @@ const Settings = () => {
        * showing data that no longer exists. Device-only preferences such as
        * the widget toggles and dark mode are deliberately left alone.
        */
-      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const storedUser = getUser('student');
       const clearedUser = {
         ...storedUser,
         mobile_number: null,
@@ -199,7 +263,7 @@ const Settings = () => {
           health_profile_completed: false,
         },
       };
-      localStorage.setItem('user', JSON.stringify(clearedUser));
+      setUser(clearedUser, 'student');
       localStorage.removeItem('carelink.student.appointments');
       localStorage.removeItem('carelink.student.dashboard');
 
@@ -226,6 +290,7 @@ const Settings = () => {
     { id: 'password', icon: Key, label: 'Password', desc: 'Change your password' },
     { id: 'email', icon: Mail, label: 'Email', desc: 'Update email address' },
     { id: 'privacy', icon: Shield, label: 'Privacy', desc: 'Data & privacy' },
+    { id: 'developer', icon: Wrench, label: 'Developer Tools', desc: 'Testing tools' },
   ];
 
   const tabs = isDesktop ? desktopTabs : desktopTabs;
@@ -269,54 +334,6 @@ const Settings = () => {
               checked={darkMode}
               onChange={applyDarkMode}
             />
-          </div>
-
-          <div className="space-y-4 border-t border-gray-100 dark:border-gray-700 pt-5">
-            <h3 className="font-bold text-gray-900 dark:text-white flex items-center space-x-2">
-              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
-              <span>Reset data</span>
-            </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Deletes the appointments, QR / check-in history, profile details and health profile
-              you entered, so you can start over. Your account and your clinic medical records are kept.
-            </p>
-
-            {!showResetConfirm ? (
-              <button
-                type="button"
-                onClick={() => setShowResetConfirm(true)}
-                className="inline-flex items-center space-x-2 rounded-lg border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/30">
-                <Trash2 className="w-4 h-4" />
-                <span>Reset data</span>
-              </button>
-            ) : (
-              <form onSubmit={handleResetData} className="space-y-3 rounded-lg border border-red-200 bg-red-50/60 p-4 dark:border-red-900/60 dark:bg-red-950/20">
-                <p className="text-xs font-semibold text-red-700 dark:text-red-300">
-                  This cannot be undone. Enter your current password to confirm.
-                </p>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="password"
-                    value={resetPassword}
-                    onChange={(e) => setResetPassword(e.target.value)}
-                    className="w-full border border-red-200 dark:border-red-900/60 dark:bg-gray-700 dark:text-white rounded-lg pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                    placeholder="Enter current password" required />
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button type="submit" disabled={loading}
-                    className="inline-flex items-center space-x-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50">
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                    <span>{loading ? 'Resetting...' : 'Confirm reset'}</span>
-                  </button>
-                  <button type="button" disabled={loading}
-                    onClick={() => { setShowResetConfirm(false); setResetPassword(''); }}
-                    className="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700/50">
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            )}
           </div>
         </div>
       );
@@ -442,6 +459,122 @@ const Settings = () => {
       );
     }
 
+    if (id === 'developer') {
+      return (
+        <div className="space-y-4">
+          <h3 className="font-bold text-gray-900 dark:text-white flex items-center space-x-2">
+            <Wrench className="w-5 h-5 text-maroon-800 dark:text-maroon-400" />
+            <span>Developer Tools</span>
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Testing tools for the clinic flow. Changes apply to your account only.
+          </p>
+
+          {!devToolsAvailable ? (
+            <p className="rounded-lg bg-gray-50 p-4 text-sm text-gray-500 dark:bg-gray-700/50 dark:text-gray-400">
+              Developer Tools are turned off on this server.
+            </p>
+          ) : (
+            <>
+              <ToggleSwitch
+                icon={Clock}
+                label="Remove time Guard"
+                description={timeGuardOff
+                  ? 'On: you can book past dates and times and Sundays. Nurse and kiosk rules still apply.'
+                  : 'Off: normal booking time rules apply.'}
+                checked={timeGuardOff || showDevPassword}
+                onChange={(value) => {
+                  if (devSaving) return;
+                  // Switching back while the password prompt is open just cancels it.
+                  if (!value && showDevPassword && !timeGuardOff) { setShowDevPassword(false); setDevPassword(''); setDevError(''); return; }
+                  handleTimeGuardToggle(value);
+                }}
+              />
+
+              {showDevPassword && !timeGuardOff && (
+                <form onSubmit={confirmTimeGuardBypass} className="space-y-3 rounded-lg border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
+                  <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                    Enter the developer password to remove the time guard.
+                  </p>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="password"
+                      autoComplete="off"
+                      autoFocus
+                      value={devPassword}
+                      onChange={(e) => { setDevPassword(e.target.value); setDevError(''); }}
+                      className="w-full border border-amber-200 dark:border-amber-900/60 dark:bg-gray-700 dark:text-white rounded-lg pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500"
+                      placeholder="Developer password"
+                      aria-label="Developer password"
+                      required
+                    />
+                  </div>
+                  {devError && <p role="alert" className="text-xs text-red-600 dark:text-red-400">{devError}</p>}
+                  <div className="flex flex-wrap gap-2">
+                    <button type="submit" disabled={devSaving || !devPassword}
+                      className="inline-flex items-center space-x-2 rounded-lg bg-maroon-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900 disabled:opacity-50">
+                      {devSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wrench className="w-4 h-4" />}
+                      <span>{devSaving ? 'Checking...' : 'Remove time guard'}</span>
+                    </button>
+                    <button type="button" disabled={devSaving}
+                      onClick={() => { setShowDevPassword(false); setDevPassword(''); setDevError(''); }}
+                      className="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700/50">
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
+            </>
+          )}
+
+          <div className="space-y-3 border-t border-gray-100 pt-4 dark:border-gray-700">
+            <ToggleSwitch
+              icon={Trash2}
+              label="Reset data"
+              description="Deletes the appointments, QR / check-in history, profile details and health profile you entered, so you can start over. Your account and clinic medical records are kept."
+              checked={showResetConfirm}
+              onChange={(value) => {
+                if (loading) return;
+                // On opens the confirmation; off cancels it.
+                setShowResetConfirm(value);
+                if (!value) setResetPassword('');
+              }}
+            />
+
+            {showResetConfirm && (
+              <form onSubmit={handleResetData} className="space-y-3 rounded-lg border border-red-200 bg-red-50/60 p-4 dark:border-red-900/60 dark:bg-red-950/20">
+                <p className="text-xs font-semibold text-red-700 dark:text-red-300">
+                  This cannot be undone. Enter the developer password to confirm.
+                </p>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="password"
+                    value={resetPassword}
+                    onChange={(e) => setResetPassword(e.target.value)}
+                    className="w-full border border-red-200 dark:border-red-900/60 dark:bg-gray-700 dark:text-white rounded-lg pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="Developer password" aria-label="Developer password" autoComplete="off" required />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button type="submit" disabled={loading}
+                    className="inline-flex items-center space-x-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50">
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    <span>{loading ? 'Resetting...' : 'Confirm reset'}</span>
+                  </button>
+                  <button type="button" disabled={loading}
+                    onClick={() => { setShowResetConfirm(false); setResetPassword(''); }}
+                    className="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700/50">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+              )}
+          </div>
+        </div>
+      );
+    }
+
     return null;
   };
 
@@ -454,13 +587,7 @@ const Settings = () => {
     return (
       <div className="space-y-5 max-w-[1440px] mx-auto">
 
-        <div className="relative overflow-hidden rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage your account</p>
-
-          {/* Route-loading bar — full-width fill/drain loop, hero only. */}
-          <RouteLoadingBar />
-        </div>
+        <StudentPageHero {...SETTINGS_HERO} loading />
 
         <div className="rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
           {/* Content-card ghost — mirrors the loaded layout 1:1 (same grid,
@@ -496,7 +623,7 @@ const Settings = () => {
             </div>
 
             {/* Ghost of the panel — mirrors the General tab's real stack:
-                General (toggle) → Appearance (toggle) → Reset data (button) */}
+                General (toggle) → Appearance (toggle) */}
             <div className="hidden min-w-0 md:block md:border-l md:border-gray-300 md:pl-5 dark:border-gray-600">
               <div className="space-y-6">
                 <div className="space-y-4">
@@ -508,12 +635,6 @@ const Settings = () => {
                 <div className="space-y-4 border-t border-gray-100 pt-5 dark:border-gray-700">
                   <SkeletonHeading />
                   <SkeletonToggle />
-                </div>
-
-                <div className="space-y-4 border-t border-gray-100 pt-5 dark:border-gray-700">
-                  <SkeletonHeading />
-                  <Skeleton className="h-3 w-3/4 max-w-full" />
-                  <Skeleton className="h-10 w-28 rounded-lg" />
                 </div>
               </div>
             </div>
@@ -527,10 +648,7 @@ const Settings = () => {
   return (
     <div className="space-y-5 max-w-[1440px] mx-auto">
 
-      <div className="rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage your account</p>
-      </div>
+      <StudentPageHero {...SETTINGS_HERO} />
 
       {message && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}

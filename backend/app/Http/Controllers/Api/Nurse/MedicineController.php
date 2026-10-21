@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Nurse;
 
 use App\Http\Controllers\Controller;
 use App\Support\DatabaseSearch;
+use App\Support\TimeGuard;
 use App\Models\Medicine;
 use App\Models\MedicineBatch;
 use App\Models\MedicineStockMovement;
@@ -71,7 +72,7 @@ class MedicineController extends Controller
             'minimum_stock' => 'nullable|integer|min:0',
             'unit' => 'nullable|string|max:50',
             'dosage' => 'nullable|string|max:100',
-            'expiry_date' => 'nullable|date|after_or_equal:today',
+            'expiry_date' => TimeGuard::nursePortalBypassed() ? 'nullable|date' : 'nullable|date|after_or_equal:today',
             'description' => 'nullable|string',
         ]);
 
@@ -114,7 +115,7 @@ class MedicineController extends Controller
         $data = $request->validate([
             'lot_number' => 'required|string|max:100',
             'quantity' => 'required|integer|min:1',
-            'expiry_date' => 'nullable|date|after_or_equal:today',
+            'expiry_date' => TimeGuard::nursePortalBypassed() ? 'nullable|date' : 'nullable|date|after_or_equal:today',
             'received_at' => 'nullable|date',
             'supplier' => 'nullable|string|max:150',
             'reference' => 'nullable|string|max:150',
@@ -222,7 +223,7 @@ class MedicineController extends Controller
             'minimum_stock' => 'nullable|integer|min:0',
             'unit' => 'nullable|string|max:50',
             'dosage' => 'nullable|string|max:100',
-            'expiry_date' => 'nullable|date|after_or_equal:today',
+            'expiry_date' => TimeGuard::nursePortalBypassed() ? 'nullable|date' : 'nullable|date|after_or_equal:today',
             'description' => 'nullable|string',
         ]);
 

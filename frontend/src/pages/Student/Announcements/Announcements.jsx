@@ -1,3 +1,4 @@
+import { getToken } from '../../../services/session';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Search, Calendar, ChevronDown, Megaphone, AlertTriangle, Heart, GraduationCap, Siren, Loader2, RefreshCw } from 'lucide-react';
@@ -27,7 +28,7 @@ const Announcements = () => {
 
   const fetchAnnouncements = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('student');
       const response = await api.get('/announcements?limit=50', {
         headers: { Authorization: `Bearer ${token}` }
       });

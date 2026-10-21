@@ -1,9 +1,11 @@
+import { getToken } from '../../../services/session';
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Plus, Edit2, Trash2, Loader2, Pill, AlertTriangle, Clock, Package, Filter, ChevronDown, ClipboardList, X, History } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import useNurseSync from '../../../hooks/useNurseSync';
+import { useNurseTimeGuardBypass } from '../../../services/devTools';
 
 const isWholeNumberInput = (value) => /^\d*$/.test(value);
 const isPositiveWholeNumberInput = (value) => value === '' || /^[1-9]\d*$/.test(value);
@@ -44,6 +46,8 @@ const NurseMedicine = () => {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
   const medicineRequest = useRef(0);
+  // Developer Tools → Remove time Guard: past expiry dates become selectable.
+  const timeGuardOff = useNurseTimeGuardBypass();
 
   useNurseSync(['medicines'], async signal => {
     await fetchMedicines(search, true, signal);
@@ -63,7 +67,7 @@ const NurseMedicine = () => {
       setError('');
       setRefreshing(true);
       if (!silent) setLoading(medicines.length === 0);
-      const token = localStorage.getItem('token');
+      const token = getToken('nurse');
       const params = { search: searchValue };
       if (filter === 'low_stock') params.low_stock = true;
       if (filter === 'expiring_soon') params.expiring_soon = true;
@@ -126,7 +130,7 @@ const NurseMedicine = () => {
     setFormLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('nurse');
       let response;
 
       if (editingMedicine) {
@@ -170,7 +174,7 @@ const NurseMedicine = () => {
     setFormLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('nurse');
       const endpoint = `/nurse/medicines/${stockMedicine.id}/add-stock`;
 
       const response = await api.post(endpoint, { quantity: stockQuantity }, {
@@ -254,7 +258,7 @@ const NurseMedicine = () => {
     if (!deleteMedicine) return;
     setFormLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('nurse');
       await api.delete(`/nurse/medicines/${deleteMedicine.id}`, {
         headers: { Authorization: `Bearer ${token}`, 'If-Match': deleteMedicine.sync_version }
       });
@@ -490,7 +494,7 @@ const NurseMedicine = () => {
                 </div>
                 <div>
                   <label className={labelClass}>Expiry Date</label>
-                  <input className={inputClass} type="date" min={minimumExpiryDate} value={form.expiry_date} onChange={(e) => setForm({...form, expiry_date: e.target.value})} />
+                  <input className={inputClass} type="date" min={timeGuardOff ? undefined : minimumExpiryDate} value={form.expiry_date} onChange={(e) => setForm({...form, expiry_date: e.target.value})} />
                 </div>
               </div>
               <div className="flex gap-3 pt-4 border-t">
@@ -538,7 +542,7 @@ const NurseMedicine = () => {
             <div className="grid grid-cols-2 gap-3">
               <label className="col-span-2"><span className={labelClass}>Lot/batch number *</span><input className={inputClass} value={batchForm.lot_number} onChange={e => setBatchForm({ ...batchForm, lot_number: e.target.value })} required /></label>
               <label><span className={labelClass}>Quantity *</span><input className={inputClass} type="number" min="1" step="1" inputMode="numeric" value={batchForm.quantity} onChange={e => { if (isWholeNumberInput(e.target.value)) setBatchForm({ ...batchForm, quantity: e.target.value }); }} required /></label>
-              <label><span className={labelClass}>Expiry Date</span><input className={inputClass} type="date" min={minimumExpiryDate} value={batchForm.expiry_date} onChange={e => setBatchForm({ ...batchForm, expiry_date: e.target.value })} /></label>
+              <label><span className={labelClass}>Expiry Date</span><input className={inputClass} type="date" min={timeGuardOff ? undefined : minimumExpiryDate} value={batchForm.expiry_date} onChange={e => setBatchForm({ ...batchForm, expiry_date: e.target.value })} /></label>
               <label><span className={labelClass}>Received Date</span><input className={inputClass} type="date" value={batchForm.received_at} onChange={e => setBatchForm({ ...batchForm, received_at: e.target.value })} /></label>
               <input className={inputClass} placeholder="Supplier (optional)" value={batchForm.supplier} onChange={e => setBatchForm({ ...batchForm, supplier: e.target.value })} />
               <input className={`${inputClass} col-span-2`} placeholder="Reference (optional)" value={batchForm.reference} onChange={e => setBatchForm({ ...batchForm, reference: e.target.value })} />

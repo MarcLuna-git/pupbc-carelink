@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Calendar, ClipboardList, FileText, Clock, Bell, ChevronRight, Activity, Heart, QrCode, User, AlertCircle, CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
 import api from '../../../services/api';
+import { getToken, getUser, setUser } from '../../../services/session';
 import { groupAppointments, formatAppointmentDate } from '../../../utils/appointmentDate';
 
 const Skeleton = ({ className = '' }) => (
@@ -13,7 +14,7 @@ const dashboardCacheKey = 'carelink.student.dashboard';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = getUser('student');
   const cachedDashboard = (() => {
     try {
       return JSON.parse(localStorage.getItem(dashboardCacheKey) || 'null');
@@ -37,7 +38,7 @@ const Dashboard = () => {
 
   const fetchDashboardData = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('student');
       const headers = { headers: { Authorization: `Bearer ${token}` } };
 
       const [healthResult, statsResult, appointmentsResult] = await Promise.allSettled([
@@ -53,11 +54,11 @@ const Dashboard = () => {
         const healthDone = healthResult.value.data.data?.completed || healthResult.value.data.data?.exists || false;
         setHealthProfileDone(healthDone);
 
-        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-        localStorage.setItem('user', JSON.stringify({
+        const currentUser = getUser('student');
+        setUser({
           ...currentUser,
           profile: { ...(currentUser.profile || {}), health_profile_completed: healthDone }
-        }));
+        }, 'student');
       } else if (healthResult.status === 'rejected') {
         console.log('Health status error:', healthResult.reason);
       }
@@ -89,7 +90,7 @@ const Dashboard = () => {
 
   const fetchAnnouncements = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('student');
       const response = await api.get('/announcements?limit=3', { headers: { Authorization: `Bearer ${token}` } });
       if (response.data.success) {
         const data = response.data.data;
@@ -105,7 +106,7 @@ const Dashboard = () => {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('student');
       const response = await api.get('/notifications?limit=5', { headers: { Authorization: `Bearer ${token}` } });
       if (response.data.success) {
         const data = response.data.data;

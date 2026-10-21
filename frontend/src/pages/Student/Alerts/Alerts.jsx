@@ -1,3 +1,4 @@
+import { getToken } from '../../../services/session';
 import {
   useState,
   useEffect,
@@ -310,9 +311,7 @@ const Alerts = () => {
           setError('');
 
           const token =
-            localStorage.getItem(
-              'token'
-            );
+            getToken('student');
 
           const headers = {
             Authorization:
@@ -476,9 +475,7 @@ const Alerts = () => {
 
       try {
         const token =
-          localStorage.getItem(
-            'token'
-          );
+          getToken('student');
 
         await api.patch(
           `/student/notifications/${id}/read`,
@@ -585,9 +582,7 @@ const Alerts = () => {
         setError('');
 
         const token =
-          localStorage.getItem(
-            'token'
-          );
+          getToken('student');
 
         await api.patch(
           '/student/notifications/read-all',
@@ -649,9 +644,7 @@ const Alerts = () => {
       setError('');
 
       const token =
-        localStorage.getItem(
-          'token'
-        );
+        getToken('student');
 
       const response =
         await api.delete(

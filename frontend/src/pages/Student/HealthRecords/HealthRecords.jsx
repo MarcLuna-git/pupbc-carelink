@@ -36,6 +36,7 @@ const CARD = 'rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)]
 const RECORDS_HERO = {
   id: 'records-title',
   title: 'Records',
+  art: FileText,
   description: 'View your consultation records, health documents, and clinic history.',
   benefits: [
     { icon: FileText, label: 'Access your clinic records' },
@@ -552,7 +553,7 @@ const HealthRecords = () => {
         </h2>
 
         <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center">
-          <div role="tablist" aria-label="Record type" className="flex flex-wrap gap-2">
+          <div role="tablist" aria-label="Record type" className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             {TABS.map(({ id, label, icon: Icon }) => {
               const active = tab === id;
               const count = id === 'certificates' ? certificates.length : records.length;
@@ -563,7 +564,7 @@ const HealthRecords = () => {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setTab(id)}
-                  className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
+                  className={`flex w-full items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition sm:inline-flex sm:w-auto ${
                     active
                       ? 'border-maroon-800 bg-maroon-800 text-white'
                       : 'border-[var(--sp-border)] text-gray-700 hover:bg-maroon-50 dark:text-gray-300 dark:hover:bg-maroon-900/20'
@@ -577,7 +578,7 @@ const HealthRecords = () => {
             })}
           </div>
 
-          <div className="flex gap-2 xl:ml-auto">
+          <div className="flex flex-col gap-2 sm:flex-row xl:ml-auto">
             <div className="relative min-w-0 flex-1 xl:w-72 xl:flex-none">
               <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
@@ -595,7 +596,7 @@ const HealthRecords = () => {
                 type="button"
                 onClick={() => setFilterOpen((open) => !open)}
                 aria-expanded={filterOpen}
-                className="inline-flex h-full items-center gap-2 rounded-xl border border-[var(--sp-border)] px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--sp-border)] px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700 sm:inline-flex sm:h-full sm:w-auto sm:py-0"
               >
                 <Filter className="h-4 w-4" />
                 Filter
@@ -606,7 +607,7 @@ const HealthRecords = () => {
               </button>
 
               {filterOpen && (
-                <div className="absolute right-0 top-full z-20 mt-2 w-64 space-y-3 rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)] p-4 shadow-lg">
+                <div className="absolute left-0 right-0 top-full z-20 mt-2 space-y-3 sm:left-auto sm:w-64 rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)] p-4 shadow-lg">
                   {[
                     ['type', 'Type', [['all', 'All types'], ['consultation', 'Consultations'], ['emergency', 'Emergencies']]],
                     ['year', 'Year', [['all', 'All years'], ...years.map((year) => [year, year])]],

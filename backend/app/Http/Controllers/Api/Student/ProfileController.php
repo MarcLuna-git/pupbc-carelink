@@ -123,6 +123,24 @@ class ProfileController extends Controller
             'phone' => $user->profile->guardian_contact ?? null, 'source' => 'legacy'];
     }
 
+    public function removeAvatar()
+    {
+        $profile = StudentProfile::where('user_id', auth()->id())->first();
+
+        if ($profile?->profile_picture) {
+            Storage::disk('public')->delete($profile->profile_picture);
+            $profile->update(['profile_picture' => null]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile picture removed.',
+            'data' => [
+                'profile_picture' => null,
+            ],
+        ]);
+    }
+
     private function profileData(?StudentProfile $profile): ?array
     {
         if (!$profile) {

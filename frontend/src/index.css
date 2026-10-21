@@ -25,9 +25,9 @@ input[type="password"]::-ms-clear {
   background-color: var(--color-maroon-950);
   background-image:
     linear-gradient(to bottom right,
-      color-mix(in srgb, var(--color-maroon-900) 78%, transparent),
-      color-mix(in srgb, var(--color-maroon-800) 72%, transparent),
-      color-mix(in srgb, var(--color-maroon-950) 78%, transparent)),
+      color-mix(in srgb, var(--color-maroon-900) 58%, transparent),
+      color-mix(in srgb, var(--color-maroon-800) 45%, transparent),
+      color-mix(in srgb, var(--color-maroon-950) 62%, transparent)),
     url('./assets/pupbg.jpg');
   background-size: cover;
   background-position: center;
@@ -218,6 +218,76 @@ html.dark { color-scheme: dark; }
    newest words stay in view (the "camera" follows the reply). */
 .chat-locked {
   scroll-behavior: smooth;
+}
+
+/* Landing page on mobile: the document scrolls, but hide its scrollbar
+   (same as the Student shell on phones). */
+@media (max-width: 767px) {
+  html:has(.landing-page),
+  body:has(.landing-page) {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  html:has(.landing-page)::-webkit-scrollbar,
+  body:has(.landing-page)::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Landing page: on tablet/desktop the content scrolls inside .landing-scroll
+   (below the header), styled like the dashboard's .student-shell-body. */
+@media (min-width: 768px) {
+  .landing-scroll {
+    overscroll-behavior: contain;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: #c9bfc2 transparent;
+  }
+
+  .landing-scroll::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .landing-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .landing-scroll::-webkit-scrollbar-thumb {
+    background-color: #c9bfc2;
+    border-radius: 8px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+
+  .landing-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: #ab9ea2;
+  }
+
+  .dark .landing-scroll {
+    scrollbar-color: #4a4149 transparent;
+  }
+
+  .dark .landing-scroll::-webkit-scrollbar-thumb {
+    background-color: #4a4149;
+  }
+
+  .dark .landing-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: #5c525b;
+  }
+}
+
+/* Student page hero artwork (components/HeroArt.jsx): the tab's line icon
+   on the right; the copy stays on the left. */
+.hero-art { position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none; }
+/* Bigger icon sitting on the hero's bottom edge: its lowest quarter is cut
+   off by the hero (overflow:hidden), so about 3/4 of it shows. */
+.hero-art-icon { position:absolute;right:6%;bottom:-50px;display:flex;color:#111111;opacity:.55; }
+.hero-art-icon svg { width:200px;height:200px; }
+.dark .hero-art-icon { color:#ffffff;opacity:.45; }
+@media (max-width:639px) {
+  .hero-art-icon { right:-10px;bottom:-32px;opacity:.25; }
+  .hero-art-icon svg { width:130px;height:130px; }
 }
 
 /* Hide the chatbot scrollbar but keep scrolling */

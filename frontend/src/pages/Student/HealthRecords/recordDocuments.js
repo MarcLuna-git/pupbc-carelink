@@ -1,5 +1,6 @@
 import { escapeHtml } from '../../../utils/escapeHtml';
 import { formatPersonName } from '../../../utils/studentUser';
+import { getUser } from '../../../services/session';
 
 /*
  * Printable clinic documents, built in the browser from a clinic-history
@@ -37,12 +38,7 @@ const formatDay = (value) => {
 };
 
 const studentInfo = () => {
-  let user;
-  try {
-    user = JSON.parse(localStorage.getItem('user') || '{}');
-  } catch {
-    user = {};
-  }
+  const user = getUser('student');
   return {
     name: formatPersonName(`${user.first_name || ''} ${user.last_name || ''}`.trim()) || 'Student',
     studentId: user.student_id || '—',

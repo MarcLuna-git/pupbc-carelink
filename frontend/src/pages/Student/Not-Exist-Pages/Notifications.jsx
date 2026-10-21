@@ -1,3 +1,4 @@
+import { getToken } from '../../../services/session';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,7 +21,7 @@ const Notifications = () => {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('student');
       const response = await api.get('/student/notifications?limit=50', { 
         headers: { Authorization: `Bearer ${token}` } 
       });
@@ -80,7 +81,7 @@ const Notifications = () => {
   const markAsRead = async (id) => {
     setActionLoading(id);
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('student');
       await api.patch(`/student/notifications/${id}/read`, {}, { 
         headers: { Authorization: `Bearer ${token}` } 
       });
@@ -97,7 +98,7 @@ const Notifications = () => {
   const markAllAsRead = async () => {
     setActionLoading('all');
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('student');
       await api.patch('/student/notifications/read-all', {}, { 
         headers: { Authorization: `Bearer ${token}` } 
       });

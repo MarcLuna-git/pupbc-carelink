@@ -2,14 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import HeroArt from '../../../components/HeroArt';
 import RouteLoadingBar from '../../../components/RouteLoadingBar';
 import { AlertCircle, ArrowRight, CalendarDays, Check, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Clock, FileText, HeartPulse, HelpCircle, LayoutGrid, List, Loader2, MapPin, RotateCcw, ShieldCheck, Stethoscope, UserRound, X } from 'lucide-react';
 import { appointmentDate, appointmentTime, clinicDate, formatAppointmentDate, isClinicSunday } from '../../../utils/appointmentDate';
+import { useTimeGuardBypass } from '../../../services/devTools';
 
 const SERVICE_TITLES = { Consultation: 'General Consultation', 'Follow-up Checkup': 'Follow-up Check-up' };
 const SERVICE_NOTES = { Consultation: 'Medical concerns & clinic care', 'Medical Certificate': 'For school requirements',
   'Medical Clearance': 'For clearance requests', 'Follow-up Checkup': 'Review an earlier clinic visit',
-  Vaccination: 'Check vaccine availability', Other: 'Other clinic concerns' };
+  Vaccination: 'Check vaccine availability' };
 const serviceTitle = value => SERVICE_TITLES[value] || value || 'Appointment';
 const personName = person => typeof person === 'object' && person
   ? person.name || [person.first_name, person.last_name].filter(Boolean).join(' ') : '';
@@ -18,6 +20,7 @@ const roomName = appointment => (typeof appointment.room === 'string' ? appointm
 
 export function AppointmentHero({ loading = false }) {
   return <section className="ap-hero" aria-labelledby="appointments-title">
+    <HeroArt icon={CalendarDays} />
     <div className="ap-hero-copy">
       <p className="ap-eyebrow">Student clinic</p>
       <h1 id="appointments-title">Appointments</h1>
@@ -102,8 +105,14 @@ function StatusBadge({ status }) {
   return <span className={`ap-status ap-status-${status || 'pending'}`}><span />{labels[status] || status || 'Pending'}</span>;
 }
 
+/* Click selects an option; clicking the selected option again clears it. */
+const toggleOption = (onChange, name, value, selected) =>
+  onChange({ target: { name, value: selected ? '' : value } });
+
 function CalendarPicker({ value, onChange, disabled }) {
   const today = clinicDate();
+  // Developer Tools → Remove time Guard: past dates and Sundays become selectable.
+  const bypass = useTimeGuardBypass();
   const [month, setMonth] = useState(value?.slice(0, 7) || today.slice(0, 7));
   useEffect(() => { if (value) setMonth(value.slice(0, 7)); }, [value]);
   const [year, monthNumber] = month.split('-').map(Number);
@@ -117,7 +126,7 @@ function CalendarPicker({ value, onChange, disabled }) {
   };
   return <div className="ap-calendar">
     <div className="ap-calendar-month"><strong>{monthLabel}</strong><div>
-      <button type="button" aria-label="Previous month" disabled={disabled || month <= today.slice(0, 7)} onClick={() => shift(-1)}><ChevronLeft /></button>
+      <button type="button" aria-label="Previous month" disabled={disabled || (!bypass && month <= today.slice(0, 7))} onClick={() => shift(-1)}><ChevronLeft /></button>
       <button type="button" aria-label="Next month" disabled={disabled} onClick={() => shift(1)}><ChevronRight /></button>
     </div></div>
     <div className="ap-calendar-grid" role="group" aria-label="Choose appointment date">
@@ -125,14 +134,15 @@ function CalendarPicker({ value, onChange, disabled }) {
       {Array.from({ length: offset }, (_, i) => <span key={`empty-${i}`} />)}
       {Array.from({ length: count }, (_, i) => {
         const date = `${month}-${String(i + 1).padStart(2, '0')}`;
-        const unavailable = date < today || isClinicSunday(date);
+        const closed = !bypass && isClinicSunday(date);
+        const unavailable = closed || (!bypass && date < today);
         return <button key={date} type="button" aria-label={formatAppointmentDate(date, { month: 'long', weekday: 'long' })}
-          aria-pressed={value === date} disabled={disabled || unavailable} title={isClinicSunday(date) ? 'Clinic closed on Sundays' : undefined}
+          aria-pressed={value === date} disabled={disabled || unavailable} title={closed ? 'Clinic closed on Sundays' : undefined}
           className={`${value === date ? 'is-selected' : ''} ${date === today ? 'is-today' : ''}`}
-          onClick={() => onChange({ target: { name: 'date', value: date } })}>{i + 1}</button>;
+          onClick={() => toggleOption(onChange, 'date', date, value === date)}>{i + 1}</button>;
       })}
     </div>
-    <p className="ap-calendar-note">Closed on Sundays · Asia/Manila</p>
+    <p className="ap-calendar-note">{bypass ? 'Time guard off (Developer Tools) · Asia/Manila' : 'Closed on Sundays · Asia/Manila'}</p>
   </div>;
 }
 
@@ -206,6 +216,63 @@ function UpcomingAppointment({ appointment, onView, onEdit }) {
   </section>;
 }
 
+/* Booking summary popup: the last booking step, shown once date, time and
+   service are chosen. Its Confirm button submits the booking form by id. */
+function BookingReviewModal({ form, editingId, loading, canBook, onClose }) {
+  useEffect(() => {
+    const closeOnEscape = event => { if (event.key === 'Escape' && !loading) onClose(); };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [loading, onClose]);
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="booking-review-title" onClick={() => { if (!loading) onClose(); }}>
+      <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6 text-gray-900 shadow-xl dark:border-gray-700 dark:bg-gray-800 dark:text-white" onClick={event => event.stopPropagation()}>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 id="booking-review-title" className="text-lg font-bold text-maroon-800 dark:text-maroon-300">Booking Summary</h3>
+            <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Please review your appointment details.</p>
+          </div>
+          <button type="button" onClick={onClose} disabled={loading} aria-label="Close" className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50 dark:hover:bg-gray-700">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <dl className="mt-5 divide-y divide-gray-200 rounded-xl border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
+          {[
+            [CalendarDays, 'Date', formatAppointmentDate(form.date)],
+            [Clock, 'Time · Asia/Manila', form.time],
+            [Stethoscope, 'Service', serviceTitle(form.service)],
+            ...((form.concern || '').trim() ? [[FileText, 'Reason', form.concern.trim()]] : []),
+          ].map(([Icon, label, value]) => (
+            <div key={label} className="flex items-start gap-3 px-4 py-3">
+              <Icon className="mt-0.5 h-4 w-4 shrink-0 text-maroon-800 dark:text-maroon-300" />
+              <div className="min-w-0">
+                <dt className="text-xs text-gray-500 dark:text-gray-400">{label}</dt>
+                <dd className="break-words text-sm font-semibold">{value}</dd>
+              </div>
+            </div>
+          ))}
+        </dl>
+
+        <p className="mt-4 flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />Your request is subject to clinic approval.
+        </p>
+
+        <div className="mt-5 flex gap-3">
+          <button type="button" onClick={onClose} disabled={loading} className="flex-1 rounded-xl border border-gray-200 py-2.5 dark:border-gray-600 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:text-gray-200 dark:hover:bg-gray-700">
+            Back
+          </button>
+          <button type="submit" form="appointment-booking-form" disabled={!canBook} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-maroon-800 py-2.5 text-sm font-semibold text-white transition-colors hover:text-gray-300 disabled:opacity-60">
+            {loading ? <><Loader2 className="h-4 w-4 animate-spin" />Saving…</> : <>{editingId ? 'Update' : 'Confirm'}<ArrowRight className="h-4 w-4" /></>}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 export default function ApprovedAppointmentsView({ appointments, filteredAppointments, form, onChange, onSubmit, onView, onEdit,
   filter, onFilter, editingId, onCancelEdit, services, timeSlots, availableSlots, slotsLoading, loading, message, messageType, onDismissMessage, retrySlots }) {
   const [page, setPage] = useState(1);
@@ -227,24 +294,50 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
   const upcoming = appointments.filter(item => ['approved', 'pending'].includes(item.status) && appointmentDate(item.appointment_date) >= clinicDate())
     .sort((a, b) => (a.status === 'approved' ? 0 : 1) - (b.status === 'approved' ? 0 : 1)
       || (appointmentTime(a.appointment_date, a.time_slot)?.getTime() || 0) - (appointmentTime(b.appointment_date, b.time_slot)?.getTime() || 0))[0];
+  // Developer Tools → Remove time Guard: slots that already passed stay bookable.
+  const bypass = useTimeGuardBypass();
   const selectedSlot = availableSlots.find(slot => slot.time === form.time);
   const selectedInstant = appointmentTime(form.date, form.time);
-  const canBook = Boolean(form.service && form.date && form.time && selectedSlot && !selectedSlot.isFull && !selectedSlot.is_past && selectedInstant && selectedInstant >= new Date() && !slotsLoading && !loading);
+  const canBook = Boolean(form.service && form.date && form.time && selectedSlot && !selectedSlot.isFull && selectedInstant && (bypass || (!selectedSlot.is_past && selectedInstant >= new Date())) && !slotsLoading && !loading);
   const progress = !form.date ? 1 : !form.time ? 2 : !form.service ? 3 : 4;
+  // An appointment being edited may use a service that is no longer offered (e.g. "Other").
+  const serviceOptions = form.service && !services.includes(form.service) ? [...services, form.service] : services;
+  const [reviewOpen, setReviewOpen] = useState(false);
+  /*
+   * No review button: the summary popup opens by itself when the student's
+   * own pick completes date + time + service. Changes made for the student
+   * (e.g. loading an appointment to edit) don't open it.
+   */
+  const pickedRef = useRef(false);
+  const onStepChange = event => {
+    pickedRef.current = true;
+    onChange(event);
+  };
+  useEffect(() => {
+    if (canBook && pickedRef.current) setReviewOpen(true);
+    pickedRef.current = false;
+  }, [canBook, form.date, form.time, form.service]);
+  // Close the summary popup once its submission finishes.
+  const wasLoadingRef = useRef(loading);
+  useEffect(() => {
+    if (wasLoadingRef.current && !loading) setReviewOpen(false);
+    wasLoadingRef.current = loading;
+  }, [loading]);
   return <>
     <AppointmentHero />
     <AppointmentToast message={message} type={messageType} onDismiss={onDismissMessage} />
     <UpcomingAppointment appointment={upcoming} onView={onView} onEdit={onEdit} />
     <section id="appointment-booking" className="ap-card ap-booking">
       <div className="ap-section-heading"><CalendarDays /><div><h2>{editingId ? 'Edit Appointment' : 'Book a New Appointment'}</h2><p>{editingId ? 'Update your pending appointment request.' : 'Choose a date, time, and service that works for you.'}</p></div>{editingId && <button type="button" className="ap-text-button" onClick={onCancelEdit}>Cancel editing</button>}</div>
-      {/* The four booking steps render as a timeline: horizontal (four
+      {/* The three booking steps render as a timeline: horizontal (three
           columns) on desktop/laptop, a vertical numbered spine on tablet and
-          mobile — content left-aligned, never centered. */}
-      <form className="ap-booking-steps" onSubmit={onSubmit} noValidate>
+          mobile — content left-aligned, never centered. The summary opens as
+          a popup once all three are picked. */}
+      <form id="appointment-booking-form" className="ap-booking-steps" onSubmit={onSubmit} noValidate>
         <ol className="ap-booking-progress" aria-label="Booking progress">
           <li aria-current={progress === 1 ? 'step' : undefined} className={`ap-booking-step${progress >= 1 ? ' is-active' : ''}`}>
             <header className="ap-step-heading"><span className="ap-step-marker">{progress > 1 ? <CheckCircle /> : 1}</span><h3 className="ap-step-label">Select Date</h3></header>
-            <section className="ap-booking-column"><CalendarPicker value={form.date} onChange={onChange} disabled={loading} /></section>
+            <section className="ap-booking-column"><CalendarPicker value={form.date} onChange={onStepChange} disabled={loading} /></section>
           </li>
           <li aria-current={progress === 2 ? 'step' : undefined} className={`ap-booking-step${progress >= 2 ? ' is-active' : ''}`}>
             <header className="ap-step-heading"><span className="ap-step-marker">{progress > 2 ? <CheckCircle /> : 2}</span><h3 className="ap-step-label">Available Time Slots</h3></header>
@@ -253,13 +346,13 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
               const slot = availableSlots.find(item => item.time === time);
               const instant = appointmentTime(form.date, time);
               // The server flags a slot that already occurred with is_past; fall back to client time if absent.
-              const isPast = Boolean(slot) && (slot.is_past ?? Boolean(instant && instant < new Date()));
+              const isPast = !bypass && Boolean(slot) && (slot.is_past ?? Boolean(instant && instant < new Date()));
               const isFull = Boolean(slot?.isFull) && !isPast;
               const unavailable = !form.date || !slot || isPast || isFull;
               const hint = !slot ? 'Availability has not been returned by the clinic' : isPast ? 'This time has already passed.' : `${slot.available} slots available${slot.booked ? ` (${slot.booked} booked)` : ''}`;
               // Default label while no availability data exists (no date picked yet / fresh reload).
-              const countLabel = !slot ? (isClinicSunday(clinicDate()) ? '0/0 no available slots' : '10/10 slots') : isPast ? 'Not available' : `${slot.available}/${slot.available + (slot.booked || 0)} slots`;
-              return <button key={time} type="button" disabled={loading || unavailable} aria-pressed={form.time === time} title={hint} className={`${form.time === time ? 'is-selected' : ''} ${isPast ? 'is-past' : ''} ${isFull ? 'is-full' : ''}`} onClick={() => onChange({ target: { name: 'time', value: time } })}>{time}<span className={isPast ? 'ap-slot-past-tag' : ''}>{countLabel}</span>{isFull && <span className="ap-slot-full-tag">Full</span>}</button>;
+              const countLabel = !slot ? (!bypass && isClinicSunday(clinicDate()) ? '0/0 no available slots' : '10/10 slots') : isPast ? 'Not available' : `${slot.available}/${slot.available + (slot.booked || 0)} slots`;
+              return <button key={time} type="button" disabled={loading || unavailable} aria-pressed={form.time === time} title={hint} className={`${form.time === time ? 'is-selected' : ''} ${isPast ? 'is-past' : ''} ${isFull ? 'is-full' : ''}`} onClick={() => toggleOption(onStepChange, 'time', time, form.time === time)}>{time}<span className={isPast ? 'ap-slot-past-tag' : ''}>{countLabel}</span>{isFull && <span className="ap-slot-full-tag">Full</span>}</button>;
             })}</div>}
             {form.date && !slotsLoading && availableSlots.length === 0 && <p className="ap-availability-note">No availability returned. <button type="button" onClick={retrySlots}>Retry</button></p>}
             <p className="ap-column-footnote">Availability updates automatically.</p>
@@ -267,22 +360,16 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
           </li>
           <li aria-current={progress === 3 ? 'step' : undefined} className={`ap-booking-step${progress >= 3 ? ' is-active' : ''}`}>
             <header className="ap-step-heading"><span className="ap-step-marker">{progress > 3 ? <CheckCircle /> : 3}</span><h3 className="ap-step-label">Select Service</h3></header>
-            <section className="ap-booking-column"><div className="ap-step-body"><div className="ap-service-list" role="radiogroup" aria-label="Appointment service">{services.map((service, index) => <label key={service} className={form.service === service ? 'is-selected' : ''}>
-              <input type="radio" name="service" value={service} checked={form.service === service} onChange={onChange} disabled={loading} />
-              {index === 0 ? <Stethoscope /> : <FileText />}<span><strong>{serviceTitle(service)}</strong><small>{SERVICE_NOTES[service]}</small></span>
-            </label>)}</div><div className="ap-reason"><label htmlFor="appointment-reason">Add a reason <span>(optional)</span></label><textarea id="appointment-reason" name="concern" value={form.concern} onChange={onChange} rows={2} maxLength={1000} placeholder="Briefly describe your concern…" disabled={loading} /></div></div></section>
-          </li>
-          <li aria-current={progress === 4 ? 'step' : undefined} className={`ap-booking-step${progress >= 4 ? ' is-active' : ''}`}>
-            <header className="ap-step-heading"><span className="ap-step-marker">{progress > 4 ? <CheckCircle /> : 4}</span><h3 className="ap-step-label">Booking Summary</h3></header><section className="ap-booking-column ap-summary"><div className="ap-step-body">
-              <dl><div><CalendarDays /><span><dt>Date</dt><dd>{form.date ? formatAppointmentDate(form.date) : 'Choose a date'}</dd></span></div>
-                <div><Clock /><span><dt>Time · Asia/Manila</dt><dd>{form.time || 'Choose a time'}</dd></span></div>
-                <div><Stethoscope /><span><dt>Service</dt><dd>{form.service ? serviceTitle(form.service) : 'Choose a service'}</dd></span></div></dl>
-              <p className="ap-summary-note"><ShieldCheck />Your request is subject to clinic approval.</p>
-              <button type="submit" disabled={!canBook} className="ap-button ap-confirm-booking">{loading ? <><Loader2 className="animate-spin" />Saving…</> : <>{editingId ? 'Update Appointment' : 'Confirm Appointment'}<ArrowRight /></>}</button>
-            </div></section>
+            <section className="ap-booking-column"><div className="ap-step-body"><div className="ap-service-list" role="radiogroup" aria-label="Appointment service">{serviceOptions.map((service, index) => <label key={service} className={form.service === service ? 'is-selected' : ''}>
+              <input type="radio" name="service" value={service} checked={form.service === service} onChange={onStepChange} onClick={() => { if (form.service === service) toggleOption(onStepChange, 'service', service, true); }} disabled={loading} />
+              {index === 0 ? <Stethoscope /> : <FileText />}{service === 'Other'
+                ? <span className="ap-other-service"><strong>Other:</strong><input type="text" name="concern" value={form.concern || ''} onChange={onChange} onFocus={() => { if (form.service !== 'Other') onChange({ target: { name: 'service', value: 'Other' } }); }} onBlur={() => { if (canBook) setReviewOpen(true); }} maxLength={1000} aria-label="Specify other service" disabled={loading} /></span>
+                : <span><strong>{serviceTitle(service)}</strong>{SERVICE_NOTES[service] && <small>{SERVICE_NOTES[service]}</small>}</span>}
+            </label>)}</div></div></section>
           </li>
         </ol>
       </form>
+      {reviewOpen && <BookingReviewModal form={form} editingId={editingId} loading={loading} canBook={canBook} onClose={() => setReviewOpen(false)} />}
     </section>
     <section className="ap-card ap-history">
       <div className="ap-section-heading"><Clock /><div><h2>Appointment History</h2><p>View your past and upcoming clinic visits.</p></div>

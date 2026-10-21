@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import api from '../services/api';
+import { getToken, getUser, setUser } from '../services/session';
 
 /*
  * ============================================================
@@ -56,7 +57,7 @@ let completedHealthProfileCache = {
 };
 
 const COMPLETED_STATUS_CACHE_MS = 60 * 1000;
-const hasCompletedStatusCache = () => completedHealthProfileCache.token === localStorage.getItem('token') &&
+const hasCompletedStatusCache = () => completedHealthProfileCache.token === getToken('student') &&
   completedHealthProfileCache.completed && Date.now() - completedHealthProfileCache.fetchedAt < COMPLETED_STATUS_CACHE_MS;
 window.addEventListener('carelink:health-profile-saved', () => {
   completedHealthProfileCache = { token: null, completed: false, fetchedAt: 0 };
@@ -69,17 +70,9 @@ window.addEventListener('carelink:health-profile-saved', () => {
  * It is NOT the final authority for Health Profile completion.
  */
 const getStoredStudent = () => {
-  try {
-    const storedUser = localStorage.getItem('user');
+  const storedUser = getUser('student');
 
-    if (!storedUser) {
-      return null;
-    }
-
-    return JSON.parse(storedUser);
-  } catch {
-    return null;
-  }
+  return Object.keys(storedUser).length ? storedUser : null;
 };
 
 /*
@@ -117,10 +110,7 @@ const syncStoredHealthProfileStatus = (completed) => {
       },
     };
 
-    localStorage.setItem(
-      'user',
-      JSON.stringify(updatedUser)
-    );
+    setUser(updatedUser, 'student');
 
     /*
      * Same-tab storage events do not fire automatically,
@@ -145,7 +135,7 @@ const syncStoredHealthProfileStatus = (completed) => {
  * Fetch authoritative completion state.
  */
 const fetchHealthProfileStatus = async () => {
-  const token = localStorage.getItem('token');
+  const token = getToken('student');
 
   if (!token) {
     throw new Error('No authenticated Student session.');
@@ -169,7 +159,7 @@ const fetchHealthProfileStatus = async () => {
   const response = await api.get(
     '/student/health-profile/status'
   );
-  if (localStorage.getItem('token') !== token) throw new Error('Session changed.');
+  if (getToken('student') !== token) throw new Error('Session changed.');
 
   const data = response.data?.data || {};
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\TimeGuard;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -48,7 +49,7 @@ class AppointmentSlot extends Model
     {
         $date = self::normalizeDate($date);
 
-        if (self::isSunday($date)) {
+        if (self::isClosed($date)) {
             return [];
         }
 
@@ -120,7 +121,7 @@ class AppointmentSlot extends Model
         $date = self::normalizeDate($date);
 
         if (
-            self::isSunday($date) ||
+            self::isClosed($date) ||
             !in_array(
                 $timeSlot,
                 self::TIME_SLOTS,
@@ -159,7 +160,7 @@ class AppointmentSlot extends Model
         $date = self::normalizeDate($date);
 
         if (
-            self::isSunday($date) ||
+            self::isClosed($date) ||
             !in_array(
                 $timeSlot,
                 self::TIME_SLOTS,
@@ -196,6 +197,14 @@ class AppointmentSlot extends Model
         );
     }
 
+    /**
+     * Sunday closure, unless the student's Developer Tools time guard is off.
+     */
+    public static function isClosed($date): bool
+    {
+        return self::isSunday($date) && !TimeGuard::bypassed();
+    }
+
     public static function isSunday(
         $date
     ): bool {
@@ -214,6 +223,11 @@ class AppointmentSlot extends Model
         $date,
         $timeSlot
     ): bool {
+        // Developer Tools → Remove time Guard: past slots stay bookable.
+        if (TimeGuard::bypassed()) {
+            return false;
+        }
+
         $date = self::normalizeDate(
             $date
         );

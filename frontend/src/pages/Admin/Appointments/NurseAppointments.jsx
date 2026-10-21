@@ -1,3 +1,4 @@
+import { getToken } from '../../../services/session';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, CheckCircle, XCircle, Search, User, Loader2, X, FileText, Stethoscope, Info, Filter, Users, RefreshCw } from 'lucide-react';
@@ -27,7 +28,7 @@ const NurseAppointments = () => {
     const request = ++requestId.current;
     setRefreshing(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('nurse');
       const res = await api.get('/nurse/appointments', {
         signal: signal instanceof AbortSignal ? signal : undefined,
         headers: { Authorization: `Bearer ${token}` },
@@ -60,7 +61,7 @@ const NurseAppointments = () => {
   const handleApprove = async (id) => {
     setActionLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('nurse');
       await api.patch(`/nurse/appointments/${id}/approve`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -78,7 +79,7 @@ const NurseAppointments = () => {
     if (!rejectReason.trim()) return;
     setActionLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('nurse');
       await api.patch(`/nurse/appointments/${rejectModal}/reject`,
         { reason: rejectReason },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -99,7 +100,7 @@ const NurseAppointments = () => {
     if (!cancelReason.trim()) return;
     setActionLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('nurse');
       await api.patch(`/nurse/appointments/${cancelModal}/cancel`, { reason: cancelReason }, { headers: { Authorization: `Bearer ${token}` } });
       showMessage('Appointment cancelled.', 'success');
       setCancelModal(null);
@@ -122,6 +123,17 @@ const NurseAppointments = () => {
   };
 
   const formatDate = (value) => formatAppointmentDate(value, { weekday: 'short' });
+
+  // When the student booked it — the list is ordered newest booking first.
+  const formatBooked = (value) => {
+    const booked = new Date(value);
+    if (!value || Number.isNaN(booked.getTime())) return '';
+    const minutes = Math.floor((Date.now() - booked.getTime()) / 60000);
+    if (minutes < 1) return 'Booked just now';
+    if (minutes < 60) return `Booked ${minutes} min ago`;
+    if (minutes < 24 * 60) return `Booked ${Math.floor(minutes / 60)} hr ago`;
+    return `Booked ${booked.toLocaleString('en-US', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`;
+  };
 
   const filtered = Array.isArray(appointments) ? appointments : [];
 
@@ -249,7 +261,10 @@ const NurseAppointments = () => {
                         <span className="text-xs text-gray-400 font-mono">{app.user?.student_id || ''}</span>
                       </div>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{app.service}</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-400 mt-0.5 font-mono">{app.reference_number}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-400 mt-0.5">
+                        <span className="font-mono">{app.reference_number}</span>
+                        {app.created_at && <span> · {formatBooked(app.created_at)}</span>}
+                      </p>
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-gray-400 dark:text-gray-400">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />{formatDate(app.appointment_date)}
@@ -340,6 +355,9 @@ const NurseAppointments = () => {
                     <p className="text-xs text-gray-400 dark:text-gray-400 font-mono">
                       {selectedAppointment.user?.student_id} · {selectedAppointment.reference_number}
                     </p>
+                    {selectedAppointment.created_at && (
+                      <p className="text-xs text-gray-400 dark:text-gray-400 mt-0.5">{formatBooked(selectedAppointment.created_at)}</p>
+                    )}
                   </div>
                 </div>
 

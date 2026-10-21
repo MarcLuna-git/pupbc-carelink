@@ -1,3 +1,4 @@
+import { getToken, getUser } from '../../../services/session';
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -9,7 +10,7 @@ import useNurseSync from '../../../hooks/useNurseSync';
 
 const NurseDashboard = () => {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = getUser('nurse');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -43,7 +44,7 @@ const NurseDashboard = () => {
     const request = ++requests.current.stats;
     try {
       if (!silent) setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = getToken('nurse');
       const response = await api.get('/nurse/dashboard-stats', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -71,7 +72,7 @@ const NurseDashboard = () => {
   const fetchTodaySchedule = async () => {
     const request = ++requests.current.schedule;
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('nurse');
       const response = await api.get('/nurse/dashboard/appointments-today', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -95,7 +96,7 @@ const NurseDashboard = () => {
   const fetchRecentActivity = async () => {
     const request = ++requests.current.activity;
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('nurse');
       const response = await api.get('/nurse/dashboard/recent-activity', {
         headers: { Authorization: `Bearer ${token}` }
       });

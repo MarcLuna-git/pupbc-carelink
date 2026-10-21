@@ -6,7 +6,9 @@ use App\Models\StudentProfile;
 use App\Models\HealthProfile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -37,6 +39,25 @@ class StudentProfileContactTest extends TestCase
         $this->putJson('/api/student/profile', ['mobile_number' => '09987654321', 'address' => 'Updated address'])->assertOk();
         $this->assertSame('Saved Contact', $health->fresh()->emergency_name);
         $this->assertSame('09123456789', $health->fresh()->emergency_phone);
+    }
+
+    public function test_avatar_can_be_removed_and_removal_is_idempotent(): void
+    {
+        Storage::fake('public');
+        $student = $this->student();
+        $this->actingAs($student, 'api')
+            ->postJson('/api/student/profile/avatar', ['avatar' => UploadedFile::fake()->image('me.jpg')])
+            ->assertOk();
+        $path = $student->profile()->first()->profile_picture;
+        Storage::disk('public')->assertExists($path);
+
+        $this->deleteJson('/api/student/profile/avatar')->assertOk()->assertJsonPath('data.profile_picture', null);
+        Storage::disk('public')->assertMissing($path);
+        $this->assertNull($student->profile()->first()->profile_picture);
+
+        // Removing again, or without any profile row, is a harmless no-op.
+        $this->deleteJson('/api/student/profile/avatar')->assertOk();
+        $this->actingAs($this->student(), 'api')->deleteJson('/api/student/profile/avatar')->assertOk();
     }
 
     public function test_email_change_requires_password_and_unique_email(): void

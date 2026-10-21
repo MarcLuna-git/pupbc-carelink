@@ -1,11 +1,13 @@
+import { clearSession, getToken, getUser, setUser } from '../../../services/session';
 import { useState, useEffect, useRef } from 'react';
-import { Key, Lock, Save, Loader2, Eye, EyeOff, User, Mail, Shield, Bell, Building, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Key, Lock, Save, Loader2, Eye, EyeOff, User, Mail, Shield, Bell, Building, CheckCircle, AlertTriangle, Wrench, Clock } from 'lucide-react';
 import api from '../../../services/api';
 import authService from '../../../services/authService';
 import useNurseSync from '../../../hooks/useNurseSync';
+import { fetchNurseDevTools, updateNurseTimeGuardBypass, useNurseTimeGuardBypass } from '../../../services/devTools';
 
 const NurseSettings = () => {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = getUser('nurse');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
   const [loading, setLoading] = useState(false);
@@ -33,7 +35,7 @@ const NurseSettings = () => {
     const { data } = await api.get('/auth/me', { signal });
     if (signal?.aborted) return;
     const latest = data.user;
-    localStorage.setItem('user', JSON.stringify(latest));
+    setUser(latest, 'nurse');
     const dirty = ['first_name', 'last_name'].some(field => draft.current[field] !== baseline.current[field]);
     if (!dirty) {
       baseline.current = latest;
@@ -46,6 +48,66 @@ const NurseSettings = () => {
     refreshProfile(controller.signal).catch(() => {});
     return () => controller.abort();
   }, []);
+
+  // Developer Tools → Remove time Guard (whole nurse portal, clinic-wide).
+  const timeGuardOff = useNurseTimeGuardBypass();
+  const [devToolsAvailable, setDevToolsAvailable] = useState(true);
+  const [showDevPassword, setShowDevPassword] = useState(false);
+  const [devPassword, setDevPassword] = useState('');
+  const [devError, setDevError] = useState('');
+  const [devSaving, setDevSaving] = useState(false);
+
+  useEffect(() => {
+    fetchNurseDevTools()
+      .then((data) => setDevToolsAvailable(data?.available !== false))
+      .catch(() => {});
+  }, []);
+
+  const handleTimeGuardToggle = async (turnOn) => {
+    if (devSaving) return;
+    setDevError('');
+    if (turnOn) {
+      // Removing the time guard needs the developer password.
+      setShowDevPassword(true);
+      return;
+    }
+    if (showDevPassword && !timeGuardOff) {
+      // Switching back while the password prompt is open just cancels it.
+      setShowDevPassword(false);
+      setDevPassword('');
+      return;
+    }
+    setDevSaving(true);
+    try {
+      const response = await updateNurseTimeGuardBypass(false);
+      setMessageType('success');
+      setMessage(response?.message || 'Time guard restored.');
+    } catch (err) {
+      setMessageType('error');
+      setMessage(err.response?.data?.message || 'Could not restore the time guard.');
+    } finally {
+      setDevSaving(false);
+      setTimeout(() => setMessage(''), 4000);
+    }
+  };
+
+  const confirmTimeGuardBypass = async (e) => {
+    e.preventDefault();
+    setDevSaving(true);
+    setDevError('');
+    try {
+      const response = await updateNurseTimeGuardBypass(true, devPassword);
+      setShowDevPassword(false);
+      setDevPassword('');
+      setMessageType('success');
+      setMessage(response?.message || 'Time guard removed.');
+      setTimeout(() => setMessage(''), 4000);
+    } catch (err) {
+      setDevError(err.response?.data?.errors?.password?.[0] || err.response?.data?.message || 'Could not remove the time guard.');
+    } finally {
+      setDevSaving(false);
+    }
+  };
 
   const getPasswordStrength = (password) => {
     let score = 0;
@@ -95,7 +157,7 @@ const NurseSettings = () => {
     setMessage('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('nurse');
       await api.post('/nurse/change-password', {
         email: user.email,
         current_password: passwordForm.current_password,
@@ -132,14 +194,14 @@ const NurseSettings = () => {
     setMessage('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('nurse');
       const response = await api.put('/nurse/profile', profile, {
         headers: { Authorization: `Bearer ${token}`, 'If-Match': baseline.current.sync_version }
       });
 
       const updatedUser = response.data.data;
       baseline.current = updatedUser;
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser, 'nurse');
 
       setMessageType('success');
       setMessage('Profile updated successfully!');
@@ -156,11 +218,10 @@ const NurseSettings = () => {
   const confirmLogout = async () => {
     setLogoutLoading(true);
     try {
-      await authService.logout();
+      await authService.logout('nurse');
       window.location.href = '/carelink-portal';
     } catch (err) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      clearSession('nurse');
       window.location.href = '/carelink-portal';
     } finally {
       setLogoutLoading(false);
@@ -369,6 +430,85 @@ const NurseSettings = () => {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-6">
+        <h3 className="font-bold text-gray-900 dark:text-white flex items-center space-x-2 mb-1">
+          <Wrench className="w-5 h-5 text-maroon-800 dark:text-maroon-400" />
+          <span>Developer Tools</span>
+        </h3>
+        <p className="text-xs text-gray-400 mb-4">Testing tools for the clinic flow. Applies to the whole nurse portal.</p>
+        {!devToolsAvailable ? (
+          <p className="rounded-2xl bg-gray-50 p-4 text-sm text-gray-500 dark:bg-gray-700/50 dark:text-gray-400">
+            Developer Tools are turned off on this server.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-4 py-2">
+              <div className="flex min-w-0 items-start gap-3">
+                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-maroon-800 dark:text-maroon-400" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-200">Remove time Guard</p>
+                  <p className="text-xs text-gray-400">
+                    {timeGuardOff
+                      ? 'On: appointments do not auto-expire; queue deadlines and past reschedule, follow-up and medicine expiry dates are not enforced.'
+                      : 'Off: normal nurse portal time rules apply.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={timeGuardOff || showDevPassword}
+                aria-label="Remove time Guard"
+                disabled={devSaving}
+                onClick={() => handleTimeGuardToggle(!(timeGuardOff || showDevPassword))}
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon-300 disabled:opacity-60 ${
+                  timeGuardOff || showDevPassword ? 'bg-maroon-800' : 'bg-gray-200 dark:bg-gray-600'
+                }`}
+              >
+                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                  timeGuardOff || showDevPassword ? 'translate-x-[22px]' : 'translate-x-0.5'
+                }`} />
+              </button>
+            </div>
+
+            {showDevPassword && !timeGuardOff && (
+              <form onSubmit={confirmTimeGuardBypass} className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
+                <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                  Enter the developer password to remove the time guard.
+                </p>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="password"
+                    autoComplete="off"
+                    autoFocus
+                    value={devPassword}
+                    onChange={(e) => { setDevPassword(e.target.value); setDevError(''); }}
+                    className={`${inputClass} pl-10`}
+                    placeholder="Developer password"
+                    aria-label="Developer password"
+                    required
+                  />
+                </div>
+                {devError && <p role="alert" className="text-xs text-red-600 dark:text-red-400">{devError}</p>}
+                <div className="flex flex-wrap gap-2">
+                  <button type="submit" disabled={devSaving || !devPassword}
+                    className="px-5 py-2.5 bg-maroon-800 text-white rounded-xl font-semibold text-sm flex items-center space-x-2 hover:bg-maroon-900 transition disabled:opacity-50">
+                    {devSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wrench className="w-4 h-4" />}
+                    <span>{devSaving ? 'Checking...' : 'Remove time guard'}</span>
+                  </button>
+                  <button type="button" disabled={devSaving}
+                    onClick={() => { setShowDevPassword(false); setDevPassword(''); setDevError(''); }}
+                    className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 transition disabled:opacity-50">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-6">

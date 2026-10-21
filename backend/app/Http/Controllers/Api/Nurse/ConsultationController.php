@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Nurse;
 
 use App\Http\Controllers\Controller;
 use App\Support\DatabaseSearch;
+use App\Support\TimeGuard;
 use App\Models\Consultation;
 use App\Models\Appointment;
 use App\Models\Notification;
@@ -44,7 +45,7 @@ class ConsultationController extends Controller
             'medical_certificate' => 'sometimes|boolean',
             'medical_certificate_ref' => 'nullable|string|max:191',
             'follow_up_required' => 'sometimes|boolean',
-            'follow_up_date' => 'nullable|required_if:follow_up_required,true|date|after_or_equal:today',
+            'follow_up_date' => 'nullable|required_if:follow_up_required,true|date' . (TimeGuard::nursePortalBypassed() ? '' : '|after_or_equal:today'),
         ]);
         $consultation = DB::transaction(function () use ($data, $request) {
             \App\Services\ClinicQueue::lock();

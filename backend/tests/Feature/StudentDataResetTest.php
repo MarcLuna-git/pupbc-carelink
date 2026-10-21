@@ -66,7 +66,7 @@ class StudentDataResetTest extends TestCase
         ], $attributes));
     }
 
-    public function test_reset_requires_the_account_password(): void
+    public function test_reset_requires_the_developer_password(): void
     {
         $student = $this->user('student');
         $profile = StudentProfile::create(['user_id' => $student->id, 'mobile_number' => '09123456789']);
@@ -145,7 +145,7 @@ class StudentDataResetTest extends TestCase
         $revisionBefore = DB::table('nurse_sync_revisions')->where('topic', 'appointments')->value('revision');
 
         $this->actingAs($student, 'api')
-            ->postJson('/api/student/reset-data', ['password' => 'TestPassword123!'])
+            ->postJson('/api/student/reset-data', ['password' => config('dev_tools.password')])
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.appointments', 1)

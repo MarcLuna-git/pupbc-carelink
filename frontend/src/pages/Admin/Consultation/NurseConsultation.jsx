@@ -1,3 +1,4 @@
+import { getToken } from '../../../services/session';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
@@ -78,7 +79,7 @@ const NurseConsultation = () => {
     const request = ++queueRequest.current;
     try {
       if (!silent) setPageLoading(true);
-      const token = localStorage.getItem('token');
+      const token = getToken('nurse');
       const response = await api.get('/nurse/queue/checkins', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -132,7 +133,7 @@ const NurseConsultation = () => {
     setMessage('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('nurse');
       const payload = {
         user_id: selectedStudent.user_id || selectedStudent.id,
         appointment_id: selectedStudent.appointment_id || null,

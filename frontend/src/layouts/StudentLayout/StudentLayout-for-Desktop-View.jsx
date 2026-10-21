@@ -25,6 +25,8 @@ import {
 
 import authService from '../../services/authService';
 import api from '../../services/api';
+import { fetchDevTools } from '../../services/devTools';
+import { getToken } from '../../services/session';
 import ChatWidget from '../../pages/Student/Chatbot-for-Student-Dashboard/ChatWidget';
 import { STUDENT_LOGOUT_REQUEST_EVENT, STUDENT_PRIMARY_LINKS, isStudentNavActive, studentPageTitle } from '../../utils/studentPortalNavigation';
 
@@ -123,7 +125,7 @@ const StudentLayoutForDesktopView = ({ children }) => {
       unreadRequestPending.current = true;
       try {
         const token =
-          localStorage.getItem('token');
+          getToken('student');
 
         if (!token) {
           setUnreadCount(0);
@@ -248,9 +250,18 @@ const StudentLayoutForDesktopView = ({ children }) => {
     return () => window.removeEventListener(STUDENT_LOGOUT_REQUEST_EVENT, openLogoutConfirm);
   }, []);
 
+  /*
+   * Developer Tools → Remove time Guard is kept on the server. Pull it once per
+   * visit so the pages' client-side time checks match (e.g. after re-login or
+   * on another device).
+   */
+  useEffect(() => {
+    fetchDevTools().catch(() => {});
+  }, []);
+
   const confirmLogout = async () => {
     setLogoutLoading(true);
-    await authService.logout();
+    await authService.logout('student');
 
     document.documentElement.classList.remove(
       'dark'
@@ -274,8 +285,8 @@ const StudentLayoutForDesktopView = ({ children }) => {
 
   /*
    * The routed page renders once and is shared by both shells. The Profile
-   * pages assemble their own hero/tabs/card via ProfileSection AFTER their
-   * data loads — so during loading the frame simply stays blank.
+   * pages assemble their own hero and cards AFTER their data loads — so
+   * during loading the frame simply stays blank.
    */
   const routedPage = (
     <AnimatePresence mode="wait">

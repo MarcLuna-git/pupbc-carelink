@@ -1,3 +1,4 @@
+import { getToken } from '../../services/session';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -8,16 +9,17 @@ import {
   EyeOff,
   Loader2,
   ArrowRight,
-  Hash,
+  UserRound,
   Calendar,
   Lock,
   ArrowLeft,
+  LockKeyhole,
 } from 'lucide-react';
 
 import clinicLogo from '../../assets/clinic logo.jpg';
 import campusPhoto from '../../assets/pup-binan-hero.jpg';
+import { forgetStudentLogin, getRememberedStudentLogin, rememberStudentLogin } from '../../services/studentRememberLogin';
 
-const REMEMBER_LOGIN_KEY = 'carelink.student.remember-login';
 const LOCK_KEY_PREFIX = 'carelink.student.login-lock.';
 
 const getMinimumBirthday = () => {
@@ -46,31 +48,6 @@ const MONTHS = [
   value: String(index + 1).padStart(2, '0'),
 }));
 
-const getRememberedLogin = () => {
-  const empty = {
-    enabled: false,
-    student_id: '',
-    dobMonth: '',
-    dobDay: '',
-    dobYear: '',
-  };
-
-  try {
-    const saved = JSON.parse(
-      localStorage.getItem(REMEMBER_LOGIN_KEY) || '{}'
-    );
-
-    return {
-      enabled: saved.enabled === true,
-      student_id: saved.student_id || '',
-      dobMonth: saved.dobMonth || '',
-      dobDay: saved.dobDay || '',
-      dobYear: saved.dobYear || '',
-    };
-  } catch {
-    return empty;
-  }
-};
 
 const formatStudentId = (value) => {
   const clean = String(value)
@@ -118,7 +95,7 @@ const getSavedLockUntil = (studentId) => {
 const Login = () => {
   const navigate = useNavigate();
 
-  const rememberedLogin = useMemo(getRememberedLogin, []);
+  const rememberedLogin = useMemo(getRememberedStudentLogin, []);
   const submittingRef = useRef(false);
 
   const [form, setForm] = useState({
@@ -341,7 +318,7 @@ const Login = () => {
     setRememberMe(checked);
 
     if (!checked) {
-      localStorage.removeItem(REMEMBER_LOGIN_KEY);
+      forgetStudentLogin();
     }
   };
 
@@ -375,7 +352,7 @@ const Login = () => {
 
       if (
         response?.success &&
-        localStorage.getItem('token')
+        getToken('student')
       ) {
         setAttemptsRemaining(null);
         setLockUntil(0);
@@ -393,18 +370,9 @@ const Login = () => {
          * Never save the password.
          */
         if (rememberMe) {
-          localStorage.setItem(
-            REMEMBER_LOGIN_KEY,
-            JSON.stringify({
-              enabled: true,
-              student_id: form.student_id,
-              dobMonth: form.dobMonth,
-              dobDay: form.dobDay,
-              dobYear: form.dobYear,
-            })
-          );
+          rememberStudentLogin(form);
         } else {
-          localStorage.removeItem(REMEMBER_LOGIN_KEY);
+          forgetStudentLogin();
         }
 
         navigate('/student', {
@@ -653,15 +621,15 @@ const Login = () => {
 
                 <div className="relative">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <Hash className="w-5 h-5" />
+                    <UserRound className="w-5 h-5" />
                   </div>
 
                   <input
                     id="student-id"
-                    className={`w-full border rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 transition-all dark:bg-gray-700 dark:text-white ${
+                    className={`w-full border rounded-2xl pl-10 pr-4 py-3 text-sm focus:outline-none transition-all dark:bg-gray-700 dark:text-white ${
                       errors.student_id
-                        ? 'border-red-300 focus:ring-red-400 bg-red-50 dark:bg-red-900/20'
-                        : 'border-gray-300 dark:border-gray-600 focus:ring-maroon-500 hover:border-maroon-300'
+                        ? 'border-red-300 focus:border-red-400 bg-red-50 dark:bg-red-900/20'
+                        : 'border-slate-200 dark:border-gray-600 focus:border-maroon-800 hover:border-maroon-300'
                     }`}
                     type="text"
                     name="student_id"
@@ -689,10 +657,10 @@ const Login = () => {
                 </label>
 
                 <div
-                  className={`rounded-xl border p-3 transition-all ${
+                  className={`rounded-2xl border p-3 transition-all ${
                     errors.birthday
                       ? 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20'
-                      : 'border-gray-300 bg-white hover:border-maroon-300 dark:border-gray-600 dark:bg-gray-700'
+                      : 'border-slate-200 bg-white hover:border-maroon-300 dark:border-gray-600 dark:bg-gray-700'
                   }`}
                 >
                   <div className="mb-2 flex items-center gap-2">
@@ -717,7 +685,7 @@ const Login = () => {
                         name="dobMonth"
                         value={form.dobMonth}
                         onChange={handleChange}
-                        className="w-full min-w-0 rounded-lg border border-gray-200 bg-white px-2 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-maroon-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                        className="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-2 py-2.5 text-sm text-gray-900 focus:border-maroon-800 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                         required
                       >
                         <option value="">Month</option>
@@ -746,7 +714,7 @@ const Login = () => {
                         name="dobDay"
                         value={form.dobDay}
                         onChange={handleChange}
-                        className="w-full min-w-0 rounded-lg border border-gray-200 bg-white px-2 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-maroon-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                        className="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-2 py-2.5 text-sm text-gray-900 focus:border-maroon-800 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                         required
                       >
                         <option value="">Day</option>
@@ -775,7 +743,7 @@ const Login = () => {
                         name="dobYear"
                         value={form.dobYear}
                         onChange={handleChange}
-                        className="w-full min-w-0 rounded-lg border border-gray-200 bg-white px-2 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-maroon-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                        className="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-2 py-2.5 text-sm text-gray-900 focus:border-maroon-800 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                         required
                       >
                         <option value="">Year</option>
@@ -816,10 +784,10 @@ const Login = () => {
 
                   <input
                     id="student-password"
-                    className={`w-full border rounded-xl pl-10 pr-12 py-3 text-sm focus:outline-none focus:ring-2 transition-all dark:bg-gray-700 dark:text-white ${
+                    className={`w-full border rounded-2xl pl-10 pr-12 py-3 text-sm focus:outline-none transition-all dark:bg-gray-700 dark:text-white ${
                       errors.password
-                        ? 'border-red-300 focus:ring-red-400 bg-red-50 dark:bg-red-900/20'
-                        : 'border-gray-300 dark:border-gray-600 focus:ring-maroon-500 hover:border-maroon-300'
+                        ? 'border-red-300 focus:border-red-400 bg-red-50 dark:bg-red-900/20'
+                        : 'border-slate-200 dark:border-gray-600 focus:border-maroon-800 hover:border-maroon-300'
                     }`}
                     type={showPassword ? 'text' : 'password'}
                     name="password"
@@ -887,7 +855,7 @@ const Login = () => {
 
               {/* Sign In */}
               <button
-                className="w-full py-3 px-4 bg-gradient-to-r from-maroon-800 to-maroon-900 hover:from-maroon-900 hover:to-maroon-950 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="w-full py-3 px-4 bg-maroon-800 text-white hover:text-gray-300 font-semibold rounded-full transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 type="submit"
                 disabled={loading || isLocked}
               >
@@ -899,7 +867,10 @@ const Login = () => {
                 ) : isLocked ? (
                   `Try again in ${lockSeconds}s`
                 ) : (
-                  'Sign In'
+                  <>
+                    <LockKeyhole className="w-5 h-5" />
+                    <span>Sign In</span>
+                  </>
                 )}
               </button>
             </form>

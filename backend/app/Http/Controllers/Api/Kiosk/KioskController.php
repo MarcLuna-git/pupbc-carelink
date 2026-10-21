@@ -8,6 +8,7 @@ use App\Services\AppointmentExpiry;
 use App\Services\ClinicQueue;
 use App\Services\KioskIdentity;
 use App\Services\NurseVisitClaim;
+use App\Support\TimeGuard;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
@@ -196,7 +197,7 @@ class KioskController extends Controller
             $checkin = AppointmentCheckin::lockForUpdate()->findOrFail($id);
             abort_unless($checkin->status === 'skipped' && !$checkin->is_walk_in, 409, 'Only skipped patients can be marked returned.');
             $appointment = Appointment::findOrFail($checkin->appointment_id);
-            abort_unless(now('Asia/Manila')->lt(app(AppointmentExpiry::class)->getCheckinDeadline($appointment)),
+            abort_unless(TimeGuard::nursePortalBypassed() || now('Asia/Manila')->lt(app(AppointmentExpiry::class)->getCheckinDeadline($appointment)),
                 409, 'The original check-in deadline has passed. This skipped visit is no longer eligible.');
             $checkin->update(['status' => 'waiting', 'returned_at' => now(), 'returned_by' => auth()->id()]);
             return $checkin;

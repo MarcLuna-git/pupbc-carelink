@@ -1,29 +1,36 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   AlertCircle,
-  ArrowRight,
+  ArrowLeft,
   BriefcaseMedical,
+  Camera,
   CalendarCheck,
   CalendarClock,
   ChevronRight,
   ClipboardList,
-  FileText,
   HeartPulse,
+  Loader2,
   Lock,
   Pencil,
   Phone,
   Pill,
   RefreshCw,
+  Save,
   ShieldAlert,
   ShieldCheck,
+  Trash2,
+  Upload,
   User,
+  UserRound,
   Users,
+  X,
 } from 'lucide-react';
 import api from '../../../services/api';
+import { getUser, setUser } from '../../../services/session';
 import StudentPageHero, { HeroRefreshButton } from '../../../components/StudentPageHero';
-import { preloadForPath } from '../../../utils/preloadStudentPages';
+import HealthProfile from '../HealthProfile/HealthProfile';
 import { formatPersonName } from '../../../utils/studentUser';
 import { clinicDate } from '../../../utils/appointmentDate';
 
@@ -36,9 +43,6 @@ const ROUTE_LOADING_DELAY = 1600;
 
 const CARD = 'rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)]';
 
-const PROFILE_EDIT = '/student/profile/edit';
-// Health Profile form steps: 1 Emergency, 2 Medical, 3 History, 4 Personal, 5 Family.
-const healthProfileStep = (step) => `/student/health-profile?step=${step}`;
 
 const fullName = (user) =>
   [user.first_name, user.middle_name, user.last_name, user.suffix].filter(Boolean).map(formatPersonName).join(' ');
@@ -56,7 +60,7 @@ const normalizeProfile = (payload) => {
 
 const readStoredUser = () => {
   try {
-    return JSON.parse(localStorage.getItem('user') || '{}');
+    return getUser('student');
   } catch {
     return {};
   }
@@ -102,32 +106,53 @@ const Skeleton = ({ className = '' }) => (
   <div className={`animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 ${className}`} />
 );
 
-/* One "My Health Profile" section card: title, Edit link and label/value rows. */
-const InfoCard = ({ icon: Icon, title, editTo, rows, footer }) => (
+const EMERGENCY_RELATIONSHIPS = ['Parent', 'Guardian', 'Sibling', 'Spouse', 'Relative', 'Friend', 'Other'];
+
+const FIELD_CLASS = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-maroon-800 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white';
+
+/* Inline input for one editable InfoCard row. */
+const RowEditor = ({ editor, draft, onChange }) => {
+  const common = {
+    id: `profile-${editor.name}`,
+    name: editor.name,
+    value: draft[editor.name] ?? '',
+    onChange,
+    className: FIELD_CLASS,
+  };
+  if (editor.type === 'textarea') return <textarea {...common} rows={2} maxLength={editor.maxLength} placeholder={editor.placeholder} className={`${FIELD_CLASS} resize-none`} />;
+  if (editor.type === 'select') {
+    return (
+      <select {...common}>
+        <option value="">Select</option>
+        {common.value && !editor.options.includes(common.value) && <option>{common.value}</option>}
+        {editor.options.map((option) => <option key={option}>{option}</option>)}
+      </select>
+    );
+  }
+  return <input {...common} type="text" inputMode={editor.inputMode} maxLength={editor.maxLength} placeholder={editor.placeholder} />;
+};
+
+/*
+ * One "My Health Information" section card: title and label/value rows. A row's
+ * optional third item is its editor, shown in place of the value while the
+ * section is in edit mode.
+ */
+const InfoCard = ({ icon: Icon, title, rows, footer, editing = false, draft = {}, onChange }) => (
   <section className="flex flex-col rounded-xl border border-[var(--sp-border)] p-4 sm:p-5">
     <div className="mb-4 flex items-center justify-between gap-3">
       <h3 className="flex items-center gap-2.5 font-bold text-maroon-800 dark:text-maroon-300">
         <Icon className="h-5 w-5" />
         {title}
       </h3>
-      {editTo && (
-        <Link
-          to={editTo}
-          onMouseEnter={() => preloadForPath(editTo.split('?')[0])}
-          onFocus={() => preloadForPath(editTo.split('?')[0])}
-          aria-label={`Edit ${title}`}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--sp-border)] px-3 py-1.5 text-xs font-semibold text-maroon-800 transition hover:bg-maroon-50 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
-        >
-          <Pencil className="h-3.5 w-3.5" /> Edit
-        </Link>
-      )}
     </div>
-    <dl className="grid flex-1 grid-cols-[minmax(0,8.5rem)_minmax(0,1fr)] content-start gap-x-4 gap-y-2.5 text-sm">
-      {rows.map(([label, value]) => (
+    <dl className="grid flex-1 grid-cols-[minmax(0,8.5rem)_minmax(0,1fr)] content-start items-center gap-x-4 gap-y-2.5 text-sm">
+      {rows.map(([label, value, editor]) => (
         <div key={label} className="contents">
-          <dt className="text-gray-500 dark:text-gray-400">{label}</dt>
+          <dt className="text-gray-500 dark:text-gray-400">
+            {editing && editor ? <label htmlFor={`profile-${editor.name}`}>{label}</label> : label}
+          </dt>
           <dd className={`break-words ${value ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}`}>
-            {value || 'Not provided'}
+            {editing && editor ? <RowEditor editor={editor} draft={draft} onChange={onChange} /> : value || 'Not provided'}
           </dd>
         </div>
       ))}
@@ -142,7 +167,7 @@ const HealthProfileMissingCard = ({ icon: Icon, title }) => (
     <Icon className="h-6 w-6 text-gray-300 dark:text-gray-600" />
     <p className="font-semibold text-gray-700 dark:text-gray-300">{title}</p>
     <p className="text-xs text-gray-500 dark:text-gray-400">Complete your Health Profile to fill this in.</p>
-    <Link to="/student/health-profile" className="mt-1 text-xs font-semibold text-maroon-800 hover:underline dark:text-maroon-300">
+    <Link to="/student/profile?view=health-profile" className="mt-1 text-xs font-semibold text-maroon-800 hover:underline dark:text-maroon-300">
       Complete Health Profile
     </Link>
   </section>
@@ -186,6 +211,82 @@ const Overview = () => {
   const [error, setError] = useState('');
   /* Cosmetic hold for the route-loading animation — see ROUTE LOADING note. */
   const [routeReady, setRouteReady] = useState(false);
+  const photoInputRef = useRef(null);
+
+  /*
+   * One Profile page, two contents under the same hero: "My Health
+   * Information" (default) and the step-by-step "Health Profile" form
+   * (?view=health-profile). Switching only changes the search string, so the
+   * hero stays mounted and the page never re-runs its route loading.
+   */
+  const [searchParams, setSearchParams] = useSearchParams();
+  const showHealthProfile = searchParams.get('view') === 'health-profile';
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState('');
+
+  const handlePhotoChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { setPhotoError('Use a JPG, PNG, or WebP image.'); return; }
+    if (file.size > 2 * 1024 * 1024) { setPhotoError('Image must be less than 2MB.'); return; }
+
+    setPhotoError('');
+    setUploadingPhoto(true);
+    try {
+      const data = new FormData();
+      data.append('avatar', file);
+      const response = await api.post('/student/profile/avatar', data);
+      const url = response.data?.data?.profile_picture;
+      if (!url) throw new Error();
+      const updated = { ...student, profile: { ...(student?.profile || {}), profile_picture: url } };
+      setStudent(updated);
+      setUser({ ...readStoredUser(), ...updated }, 'student');
+      window.dispatchEvent(new Event('studentProfileUpdated'));
+    } catch (err) {
+      setPhotoError(err.response?.data?.errors?.avatar?.[0] || 'We could not upload your photo. Please try again.');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  /* Avatar menu: Upload photo / Remove photo. */
+  const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
+  const photoMenuRef = useRef(null);
+  useEffect(() => {
+    if (!photoMenuOpen) return undefined;
+    const closeOnOutside = (event) => { if (!photoMenuRef.current?.contains(event.target)) setPhotoMenuOpen(false); };
+    const closeOnEscape = (event) => { if (event.key === 'Escape') setPhotoMenuOpen(false); };
+    document.addEventListener('mousedown', closeOnOutside);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutside);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [photoMenuOpen]);
+
+  const choosePhoto = () => {
+    setPhotoMenuOpen(false);
+    photoInputRef.current?.click();
+  };
+
+  const removePhoto = async () => {
+    setPhotoMenuOpen(false);
+    if (!window.confirm('Remove your profile photo?')) return;
+    setPhotoError('');
+    setUploadingPhoto(true);
+    try {
+      await api.delete('/student/profile/avatar');
+      const updated = { ...student, profile: { ...(student?.profile || {}), profile_picture: null } };
+      setStudent(updated);
+      setUser({ ...readStoredUser(), ...updated }, 'student');
+      window.dispatchEvent(new Event('studentProfileUpdated'));
+    } catch {
+      setPhotoError('We could not remove your photo. Please try again.');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   const loadOverview = useCallback(async ({ refresh = false } = {}) => {
     if (refresh) setRefreshing(true);
@@ -212,7 +313,7 @@ const Overview = () => {
         normalized.profile.health_profile_completed = stored?.profile?.health_profile_completed;
       }
       setStudent(normalized);
-      localStorage.setItem('user', JSON.stringify(normalized));
+      setUser(normalized, 'student');
       window.dispatchEvent(new Event('studentProfileUpdated'));
 
       if (healthResult.status === 'fulfilled' && healthResult.value.data?.success) {
@@ -243,23 +344,99 @@ const Overview = () => {
   const hasHealthProfile = Boolean(healthProfile);
   const contact = student?.emergency_contact || {};
 
+  /* Inline editing of the "My Health Information" cards. */
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState('');
+  const [draft, setDraft] = useState({});
+
+
+  const startEdit = () => {
+    setDraft({
+      mobile_number: student?.mobile_number || '',
+      address: profile.address || '',
+      emergency_name: contact.name || hp.emergency_name || '',
+      emergency_relationship: contact.relationship || hp.emergency_relationship || '',
+      emergency_phone: contact.phone || hp.emergency_phone || '',
+      allergy_details: hp.allergy_details || '',
+      medications: hp.medications || '',
+    });
+    setEditError('');
+    setEditing(true);
+  };
+
+  const cancelEdit = () => {
+    if (saving) return;
+    setEditing(false);
+    setEditError('');
+  };
+
+  const handleDraftChange = (event) => {
+    const { name, value } = event.target;
+    const next = name === 'mobile_number'
+      ? value.replace(/[^\d+]/g, '').slice(0, 13)
+      : name === 'emergency_phone'
+        ? value.replace(/\D/g, '').slice(0, 11)
+        : value;
+    setDraft((current) => ({ ...current, [name]: next }));
+  };
+
+  const saveEdit = async () => {
+    if (saving) return;
+    const trimmed = Object.fromEntries(Object.entries(draft).map(([key, value]) => [key, value.trim()]));
+    if (!/^(?:09\d{9}|\+639\d{9})$/.test(trimmed.mobile_number)) { setEditError('Use 09XXXXXXXXX or +639XXXXXXXXX for your mobile number.'); return; }
+    if (hasHealthProfile && (!trimmed.emergency_name || !trimmed.emergency_relationship)) { setEditError('Emergency contact name and relationship are required.'); return; }
+    if ((hasHealthProfile || trimmed.emergency_phone) && !/^09\d{9}$/.test(trimmed.emergency_phone)) { setEditError('Emergency contact number must be 11 digits starting with 09.'); return; }
+
+    setSaving(true);
+    setEditError('');
+    try {
+      await api.put('/student/profile', {
+        mobile_number: trimmed.mobile_number,
+        address: trimmed.address,
+        // Without a Health Profile the emergency contact lives on the student profile.
+        ...(hasHealthProfile ? {} : {
+          guardian_name: trimmed.emergency_name || null,
+          guardian_relationship: trimmed.emergency_relationship || null,
+          guardian_contact: trimmed.emergency_phone || null,
+        }),
+      });
+      if (hasHealthProfile) {
+        await api.put('/student/health-profile', {
+          emergency_name: trimmed.emergency_name,
+          emergency_relationship: trimmed.emergency_relationship,
+          emergency_phone: trimmed.emergency_phone,
+          allergy_details: trimmed.allergy_details,
+          medications: trimmed.medications,
+        });
+        window.dispatchEvent(new CustomEvent('healthProfileUpdated'));
+      }
+      setEditing(false);
+      await loadOverview({ refresh: true });
+    } catch (err) {
+      const messages = Object.values(err.response?.data?.errors || {}).flat().filter((value) => typeof value === 'string');
+      setEditError(messages.join(' ') || err.response?.data?.message || 'We could not save your changes. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   /* Profile completeness — the share of these items that are filled in. */
   const completion = useMemo(() => {
-    if (!student) return { percent: 0, next: null };
+    if (!student) return { percent: 0 };
     const checks = [
-      [profile.profile_picture, PROFILE_EDIT],
-      [student.mobile_number, PROFILE_EDIT],
-      [profile.address, PROFILE_EDIT],
-      [student.email, PROFILE_EDIT],
-      [student.birthday || profile.birthday, null],
-      [student.gender || profile.gender, null],
-      [contact.name || hp.emergency_name, healthProfileStep(1)],
-      [contact.phone || hp.emergency_phone, healthProfileStep(1)],
-      [hasHealthProfile && hp.completed_at, '/student/health-profile'],
+      profile.profile_picture,
+      student.mobile_number,
+      profile.address,
+      student.email,
+      student.birthday || profile.birthday,
+      student.gender || profile.gender,
+      contact.name || hp.emergency_name,
+      contact.phone || hp.emergency_phone,
+      hasHealthProfile && hp.completed_at,
     ];
-    const done = checks.filter(([value]) => Boolean(value)).length;
-    const next = checks.find(([value, to]) => !value && to)?.[1] || null;
-    return { percent: Math.round((done / checks.length) * 100), next };
+    const done = checks.filter(Boolean).length;
+    return { percent: Math.round((done / checks.length) * 100) };
   }, [student, profile, contact, hp, hasHealthProfile]);
 
   /* Health summary — derived from clinic history and the Health Profile. */
@@ -275,86 +452,73 @@ const Overview = () => {
     return { last, upcoming, conditions, visitCount: visits.length };
   }, [history, hp]);
 
-  const errorView = (
-    <div className="w-full min-w-0 space-y-3">
-      <StudentPageHero id="profile-title" eyebrow="Student profile" title="Profile" description="View your personal information and Health Profile." />
-      <div className={`${CARD} mx-auto flex min-h-[40vh] flex-col items-center justify-center p-6 text-center`}>
-        <AlertCircle className="h-10 w-10 text-red-500" />
-        <h2 className="mt-3 text-lg font-semibold text-gray-900 dark:text-white">Profile unavailable</h2>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{error}</p>
-        <button onClick={() => loadOverview()} className="mt-4 inline-flex items-center gap-2 rounded-md bg-maroon-800 px-4 py-2 text-sm font-semibold text-white hover:bg-maroon-900">
-          <RefreshCw className="h-4 w-4" /> Retry
-        </button>
-      </div>
+  const openHealthProfile = () => setSearchParams({ view: 'health-profile' });
+  const closeHealthProfile = () => {
+    setSearchParams({});
+    // The form may have changed what the cards and completion show.
+    loadOverview({ refresh: true });
+  };
+
+  /*
+   * LOADING PHASE — the hero is real right away (name from the stored
+   * session) with the looping progress bar on its bottom edge ONLY; the
+   * content below renders as 1:1 ghosts.
+   */
+  const pageLoading = loading || !routeReady;
+  const ready = !pageLoading && !error && Boolean(student);
+  const heroUser = ready ? student : readStoredUser();
+  const heroProfile = heroUser?.profile || {};
+  const course = heroUser?.course || heroProfile.course;
+  const yearLevel = formatYearLevel(heroUser?.year || heroProfile.year);
+  const section = heroUser?.section || heroProfile.section;
+  const last = summary.last;
+
+  const errorCard = (
+    <div className={`${CARD} mx-auto flex min-h-[40vh] flex-col items-center justify-center p-6 text-center`}>
+      <AlertCircle className="h-10 w-10 text-red-500" />
+      <h2 className="mt-3 text-lg font-semibold text-gray-900 dark:text-white">Profile unavailable</h2>
+      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{error || 'We could not load your profile. Please try again.'}</p>
+      <button onClick={() => loadOverview()} className="mt-4 inline-flex items-center gap-2 rounded-md bg-maroon-800 px-4 py-2 text-sm font-semibold text-white hover:bg-maroon-900">
+        <RefreshCw className="h-4 w-4" /> Retry
+      </button>
     </div>
   );
 
-  /* Failed fetch → error right away; never wait on the demo timer to show it. */
-  if (error && !loading) return errorView;
-
-  /*
-   * LOADING PHASE — the hero is real (name from the stored session), with
-   * the looping progress bar on its bottom edge ONLY. The health profile
-   * cards and summary render as 1:1 ghosts.
-   */
-  if (loading || !routeReady) {
-    const stored = readStoredUser();
-    return (
-      <div className="w-full min-w-0 space-y-3">
-        <StudentPageHero
-          id="profile-title"
-          eyebrow={null}
-          title={fullName(stored) || 'Profile'}
-          description={[stored.course || stored.profile?.course, formatYearLevel(stored.year || stored.profile?.year)].filter(Boolean).join(' • ') || 'Student'}
-          leading={<Avatar src={stored.profile?.profile_picture} />}
-          loading
-        >
-          <Skeleton className="mt-2 h-3.5 w-36" />
-          <Skeleton className="mt-3 h-8 w-44 rounded-full" />
-        </StudentPageHero>
-
-        <div className={`${CARD} p-4 lg:p-6`}>
-          <Skeleton className="mb-2 h-6 w-44" />
-          <Skeleton className="mb-5 h-3.5 w-72 max-w-full" />
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {[0, 1, 2, 3, 4, 5].map((key) => (
-              <div key={key} className="rounded-xl border border-[var(--sp-border)] p-4 sm:p-5">
-                <div className="mb-4 flex items-center justify-between">
-                  <Skeleton className="h-5 w-40" />
-                  <Skeleton className="h-7 w-16 rounded-lg" />
-                </div>
-                <div className="space-y-3">
-                  {[0, 1, 2, 3].map((row) => (
-                    <div key={row} className="flex gap-4">
-                      <Skeleton className="h-3.5 w-24" />
-                      <Skeleton className="h-3.5 flex-1" />
-                    </div>
-                  ))}
-                </div>
+  const loadingCards = (
+    <>
+      <div className={`${CARD} p-4 lg:p-6`}>
+        <Skeleton className="mb-2 h-6 w-44" />
+        <Skeleton className="mb-5 h-3.5 w-72 max-w-full" />
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {[0, 1, 2, 3, 4, 5].map((key) => (
+            <div key={key} className="rounded-xl border border-[var(--sp-border)] p-4 sm:p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-7 w-16 rounded-lg" />
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className={`${CARD} p-4 lg:p-6`}>
-          <Skeleton className="mb-5 h-6 w-56" />
-          <div className="grid gap-3 md:grid-cols-3">
-            <Skeleton className="h-20 rounded-xl" />
-            <Skeleton className="h-20 rounded-xl" />
-            <Skeleton className="h-20 rounded-xl" />
-          </div>
+              <div className="space-y-3">
+                {[0, 1, 2, 3].map((row) => (
+                  <div key={row} className="flex gap-4">
+                    <Skeleton className="h-3.5 w-24" />
+                    <Skeleton className="h-3.5 flex-1" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
-    );
-  }
 
-  if (error || !student) return errorView;
-
-  const course = student.course || profile.course;
-  const yearLevel = formatYearLevel(student.year || profile.year);
-  const section = student.section || profile.section;
-  const firstName = formatPersonName(student.first_name) || 'there';
-  const last = summary.last;
+      <div className={`${CARD} p-4 lg:p-6`}>
+        <Skeleton className="mb-5 h-6 w-56" />
+        <div className="grid gap-3 md:grid-cols-3">
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+        </div>
+      </div>
+    </>
+  );
 
   return (
     <motion.div
@@ -366,37 +530,171 @@ const Overview = () => {
       <StudentPageHero
         id="profile-title"
         eyebrow={null}
-        title={fullName(student)}
+        art={UserRound}
+        title={fullName(heroUser || {}) || 'Profile'}
         description={[course, yearLevel].filter(Boolean).join(' • ') || 'Student'}
-        leading={<Avatar src={profile.profile_picture} />}
-        action={<HeroRefreshButton onClick={() => loadOverview({ refresh: true })} refreshing={refreshing} label="Refresh profile" />}
-      >
-        <p className="text-xs text-gray-700 dark:text-gray-300 sm:text-sm">Student ID: {student.student_id || '—'}</p>
-        {completion.next ? (
-          <Link
-            to={completion.next}
-            className="mt-3 inline-flex items-center gap-2 rounded-full bg-[#f6deda] px-3 py-1.5 text-xs font-semibold text-maroon-800 transition hover:bg-[#f1cfc9] dark:bg-maroon-900/40 dark:text-maroon-200 dark:hover:bg-maroon-900/60"
-          >
-            <ShieldCheck className="h-4 w-4" /> Profile {completion.percent}% Complete <ChevronRight className="h-4 w-4" />
-          </Link>
-        ) : (
-          <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 dark:bg-green-900/20 dark:text-green-400">
-            <ShieldCheck className="h-4 w-4" /> Profile 100% Complete
-          </span>
+        loading={pageLoading}
+        leading={(
+          <div className="relative shrink-0">
+            <Avatar src={heroProfile.profile_picture} />
+            {ready && (
+              <>
+                <div ref={photoMenuRef} className="absolute bottom-1 right-1">
+                  <button
+                    type="button"
+                    onClick={() => setPhotoMenuOpen((open) => !open)}
+                    disabled={uploadingPhoto}
+                    aria-label="Profile photo options"
+                    aria-haspopup="menu"
+                    aria-expanded={photoMenuOpen}
+                    title="Profile photo"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-maroon-800 text-white transition hover:bg-maroon-900 disabled:opacity-60 dark:border-gray-800"
+                  >
+                    {uploadingPhoto ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                  </button>
+                  {/* Opens to the right so the hero's rounded edge never clips it. */}
+                  {photoMenuOpen && (
+                    <div role="menu" className="absolute bottom-0 left-full z-20 ml-2 w-40 overflow-hidden rounded-xl border border-[var(--sp-border)] bg-white py-1 text-sm dark:bg-gray-800">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={choosePhoto}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700"
+                      >
+                        <Upload className="h-4 w-4" /> Upload photo
+                      </button>
+                      {profile.profile_picture && (
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={removePhoto}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 className="h-4 w-4" /> Remove photo
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoChange} className="hidden" />
+              </>
+            )}
+          </div>
         )}
-        <p className="mt-3 hidden font-bold text-maroon-800 dark:text-maroon-300 sm:block">Hello, {firstName}!</p>
-        <p className="hidden text-xs text-gray-600 dark:text-gray-400 sm:block">Keep your health in check for a brighter tomorrow.</p>
+        action={ready ? <HeroRefreshButton onClick={() => loadOverview({ refresh: true })} refreshing={refreshing} label="Refresh profile" /> : null}
+      >
+        {ready ? (
+          <>
+            <p className="mt-1 text-xs text-gray-700 dark:text-gray-300 sm:text-sm">Student ID: {student.student_id || '—'}</p>
+            {photoError && <p role="alert" className="mt-2 text-xs text-red-600 dark:text-red-400">{photoError}</p>}
+          </>
+        ) : (
+          <>
+            <Skeleton className="mt-1 h-4 w-44 max-w-full" />
+          </>
+        )}
       </StudentPageHero>
 
-      {/* My Health Profile */}
-      <div className={`${CARD} p-4 lg:p-6`}>
-        <div className="mb-5 flex items-start gap-2.5">
-          <ClipboardList className="mt-0.5 h-6 w-6 text-maroon-800 dark:text-maroon-300" />
-          <div>
-            <h2 className="text-lg font-bold text-maroon-800 dark:text-maroon-300">My Health Profile</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Keep your information up to date for better and safer care.</p>
+      {/* Profile completion — its own card under the hero. */}
+      {ready ? (
+        <div className={`${CARD} flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between lg:px-6`}>
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <ShieldCheck className={`h-6 w-6 shrink-0 ${completion.percent >= 100 ? 'text-green-600 dark:text-green-400' : 'text-maroon-800 dark:text-maroon-300'}`} />
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+                {completion.percent >= 100 ? 'Your profile is complete' : 'Complete your profile'}
+                <span className={completion.percent >= 100 ? 'text-green-700 dark:text-green-400' : 'text-maroon-800 dark:text-maroon-300'}>
+                  {completion.percent}%
+                </span>
+              </p>
+              <div className="mt-2 h-2 w-full max-w-md overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                <div
+                  className={`h-full rounded-full ${completion.percent >= 100 ? 'bg-green-600' : 'bg-maroon-800'}`}
+                  style={{ width: `${completion.percent}%` }}
+                />
+              </div>
+            </div>
           </div>
+          {/* Opens the Health Profile form under the same hero. */}
+          <button
+            type="button"
+            onClick={showHealthProfile ? closeHealthProfile : openHealthProfile}
+            aria-pressed={showHealthProfile}
+            className="inline-flex items-center gap-1.5 self-start rounded-lg bg-maroon-800 px-4 py-2 text-xs font-semibold text-white transition-colors hover:text-gray-300 sm:self-auto"
+          >
+            {showHealthProfile ? (
+              <><ArrowLeft className="h-4 w-4" /> Go Back</>
+            ) : (
+              <>Go <ChevronRight className="h-4 w-4" /></>
+            )}
+          </button>
         </div>
+      ) : (
+        <div className={`${CARD} flex items-center justify-between gap-3 p-4 lg:px-6`}>
+          <div className="flex flex-1 items-center gap-3">
+            <Skeleton className="h-6 w-6 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-2 w-full max-w-md rounded-full" />
+            </div>
+          </div>
+          <Skeleton className="h-8 w-44 rounded-full" />
+        </div>
+      )}
+
+      {showHealthProfile ? (
+        <HealthProfile onBack={closeHealthProfile} />
+      ) : error && !loading ? (
+        errorCard
+      ) : pageLoading ? (
+        loadingCards
+      ) : !student ? (
+        errorCard
+      ) : (
+      <>
+
+      {/* My Health Information */}
+      <div className={`${CARD} p-4 lg:p-6`}>
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-start gap-2.5">
+            <ClipboardList className="mt-0.5 h-6 w-6 text-maroon-800 dark:text-maroon-300" />
+            <div>
+              <h2 className="text-lg font-bold text-maroon-800 dark:text-maroon-300">My Health Information</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Keep your information up to date for better and safer care.</p>
+            </div>
+          </div>
+          {editing ? (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={cancelEdit}
+                disabled={saving}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--sp-border)] px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-60 dark:text-gray-200 dark:hover:bg-gray-700"
+              >
+                <X className="h-3.5 w-3.5" /> Cancel
+              </button>
+              <button
+                type="button"
+                onClick={saveEdit}
+                disabled={saving}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-maroon-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:text-gray-300 disabled:opacity-60"
+              >
+                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={startEdit}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--sp-border)] px-3 py-1.5 text-xs font-semibold text-maroon-800 transition hover:bg-maroon-50 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
+            >
+              <Pencil className="h-3.5 w-3.5" /> Edit
+            </button>
+          )}
+        </div>
+
+        {editError && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">{editError}</p>}
 
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <InfoCard
@@ -416,22 +714,27 @@ const Overview = () => {
           <InfoCard
             icon={Phone}
             title="Contact Information"
-            editTo={PROFILE_EDIT}
+            editing={editing}
+            draft={draft}
+            onChange={handleDraftChange}
             rows={[
-              ['Mobile Number', student.mobile_number],
+              ['Mobile Number', student.mobile_number, { name: 'mobile_number', inputMode: 'tel', maxLength: 13, placeholder: '09XXXXXXXXX' }],
               ['Email Address', student.email],
-              ['Home Address', profile.address],
+              ['Home Address', profile.address, { name: 'address', type: 'textarea', maxLength: 1000, placeholder: 'Enter your address' }],
             ]}
+            footer={editing ? <><Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" /> Change your email address in Settings.</> : null}
           />
 
           <InfoCard
             icon={Users}
             title="Emergency Contact"
-            editTo={healthProfileStep(1)}
+            editing={editing}
+            draft={draft}
+            onChange={handleDraftChange}
             rows={[
-              ['Name', contact.name || hp.emergency_name],
-              ['Relationship', contact.relationship || hp.emergency_relationship],
-              ['Mobile Number', contact.phone || hp.emergency_phone],
+              ['Name', contact.name || hp.emergency_name, { name: 'emergency_name', maxLength: 100, placeholder: 'Juan Dela Cruz' }],
+              ['Relationship', contact.relationship || hp.emergency_relationship, { name: 'emergency_relationship', type: 'select', options: EMERGENCY_RELATIONSHIPS }],
+              ['Mobile Number', contact.phone || hp.emergency_phone, { name: 'emergency_phone', inputMode: 'numeric', maxLength: 11, placeholder: '09123456789' }],
             ]}
           />
 
@@ -440,7 +743,6 @@ const Overview = () => {
               <InfoCard
                 icon={HeartPulse}
                 title="Health Information"
-                editTo={healthProfileStep(2)}
                 rows={[
                   ['Known Conditions', listOrNone(hp.medical_history, hp.other_medical_history)],
                   ['Hospitalization', yesNoDetail(hp.hospitalized, hp.hospitalization_diagnosis, hp.hospitalization_date)],
@@ -453,9 +755,11 @@ const Overview = () => {
               <InfoCard
                 icon={ShieldAlert}
                 title="Allergies & Family History"
-                editTo={healthProfileStep(2)}
+                editing={editing}
+                draft={draft}
+                onChange={handleDraftChange}
                 rows={[
-                  ['Allergies', hp.allergy_details || 'None'],
+                  ['Allergies', hp.allergy_details || 'None', { name: 'allergy_details', maxLength: 191, placeholder: 'Penicillin, Seafood, None' }],
                   ['Family History', listOrNone(hp.family_history)],
                 ]}
               />
@@ -463,9 +767,11 @@ const Overview = () => {
               <InfoCard
                 icon={Pill}
                 title="Medications & Lifestyle"
-                editTo={healthProfileStep(2)}
+                editing={editing}
+                draft={draft}
+                onChange={handleDraftChange}
                 rows={[
-                  ['Current Medications', hp.medications || 'None'],
+                  ['Current Medications', hp.medications || 'None', { name: 'medications', type: 'textarea', maxLength: 2000, placeholder: 'List medications or type None' }],
                   ['Tobacco Use', hp.tobacco_use || 'None'],
                   ['Alcohol Use', hp.alcohol_use || 'None'],
                 ]}
@@ -491,13 +797,6 @@ const Overview = () => {
               <p className="text-sm text-gray-500 dark:text-gray-400">Your key health records at a glance.</p>
             </div>
           </div>
-          <Link
-            to="/student/health-records"
-            onMouseEnter={() => preloadForPath('/student/health-records')}
-            className="inline-flex items-center gap-2 rounded-lg border border-maroon-800 px-3 py-2 text-xs font-semibold text-maroon-800 transition hover:bg-maroon-50 dark:border-maroon-700 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
-          >
-            <FileText className="h-4 w-4" /> View Records <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
         </div>
 
         <div className="grid gap-3 md:grid-cols-3">
@@ -533,6 +832,8 @@ const Overview = () => {
           />
         </div>
       </div>
+      </>
+      )}
     </motion.div>
   );
 };

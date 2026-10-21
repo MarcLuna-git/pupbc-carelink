@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { createRequestPool } from './requestPool.js';
+import { clearSession, currentPortal, getToken } from './session.js';
 
 const getApiUrl = () => {
   const configuredUrl = import.meta.env.VITE_API_URL
@@ -34,7 +35,7 @@ const api = axios.create({
 
 const transportGet = api.get.bind(api);
 const reads = createRequestPool(transportGet,
-  () => JSON.stringify([localStorage.getItem('token'), sessionStorage.getItem('carelink.kiosk.token')]),
+  () => JSON.stringify([currentPortal(), getToken(), sessionStorage.getItem('carelink.kiosk.token')]),
   (url, config) => {
     const target = new URL(api.getUri({ ...config, url }), window.location.origin);
     target.searchParams.sort();
@@ -56,9 +57,13 @@ api.interceptors.request.use(
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type'];
     }
-    const token = localStorage.getItem('token');
+    // The kiosk authenticates the device only; never send a portal user's token with it.
+    const isKioskRequest = config.url?.startsWith('/kiosk/');
+    const token = isKioskRequest ? null : getToken();
 
-    if (token) {
+    if (isKioskRequest) {
+      delete config.headers.Authorization;
+    } else if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
@@ -122,13 +127,19 @@ api.interceptors.response.use(
         pathname.includes('/forgot-password') ||
         pathname.includes('/reset-password');
 
+      // A rejected kiosk device token must not sign anyone out of another portal.
+      const isKiosk =
+        pathname.startsWith('/kiosk') ||
+        error.config?.url?.startsWith('/kiosk/');
+
       if (
         !isLoginPage &&
         !isCarelinkPortal &&
-        !isAuthPage
+        !isAuthPage &&
+        !isKiosk
       ) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        // Only the portal whose token was rejected is signed out.
+        clearSession();
 
         window.location.replace(
           pathname.startsWith('/nurse')

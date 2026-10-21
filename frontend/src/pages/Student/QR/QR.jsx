@@ -1,11 +1,12 @@
 import api from '../../../services/api';
+import { getUser } from '../../../services/session';
 import {
   clinicDate as getManilaDateString,
-  groupAppointments,
+  appointmentDate,
   formatAppointmentDate,
   appointmentTime,
 } from '../../../utils/appointmentDate';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -65,7 +66,8 @@ const CHECKIN_STEPS = [
   { title: 'Completed', desc: 'Your clinic visit is finished.' },
 ];
 
-const checkinStepIndex = (queue) => {
+const checkinStepIndex = (queue, appointment) => {
+  if (appointment?.status === 'completed') return 3;
   switch (queue?.status) {
     case 'waiting':
       return 1;
@@ -97,6 +99,7 @@ const Skeleton = ({ className = '' }) => (
 const QR_HERO = {
   id: 'qr-title',
   title: 'QR Code',
+  art: QrCode,
   description: 'Use your QR code for a faster and easier clinic check-in at the PUP Student Clinic.',
 };
 
@@ -132,7 +135,7 @@ const CHECKIN_TIPS = [
 
 const QR = () => {
   const user = useMemo(
-    () => JSON.parse(localStorage.getItem('user') || '{}'),
+    () => getUser('student'),
     []
   );
 
@@ -157,20 +160,28 @@ const QR = () => {
   const [qrUsable, setQrUsable] = useState(false);
   const [appointments, setAppointments] = useState([]);
   const [qrDataUrl, setQrDataUrl] = useState('');
+  const hasLoadedRef = useRef(false);
 
   // Check-in window state
   const [checkinOpensAt, setCheckinOpensAt] = useState(null);
   const [checkinDeadlineAt, setCheckinDeadlineAt] = useState(null);
 
   const today = getManilaDateString();
+  // Today's visit stays on this page all day — including after it is completed.
   const todayAppointment = useMemo(
-    () => groupAppointments(appointments).today[0] || null,
-    // `today` re-evaluates the grouping when the clinic day rolls over.
+    () => appointments.find((item) =>
+      ['approved', 'completed'].includes(item.status) &&
+      appointmentDate(item.appointment_date) === today) || null,
+    // `today` re-evaluates the selection when the clinic day rolls over.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [appointments, today]
   );
 
   const queue = todayAppointment?.queue || null;
+  const visitCompleted = todayAppointment?.status === 'completed' || queue?.status === 'completed';
+  // Kiosk → Developer Tools → Remove time Guard opens check-in for the whole day.
+  const allDayWindow = Boolean(checkinOpensAt && checkinDeadlineAt) &&
+    formatTime(checkinOpensAt) === '12:00 AM' && formatTime(checkinDeadlineAt) === '11:59 PM';
 
   const canUseQr =
     Boolean(qrUsable) &&
@@ -199,11 +210,14 @@ const QR = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Background polls pass the poller's signal; a manual Refresh passes none.
   const fetchQrData = async (signal) => {
+    const background = Boolean(signal);
     setRefreshing(true);
     try {
       const response = await api.get('/student/qr', { signal });
       if (signal?.aborted) return;
+      hasLoadedRef.current = true;
       const qrData = response?.data?.data || null;
 
       setQrCodeHash(qrData?.qr_code_hash || '');
@@ -220,8 +234,14 @@ const QR = () => {
     } catch (error) {
       if (error.name === 'CanceledError') return;
       console.error('QR data load error:', error);
-      setMessageType('error');
-      setMessage(LOAD_ERROR);
+      /* A slow or busy server can drop one background poll. Keep showing the
+         QR that is already loaded and let the poller back off and retry;
+         only report the failure when nothing is loaded or on manual Refresh. */
+      if (!background || !hasLoadedRef.current) {
+        setMessageType('error');
+        setMessage(LOAD_ERROR);
+      }
+      if (background) throw error;
     } finally {
       setPageLoading(false);
       setRefreshing(false);
@@ -541,7 +561,7 @@ const QR = () => {
 
   const fullName = `${formatPersonName(user.first_name)} ${formatPersonName(user.last_name)}`.trim();
   const courseLine = [user.course, user.year, user.section].filter(Boolean).join(' • ');
-  const currentStep = checkinStepIndex(queue);
+  const currentStep = checkinStepIndex(queue, todayAppointment);
   const isNoShow = queue?.status === 'no_show';
   const opensLabel = formatTime(checkinOpensAt);
   const deadlineLabel = formatTime(checkinDeadlineAt);
@@ -591,8 +611,8 @@ const QR = () => {
                 <div className="flex items-center gap-2 rounded-xl bg-green-50 px-3 py-2 dark:bg-green-900/20">
                   <CircleCheck className="h-5 w-5 fill-green-600 text-white dark:fill-green-500 dark:text-green-950" />
                   <div className="leading-tight">
-                    <p className="text-sm font-semibold text-green-700 dark:text-green-400">Approved</p>
-                    <p className="text-[11px] text-green-700/80 dark:text-green-500/80">Ready for Check-in</p>
+                    <p className="text-sm font-semibold text-green-700 dark:text-green-400">{visitCompleted ? 'Visit Completed' : 'Approved'}</p>
+                    <p className="text-[11px] text-green-700/80 dark:text-green-500/80">{visitCompleted ? 'Your clinic visit is finished' : 'Ready for Check-in'}</p>
                   </div>
                 </div>
               )
@@ -718,9 +738,11 @@ const QR = () => {
                     <p className="text-sm font-medium text-maroon-800 dark:text-maroon-300">Check-in Opens</p>
                     <p className="text-3xl font-bold text-maroon-800 dark:text-maroon-200">{opensLabel}</p>
                     <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                      {minutesBeforeStart
-                        ? `${minutesBeforeStart} minutes before your appointment`
-                        : 'Before your appointment'}
+                      {allDayWindow
+                        ? 'Open all day (kiosk time guard off)'
+                        : minutesBeforeStart
+                          ? `${minutesBeforeStart} minutes before your appointment`
+                          : 'Before your appointment'}
                     </p>
                   </div>
                 </div>
@@ -730,7 +752,9 @@ const QR = () => {
                     <p className="text-sm font-medium text-maroon-800 dark:text-maroon-300">Check-in Deadline</p>
                     <p className="text-3xl font-bold text-maroon-800 dark:text-maroon-200">{deadlineLabel}</p>
                     <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                      After this time, your slot may be forfeited.
+                      {allDayWindow
+                        ? 'Open until the end of your appointment day.'
+                        : 'After this time, your slot may be forfeited.'}
                     </p>
                   </div>
                 </div>

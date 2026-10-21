@@ -1,3 +1,4 @@
+import { getUser, setUser as saveSessionUser } from '../services/session';
 import useAccountTheme from '../hooks/useAccountTheme';
 import authService from '../services/authService';
 import { Suspense, useState, useEffect } from 'react';
@@ -8,11 +9,12 @@ import { LayoutDashboard, Calendar, Users, FileText, Bell, LogOut, QrCode, Setti
 import { fetchNurseNotifications } from '../services/nurseNotifications';
 import useNurseSync from '../hooks/useNurseSync';
 import api from '../services/api';
+import { fetchNurseDevTools } from '../services/devTools';
 
 const AdminLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user') || '{}'));
+  const [user, setUser] = useState(() => getUser('nurse'));
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -23,7 +25,7 @@ const AdminLayout = ({ children }) => {
     const { data } = await api.get('/auth/me', { signal });
     if (signal.aborted) return;
     setUser(data.user);
-    localStorage.setItem('user', JSON.stringify(data.user));
+    saveSessionUser(data.user, 'nurse');
   });
 
   useNurseSync(['notifications', 'medicines'], async () => {
@@ -50,11 +52,16 @@ const AdminLayout = ({ children }) => {
     };
   }, []);
 
+  // Developer Tools → Remove time Guard lives on the server; mirror it once per visit.
+  useEffect(() => {
+    fetchNurseDevTools().catch(() => {});
+  }, []);
+
   const handleLogout = () => setShowLogoutConfirm(true);
 
   const confirmLogout = async () => {
     setLogoutLoading(true);
-    await authService.logout();
+    await authService.logout('nurse');
     navigate('/carelink-portal');
   };
 

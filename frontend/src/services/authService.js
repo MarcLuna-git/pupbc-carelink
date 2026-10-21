@@ -1,4 +1,5 @@
 import api from './api';
+import { clearSession, currentPortal, getToken, getUser, setToken, setUser } from './session';
 
 const getPayload = (responseData) => {
   // Tanggap ang token/user sa data object o sa root response.
@@ -18,13 +19,10 @@ const authService = {
     const payload = getPayload(body);
 
     if (body.success && payload?.token) {
-      localStorage.setItem('token', payload.token);
+      setToken(payload.token, 'nurse');
 
       if (payload.user) {
-        localStorage.setItem(
-          'user',
-          JSON.stringify(payload.user)
-        );
+        setUser(payload.user, 'nurse');
       }
     }
 
@@ -43,13 +41,10 @@ const authService = {
     const payload = getPayload(body);
 
     if (body.success && payload?.token) {
-      localStorage.setItem('token', payload.token);
+      setToken(payload.token, 'student');
 
       if (payload.user) {
-        localStorage.setItem(
-          'user',
-          JSON.stringify(payload.user)
-        );
+        setUser(payload.user, 'student');
       }
     }
 
@@ -146,42 +141,39 @@ const authService = {
   },
 
 
-  async logout() {
+  // Signs out of the current portal only; the other portal's session stays.
+  async logout(portal = currentPortal()) {
     try {
       await api.post('/auth/logout');
     } catch (e) {
       // I-clear ang local session kahit invalid na ang token.
     }
 
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    clearSession(portal);
 
-    Object.keys(localStorage)
-      .filter((key) =>
-        key.startsWith('carelink.student.')
-      )
-      .forEach((key) =>
-        localStorage.removeItem(key)
-      );
+    // Student-only cleanup of per-session caches. "Remember me" is kept
+    // (stored outside this namespace, see studentRememberLogin.js), and the
+    // Nurse portal's logout never touches Student data.
+    if (portal === 'student') {
+      Object.keys(localStorage)
+        .filter((key) =>
+          key.startsWith('carelink.student.')
+        )
+        .forEach((key) =>
+          localStorage.removeItem(key)
+        );
+    }
   },
 
 
   getCurrentUser() {
-    const user = localStorage.getItem('user');
+    const user = getUser();
 
-    if (!user) {
-      return null;
-    }
-
-    try {
-      return JSON.parse(user);
-    } catch {
-      return null;
-    }
+    return user.id || user.role ? user : null;
   },
 
   isAuthenticated() {
-    return !!localStorage.getItem('token');
+    return !!getToken();
   },
 
   isNurse() {
@@ -197,7 +189,7 @@ const authService = {
   },
 
   getToken() {
-    return localStorage.getItem('token');
+    return getToken();
   },
 
 
@@ -210,10 +202,7 @@ const authService = {
     const payload = getPayload(body);
 
     if (body.success && payload?.token) {
-      localStorage.setItem(
-        'token',
-        payload.token
-      );
+      setToken(payload.token);
     }
 
     return body;

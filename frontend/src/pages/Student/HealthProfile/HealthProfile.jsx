@@ -1,9 +1,9 @@
+import { getToken, getUser, setUser } from '../../../services/session';
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Check, Loader2, Heart, Shield, ClipboardList, AlertCircle, Info } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Check, Loader2, Heart, Shield, ClipboardList, AlertCircle, Info, PenLine, Users } from 'lucide-react';
 import api from '../../../services/api';
-import ProfileSection from '../../../layouts/StudentLayout/student-shell/ProfileSection';
 
 const getManilaDateString = () => {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -36,9 +36,66 @@ const textLimits = {
   medications: 2000, other_substance_use: 2000, disability_details: 2000,
 };
 
-const HealthProfile = () => {
+const CARD = 'rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)]';
+
+const STEP_ICONS = [Shield, ClipboardList, AlertCircle, Heart, Users, PenLine];
+
+// Header copy for each form step; the card header pages along with the form.
+const STEP_HEADERS = [
+  { title: 'Emergency Contact', description: 'Who should we contact in case of emergency?' },
+  { title: 'Medical History', description: 'Please check all illnesses that apply to you.' },
+  { title: 'Hospitalization, Surgery & COVID-19', description: 'All questions are optional.' },
+  { title: 'Personal & Social History', description: 'Optional. Helps us provide better care.' },
+  { title: 'Family Medical History', description: 'Select any conditions present in your immediate family. Leave unchecked if none are known. You can update this information later.' },
+  { title: 'Consent & Signature', description: 'Confirm that your answers are true and sign to finish.' },
+];
+
+/*
+ * Health Profile content of the Profile page (below the shared hero, in
+ * place of "My Health Information"). Kept outside HealthProfile so the form
+ * inputs are not remounted (and lose focus) on every keystroke.
+ */
+const HealthProfileShell = ({ completed, step = null, totalSteps = STEP_HEADERS.length, loading = false, children }) => {
+  const header = step ? STEP_HEADERS[step - 1] : null;
+  const HeaderIcon = step ? STEP_ICONS[step - 1] : ClipboardList;
+  return (
+  <section aria-labelledby="health-profile-title" className={`${CARD} p-4 lg:p-6`}>
+    <div className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-[var(--sp-border)] pb-4">
+      {loading ? (
+        // Ghost of the header while the record loads, like the rest of the page.
+        <div className="flex items-start gap-2.5" aria-hidden="true">
+          <div className="mt-0.5 h-6 w-6 animate-pulse rounded-md bg-gray-200 dark:bg-gray-700" />
+          <div className="space-y-2">
+            <div className="h-5 w-40 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />
+            <div className="h-3.5 w-72 max-w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />
+            <div className="h-6 w-52 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
+          </div>
+        </div>
+      ) : (
+      <div className="flex items-start gap-2.5">
+        <HeaderIcon className="mt-0.5 h-6 w-6 text-maroon-800 dark:text-maroon-300" />
+        <div>
+          {header && <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Health Profile · Step {step} of {totalSteps}</p>}
+          <h2 id="health-profile-title" className="text-lg font-bold text-maroon-800 dark:text-maroon-300">{header ? header.title : 'Health Profile'}</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{header ? header.description : 'Your medical information helps the clinic give you safer, faster care.'}</p>
+          {/* Only a not-yet-completed profile gets a status label. */}
+          {!completed && (
+            <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#f6deda] px-2.5 py-1 text-xs font-semibold text-maroon-800 dark:bg-maroon-900/40 dark:text-maroon-200">
+              <Info className="h-3.5 w-3.5" /> Required before booking appointments
+            </span>
+          )}
+        </div>
+      </div>
+      )}
+    </div>
+    {children}
+  </section>
+  );
+};
+
+const HealthProfile = ({ onBack }) => {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = getUser('student');
   const isFemale = user.gender === 'female' || user.gender === 'Female';
 
   // `?step=N` opens a section directly (the Profile page's Edit buttons).
@@ -139,6 +196,25 @@ const HealthProfile = () => {
     setForm({ ...form, family_history: current.includes(condition) ? current.filter(c => c !== condition) : [...current, condition] });
   };
 
+  /*
+   * Steps that still have something to fill in (red dot on the step tab):
+   * a missing required answer, an unanswered optional question, or a "Yes"
+   * without its details.
+   */
+  const blank = (value) => !String(value ?? '').trim();
+  const stepMissing = {
+    1: blank(form.emergency_name) || blank(form.emergency_relationship) || !/^09\d{9}$/.test(form.emergency_phone),
+    2: form.medical_history.length === 0 || blank(form.allergy_details) || blank(form.medications),
+    3: [['hospitalized', 'hospitalization_date', 'hospitalization_diagnosis'], ['surgery', 'surgery_date', 'surgery_diagnosis'], ['had_covid', 'covid_date', 'covid_diagnosis']]
+      .some(([answer, date, diagnosis]) => form[answer] && (blank(form[date]) || blank(form[diagnosis]))),
+    4: blank(form.occupation) || blank(form.marital_status) || blank(form.tobacco_use) || blank(form.alcohol_use)
+      || (['Past', 'Present'].includes(form.tobacco_use) && (blank(form.tobacco_amount) || blank(form.tobacco_duration)))
+      || (form.has_disability && blank(form.disability_details)),
+    5: form.family_history.length === 0,
+    6: blank(form.consent_signature) || !form.agree_privacy || !form.agree_terms,
+  };
+  const stepsNeedingInput = new Set(Object.keys(stepMissing).filter((key) => stepMissing[key]).map(Number));
+
   const validateStep = (s) => {
     const newErrors = {};
 
@@ -204,7 +280,7 @@ const HealthProfile = () => {
     setLoading(true); setMessage('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('student');
       let payload = { ...form, consent_date: getManilaDateString() };
 
       if (!isFemale) {
@@ -216,8 +292,8 @@ const HealthProfile = () => {
 
       if (response.data.success) {
         setProfileExists(true);
-        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-        localStorage.setItem('user', JSON.stringify({ ...currentUser, profile: { ...(currentUser.profile || {}), health_profile_completed: true } }));
+        const currentUser = getUser('student');
+        setUser({ ...currentUser, profile: { ...(currentUser.profile || {}), health_profile_completed: true } }, 'student');
         window.dispatchEvent(new Event('storage'));
         window.dispatchEvent(new CustomEvent('healthProfileUpdated'));
         setShowCompletion(true);
@@ -234,7 +310,7 @@ const HealthProfile = () => {
 
   const steps = ['Emergency', 'Medical', 'History', 'Personal', 'Family', 'Consent'];
   const progress = Math.round((step / totalSteps) * 100);
-  const inputClass = (field) => `w-full border rounded-2xl px-4 py-3 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-maroon-500 transition ${errors[field] ? 'border-red-300 bg-red-50 dark:bg-red-900/20' : 'border-gray-200'}`;
+  const inputClass = (field) => `w-full border rounded-xl px-4 py-3 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:border-maroon-800 transition ${errors[field] ? 'border-red-300 bg-red-50 dark:bg-red-900/20' : 'border-slate-200 bg-white'}`;
   const labelClass = 'text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1.5';
   const errorClass = 'text-red-500 text-xs mt-0.5';
   const optionalClass = 'text-[11px] text-gray-600 dark:text-gray-300 ml-1 font-normal italic';
@@ -266,33 +342,44 @@ const HealthProfile = () => {
     </div>
   );
 
-  /* Hold the page blank (no loading UI) — the section renders at once when ready. */
   if (pageLoading) {
-    return null;
+    return (
+      <HealthProfileShell loading>
+        <div className="grid gap-6 lg:grid-cols-[230px_minmax(0,1fr)]" aria-busy="true">
+          <div className="hidden space-y-2 lg:block">
+            {steps.map((label) => <div key={label} className="h-12 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700" />)}
+          </div>
+          <div className="space-y-4">
+            <div className="h-6 w-48 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />
+            {[0, 1, 2].map((key) => <div key={key} className="h-12 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700" />)}
+          </div>
+        </div>
+      </HealthProfileShell>
+    );
   }
 
   if (loadFailed) {
     return (
-      <ProfileSection>
-        <div role="alert" className="w-full max-w-lg rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 p-6 lg:p-8 text-center space-y-4">
+      <HealthProfileShell completed={false}>
+        <div role="alert" className="space-y-4 py-6 text-center">
           <AlertCircle className="w-10 h-10 text-red-600 mx-auto" aria-hidden="true" />
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">Unable to load health profile</h2>
           <p className="text-sm text-gray-700 dark:text-gray-200">Your saved information is safe. To avoid accidentally replacing existing medical information, editing is unavailable until your record loads.</p>
-          <button type="button" onClick={() => setReloadKey(key => key + 1)} className="px-5 py-3 rounded-xl bg-maroon-800 text-white font-semibold hover:bg-maroon-900">Try again</button>
+          <button type="button" onClick={() => setReloadKey(key => key + 1)} className="px-5 py-3 rounded-xl bg-maroon-800 text-white font-semibold transition-colors hover:text-gray-300">Try again</button>
         </div>
-      </ProfileSection>
+      </HealthProfileShell>
     );
   }
 
   if (showCompletion) {
     return (
-      <ProfileSection>
+      <HealthProfileShell completed>
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          initial={{ opacity: 0, scale: 0.98, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.25 }}
           role="status"
-          className="w-full max-w-lg rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 p-6 lg:p-8 text-center"
+          className="py-6 text-center lg:py-10"
         >
           <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-5">
             <Check className="w-10 h-10 text-green-600 dark:text-green-400" strokeWidth={3} />
@@ -301,11 +388,11 @@ const HealthProfile = () => {
           <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 leading-relaxed">
             Your health profile has been saved successfully. You can now book clinic appointments and use other clinic services.
           </p>
-          <div className="mt-6 space-y-3">
+          <div className="mx-auto mt-6 max-w-sm space-y-3">
             <button
               type="button"
               onClick={() => navigate('/student/appointments')}
-              className="w-full flex items-center justify-center space-x-2 px-5 py-3 rounded-xl bg-maroon-800 text-white text-sm font-semibold hover:bg-maroon-900 transition"
+              className="w-full flex items-center justify-center space-x-2 px-5 py-3 rounded-xl bg-maroon-800 text-white text-sm font-semibold transition-colors hover:text-gray-300"
             >
               <span>Proceed to Appointments</span>
               <ArrowRight className="w-4 h-4" />
@@ -317,33 +404,81 @@ const HealthProfile = () => {
             >
               Review my answers
             </button>
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="block w-full px-5 py-3 text-sm font-semibold text-maroon-800 hover:underline dark:text-maroon-300"
+              >
+                Back to My Health Information
+              </button>
+            )}
           </div>
         </motion.div>
-      </ProfileSection>
+      </HealthProfileShell>
     );
   }
 
   return (
-    <ProfileSection>
-      <div className="flex justify-center py-2">
-      <div className="w-full max-w-lg rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 p-6 lg:p-8">
+    <HealthProfileShell completed={profileCompleted} step={step} totalSteps={totalSteps}>
+      <div>
+      <div className="grid gap-6 lg:grid-cols-[230px_minmax(0,1fr)]">
 
-        {profileCompleted ? (
-          <div className="mb-5 p-3 rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 text-sm text-green-700 dark:text-green-400 flex items-start space-x-2">
-            <Check className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
-            <span><strong className="font-semibold">Health Profile completed!</strong> You can review and update your answers anytime.</span>
-          </div>
-        ) : (
+        {/* Step list (tablet/desktop). Saved profiles can jump to any step. */}
+        <nav aria-label="Health Profile steps" className="hidden lg:block">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Step {step} of {totalSteps}</p>
+          <ol className="space-y-1">
+            {steps.map((label, index) => {
+              const number = index + 1;
+              const StepIcon = STEP_ICONS[index];
+              const current = number === step;
+              const reachable = profileExists || number <= step;
+              return (
+                <li key={label}>
+                  <button
+                    type="button"
+                    onClick={() => { if (reachable) { setStep(number); setMessage(''); } }}
+                    disabled={!reachable}
+                    aria-current={current ? 'step' : undefined}
+                    className={`relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
+                      current
+                        ? 'bg-maroon-50 text-maroon-800 dark:bg-maroon-900/30 dark:text-maroon-200'
+                        : reachable
+                          ? 'text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700/50'
+                          : 'cursor-not-allowed text-gray-300 dark:text-gray-600'
+                    }`}
+                  >
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                      current ? 'bg-maroon-800 text-white' : 'bg-gray-100 text-gray-400 dark:bg-gray-700'
+                    }`}>
+                      <StepIcon className="h-4 w-4" />
+                    </span>
+                    {label}
+                    {stepsNeedingInput.has(number) && (
+                      <span className="absolute right-2 top-2 h-3 w-3 rounded-full bg-red-700" title="Some information is still missing">
+                        <span className="sr-only">Some information is still missing</span>
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
+
+        <div className="min-w-0 lg:border-l lg:border-[var(--sp-border)] lg:pl-6">
+
+        {!profileCompleted && (
           <div className="mb-5 p-3 rounded-2xl bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 text-sm text-blue-700 dark:text-blue-400 flex items-start space-x-2">
             <Info className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
             <span>Complete the required fields in each step, then submit to finish your Health Profile.</span>
           </div>
         )}
 
-        <div className="mb-6">
+        <div className="mb-6 lg:hidden">
           <div className="flex items-center justify-between text-xs text-gray-400 mb-2"><span>Step {step} of {totalSteps}</span><span>{progress}%</span></div>
           <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
-            <motion.div className="h-2 bg-gradient-to-r from-maroon-800 to-maroon-900 rounded-full" animate={{ width: `${progress}%` }} transition={{ duration: 0.3 }} />
+            <motion.div className="h-2 bg-maroon-800 rounded-full" animate={{ width: `${progress}%` }} transition={{ duration: 0.3 }} />
           </div>
           <div className="flex justify-between mt-2">
             {steps.map((s, i) => <span key={i} className={`text-[10px] font-medium hidden sm:block ${step > i ? 'text-maroon-800 dark:text-maroon-400' : 'text-gray-300 dark:text-gray-600'}`}>{s}</span>)}
@@ -359,8 +494,6 @@ const HealthProfile = () => {
 
             {step === 1 && (
               <div className="space-y-4">
-                <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center space-x-2"><Shield className="w-5 h-5 text-maroon-800 dark:text-maroon-400" /><span>Emergency Contact</span></h3>
-                <p className="text-xs text-gray-400">Who should we contact in case of emergency?</p>
                 <div>
                   <label className={labelClass}>Full Name <span className="text-red-400">*</span></label>
                   <input className={inputClass('emergency_name')} name="emergency_name" value={form.emergency_name} onChange={handleChange} placeholder="Juan Dela Cruz" maxLength={100} />
@@ -384,8 +517,6 @@ const HealthProfile = () => {
 
             {step === 2 && (
               <div className="space-y-5">
-                <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center space-x-2"><ClipboardList className="w-5 h-5 text-maroon-800 dark:text-maroon-400" /><span>Medical History</span></h3>
-                <p className="text-xs text-gray-400">Please check all illnesses that apply to you.</p>
                 <div>
                   <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 block mb-3">A. Past Medical History</label>
                   <CheckboxGrid items={[...new Set([...medicalHistoryList, ...form.medical_history])]} selected={form.medical_history} onToggle={handleMedicalHistoryToggle} />
@@ -399,8 +530,6 @@ const HealthProfile = () => {
 
             {step === 3 && (
               <div className="space-y-4">
-                <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center space-x-2"><AlertCircle className="w-5 h-5 text-maroon-800 dark:text-maroon-400" /><span>Hospitalization, Surgery & COVID-19</span></h3>
-                <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 rounded-2xl p-3 flex items-start space-x-2"><Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" /><p className="text-xs text-blue-700 dark:text-blue-400">All questions optional.</p></div>
                 {[
                   { label: 'Have you been hospitalized?', name: 'hospitalized', dateName: 'hospitalization_date', diagName: 'hospitalization_diagnosis' },
                   { label: 'Have you undergone surgery?', name: 'surgery', dateName: 'surgery_date', diagName: 'surgery_diagnosis' },
@@ -419,8 +548,6 @@ const HealthProfile = () => {
 
             {step === 4 && (
               <div className="space-y-4">
-                <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center space-x-2"><Heart className="w-5 h-5 text-maroon-800 dark:text-maroon-400" /><span>Personal & Social History</span></h3>
-                <p className="text-xs text-gray-400">Optional. Helps us provide better care.</p>
                 <div><label className={labelClass}>Occupation <span className={optionalClass}>(optional)</span></label><input className={inputClass('occupation')} name="occupation" value={form.occupation} onChange={handleChange} placeholder="Your occupation" maxLength={191} /></div>
                 <div><label className={labelClass}>Marital Status <span className={optionalClass}>(optional)</span></label><select className={inputClass('marital_status')} name="marital_status" value={form.marital_status} onChange={handleChange}><option value="">Select</option><option>Single</option><option>Married</option><option>Widowed</option><option>Separated</option><option>Prefer not to say</option></select></div>
                 <div>
@@ -451,8 +578,6 @@ const HealthProfile = () => {
 
             {step === 5 && (
               <div className="space-y-4">
-                <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center space-x-2"><ClipboardList className="w-5 h-5 text-maroon-800 dark:text-maroon-400" /><span>Family Medical History</span></h3>
-                <p className="text-xs text-gray-700 dark:text-gray-300">Select any conditions present in your immediate family. Leave unchecked if none are known. You can update this information later.</p>
                 <CheckboxGrid items={[...new Set([...familyHistoryList, ...form.family_history])]} selected={form.family_history} onToggle={handleFamilyHistoryToggle} />
                 {form.family_history.length > 0 && <p className="text-xs text-maroon-600 mt-2">Selected: {form.family_history.join(', ')}</p>}
               </div>
@@ -460,7 +585,6 @@ const HealthProfile = () => {
 
             {step === 6 && (
               <div className="space-y-4">
-                <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center space-x-2"><Check className="w-5 h-5 text-maroon-800 dark:text-maroon-400" /><span>Consent & Signature</span></h3>
                 <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 rounded-2xl p-4 text-xs text-yellow-700 dark:text-yellow-400 leading-relaxed"><strong>Important:</strong> I certify that all information is true. I consent to data processing per RA 10173.</div>
                 <div><label className={labelClass}>Full Name (Electronic Signature) <span className="text-red-400">*</span></label><input className={inputClass('consent_signature')} name="consent_signature" value={form.consent_signature} onChange={handleChange} placeholder="Type your full name" maxLength={191} />{errors.consent_signature && <p className={errorClass}>{errors.consent_signature}</p>}</div>
                 <div><label className={labelClass}>Date</label><input className={`${inputClass('consent_date')} bg-gray-50 dark:bg-gray-600 text-gray-500 cursor-not-allowed`} value={form.consent_date} disabled /></div>
@@ -475,18 +599,19 @@ const HealthProfile = () => {
         <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
           {step > 1 ? <button onClick={prevStep} className="flex items-center space-x-1 px-4 py-2.5 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl"><ArrowLeft className="w-4 h-4" /><span>Back</span></button> : <div />}
           {step < totalSteps ? (
-            <button onClick={nextStep} className="flex items-center space-x-1 px-6 py-2.5 bg-maroon-800 text-white text-sm font-semibold rounded-xl hover:bg-maroon-900"><span>Next</span><ArrowRight className="w-4 h-4" /></button>
+            <button onClick={nextStep} className="flex items-center space-x-1 px-6 py-2.5 bg-maroon-800 text-white text-sm font-semibold rounded-xl transition-colors hover:text-gray-300"><span>Next</span><ArrowRight className="w-4 h-4" /></button>
           ) : (
-            <button onClick={handleSubmit} disabled={loading} className="flex items-center space-x-1 px-6 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 transition disabled:opacity-50 shadow-lg shadow-green-600/20">
+            <button onClick={handleSubmit} disabled={loading} className="flex items-center space-x-1 px-6 py-2.5 bg-maroon-800 text-white text-sm font-semibold rounded-xl transition-colors hover:text-gray-300 disabled:opacity-50">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               <span>{loading ? 'Saving...' : 'Submit Health Profile'}</span>
             </button>
           )}
         </div>
 
+        </div>
       </div>
-    </div>
-    </ProfileSection>
+      </div>
+    </HealthProfileShell>
   );
 };
 

@@ -4,13 +4,9 @@
  * Used by the Student shell (StudentLayout-for-Desktop-View) and by the account menu.
  */
 
-export const getStoredUser = () => {
-  try {
-    return JSON.parse(localStorage.getItem('user') || '{}');
-  } catch {
-    return {};
-  }
-};
+import { getUser } from '../services/session';
+
+export const getStoredUser = () => getUser('student');
 
 export const getAvatar = (user) =>
   user?.profile?.profile_picture ||

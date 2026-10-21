@@ -1,3 +1,4 @@
+import { getToken } from '../../../services/session';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Megaphone, Plus, Trash2, Edit2, Loader2, X, Send, Search } from 'lucide-react';
@@ -23,7 +24,7 @@ const NurseAnnouncements = () => {
   const fetchAnnouncements = async () => {
     const request = ++requestId.current;
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('nurse');
       const res = await api.get('/nurse/announcements', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -56,7 +57,7 @@ const NurseAnnouncements = () => {
 
     setSaving(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('nurse');
       if (editingId) {
         const response = await api.put(`/nurse/announcements/${editingId}`, form, {
           headers: { Authorization: `Bearer ${token}`, 'If-Match': editVersion },
@@ -100,7 +101,7 @@ const NurseAnnouncements = () => {
     if (!confirm('Delete this announcement?')) return;
     setDeletingId(id);
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken('nurse');
       await api.delete(`/nurse/announcements/${id}`, {
         headers: { Authorization: `Bearer ${token}`, 'If-Match': announcements.find(item => item.id === id)?.sync_version }
       });

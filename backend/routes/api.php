@@ -13,6 +13,8 @@ use App\Http\Controllers\Api\Student\ConsultationController as StudentConsultati
 use App\Http\Controllers\Api\Student\DashboardController as StudentDashboardController;
 use App\Http\Controllers\Api\Student\NotificationController as StudentNotificationController;
 use App\Http\Controllers\Api\Student\ChatbotController;
+use App\Http\Controllers\Api\Student\DevToolsController;
+use App\Http\Controllers\Api\Nurse\DevToolsController as NurseDevToolsController;
 
 use App\Http\Controllers\Api\Nurse\AppointmentController as NurseAppointmentController;
 use App\Http\Controllers\Api\Nurse\ConsultationController as NurseConsultationController;
@@ -24,6 +26,7 @@ use App\Http\Controllers\Api\Nurse\EmergencyEncounterController;
 
 use App\Http\Controllers\Api\Kiosk\CheckinController;
 use App\Http\Controllers\Api\Kiosk\KioskController;
+use App\Http\Controllers\Api\Kiosk\DevToolsController as KioskDevToolsController;
 
 
 Route::get('/health', function () {
@@ -82,6 +85,10 @@ Route::prefix('kiosk')
             [KioskController::class, 'todayQueue']
         );
         Route::get('/session', function () { return response()->json(['success' => true]); });
+
+        // Hidden /kiosk/settings page → Developer Tools.
+        Route::get('/dev-tools', [KioskDevToolsController::class, 'show']);
+        Route::put('/dev-tools', [KioskDevToolsController::class, 'update']);
 
         Route::post(
             '/verify-qr',
@@ -492,6 +499,11 @@ Route::middleware([
                     [ProfileController::class, 'uploadAvatar']
                 );
 
+                Route::delete(
+                    '/profile/avatar',
+                    [ProfileController::class, 'removeAvatar']
+                );
+
                 Route::patch('/profile/email', [ProfileController::class, 'updateEmail']);
 
 
@@ -633,6 +645,23 @@ Route::middleware([
                 Route::get(
                     '/qr/status',
                     [StudentAppointmentController::class, 'checkQRStatus']
+                );
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Student Developer Tools (Settings → Developer Tools)
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get(
+                    '/dev-tools',
+                    [DevToolsController::class, 'show']
+                );
+
+                Route::put(
+                    '/dev-tools',
+                    [DevToolsController::class, 'update']
                 );
 
 
@@ -781,6 +810,22 @@ Route::middleware([
                     [CheckinController::class, 'todayCheckins']
                 );
 
+
+                /*
+                |--------------------------------------------------------------------------
+                | Nurse Developer Tools (Settings → Developer Tools)
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get(
+                    '/dev-tools',
+                    [NurseDevToolsController::class, 'show']
+                );
+
+                Route::put(
+                    '/dev-tools',
+                    [NurseDevToolsController::class, 'update']
+                );
 
                 /*
                 |--------------------------------------------------------------------------

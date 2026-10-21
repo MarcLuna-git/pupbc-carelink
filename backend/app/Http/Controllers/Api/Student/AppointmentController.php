@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\AppointmentExpiry;
 use App\Services\ClinicQueue;
 use App\Services\StudentAppointmentMail;
+use App\Support\TimeGuard;
 use Carbon\Carbon;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
@@ -82,7 +83,7 @@ class AppointmentController extends Controller
 
         $this->ensureDateNotPast($date);
 
-        if (AppointmentSlot::isSunday($date)) {
+        if (AppointmentSlot::isClosed($date)) {
             return response()->json([
                 'success' => true,
                 'message' => 'The clinic is closed on Sundays.',
@@ -122,7 +123,7 @@ class AppointmentController extends Controller
             ])
             ->exists();
 
-        $closed = AppointmentSlot::isSunday($date);
+        $closed = AppointmentSlot::isClosed($date);
 
         return response()->json([
             'success' => true,
@@ -486,21 +487,29 @@ class AppointmentController extends Controller
     public function getQRCode()
     {
         $user = auth()->user();
+        // The QR is issued at registration, but "Reset data" deletes it. Issue a
+        // fresh one when it is missing so the student can still check in.
         $qrCode =
-            QRCode::where(
-                'user_id',
-                $user->id
-            )->first();
+            QRCode::firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'qr_code_hash' => hash('sha256', $user->id . Str::random(32)),
+                    'is_active' => true,
+                ]
+            );
 
         $appointment = Appointment::where('user_id', $user->id)
             ->whereDate(
                 'appointment_date',
                 Carbon::now(self::TIMEZONE)->toDateString()
             )
-            ->where('status', 'approved')
+            // A completed visit stays on the QR page for the rest of the day so
+            // the check-in tracker can show "Completed"; an open one comes first.
+            ->whereIn('status', ['approved', 'completed'])
             ->with([
                 'checkins' => fn ($query) => $this->selectStudentCheckinColumns($query),
             ])
+            ->orderByRaw("CASE WHEN status = 'approved' THEN 0 ELSE 1 END")
             ->orderBy('created_at')
             ->first();
 
@@ -686,7 +695,7 @@ class AppointmentController extends Controller
         );
 
         if (
-            AppointmentSlot::isSunday(
+            AppointmentSlot::isClosed(
                 $date
             )
         ) {
@@ -703,6 +712,11 @@ class AppointmentController extends Controller
     private function ensureDateNotPast(
         string $date
     ): void {
+        // Developer Tools → Remove time Guard: past dates are allowed.
+        if (TimeGuard::bypassed()) {
+            return;
+        }
+
         $appointmentDate =
             Carbon::createFromFormat(
                 'Y-m-d',
@@ -734,6 +748,11 @@ class AppointmentController extends Controller
         string $date,
         string $time
     ): void {
+        // Developer Tools → Remove time Guard: past time slots are allowed.
+        if (TimeGuard::bypassed()) {
+            return;
+        }
+
         $slot =
             Carbon::createFromFormat(
                 'Y-m-d g:i A',

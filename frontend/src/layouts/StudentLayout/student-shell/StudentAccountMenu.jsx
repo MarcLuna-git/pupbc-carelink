@@ -15,6 +15,8 @@ import {
 import { getAvatar, getCourseSection, getDisplayName, getInitials, getStoredUser } from '../../../utils/studentUser';
 import { preloadForPath } from '../../../utils/preloadStudentPages';
 import { STUDENT_LOGOUT_REQUEST_EVENT } from '../../../utils/studentPortalNavigation';
+import { sessionKeys } from '../../../services/session';
+import { darkModeKey, readDarkMode as readPortalDarkMode, saveDarkMode } from '../../../hooks/useAccountTheme';
 
 /*
  * User account button + dropdown.
@@ -31,13 +33,7 @@ const MENU_WIDTH = 288;
 const GAP = 8;
 const EDGE = 12;
 
-const readDarkMode = () => {
-  try {
-    return localStorage.getItem('darkMode') === 'true';
-  } catch {
-    return false;
-  }
-};
+const readDarkMode = () => readPortalDarkMode('student');
 
 const StudentAccountMenu = ({ variant = 'sidebar', collapsed = false }) => {
   const location = useLocation();
@@ -61,8 +57,8 @@ const StudentAccountMenu = ({ variant = 'sidebar', collapsed = false }) => {
       setAvatarFailed(false);
     };
     const onStorage = (event) => {
-      if (event.key === 'user' || event.key === null) refreshUser();
-      if (event.key === 'darkMode' || event.key === null) setDarkMode(readDarkMode());
+      if (event.key === sessionKeys('student').user || event.key === null) refreshUser();
+      if (event.key === darkModeKey('student') || event.key === null) setDarkMode(readDarkMode());
     };
     const onTheme = () => setDarkMode(readDarkMode());
 
@@ -137,11 +133,7 @@ const StudentAccountMenu = ({ variant = 'sidebar', collapsed = false }) => {
   // the event and applies the class.
   const toggleDarkMode = () => {
     const next = !readDarkMode();
-    try {
-      localStorage.setItem('darkMode', String(next));
-    } catch {
-      /* Keep the current session usable. */
-    }
+    saveDarkMode(next, 'student');
     window.dispatchEvent(new Event('darkModeChange'));
     setDarkMode(next);
   };

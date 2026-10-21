@@ -9,14 +9,13 @@ use App\Models\StudentProfile;
 use App\Services\NurseSync;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 /*
  * "Reset data" — clears everything the student typed in from inside the portal
- * in one shot. Reached from Settings → General, and confirmed with the account
- * password.
+ * in one shot. Reached from Settings → Developer Tools, and confirmed with the
+ * Developer Tools password (config dev_tools.password, same as "Remove time Guard").
  *
  * Cleared (the student's own input):
  *   - appointments, and by cascade their check-ins and visit triage;
@@ -42,9 +41,9 @@ class DataResetController extends Controller
 
         $user = auth()->user();
 
-        if (! Hash::check($request->input('password'), $user->password)) {
+        if (! hash_equals((string) config('dev_tools.password'), (string) $request->input('password'))) {
             throw ValidationException::withMessages([
-                'password' => ['Your current password is incorrect.'],
+                'password' => ['Incorrect developer password.'],
             ]);
         }
 

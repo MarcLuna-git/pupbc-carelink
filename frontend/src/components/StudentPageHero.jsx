@@ -1,10 +1,11 @@
 import { RefreshCw } from 'lucide-react';
-import heroImage from '../assets/hero-appointment.png';
+import HeroArt from './HeroArt';
 import RouteLoadingBar from './RouteLoadingBar';
 
 /*
- * Illustrated Student-portal page banner — same artwork and fade as the
- * Appointments hero. `leading` sits left of the copy (e.g. an avatar),
+ * Student-portal page banner with the same aurora + tab-icon artwork as the
+ * Appointments hero (`art` is the tab's lucide icon; see HeroArt). `leading`
+ * sits left of the copy (e.g. an avatar),
  * `children` renders extra lines under the description (pass a null
  * `eyebrow` to hide it), `benefits` renders the small icon row under the copy,
  * `action` sits in the top-right corner (e.g. a refresh button), and
@@ -20,13 +21,13 @@ const StudentPageHero = ({
   loading = false,
   leading = null,
   children = null,
+  art = null,
 }) => (
   <section
-    className="relative isolate min-h-[168px] overflow-hidden rounded-xl border border-[var(--sp-border)] bg-[#fbeee9] bg-cover bg-right bg-no-repeat dark:bg-[#2a1c26] dark:bg-blend-multiply"
-    style={{ backgroundImage: `url(${heroImage})` }}
+    className="relative isolate min-h-[168px] overflow-hidden rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)]"
     aria-labelledby={id}
   >
-    <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,249,244,.95)_0%,rgba(255,249,244,.78)_52%,rgba(255,249,244,.2)_100%)] dark:bg-[linear-gradient(90deg,rgba(36,25,33,.95)_0%,rgba(36,25,33,.8)_52%,rgba(36,25,33,.35)_100%)]" />
+    <HeroArt icon={art} />
 
     <div className="relative z-[1] flex max-w-full items-center gap-5 px-5 py-5 sm:max-w-[60%] sm:px-6">
       {leading}

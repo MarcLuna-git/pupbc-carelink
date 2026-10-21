@@ -1,17 +1,9 @@
 .student-appointments { width:100%;min-width:0; }
 .approved-appointments-page { display:grid;gap:12px; }
 .ap-card { min-width:0;border:1px solid var(--sp-border,#eadfe1);border-radius:12px;background:var(--sp-surface,#fff);box-shadow:0 2px 7px #5a0b2004;overflow:hidden; }
-.ap-hero { position:relative;min-height:168px;overflow:hidden;border:1px solid var(--sp-border);border-radius:12px;background:#fbeee9 url('../../../assets/hero-appointment.png') center right/cover no-repeat; }
-/*
- * Readability overlay: a soft left-to-right wash keeps the hero copy
- * legible while the artwork (girl + PUP building, right side) stays
- * visible. pointer-events:none so it never blocks the copy.
- */
-.ap-hero::after { content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(255,249,244,.95) 0%,rgba(255,249,244,.78) 52%,rgba(255,249,244,.25) 100%); }
-.dark .ap-hero { background-color:#2a1c26;background-blend-mode:multiply; }
-.dark .ap-hero::after { background:linear-gradient(90deg,rgba(36,25,33,.95) 0%,rgba(36,25,33,.8) 52%,rgba(36,25,33,.35) 100%); }
-/* The loading bar sits ABOVE the overlay so it stays solid maroon instead of
-   being washed pink; isolation keeps that z-index local to the hero. */
+.ap-hero { position:relative;min-height:168px;overflow:hidden;border:1px solid var(--sp-border);border-radius:12px;background:var(--sp-surface); }
+/* The loading bar sits above the hero artwork; isolation keeps that z-index
+   local to the hero. */
 .ap-hero { isolation:isolate; }
 .ap-hero-loading-bar { z-index:2; }
 .ap-hero-copy { position:relative;z-index:1;padding:19px 24px;max-width:57%; }
@@ -120,12 +112,12 @@
  * ring, completed (check icon) = maroon outline + maroon check.
  */
 .ap-booking-steps { display:block;padding:6px 16px 16px; }
-.ap-booking-progress { display:grid;gap:10px;max-width:462px;list-style:none;margin:0 auto;padding:0; }
+.ap-booking-progress { display:grid;gap:22px;max-width:462px;list-style:none;margin:0 auto;padding:0; }
 .ap-booking-progress li { position:relative;min-width:0;padding-left:42px; }
 /* Connector: every step except the last draws a segment from its marker's
    center down into the gap; the next marker covers the rest, so the visible
    line always runs marker-edge to marker-edge. */
-.ap-booking-progress li:not(:last-child)::before { content:'';position:absolute;left:13px;top:14px;bottom:-10px;width:2px;background:var(--sp-border); }
+.ap-booking-progress li:not(:last-child)::before { content:'';position:absolute;left:13px;top:14px;bottom:-22px;width:2px;background:var(--sp-border); }
 .ap-step-heading { display:flex;align-items:center;min-height:28px;margin-bottom:8px; }
 .ap-step-marker { position:absolute;left:0;top:0;z-index:1;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border:2px solid var(--sp-border);border-radius:50%;background:var(--sp-surface);font-size:12px;font-weight:700;color:var(--sp-muted); }
 .ap-step-marker svg { width:14px;height:14px; }
@@ -178,16 +170,19 @@
 .ap-slots-loading-label { position:absolute;inset:0;display:flex;gap:7px;align-items:center;justify-content:center; }
 .ap-slots-loading svg { width:17px;height:17px; }
 .ap-service-list { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px 10px; }
-.ap-service-list label { display:flex;align-items:center;gap:8px;padding:8px 7px;min-height:48px;border:1px solid transparent;border-radius:6px;min-width:0;cursor:pointer; }
-.ap-service-list label.is-selected { background:var(--sp-soft);border-color:var(--sp-border); }
+/* Each service is a bordered card; the selected one gets a maroon border. */
+.ap-service-list label { display:flex;align-items:center;gap:8px;padding:8px 10px;min-height:48px;border:1px solid var(--sp-border);border-radius:8px;background:var(--sp-surface);min-width:0;cursor:pointer;transition:border-color .12s ease,background-color .12s ease; }
+.ap-service-list label:hover { border-color:#c67c8a; }
+.ap-service-list label.is-selected { background:var(--sp-soft);border-color:#800000; }
 .ap-service-list input { width:11px;height:11px;flex-shrink:0;accent-color:#800000; }
 .ap-service-list svg { width:13px;height:13px;flex-shrink:0;color:var(--sp-accent); }
 .ap-service-list strong { display:block;font-size:10px;line-height:1.2; }
 .ap-service-list small { display:block;font-size:8px;line-height:1.35;color:var(--sp-muted);margin-top:2px; }
-.ap-reason { margin-top:7px;font-size:9px;display:flex;flex-direction:column;gap:4px; }
-.ap-reason label { padding:0;color:var(--sp-accent);cursor:default; }
-.ap-reason label>span { color:var(--sp-muted); }
-.ap-booking-column textarea { width:100%;min-width:0;margin-top:4px;padding:7px;border:1px solid var(--sp-border);border-radius:6px;background:var(--sp-surface);font-size:10px;color:var(--sp-text);resize:vertical; }
+/* "Other:" with an underline field to name the service. */
+.ap-service-list .ap-other-service { display:flex;flex:1;align-items:baseline;gap:6px;min-width:0; }
+.ap-other-service strong { flex-shrink:0; }
+.ap-service-list .ap-other-service input { flex:1;width:auto;height:auto;min-width:0;padding:3px 6px;border:0;border-bottom:1px solid var(--sp-muted);border-radius:4px 4px 0 0;background:var(--sp-surface);font-size:12px;color:var(--sp-text); }
+.ap-service-list .ap-other-service input:focus { outline:none;border-bottom-color:#800000; }
 .ap-summary dl>div { display:flex;align-items:flex-start;gap:8px;padding:16px 0;border-bottom:1px solid var(--sp-border); }
 .ap-summary dl svg { width:15px;height:15px;flex-shrink:0;margin-top:3px;color:var(--sp-accent); }
 .ap-summary dt { font-size:8px;color:var(--sp-muted); }
@@ -286,27 +281,37 @@
   .ap-hero-benefits { gap:10px; }
 }
 /*
- * Desktop / laptop: the booking timeline lies down — four equal columns side
+ * Desktop / laptop: the booking timeline lies down — three equal columns side
  * by side, with the connector running horizontally from each marker toward the
  * next step instead of down the left gutter. Tablet and mobile keep the
  * vertical timeline above.
  */
 @media (min-width:1024px) {
   .ap-booking-steps { padding:6px 16px 16px; }
-  .ap-booking-progress { grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;max-width:none; }
+  .ap-booking-progress { grid-template-columns:repeat(3,minmax(0,1fr));gap:32px;max-width:none; }
   .ap-booking-progress li { display:flex;flex-direction:column;padding-left:0; }
   .ap-booking-progress li:not(:last-child)::before { content:none; }
-  .ap-step-heading { gap:8px; }
+  /* Marker centred over its column, label underneath. */
+  .ap-step-heading { flex-direction:column;justify-content:center;gap:6px;margin-bottom:12px;text-align:center; }
   .ap-step-marker { position:relative;flex-shrink:0; }
-  .ap-step-label { white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-  /* Connector: fills the rest of the heading row and bridges the column gap. */
-  .ap-booking-progress li:not(:last-child) .ap-step-heading::after { content:'';flex:1;min-width:12px;height:2px;margin-right:-14px;background:var(--sp-border); }
+  .ap-step-label { max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3; }
+  /* Connector: from the edge of this marker to the edge of the next one —
+     half a column + the 32px gap + half a column, minus both 14px marker
+     radii and a 6px breathing space on each side. */
+  .ap-booking-progress li:not(:last-child)::after { content:'';position:absolute;top:13px;left:calc(50% + 20px);width:calc(100% + 32px - 40px);height:2px;background:var(--sp-border); }
   .ap-booking-column { display:flex;flex-direction:column;flex:1;max-width:none; }
   .ap-booking-column>.ap-step-body,.ap-booking-column>.ap-calendar { flex:1; }
+  /* The calendar days and time slots grow to fill their box, so all three
+     columns line up with the tallest one (usually the service list) instead
+     of leaving empty space below the buttons. */
+  .ap-booking-column>.ap-step-body,.ap-calendar { display:flex;flex-direction:column; }
+  .ap-calendar-grid { flex:1;grid-template-rows:auto;grid-auto-rows:minmax(30px,1fr); }
+  .ap-time-grid { flex:1;grid-auto-rows:minmax(46px,1fr); }
   .ap-service-list { grid-template-columns:minmax(0,1fr);gap:6px; }
   .ap-summary dl>div { padding:12px 0; }
 }
 @media (max-width:767px) {
+  .ap-service-list .ap-other-service input { width:auto;height:auto;font-size:16px; }
   .approved-appointments-page { gap:12px; }
   /* Full-width toast just under the mobile header. */
   .ap-toast { top:calc(58px + env(safe-area-inset-top) + 10px);left:12px;right:12px;width:auto; }
@@ -346,9 +351,6 @@
   .ap-service-list input { width:14px;height:14px; }
   .ap-service-list svg { width:16px;height:16px; }
   .ap-service-list strong { font-size:12px; }
-  .ap-reason { font-size:11px; }
-  .ap-reason label { min-height:auto;padding:0; }
-  .ap-booking-column textarea { font-size:16px; }
   .ap-summary dt,.ap-summary-note { font-size:11px; }
   .ap-summary dd { font-size:14px; }
   .ap-history-item { flex-wrap:wrap;gap:12px;padding:12px; }

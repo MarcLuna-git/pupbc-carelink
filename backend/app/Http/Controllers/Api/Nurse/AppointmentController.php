@@ -26,7 +26,9 @@ class AppointmentController extends Controller
                       ->orWhere('student_id', DatabaseSearch::like($q), "%{$request->search}%")
                 );
             })
-            ->orderBy('appointment_date', 'desc');
+            // Most recently booked first, so new requests show at the top.
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
 
         return response()->json(['success' => true, 'data' => $query->paginate(20)]);
     }
@@ -96,14 +98,17 @@ class AppointmentController extends Controller
     }
     public function reschedule(Request $request, $id)
     {
-        $data = $request->validate(['appointment_date' => 'required|date_format:Y-m-d|after_or_equal:' . today('Asia/Manila')->toDateString(), 'time_slot' => 'required|string|in:8:00 AM,8:30 AM,9:00 AM,9:30 AM,10:00 AM,10:30 AM,11:00 AM,11:30 AM,1:00 PM,1:30 PM,2:00 PM,2:30 PM,3:00 PM,3:30 PM,4:00 PM,4:30 PM']);
-        return DB::transaction(function () use ($data, $id) {
+        $nurseBypass = \App\Support\TimeGuard::nursePortalBypassed();
+        $data = $request->validate(['appointment_date' => 'required|date_format:Y-m-d' . ($nurseBypass ? '' : '|after_or_equal:' . today('Asia/Manila')->toDateString()), 'time_slot' => 'required|string|in:8:00 AM,8:30 AM,9:00 AM,9:30 AM,10:00 AM,10:30 AM,11:00 AM,11:30 AM,1:00 PM,1:30 PM,2:00 PM,2:30 PM,3:00 PM,3:30 PM,4:00 PM,4:30 PM']);
+        return DB::transaction(function () use ($data, $id, $nurseBypass) {
             \App\Services\ClinicQueue::lock();
             $appointment = Appointment::findOrFail($id);
             abort_unless(in_array($appointment->status, ['pending', 'approved'], true), 422, 'This appointment cannot be rescheduled.');
             abort_if(\App\Models\AppointmentCheckin::where('appointment_id', $id)->exists(), 409, 'A checked-in visit cannot be rescheduled.');
-            abort_if(\App\Models\AppointmentSlot::isSunday($data['appointment_date']), 422, 'The clinic is closed on Sundays.');
-            abort_if(Carbon::parse($data['appointment_date'] . ' ' . $data['time_slot'], 'Asia/Manila')->isPast(), 422, 'Select a future appointment time.');
+            // Nurse → Developer Tools → Remove time Guard lifts these (the student's switch does not).
+            $bypass = $nurseBypass;
+            abort_if(!$bypass && \App\Models\AppointmentSlot::isSunday($data['appointment_date']), 422, 'The clinic is closed on Sundays.');
+            abort_if(!$bypass && Carbon::parse($data['appointment_date'] . ' ' . $data['time_slot'], 'Asia/Manila')->isPast(), 422, 'Select a future appointment time.');
             $others = Appointment::where('id', '!=', $id)->whereDate('appointment_date', $data['appointment_date'])->whereIn('status', ['pending', 'approved']);
             abort_if((clone $others)->where('user_id', $appointment->user_id)->exists(), 422, 'Student already has an appointment that day.');
             abort_if((clone $others)->where('time_slot', $data['time_slot'])->count() >= 10, 422, 'Time slot is full.');

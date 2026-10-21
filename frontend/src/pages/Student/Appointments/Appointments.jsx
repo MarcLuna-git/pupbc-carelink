@@ -16,7 +16,9 @@ import {
   Loader2,
 } from 'lucide-react';
 import api from '../../../services/api';
-import { clinicDate, appointmentDate as normalizeDateValue, appointmentTime as parseAppointmentDateTime, isClinicSunday as isSunday, formatAppointmentDate as formatDate } from '../../../utils/appointmentDate';
+import { getToken } from '../../../services/session';
+import { clinicDate, appointmentDate as normalizeDateValue, appointmentTime as parseAppointmentDateTime, isClinicSunday, formatAppointmentDate as formatDate } from '../../../utils/appointmentDate';
+import { isTimeGuardBypassed, useTimeGuardBypass } from '../../../services/devTools';
 import useVisiblePolling from '../../../hooks/useVisiblePolling';
 import HealthProfileVerifyError from '../../../components/HealthProfileVerifyError';
 import { useStudentHealthProfileStatus } from '../../../hooks/useStudentHealthProfileStatus';
@@ -27,6 +29,9 @@ import { useStudentHealthProfileStatus } from '../../../hooks/useStudentHealthPr
  * the animation is visible even when the API answers quickly on localhost.
  */
 const ROUTE_LOADING_DELAY = 1600;
+
+// Sunday closure, unless Settings → Developer Tools → Remove time Guard is on.
+const isSunday = (value) => !isTimeGuardBypassed() && isClinicSunday(value);
 
 const Skeleton = ({ className = '' }) => (
   <div className={`animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 ${className}`} />
@@ -52,7 +57,7 @@ const SkeletonUpcoming = () => (
   </section>
 );
 
-/* Ghost of the 4-step booking form — same timeline markup (markers, spine
+/* Ghost of the 3-step booking form — same timeline markup (markers, spine
    and columns ride the real CSS). */
 const SkeletonBooking = () => (
   <section className="ap-card ap-booking">
@@ -83,15 +88,6 @@ const SkeletonBooking = () => (
           <header className="ap-step-heading"><span className="ap-step-marker">3</span><Skeleton className="h-3.5 w-24" /></header>
           <section className="ap-booking-column"><div className="ap-service-list">
             {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}
-          </div></section>
-        </li>
-        <li className="ap-booking-step">
-          <header className="ap-step-heading"><span className="ap-step-marker">4</span><Skeleton className="h-3.5 w-28" /></header>
-          <section className="ap-booking-column"><div className="ap-step-body space-y-2.5">
-            <Skeleton className="h-4 w-full rounded" />
-            <Skeleton className="h-4 w-full rounded" />
-            <Skeleton className="h-4 w-full rounded" />
-            <Skeleton className="h-10 w-full rounded-xl" />
           </div></section>
         </li>
       </ol>
@@ -140,6 +136,9 @@ const Appointments = () => {
     error: verifyError,
     retry: retryVerification,
   } = useStudentHealthProfileStatus();
+
+  // Re-render when Developer Tools turns the time guard on or off.
+  useTimeGuardBypass();
 
   /* Fresh-reload default: today pre-selected (unless the clinic is closed)
      so the step 2 slot labels are populated without picking a date. */
@@ -605,7 +604,8 @@ const Appointments = () => {
       }
 
       if (
-        slotInfo.is_past
+        slotInfo.is_past &&
+        !isTimeGuardBypassed()
       ) {
         setMessageType(
           'error'
@@ -635,8 +635,9 @@ const Appointments = () => {
         Number.isNaN(
           selectedSlot.getTime()
         ) ||
-        selectedSlot <
-          new Date()
+        (!isTimeGuardBypassed() &&
+          selectedSlot <
+            new Date())
       ) {
         setMessageType(
           'error'
@@ -660,9 +661,7 @@ const Appointments = () => {
 
       try {
         const token =
-          localStorage.getItem(
-            'token'
-          );
+          getToken('student');
 
         const payload = {
           service:

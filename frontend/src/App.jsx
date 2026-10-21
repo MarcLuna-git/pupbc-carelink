@@ -4,6 +4,7 @@ import {
   Route,
   Outlet,
   Navigate,
+  useLocation,
 } from 'react-router-dom';
 
 import { lazy, Suspense } from 'react';
@@ -16,11 +17,9 @@ const ForgotPassword = lazy(() => import('./pages/Student/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/Student/ResetPassword'));
 
 const Welcome = lazy(() => import('./pages/Student/Welcome/Welcome'));
-const HealthProfile = lazy(() => import('./pages/Student/HealthProfile/HealthProfile'));
 const Appointments = lazy(() => import('./pages/Student/Appointments/Appointments'));
 const QR = lazy(() => import('./pages/Student/QR/QR'));
 const Overview = lazy(() => import('./pages/Student/Overview/Overview'));
-const ProfileEdit = lazy(() => import('./pages/Student/ProfileEdit/ProfileEdit'));
 const Alerts = lazy(() => import('./pages/Student/Alerts/Alerts'));
 const Announcements = lazy(() => import('./pages/Student/Announcements/Announcements'));
 const HealthRecords = lazy(() => import('./pages/Student/HealthRecords/HealthRecords'));
@@ -48,6 +47,7 @@ import HealthProfileVerifyError from './components/HealthProfileVerifyError';
 import { useStudentHealthProfileStatus } from './hooks/useStudentHealthProfileStatus';
 
 const KioskPage = lazy(() => import('./pages/Kiosk/KioskPage'));
+const KioskSettings = lazy(() => import('./pages/Kiosk/KioskSettings'));
 import AppErrorBoundary from './components/AppErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
 
@@ -123,11 +123,17 @@ const StudentHomeRedirect = () => {
  * ============================================================
  *
  * Both incomplete and completed students can open the form.
- * HealthProfile loads the saved record itself. Completion is
- * required only for clinic services, never for editing this form.
+ * It is shown inside the Profile page (/student/profile?view=
+ * health-profile); /student/health-profile stays as an alias.
+ * Completion is required only for clinic services, never for
+ * editing this form.
  */
 const HealthProfileOnboardingRoute = () => {
-  return <HealthProfile />;
+  // The form lives inside the Profile page now; keep ?step=N working.
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  params.set('view', 'health-profile');
+  return <Navigate to={`/student/profile?${params}`} replace />;
 };
 
 function App() {
@@ -173,6 +179,12 @@ function App() {
           <Route
             path="/kiosk"
             element={<KioskPage />}
+          />
+
+          {/* Hidden: no link on the kiosk; staff type the URL. */}
+          <Route
+            path="/kiosk/settings"
+            element={<KioskSettings />}
           />
 
           {/* ==================================================
@@ -263,9 +275,10 @@ function App() {
               element={<Overview />}
             />
 
+            {/* Editing is inline on the Profile page now; keep old links working. */}
             <Route
               path="profile/edit"
-              element={<ProfileEdit />}
+              element={<Navigate to="/student/profile" replace />}
             />
 
             {/* ==================================================

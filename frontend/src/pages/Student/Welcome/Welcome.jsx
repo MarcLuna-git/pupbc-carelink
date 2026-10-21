@@ -1,3 +1,4 @@
+import { getUser } from '../../../services/session';
 import { Link, useNavigate } from 'react-router-dom';
 import { Heart, Clock, Shield, ArrowRight, ClipboardList } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -5,7 +6,7 @@ import { formatPersonName } from '../../../utils/studentUser';
 
 const Welcome = () => {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = getUser('student');
 
   const steps = [
     { icon: ClipboardList, title: 'Health Profile', desc: 'Tell us about your medical history so we can serve you better.' },
