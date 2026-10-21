@@ -1,6 +1,6 @@
 # PUPBC CareLink
 
-Clinic Management System for PUP Binan Campus
+A QR Integrated Health Information System with Self-Service Triage kiosk for PUP Binan Campus
 
 ## Structure
 - `backend/` - Laravel API
