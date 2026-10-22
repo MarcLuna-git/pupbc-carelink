@@ -297,7 +297,9 @@ class AuthService
             ->getTTL();
 
         return [
-            'user' => $user,
+            // The student shell reads the avatar from the stored user, so
+            // include the profile (profile_picture) right at login.
+            'user' => $user->load('profile'),
             'token' => $token,
             'token_type' => 'bearer',
             'expires_in' => $ttl * 60,
