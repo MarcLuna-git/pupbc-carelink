@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import api from '../../../services/api';
 import { getUser, setUser } from '../../../services/session';
-import StudentPageHero, { HeroRefreshButton } from '../../../components/StudentPageHero';
+import StudentPageHero from '../../../components/StudentPageHero';
 import HealthProfile from '../HealthProfile/HealthProfile';
 import { formatPersonName } from '../../../utils/studentUser';
 import { mediaUrl } from '../../../utils/mediaUrl';
@@ -208,7 +208,6 @@ const Overview = () => {
   const [healthProfile, setHealthProfile] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   /* Cosmetic hold for the route-loading animation — see ROUTE LOADING note. */
   const [routeReady, setRouteReady] = useState(false);
@@ -290,8 +289,8 @@ const Overview = () => {
   };
 
   const loadOverview = useCallback(async ({ refresh = false } = {}) => {
-    if (refresh) setRefreshing(true);
-    else setLoading(true);
+    // A refresh (e.g. after saving) updates in place without the loading state.
+    if (!refresh) setLoading(true);
     setError('');
     // Only the profile is required; health data and history fill in when available.
     const [profileResult, healthResult, historyResult] = await Promise.allSettled([
@@ -328,7 +327,6 @@ const Overview = () => {
       setError('We could not load your profile. Please try again.');
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, []);
 
@@ -582,7 +580,6 @@ const Overview = () => {
             )}
           </div>
         )}
-        action={ready ? <HeroRefreshButton onClick={() => loadOverview({ refresh: true })} refreshing={refreshing} label="Refresh profile" /> : null}
       >
         {ready ? (
           <>
@@ -656,10 +653,10 @@ const Overview = () => {
 
       {/* My Health Information */}
       <div className={`${CARD} p-4 lg:p-6`}>
-        <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-          <div className="flex items-start gap-2.5">
-            <ClipboardList className="mt-0.5 h-6 w-6 text-maroon-800 dark:text-maroon-300" />
-            <div>
+        <div className={`mb-5 flex items-start justify-between gap-3 ${editing ? 'flex-wrap' : ''}`}>
+          <div className="flex min-w-0 flex-1 items-start gap-2.5">
+            <ClipboardList className="mt-0.5 h-6 w-6 shrink-0 text-maroon-800 dark:text-maroon-300" />
+            <div className="min-w-0">
               <h2 className="text-lg font-bold text-maroon-800 dark:text-maroon-300">My Health Information</h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">Keep your information up to date for better and safer care.</p>
             </div>
@@ -688,9 +685,11 @@ const Overview = () => {
             <button
               type="button"
               onClick={startEdit}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--sp-border)] px-3 py-1.5 text-xs font-semibold text-maroon-800 transition hover:bg-maroon-50 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
+              aria-label="Edit health information"
+              title="Edit"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--sp-border)] text-maroon-800 transition hover:bg-maroon-50 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
             >
-              <Pencil className="h-3.5 w-3.5" /> Edit
+              <Pencil className="h-4 w-4" />
             </button>
           )}
         </div>

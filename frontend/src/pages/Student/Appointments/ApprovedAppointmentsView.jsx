@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import HeroArt from '../../../components/HeroArt';
 import RouteLoadingBar from '../../../components/RouteLoadingBar';
@@ -146,71 +145,48 @@ function CalendarPicker({ value, onChange, disabled }) {
   </div>;
 }
 
-/* The ··· button with no appointment booked: instead of jumping anywhere, it
-   opens a small note under the button that there is nothing to show yet. */
-function EmptyDetailsPopover() {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef(null);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const onPointerDown = event => { if (!rootRef.current?.contains(event.target)) setOpen(false); };
-    const onKeyDown = event => { if (event.key === 'Escape') setOpen(false); };
-    document.addEventListener('mousedown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [open]);
-
-  return <div ref={rootRef} className="ap-more-popover-root">
-    <button type="button" className="ap-more-button" aria-haspopup="dialog" aria-expanded={open}
-      aria-label="Upcoming appointment details" title="View details" onClick={() => setOpen(isOpen => !isOpen)}>···</button>
-    {/* Folds away with the same motion it opened with (fade + 10px slide). */}
-    <AnimatePresence>
-      {open && <motion.div role="status" className="ap-more-popover"
-        initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.15, ease: 'easeOut' }}>
-        <CalendarDays />
-        <div><strong>No appointment to show</strong><p>You don&apos;t have an upcoming appointment yet. Book one below to see its details here.</p></div>
-      </motion.div>}
-    </AnimatePresence>
-  </div>;
-}
-
 /* ONE upcoming card for every state. The markup never changes — heading
-   (title · status badge · ···), date tile, details, place, check-in cell and
-   the same two action slots; only the values swap between placeholders (no
-   appointment yet) and the real booking. */
+   (title · status badge), date tile, details, place, check-in cell and the
+   same two action slots; only the values swap between placeholders (no
+   appointment yet) and the real booking. With a booking, the inner summary
+   card opens its details; its two action buttons keep their own clicks. */
 function UpcomingAppointment({ appointment, onView, onEdit }) {
   const hasAppointment = Boolean(appointment);
   const date = hasAppointment ? appointmentDate(appointment.appointment_date) : null;
   const queueStatus = appointment?.queue?.status;
   const canViewQr = appointment?.status === 'approved' && date === clinicDate();
   const qrHint = 'QR is available on the day of an approved appointment.';
+  const openDetails = () => onView(appointment);
+  const clickable = hasAppointment ? {
+    role: 'button', tabIndex: 0, 'aria-label': 'View upcoming appointment details', title: 'View details',
+    onClick: openDetails,
+    onKeyDown: event => {
+      if (event.target !== event.currentTarget || (event.key !== 'Enter' && event.key !== ' ')) return;
+      event.preventDefault();
+      openDetails();
+    },
+  } : {};
   return <section className={`ap-card ap-upcoming${hasAppointment ? '' : ' is-empty'}`}>
     <div className="ap-section-heading ap-upcoming-heading"><CalendarDays /><h2>Your Upcoming Appointment</h2>
       {hasAppointment ? <StatusBadge status={appointment.status} /> : <span className="ap-status ap-status-expired"><span />Not booked</span>}
-      {hasAppointment
-        ? <button type="button" className="ap-more-button" aria-label="View upcoming appointment details" title="View details" onClick={() => onView(appointment)}>···</button>
-        : <EmptyDetailsPopover />}
     </div>
     <div className="ap-upcoming-content">
-      <div className="ap-date-tile" aria-hidden={!date}><span>{date ? formatAppointmentDate(date, { month: 'short', year: undefined, day: undefined }).toUpperCase() : 'DATE'}</span><strong>{date ? date.slice(-2) : '—'}</strong><small>{date ? formatAppointmentDate(date, { weekday: 'short', day: undefined, month: undefined, year: undefined }) : '—'}</small></div>
-      <div className="ap-upcoming-details"><Stethoscope /><div><strong>{hasAppointment ? serviceTitle(appointment.service) : 'No appointment yet'}</strong><small>{hasAppointment ? appointment.concern || 'Scheduled clinic visit' : 'Choose a date and service below'}</small></div><UserRound /><div><span>{hasAppointment ? providerName(appointment) : 'Not assigned'}</span><small>Clinic staff</small></div></div>
-      <div className="ap-upcoming-place"><div><MapPin /><span><strong>{hasAppointment ? roomName(appointment) : 'Campus clinic'}</strong><small>{hasAppointment ? 'Campus clinic' : 'Room assigned on approval'}</small></span></div><div><Clock /><span><strong>{appointment?.time_slot || 'No time selected'}</strong><small>Asia/Manila</small></span></div></div>
-      {/* State cell: only the live queue status. Left empty otherwise — never
-          a filler sentence — so the card reads the same either way. */}
-      <div className="ap-upcoming-state">
-        {queueStatus && <span className="ap-queue-label">Queue: {queueStatus.replaceAll('_', ' ')}</span>}
-      </div>
-      {/* Same two slots always: QR (primary) · Reschedule / Book a Visit. */}
-      <div className="ap-upcoming-actions">
-        {canViewQr ? <Link to="/student/qr" className="ap-button"><FileText />View QR Code</Link> : <button type="button" className="ap-button" disabled title={qrHint}><FileText />View QR Code</button>}
-        {hasAppointment
-          ? <button type="button" className="ap-button ap-button-outline" disabled={appointment.status !== 'pending'} title={appointment.status === 'pending' ? 'Edit your pending request' : 'Contact the clinic to reschedule an approved visit'} onClick={() => onEdit(appointment)}><RotateCcw />Reschedule</button>
-          : <a href="#appointment-booking" className="ap-button ap-button-outline"><CalendarDays />Book a Visit</a>}
+      <div className={`ap-upcoming-summary${hasAppointment ? ' is-clickable' : ''}`} {...clickable}>
+        <div className="ap-date-tile" aria-hidden={!date}><span>{date ? formatAppointmentDate(date, { month: 'short', year: undefined, day: undefined }).toUpperCase() : 'DATE'}</span><strong>{date ? date.slice(-2) : '—'}</strong><small>{date ? formatAppointmentDate(date, { weekday: 'short', day: undefined, month: undefined, year: undefined }) : '—'}</small></div>
+        <div className="ap-upcoming-details"><Stethoscope /><div><strong>{hasAppointment ? serviceTitle(appointment.service) : 'No appointment yet'}</strong><small>{hasAppointment ? appointment.concern || 'Scheduled clinic visit' : 'Choose a date and service below'}</small></div><UserRound /><div><span>{hasAppointment ? providerName(appointment) : 'Not assigned'}</span><small>Clinic staff</small></div></div>
+        <div className="ap-upcoming-place"><div><MapPin /><span><strong>{hasAppointment ? roomName(appointment) : 'Campus clinic'}</strong><small>{hasAppointment ? 'Campus clinic' : 'Room assigned on approval'}</small></span></div><div><Clock /><span><strong>{appointment?.time_slot || 'No time selected'}</strong><small>Asia/Manila</small></span></div></div>
+        {/* State cell: only the live queue status. Left empty otherwise — never
+            a filler sentence — so the card reads the same either way. */}
+        <div className="ap-upcoming-state">
+          {queueStatus && <span className="ap-queue-label">Queue: {queueStatus.replaceAll('_', ' ')}</span>}
+        </div>
+        {/* Same two slots always: QR (primary) · Reschedule / Book a Visit. */}
+        <div className="ap-upcoming-actions" onClick={event => event.stopPropagation()}>
+          {canViewQr ? <Link to="/student/qr" className="ap-button"><FileText />View QR Code</Link> : <button type="button" className="ap-button" disabled title={qrHint}><FileText />View QR Code</button>}
+          {hasAppointment
+            ? <button type="button" className="ap-button ap-button-outline" disabled={appointment.status !== 'pending'} title={appointment.status === 'pending' ? 'Edit your pending request' : 'Contact the clinic to reschedule an approved visit'} onClick={() => onEdit(appointment)}><RotateCcw />Reschedule</button>
+            : <a href="#appointment-booking" className="ap-button ap-button-outline"><CalendarDays />Book a Visit</a>}
+        </div>
       </div>
     </div>
   </section>;

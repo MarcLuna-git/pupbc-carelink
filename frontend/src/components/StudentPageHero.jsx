@@ -1,4 +1,3 @@
-import { RefreshCw } from 'lucide-react';
 import HeroArt from './HeroArt';
 import RouteLoadingBar from './RouteLoadingBar';
 
@@ -71,20 +70,6 @@ const StudentPageHero = ({
     {/* Route-loading bar — full-width fill/drain loop, hero only. */}
     {loading && <RouteLoadingBar className="z-[2]" />}
   </section>
-);
-
-/* Frosted refresh button for the hero's `action` slot. */
-export const HeroRefreshButton = ({ onClick, refreshing = false, label = 'Refresh' }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    disabled={refreshing}
-    className="rounded-xl border border-white/60 bg-white/80 p-2.5 backdrop-blur transition hover:bg-white disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800/80 dark:hover:bg-gray-800"
-    title="Refresh"
-    aria-label={label}
-  >
-    <RefreshCw className={`h-4 w-4 text-gray-600 dark:text-gray-300 ${refreshing ? 'animate-spin' : ''}`} />
-  </button>
 );
 
 export default StudentPageHero;

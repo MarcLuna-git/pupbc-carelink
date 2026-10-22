@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import useVisiblePolling from '../../../hooks/useVisiblePolling';
-import StudentPageHero, { HeroRefreshButton } from '../../../components/StudentPageHero';
+import StudentPageHero from '../../../components/StudentPageHero';
 import HealthProfileVerifyError from '../../../components/HealthProfileVerifyError';
 import { useStudentHealthProfileStatus } from '../../../hooks/useStudentHealthProfileStatus';
 import { formatPersonName } from '../../../utils/studentUser';
@@ -152,7 +152,6 @@ const QR = () => {
   } = useStudentHealthProfileStatus();
 
   const [pageLoading, setPageLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('info');
@@ -210,10 +209,9 @@ const QR = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Background polls pass the poller's signal; a manual Refresh passes none.
+  // Background polls pass the poller's signal.
   const fetchQrData = async (signal) => {
     const background = Boolean(signal);
-    setRefreshing(true);
     try {
       const response = await api.get('/student/qr', { signal });
       if (signal?.aborted) return;
@@ -244,7 +242,6 @@ const QR = () => {
       if (background) throw error;
     } finally {
       setPageLoading(false);
-      setRefreshing(false);
     }
   };
 
@@ -573,16 +570,7 @@ const QR = () => {
       transition={{ duration: 0.35, ease: 'easeOut' }}
       className="w-full min-w-0 space-y-3"
     >
-      <StudentPageHero
-        {...QR_HERO}
-        action={
-          <HeroRefreshButton
-            onClick={() => fetchQrData()}
-            refreshing={refreshing}
-            label="Refresh QR information"
-          />
-        }
-      />
+      <StudentPageHero {...QR_HERO} />
 
       {message && (
         <motion.div

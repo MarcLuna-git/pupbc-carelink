@@ -958,20 +958,6 @@ const Appointments = () => {
                     ).text
                   }`}
                 >
-                  {(() => {
-                    const Icon =
-                      (
-                        statusConfig[
-                          selectedAppointment.status
-                        ] ||
-                        statusConfig.pending
-                      ).icon;
-
-                    return (
-                      <Icon className="w-3.5 h-3.5" />
-                    );
-                  })()}
-
                   <span className="capitalize">
                     {
                       selectedAppointment.status
@@ -1002,11 +988,9 @@ const Appointments = () => {
                   'pending' && (
                   <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/20 rounded-2xl p-4 mb-4">
                     <div className="flex items-start gap-2">
-                      <Clock className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
-
                       <div>
                         <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-400">
-                          ⏳ Waiting for Approval
+                          Waiting for Approval
                         </p>
 
                         <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">
@@ -1022,11 +1006,9 @@ const Appointments = () => {
                   <>
                     <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/20 rounded-2xl p-4 mb-3">
                       <div className="flex items-start gap-2">
-                        <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-
                         <div>
                           <p className="text-sm font-semibold text-green-800 dark:text-green-400">
-                            ✅ Appointment Approved
+                            Appointment Approved
                           </p>
 
                           <p className="text-xs text-green-600 dark:text-green-500 mt-1">
@@ -1098,11 +1080,9 @@ const Appointments = () => {
                   'completed' && (
                   <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/20 rounded-2xl p-4 mb-4">
                     <div className="flex items-start gap-2">
-                      <CheckCircle className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
-
                       <div>
                         <p className="text-sm font-semibold text-blue-800 dark:text-blue-400">
-                          🎉 Appointment Completed
+                          Appointment Completed
                         </p>
 
                         <p className="text-xs text-blue-600 dark:text-blue-500 mt-1">
@@ -1117,11 +1097,9 @@ const Appointments = () => {
                   'cancelled' && (
                   <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/20 rounded-2xl p-4 mb-4">
                     <div className="flex items-start gap-2">
-                      <XCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
-
                       <div>
                         <p className="text-sm font-semibold text-red-800 dark:text-red-400">
-                          ❌ Appointment Cancelled
+                          Appointment Cancelled
                         </p>
 
                         <p className="text-xs text-red-600 dark:text-red-500 mt-1">
@@ -1136,11 +1114,9 @@ const Appointments = () => {
                   'rejected' && (
                   <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/20 rounded-2xl p-4 mb-4">
                     <div className="flex items-start gap-2">
-                      <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
-
                       <div>
                         <p className="text-sm font-semibold text-red-800 dark:text-red-400">
-                          ⚠️ Appointment Rejected
+                          Appointment Rejected
                         </p>
 
                         <p className="text-xs text-red-600 dark:text-red-500 mt-1">

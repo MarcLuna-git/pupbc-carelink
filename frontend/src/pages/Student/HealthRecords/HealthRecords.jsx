@@ -21,7 +21,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import api from '../../../services/api';
-import StudentPageHero, { HeroRefreshButton } from '../../../components/StudentPageHero';
+import StudentPageHero from '../../../components/StudentPageHero';
 import { DOCUMENTS, openRecordDocument } from './recordDocuments';
 
 /*
@@ -351,7 +351,6 @@ const DocumentTile = ({ kind, description, record, emptyText, onDocument }) => {
 const HealthRecords = () => {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [search, setSearch] = useState('');
@@ -375,10 +374,9 @@ const HealthRecords = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const fetchRecords = async ({ refresh = false } = {}) => {
+  const fetchRecords = async () => {
     try {
-      if (refresh) setRefreshing(true);
-      else setLoading(true);
+      setLoading(true);
       setError('');
       const response = await api.get('/student/clinic-history');
       if (response.data.success) {
@@ -391,7 +389,6 @@ const HealthRecords = () => {
       setError('Unable to load health records.');
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
@@ -498,16 +495,7 @@ const HealthRecords = () => {
       transition={{ duration: 0.35, ease: 'easeOut' }}
       className="w-full min-w-0 space-y-3"
     >
-      <StudentPageHero
-        {...RECORDS_HERO}
-        action={
-          <HeroRefreshButton
-            onClick={() => fetchRecords({ refresh: true })}
-            refreshing={refreshing}
-            label="Refresh records"
-          />
-        }
-      />
+      <StudentPageHero {...RECORDS_HERO} />
 
       {notice && (
         <div role="alert" className="flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700 dark:border-red-800/30 dark:bg-red-900/20 dark:text-red-400">
