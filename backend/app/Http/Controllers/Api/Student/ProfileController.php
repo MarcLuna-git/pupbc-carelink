@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api\Student;
 
 use App\Http\Controllers\Controller;
 use App\Models\StudentProfile;
+use App\Services\AvatarStore;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -80,20 +80,24 @@ class ProfileController extends Controller
         $user = auth()->user();
         $profile = StudentProfile::firstOrCreate(['user_id' => $user->id]);
 
-        if ($profile->profile_picture) {
-            Storage::disk('public')->delete($profile->profile_picture);
-        }
-
-        $path = $request->file('avatar')->store('student-avatars', 'public');
+        $previous = $profile->profile_picture;
+        $path = AvatarStore::store($request->file('avatar'));
         $profile->update(['profile_picture' => $path]);
+        AvatarStore::delete($previous);
 
         return response()->json([
             'success' => true,
             'message' => 'Profile picture updated successfully.',
             'data' => [
-                'profile_picture' => Storage::disk('public')->url($path),
+                'profile_picture' => AvatarStore::url($path),
             ],
         ]);
+    }
+
+    // Public: <img> tags cannot send the bearer token. Names are random hashes.
+    public function avatar(string $path)
+    {
+        return AvatarStore::response(AvatarStore::DIRECTORY . '/' . $path);
     }
 
     public function updateEmail(Request $request)
@@ -128,7 +132,7 @@ class ProfileController extends Controller
         $profile = StudentProfile::where('user_id', auth()->id())->first();
 
         if ($profile?->profile_picture) {
-            Storage::disk('public')->delete($profile->profile_picture);
+            AvatarStore::delete($profile->profile_picture);
             $profile->update(['profile_picture' => null]);
         }
 
@@ -150,8 +154,7 @@ class ProfileController extends Controller
         $data = $profile->toArray();
 
         if ($profile->profile_picture) {
-            $data['profile_picture'] = Storage::disk('public')
-                ->url($profile->profile_picture);
+            $data['profile_picture'] = AvatarStore::url($profile->profile_picture);
         }
 
         return $data;

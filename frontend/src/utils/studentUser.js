@@ -5,14 +5,15 @@
  */
 
 import { getUser } from '../services/session';
+import { mediaUrl } from './mediaUrl';
 
 export const getStoredUser = () => getUser('student');
 
-export const getAvatar = (user) =>
+export const getAvatar = (user) => mediaUrl(
   user?.profile?.profile_picture ||
   user?.profile_picture ||
   user?.avatar_url ||
-  '';
+  '');
 
 /*
  * Formal name casing: capitalize the first letter of every word (after a

@@ -41,6 +41,27 @@ class StudentProfileContactTest extends TestCase
         $this->assertSame('09123456789', $health->fresh()->emergency_phone);
     }
 
+    public function test_avatar_is_served_by_the_api_even_without_the_disk_copy(): void
+    {
+        Storage::fake('public');
+        $student = $this->student();
+        $url = $this->actingAs($student, 'api')
+            ->postJson('/api/student/profile/avatar', ['avatar' => UploadedFile::fake()->image('me.png')])
+            ->assertOk()->json('data.profile_picture');
+        $path = $student->profile()->first()->profile_picture;
+        $this->assertStringEndsWith('/api/media/' . $path, $url);
+        $this->assertDatabaseHas('media_files', ['path' => $path]);
+
+        $this->get('/api/media/' . $path)->assertOk()->assertHeader('Content-Type', 'image/png');
+        // Render wipes its disk on restart; the database copy still serves it.
+        Storage::disk('public')->delete($path);
+        $this->get('/api/media/' . $path)->assertOk()->assertHeader('Content-Type', 'image/png');
+
+        $this->deleteJson('/api/student/profile/avatar')->assertOk();
+        $this->assertDatabaseMissing('media_files', ['path' => $path]);
+        $this->get('/api/media/' . $path)->assertNotFound();
+    }
+
     public function test_avatar_can_be_removed_and_removal_is_idempotent(): void
     {
         Storage::fake('public');

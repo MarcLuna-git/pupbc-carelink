@@ -52,6 +52,13 @@ Route::get('/health', function () {
 });
 
 
+// Uploaded student photos. Outside the throttle so a list of avatars cannot
+// use up a viewer's API rate limit.
+Route::get('/media/student-avatars/{path}', [ProfileController::class, 'avatar'])
+    ->where('path', '[A-Za-z0-9._-]+')
+    ->withoutMiddleware(['throttle:api', \App\Http\Middleware\ExpireStaleAppointments::class]);
+
+
 Route::get('/test', function () {
     return response()->json([
         'success' => true,

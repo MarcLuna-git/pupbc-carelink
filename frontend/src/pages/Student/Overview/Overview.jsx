@@ -32,6 +32,7 @@ import { getUser, setUser } from '../../../services/session';
 import StudentPageHero, { HeroRefreshButton } from '../../../components/StudentPageHero';
 import HealthProfile from '../HealthProfile/HealthProfile';
 import { formatPersonName } from '../../../utils/studentUser';
+import { mediaUrl } from '../../../utils/mediaUrl';
 import { clinicDate } from '../../../utils/appointmentDate';
 
 /*
@@ -536,7 +537,7 @@ const Overview = () => {
         loading={pageLoading}
         leading={(
           <div className="relative shrink-0">
-            <Avatar src={heroProfile.profile_picture} />
+            <Avatar src={mediaUrl(heroProfile.profile_picture)} />
             {ready && (
               <>
                 <div ref={photoMenuRef} className="absolute bottom-1 right-1">

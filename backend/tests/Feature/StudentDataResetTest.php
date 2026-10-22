@@ -45,6 +45,7 @@ class StudentDataResetTest extends TestCase
             '2026_07_04_181119_create_consultations_table.php',
             '2026_09_07_000001_add_visit_triage_and_emergency_encounters.php',
             '2026_07_05_110023_create_qr_codes_table.php',
+            '2026_10_22_000001_create_media_files_table.php',
         ] as $file) {
             (require database_path('migrations/' . $file))->up();
         }

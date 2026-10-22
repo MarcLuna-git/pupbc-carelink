@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { Eye, Search, SlidersHorizontal, Users, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import api from '../../../services/api';
+import { mediaUrl } from '../../../utils/mediaUrl';
 import { academic, courses, years, sections, fullName, focus, inputStyle, secondary } from './directoryOptions';
 
 export function Avatar({ student }) {
   const path = student?.student_profile?.profile_picture;
   const [failedPath, setFailedPath] = useState(null);
-  const base = new URL(api.defaults.baseURL, window.location.origin);
-  const src = path && (/^https?:\/\//.test(path) ? path : new URL(path.startsWith('/') ? path : `/storage/${path}`, base.origin).href);
+  const src = mediaUrl(path);
   return <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-maroon-50 text-sm font-semibold text-maroon-800">
     {src && failedPath !== path ? <img src={src} alt="" className="h-full w-full object-cover" onError={() => setFailedPath(path)} /> : `${student?.first_name?.[0] || ''}${student?.last_name?.[0] || ''}` || '?'}
   </span>;

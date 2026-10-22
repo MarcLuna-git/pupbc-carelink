@@ -6,10 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\HealthProfile;
 use App\Models\QRCode;
 use App\Models\StudentProfile;
+use App\Services\AvatarStore;
 use App\Services\NurseSync;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 /*
@@ -73,9 +73,7 @@ class DataResetController extends Controller
             $profile = StudentProfile::where('user_id', $user->id)->first();
 
             if ($profile) {
-                if ($profile->profile_picture) {
-                    Storage::disk('public')->delete($profile->profile_picture);
-                }
+                AvatarStore::delete($profile->profile_picture);
 
                 $profile->update([
                     'mobile_number' => null,
