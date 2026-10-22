@@ -7,7 +7,7 @@ import RouteLoadingBar from './RouteLoadingBar';
  * sits left of the copy (e.g. an avatar),
  * `children` renders extra lines under the description (pass a null
  * `eyebrow` to hide it), `benefits` renders the small icon row under the copy,
- * `action` sits in the top-right corner (e.g. a refresh button), and
+ * `action` sits in the top-right corner, and
  * `loading` pins the route-loading bar to the bottom edge.
  */
 const StudentPageHero = ({

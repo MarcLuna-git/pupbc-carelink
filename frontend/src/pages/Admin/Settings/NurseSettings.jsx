@@ -1,13 +1,65 @@
 import { clearSession, getToken, getUser, setUser } from '../../../services/session';
 import { useState, useEffect, useRef } from 'react';
-import { Key, Lock, Save, Loader2, Eye, EyeOff, User, Mail, Shield, Bell, Building, CheckCircle, AlertTriangle, Wrench, Clock } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Key, Lock, Save, Loader2, Eye, EyeOff, User, Mail, Bell, Building, CheckCircle, Wrench, Clock, LogOut, Moon, SlidersHorizontal, ChevronDown, CalendarCheck, UserPlus, Settings as SettingsIcon } from 'lucide-react';
 import api from '../../../services/api';
 import authService from '../../../services/authService';
 import useNurseSync from '../../../hooks/useNurseSync';
+import { readDarkMode, saveDarkMode } from '../../../hooks/useAccountTheme';
+import NursePageHero from '../../../components/NursePageHero';
 import { fetchNurseDevTools, updateNurseTimeGuardBypass, useNurseTimeGuardBypass } from '../../../services/devTools';
+import { NurseToast } from '../../../components/NurseFeedback';
+
+/*
+ * On/off row used by the General and Developer Tools tabs; same look as the
+ * Student Settings switch rows.
+ */
+const ToggleSwitch = ({ checked, onChange, label, description, icon: Icon, disabled = false }) => (
+  <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/50">
+    <div className="flex min-w-0 items-start gap-3">
+      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-maroon-800 shadow-sm dark:bg-gray-800 dark:text-maroon-400">
+        <Icon className="h-4 w-4" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-gray-800 dark:text-white">{label}</p>
+        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{description}</p>
+      </div>
+    </div>
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon-500 disabled:opacity-60 ${
+        checked ? 'bg-maroon-800' : 'bg-gray-300 dark:bg-gray-600'
+      }`}
+    >
+      <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+    </button>
+  </div>
+);
+
+const SectionTitle = ({ icon: Icon, children }) => (
+  <h3 className="flex items-center space-x-2 font-bold text-gray-900 dark:text-white">
+    <Icon className="h-5 w-5 text-maroon-800 dark:text-maroon-400" />
+    <span>{children}</span>
+  </h3>
+);
+
+const SETTINGS_TABS = [
+  { id: 'general', icon: SlidersHorizontal, label: 'General' },
+  { id: 'profile', icon: User, label: 'Profile' },
+  { id: 'password', icon: Key, label: 'Password' },
+  { id: 'developer', icon: Wrench, label: 'Developer Tools' },
+  { id: 'system', icon: Building, label: 'System' },
+];
 
 const NurseSettings = () => {
   const user = getUser('nurse');
+  const [activeTab, setActiveTab] = useState('general');
+  const [darkMode, setDarkMode] = useState(() => readDarkMode('nurse'));
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
   const [loading, setLoading] = useState(false);
@@ -15,6 +67,19 @@ const NurseSettings = () => {
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [showCurrentPass, setShowCurrentPass] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
+
+  // Follow theme changes made from the header / account menu.
+  useEffect(() => {
+    const syncTheme = () => setDarkMode(readDarkMode('nurse'));
+    window.addEventListener('darkModeChange', syncTheme);
+    return () => window.removeEventListener('darkModeChange', syncTheme);
+  }, []);
+
+  const applyDarkMode = (value) => {
+    setDarkMode(value);
+    saveDarkMode(value, 'nurse');
+    window.dispatchEvent(new Event('darkModeChange'));
+  };
 
   const [passwordForm, setPasswordForm] = useState({
     current_password: '',
@@ -228,34 +293,55 @@ const NurseSettings = () => {
     }
   };
 
-  const inputClass = "w-full border border-gray-200 dark:border-gray-600 rounded-2xl px-4 py-2.5 text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-maroon-500 dark:focus:ring-maroon-300/30 dark:focus:border-maroon-300 focus:outline-none";
+  const inputClass = "w-full border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-maroon-500 focus:outline-none";
   const labelClass = "text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5";
+  const primaryButton = "w-full py-3 bg-maroon-800 text-white font-semibold rounded-lg hover:bg-maroon-900 transition flex items-center justify-center space-x-2 disabled:opacity-50";
 
-  return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage your account and preferences</p>
-      </div>
+  // Shared panel body: right column on tablet / desktop, inside the opened
+  // accordion item on mobile.
+  const renderPanel = (id) => {
+    if (id === 'general') {
+      return (
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <SectionTitle icon={Moon}>Appearance</SectionTitle>
+            <ToggleSwitch
+              icon={Moon}
+              label="Dark mode"
+              description="Switch between the light and dark theme."
+              checked={darkMode}
+              onChange={applyDarkMode}
+            />
+          </div>
 
-      {message && (
-        <div className={`p-3 rounded-2xl text-sm text-center flex items-center justify-center space-x-2 ${
-          messageType === 'success'
-            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-            : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-        }`}>
-          {messageType === 'success' ? <CheckCircle className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
-          <span>{message}</span>
+          <div className="space-y-4 border-t border-gray-100 pt-5 dark:border-gray-700">
+            <SectionTitle icon={Bell}>Notification Preferences</SectionTitle>
+            <div className="space-y-3">
+              {[
+                { key: 'email_notifications', icon: Mail, label: 'Email Notifications', desc: 'Receive email notifications' },
+                { key: 'appointment_alerts', icon: CalendarCheck, label: 'Appointment Alerts', desc: 'Get notified for new appointments' },
+                { key: 'new_registration_alerts', icon: UserPlus, label: 'Registration Alerts', desc: 'Get notified for new student registrations' },
+              ].map((item) => (
+                <ToggleSwitch
+                  key={item.key}
+                  icon={item.icon}
+                  label={item.label}
+                  description={item.desc}
+                  checked={notifPrefs[item.key]}
+                  onChange={(value) => setNotifPrefs({ ...notifPrefs, [item.key]: value })}
+                />
+              ))}
+            </div>
+          </div>
         </div>
-      )}
+      );
+    }
 
-      <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-6">
-        <h3 className="font-bold text-gray-900 dark:text-white flex items-center space-x-2 mb-4">
-          <User className="w-5 h-5 text-maroon-800 dark:text-maroon-400" />
-          <span>Profile Information</span>
-        </h3>
+    if (id === 'profile') {
+      return (
         <form onSubmit={handleProfileUpdate} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <SectionTitle icon={User}>Profile Information</SectionTitle>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className={labelClass}>First Name</label>
               <input
@@ -292,35 +378,34 @@ const NurseSettings = () => {
           <div>
             <label className={labelClass}>Email Address</label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
-                className={`${inputClass} pl-10 bg-gray-50 dark:bg-gray-800 cursor-not-allowed`}
+                className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 py-3 pl-10 pr-4 text-sm text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400"
                 type="email"
                 value={profile.email}
                 disabled
                 title="Email cannot be changed"
               />
             </div>
-            <p className="text-xs text-gray-400 mt-1">Email cannot be changed. Contact the clinic for changes.</p>
+            <p className="mt-1 text-xs text-gray-400">Email cannot be changed. Contact the clinic for changes.</p>
           </div>
-          <button type="submit" disabled={loading}
-            className="px-6 py-2.5 bg-maroon-800 text-white rounded-xl font-semibold text-sm flex items-center space-x-2 hover:bg-maroon-900 transition disabled:opacity-50">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            <span>Update Profile</span>
+          <button type="submit" disabled={loading} className={primaryButton}>
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <span>{loading ? 'Saving...' : 'Update Profile'}</span>
           </button>
         </form>
-      </div>
+      );
+    }
 
-      <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-6">
-        <h3 className="font-bold text-gray-900 dark:text-white flex items-center space-x-2 mb-4">
-          <Key className="w-5 h-5 text-maroon-800 dark:text-maroon-400" />
-          <span>Change Password</span>
-        </h3>
+    if (id === 'password') {
+      return (
         <form onSubmit={handlePasswordChange} className="space-y-4">
+          <SectionTitle icon={Key}>Change Password</SectionTitle>
+
           <div>
             <label className={labelClass}>Current Password</label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
                 className={`${inputClass} pl-10 pr-12`}
                 type={showCurrentPass ? 'text' : 'password'}
@@ -330,8 +415,8 @@ const NurseSettings = () => {
                 required
               />
               <button type="button" onClick={() => setShowCurrentPass(!showCurrentPass)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1">
-                {showCurrentPass ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600">
+                {showCurrentPass ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
               </button>
             </div>
           </div>
@@ -339,23 +424,23 @@ const NurseSettings = () => {
           <div>
             <label className={labelClass}>New Password</label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
                 className={`${inputClass} pl-10 pr-12`}
                 type={showNewPass ? 'text' : 'password'}
                 value={passwordForm.new_password}
                 onChange={(e) => setPasswordForm({...passwordForm, new_password: e.target.value})}
-                placeholder="Enter new password (min 8 chars)"
+                placeholder="Min 8 characters"
                 required
               />
               <button type="button" onClick={() => setShowNewPass(!showNewPass)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1">
-                {showNewPass ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600">
+                {showNewPass ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
               </button>
             </div>
             {passwordForm.new_password && (
               <div className="mt-2">
-                <div className="flex gap-1 mb-1">
+                <div className="mb-1 flex gap-1">
                   <div className={`h-1.5 flex-1 rounded-full ${passwordStrength.color}`}></div>
                   <div className={`h-1.5 flex-1 rounded-full ${passwordStrength.level === 'Weak' ? 'bg-gray-200' : passwordStrength.color}`}></div>
                   <div className={`h-1.5 flex-1 rounded-full ${['Weak', 'Fair'].includes(passwordStrength.level) ? 'bg-gray-200' : passwordStrength.color}`}></div>
@@ -370,14 +455,14 @@ const NurseSettings = () => {
           <div>
             <label className={labelClass}>Confirm New Password</label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
                 className={`${inputClass} pl-10 ${
                   passwordForm.new_password_confirmation && passwordForm.new_password === passwordForm.new_password_confirmation
                     ? 'border-green-400 bg-green-50 dark:bg-green-900/10'
                     : passwordForm.new_password_confirmation && passwordForm.new_password !== passwordForm.new_password_confirmation
                     ? 'border-red-400 bg-red-50 dark:bg-red-900/10'
-                    : 'border-gray-200 dark:border-gray-600'
+                    : ''
                 }`}
                 type="password"
                 value={passwordForm.new_password_confirmation}
@@ -387,162 +472,220 @@ const NurseSettings = () => {
               />
             </div>
             {passwordForm.new_password_confirmation && passwordForm.new_password === passwordForm.new_password_confirmation && (
-              <p className="text-green-600 text-xs mt-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Passwords match</p>
+              <p className="mt-1 flex items-center gap-1 text-xs text-green-600"><CheckCircle className="h-3 w-3" /> Passwords match</p>
             )}
             {passwordForm.new_password_confirmation && passwordForm.new_password !== passwordForm.new_password_confirmation && (
-              <p className="text-red-500 text-xs mt-1">Passwords do not match</p>
+              <p className="mt-1 text-xs text-red-500">Passwords do not match</p>
             )}
           </div>
 
-          <button type="submit" disabled={loading}
-            className="w-full py-3 bg-maroon-800 text-white rounded-2xl font-semibold flex items-center justify-center space-x-2 hover:bg-maroon-900 transition disabled:opacity-50">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            <span>Update Password</span>
+          <button type="submit" disabled={loading} className={primaryButton}>
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <span>{loading ? 'Saving...' : 'Update Password'}</span>
           </button>
         </form>
-      </div>
+      );
+    }
 
-      <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-6">
-        <h3 className="font-bold text-gray-900 dark:text-white flex items-center space-x-2 mb-4">
-          <Bell className="w-5 h-5 text-maroon-800 dark:text-maroon-400" />
-          <span>Notification Preferences</span>
-        </h3>
-        <div className="space-y-3">
-          {[
-            { key: 'email_notifications', label: 'Email Notifications', desc: 'Receive email notifications' },
-            { key: 'appointment_alerts', label: 'Appointment Alerts', desc: 'Get notified for new appointments' },
-            { key: 'new_registration_alerts', label: 'Registration Alerts', desc: 'Get notified for new student registrations' },
-          ].map((item) => (
-            <div key={item.key} className="flex items-center justify-between py-2">
-              <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{item.label}</p>
-                <p className="text-xs text-gray-400">{item.desc}</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={notifPrefs[item.key]}
-                  onChange={(e) => setNotifPrefs({...notifPrefs, [item.key]: e.target.checked})}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-maroon-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-maroon-800"></div>
-              </label>
-            </div>
-          ))}
-        </div>
-      </div>
+    if (id === 'developer') {
+      return (
+        <div className="space-y-4">
+          <SectionTitle icon={Wrench}>Developer Tools</SectionTitle>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Testing tools for the clinic flow. Applies to the whole nurse portal.</p>
 
-      <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-6">
-        <h3 className="font-bold text-gray-900 dark:text-white flex items-center space-x-2 mb-1">
-          <Wrench className="w-5 h-5 text-maroon-800 dark:text-maroon-400" />
-          <span>Developer Tools</span>
-        </h3>
-        <p className="text-xs text-gray-400 mb-4">Testing tools for the clinic flow. Applies to the whole nurse portal.</p>
-        {!devToolsAvailable ? (
-          <p className="rounded-2xl bg-gray-50 p-4 text-sm text-gray-500 dark:bg-gray-700/50 dark:text-gray-400">
-            Developer Tools are turned off on this server.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-4 py-2">
-              <div className="flex min-w-0 items-start gap-3">
-                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-maroon-800 dark:text-maroon-400" />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-200">Remove time Guard</p>
-                  <p className="text-xs text-gray-400">
-                    {timeGuardOff
-                      ? 'On: appointments do not auto-expire; queue deadlines and past reschedule, follow-up and medicine expiry dates are not enforced.'
-                      : 'Off: normal nurse portal time rules apply.'}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={timeGuardOff || showDevPassword}
-                aria-label="Remove time Guard"
+          {!devToolsAvailable ? (
+            <p className="rounded-lg bg-gray-50 p-4 text-sm text-gray-500 dark:bg-gray-700/50 dark:text-gray-400">
+              Developer Tools are turned off on this server.
+            </p>
+          ) : (
+            <>
+              <ToggleSwitch
+                icon={Clock}
+                label="Remove time Guard"
+                description={timeGuardOff
+                  ? 'On: appointments do not auto-expire; queue deadlines and past reschedule, follow-up and medicine expiry dates are not enforced.'
+                  : 'Off: normal nurse portal time rules apply.'}
+                checked={timeGuardOff || showDevPassword}
                 disabled={devSaving}
-                onClick={() => handleTimeGuardToggle(!(timeGuardOff || showDevPassword))}
-                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon-300 disabled:opacity-60 ${
-                  timeGuardOff || showDevPassword ? 'bg-maroon-800' : 'bg-gray-200 dark:bg-gray-600'
-                }`}
-              >
-                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
-                  timeGuardOff || showDevPassword ? 'translate-x-[22px]' : 'translate-x-0.5'
-                }`} />
-              </button>
+                onChange={handleTimeGuardToggle}
+              />
+
+              {showDevPassword && !timeGuardOff && (
+                <form onSubmit={confirmTimeGuardBypass} className="space-y-3 rounded-lg border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
+                  <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                    Enter the developer password to remove the time guard.
+                  </p>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="password"
+                      autoComplete="off"
+                      autoFocus
+                      value={devPassword}
+                      onChange={(e) => { setDevPassword(e.target.value); setDevError(''); }}
+                      className={`${inputClass} pl-10`}
+                      placeholder="Developer password"
+                      aria-label="Developer password"
+                      required
+                    />
+                  </div>
+                  {devError && <p role="alert" className="text-xs text-red-600 dark:text-red-400">{devError}</p>}
+                  <div className="flex flex-wrap gap-2">
+                    <button type="submit" disabled={devSaving || !devPassword}
+                      className="inline-flex items-center space-x-2 rounded-lg bg-maroon-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900 disabled:opacity-50">
+                      {devSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wrench className="h-4 w-4" />}
+                      <span>{devSaving ? 'Checking...' : 'Remove time guard'}</span>
+                    </button>
+                    <button type="button" disabled={devSaving}
+                      onClick={() => { setShowDevPassword(false); setDevPassword(''); setDevError(''); }}
+                      className="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700/50">
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
+            </>
+          )}
+        </div>
+      );
+    }
+
+    if (id === 'system') {
+      return (
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <SectionTitle icon={Building}>System Information</SectionTitle>
+            <div className="space-y-3 text-sm">
+              {[
+                ['Version', systemInfo.version],
+                ['Last Updated', systemInfo.lastUpdated],
+                ['Environment', systemInfo.environment],
+              ].map(([label, value]) => (
+                <div key={label} className="flex justify-between rounded-lg bg-gray-50 p-4 dark:bg-gray-700/50">
+                  <span className="text-gray-500 dark:text-gray-400">{label}</span>
+                  <span className="font-medium text-gray-700 dark:text-gray-200">{value}</span>
+                </div>
+              ))}
+              <div className="flex justify-between rounded-lg bg-gray-50 p-4 dark:bg-gray-700/50">
+                <span className="text-gray-500 dark:text-gray-400">Logged in as</span>
+                <span className="font-medium capitalize text-maroon-700 dark:text-maroon-400">{user.role || 'Nurse'}</span>
+              </div>
             </div>
+          </div>
 
-            {showDevPassword && !timeGuardOff && (
-              <form onSubmit={confirmTimeGuardBypass} className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
-                <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
-                  Enter the developer password to remove the time guard.
-                </p>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="password"
-                    autoComplete="off"
-                    autoFocus
-                    value={devPassword}
-                    onChange={(e) => { setDevPassword(e.target.value); setDevError(''); }}
-                    className={`${inputClass} pl-10`}
-                    placeholder="Developer password"
-                    aria-label="Developer password"
-                    required
-                  />
-                </div>
-                {devError && <p role="alert" className="text-xs text-red-600 dark:text-red-400">{devError}</p>}
-                <div className="flex flex-wrap gap-2">
-                  <button type="submit" disabled={devSaving || !devPassword}
-                    className="px-5 py-2.5 bg-maroon-800 text-white rounded-xl font-semibold text-sm flex items-center space-x-2 hover:bg-maroon-900 transition disabled:opacity-50">
-                    {devSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wrench className="w-4 h-4" />}
-                    <span>{devSaving ? 'Checking...' : 'Remove time guard'}</span>
-                  </button>
-                  <button type="button" disabled={devSaving}
-                    onClick={() => { setShowDevPassword(false); setDevPassword(''); setDevError(''); }}
-                    className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 transition disabled:opacity-50">
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            )}
+          <div className="space-y-4 border-t border-gray-100 pt-5 dark:border-gray-700">
+            <SectionTitle icon={LogOut}>Session</SectionTitle>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex w-full items-center justify-center space-x-2 rounded-lg bg-red-50 py-3 font-semibold text-red-700 transition hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Sign Out</span>
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      );
+    }
 
-      <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-6">
-        <h3 className="font-bold text-gray-900 dark:text-white flex items-center space-x-2 mb-4">
-          <Building className="w-5 h-5 text-maroon-800 dark:text-maroon-400" />
-          <span>System Information</span>
-        </h3>
-        <div className="space-y-3 text-sm">
-          <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
-            <span className="text-gray-500">Version</span>
-            <span className="font-medium text-gray-700 dark:text-gray-200">{systemInfo.version}</span>
+    return null;
+  };
+
+  return (
+    <div className="mx-auto max-w-[1440px] space-y-5">
+      <NursePageHero
+        id="nurse-settings-title"
+        title="Settings"
+        description="Manage your account, security, and portal preferences."
+        art={SettingsIcon}
+      />
+
+      {/* Action results show as a floating toast */}
+      <NurseToast message={message} type={messageType} onClose={() => setMessage('')} />
+
+      <div className="rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
+        <div className="grid gap-5 md:grid-cols-[220px_minmax(0,1fr)]">
+          {/* Mobile: accordion — tapping a section slides its panel open beneath it */}
+          <div className="space-y-2 md:hidden">
+            {SETTINGS_TABS.map((tab) => {
+              const isOpen = activeTab === tab.id;
+              return (
+                <div key={tab.id} className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab(isOpen ? '' : tab.id)}
+                    aria-expanded={isOpen}
+                    aria-controls={`nurse-settings-panel-${tab.id}`}
+                    className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold transition-colors ${
+                      isOpen
+                        ? 'bg-maroon-800 text-white'
+                        : 'bg-white text-gray-600 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700/50'
+                    }`}
+                  >
+                    <span className="flex items-center gap-3">
+                      <tab.icon className="h-4 w-4 shrink-0" />
+                      <span>{tab.label}</span>
+                    </span>
+                    <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        id={`nurse-settings-panel-${tab.id}`}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                      >
+                        <div className="border-t border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                          {renderPanel(tab.id)}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
           </div>
-          <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
-            <span className="text-gray-500">Last Updated</span>
-            <span className="font-medium text-gray-700 dark:text-gray-200">{systemInfo.lastUpdated}</span>
-          </div>
-          <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
-            <span className="text-gray-500">Environment</span>
-            <span className="font-medium text-gray-700 dark:text-gray-200">{systemInfo.environment}</span>
-          </div>
-          <div className="flex justify-between py-2">
-            <span className="text-gray-500">Logged in as</span>
-            <span className="font-medium text-maroon-700 dark:text-maroon-400 capitalize">{user.role || 'Nurse'}</span>
+
+          {/* Tablet / desktop: vertical tab rail */}
+          <nav aria-label="Settings sections" className="hidden md:flex md:flex-col">
+            {SETTINGS_TABS.map((tab) => (
+              <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)}
+                aria-pressed={(activeTab || 'general') === tab.id}
+                className={`flex w-full items-center gap-3 rounded-lg border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold transition-colors last:border-b-0 dark:border-gray-700 ${
+                  activeTab === tab.id ? 'bg-maroon-800 text-white' : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700/50'
+                }`}>
+                <tab.icon className="h-4 w-4 shrink-0" />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+
+          {/* Tablet / desktop: panel */}
+          <div className="hidden min-w-0 md:block md:border-l md:border-gray-300 md:pl-5 dark:border-gray-600">
+            {/* All panels share one grid cell, so the card keeps the height
+                of the tallest panel and switching tabs never shrinks the
+                page (which made the scroll jump like a page change). */}
+            <div className="grid">
+              {SETTINGS_TABS.map((tab) => {
+                const shown = (activeTab || 'general') === tab.id;
+                return (
+                  <div
+                    key={tab.id}
+                    aria-hidden={!shown}
+                    className={`[grid-area:1/1] min-w-0 ${shown ? '' : 'invisible pointer-events-none'}`}
+                  >
+                    {renderPanel(tab.id)}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
-
-      <button
-        onClick={handleLogout}
-        className="w-full py-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-2xl font-semibold hover:bg-red-100 dark:hover:bg-red-900/30 transition flex items-center justify-center space-x-2"
-      >
-        <Shield className="w-4 h-4" />
-        <span>Sign Out</span>
-      </button>
 
       {showLogoutConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" role="presentation">
@@ -557,7 +700,7 @@ const NurseSettings = () => {
         </div>
       )}
 
-      <p className="text-center text-xs text-gray-400 pb-8">
+      <p className="pb-8 text-center text-xs text-gray-400">
         PUPBC CareLink v{systemInfo.version} • PUP Biñan Campus Clinic
       </p>
     </div>

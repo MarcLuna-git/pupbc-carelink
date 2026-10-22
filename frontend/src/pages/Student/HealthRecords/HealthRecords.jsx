@@ -17,12 +17,11 @@ import {
   Download,
   Printer,
   X,
-  RefreshCw,
-  AlertCircle,
-} from 'lucide-react';
+  } from 'lucide-react';
 import api from '../../../services/api';
 import StudentPageHero from '../../../components/StudentPageHero';
 import { DOCUMENTS, openRecordDocument } from './recordDocuments';
+import { StudentToast } from '../../../components/StudentFeedback';
 
 /*
  * ROUTE LOADING — same restored effect as the Settings / Profile pages,
@@ -497,14 +496,7 @@ const HealthRecords = () => {
     >
       <StudentPageHero {...RECORDS_HERO} />
 
-      {notice && (
-        <div role="alert" className="flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700 dark:border-red-800/30 dark:bg-red-900/20 dark:text-red-400">
-          <span className="flex items-center gap-2"><AlertCircle className="h-4 w-4 shrink-0" />{notice}</span>
-          <button type="button" onClick={() => setNotice('')} aria-label="Dismiss" className="rounded p-0.5 hover:bg-red-100 dark:hover:bg-red-900/30">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+      <StudentToast message={notice} type="error" onClose={() => setNotice('')} />
 
       {/* Summary stats */}
       <section aria-label="Record summary" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -630,7 +622,7 @@ const HealthRecords = () => {
         {error && (
           <div className="mb-4 flex flex-col items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-400 sm:flex-row">
             <span>{error}</span>
-            <button onClick={() => fetchRecords()} className="inline-flex items-center gap-2 rounded-md border border-red-300 px-3 py-2 font-semibold hover:bg-red-100 dark:border-red-700 dark:hover:bg-red-900/30"><RefreshCw className="h-4 w-4" /> Retry</button>
+            <button onClick={() => fetchRecords()} className="inline-flex items-center gap-2 rounded-md border border-red-300 px-3 py-2 font-semibold hover:bg-red-100 dark:border-red-700 dark:hover:bg-red-900/30">Retry</button>
           </div>
         )}
 

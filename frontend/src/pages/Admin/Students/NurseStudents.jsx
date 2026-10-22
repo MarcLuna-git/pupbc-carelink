@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Users } from 'lucide-react';
+import { Users, UsersRound, IdCard } from 'lucide-react';
+import NursePageHero from '../../../components/NursePageHero';
+import NurseListCard from '../../../components/NurseListCard';
 import api from '../../../services/api';
 import useNurseSync from '../../../hooks/useNurseSync';
 import { StudentDirectory, StudentFilters, Pagination } from './StudentDirectory';
@@ -117,13 +119,28 @@ export default function NurseStudents() {
   };
   const close = () => { setSelectedId(null); setEmergencyOpen(false); setEmergency(emptyEmergency); setDetailError(''); setEmergencyError(''); };
 
-  return <div className="mx-auto max-w-7xl space-y-5 text-gray-900 dark:text-gray-100">
-    <header className="flex flex-wrap items-center justify-between gap-4"><div><div className="mb-2 h-1 w-9 rounded-full bg-yellow-400" /><h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Students</h1><p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">Manage and view registered student records.</p></div><div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800"><span className="rounded-lg bg-maroon-50 p-2 text-maroon-800"><Users size={20} aria-hidden="true" /></span><div><p className="text-xs text-gray-500">{filtered ? 'Matching students' : 'Total students'}</p><p className="text-xl font-semibold tabular-nums" aria-live="polite">{loading || listError ? '—' : meta.total.toLocaleString()}</p></div></div></header>
-    <StudentFilters filters={filters} onChange={changeFilter} onClear={clearFilters} />
-    <section aria-label="Student directory" aria-busy={loading} className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-      <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-4 py-3 dark:border-gray-700"><h2 className="text-sm font-semibold">Student directory</h2><span className="text-xs text-gray-500">Last name, A–Z</span></div>
+  return <div className="mx-auto max-w-[1440px] space-y-5 text-gray-900 dark:text-gray-100">
+    <NursePageHero id="nurse-students-title" title="Students" description="Manage and view registered student records." art={Users}>
+      <div className="mt-4 inline-flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-700/50">
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-maroon-800 shadow-sm dark:bg-gray-800 dark:text-maroon-400"><UsersRound size={16} aria-hidden="true" /></span>
+        <div>
+          <p className="text-[11px] text-gray-500 dark:text-gray-400">{filtered ? 'Matching students' : 'Total students'}</p>
+          {loading
+            ? <span role="status" className="mt-1 block h-5 w-12 animate-pulse rounded-md bg-gray-200 dark:bg-gray-600"><span className="sr-only">Loading student count</span></span>
+            : <p className="text-lg font-bold leading-tight tabular-nums" aria-live="polite">{listError ? <span className="text-sm font-semibold text-gray-400">Unavailable</span> : meta.total.toLocaleString()}</p>}
+        </div>
+      </div>
+    </NursePageHero>
+    <NurseListCard
+      aria-label="Student directory"
+      aria-busy={loading}
+      icon={IdCard}
+      title="Student directory"
+      description="Registered students sorted by last name, A–Z. Open a student to see their health record."
+      toolbar={<StudentFilters embedded filters={filters} onChange={changeFilter} onClear={clearFilters} />}
+    >
       {listError ? <div role="alert" className="space-y-3 p-8 text-center"><p className="text-sm text-red-600">{listError}</p><button className={secondary} onClick={() => setListRefresh(value => value + 1)}>Try again</button></div> : <><StudentDirectory students={students} loading={loading} filtered={filtered} onClear={clearFilters} onView={id => { setSelectedId(id); setTab('Overview'); }} /><Pagination meta={meta} page={page} onPage={setPage} loading={loading} /></>}
-    </section>
+    </NurseListCard>
     {selectedId && <StudentDetailsModal student={selected} loading={detailLoading} error={detailError} appointments={appointments} history={history} tab={tab} onTab={setTab} onClose={close} emergencyOpen={emergencyOpen} onEmergency={() => { setEmergencyError(''); setEmergencyOpen(true); }} onArchive={archiveStudent} onRestore={restoreStudent} statusSaving={statusSaving} />}
     {emergencyOpen && selectedId && <EmergencyModal emergency={emergency} onChange={(field, value) => setEmergency(previous => ({ ...previous, [field]: value }))} onSubmit={submitEmergency} onClose={() => setEmergencyOpen(false)} saving={saving} error={emergencyError} />}
   </div>;

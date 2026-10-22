@@ -172,7 +172,7 @@ function UpcomingAppointment({ appointment, onView, onEdit }) {
     </div>
     <div className="ap-upcoming-content">
       <div className={`ap-upcoming-summary${hasAppointment ? ' is-clickable' : ''}`} {...clickable}>
-        <div className="ap-date-tile" aria-hidden={!date}><span>{date ? formatAppointmentDate(date, { month: 'short', year: undefined, day: undefined }).toUpperCase() : 'DATE'}</span><strong>{date ? date.slice(-2) : '—'}</strong><small>{date ? formatAppointmentDate(date, { weekday: 'short', day: undefined, month: undefined, year: undefined }) : '—'}</small></div>
+        <div className="ap-date-tile" aria-hidden={!date}><span>{date ? formatAppointmentDate(date, { month: 'short', year: undefined, day: undefined }).toUpperCase() : 'DATE'}</span><strong>{date ? date.slice(-2) : <span className="ap-date-placeholder is-day" />}</strong><small>{date ? formatAppointmentDate(date, { weekday: 'short', day: undefined, month: undefined, year: undefined }) : <span className="ap-date-placeholder is-weekday" />}</small></div>
         <div className="ap-upcoming-details"><Stethoscope /><div><strong>{hasAppointment ? serviceTitle(appointment.service) : 'No appointment yet'}</strong><small>{hasAppointment ? appointment.concern || 'Scheduled clinic visit' : 'Choose a date and service below'}</small></div><UserRound /><div><span>{hasAppointment ? providerName(appointment) : 'Not assigned'}</span><small>Clinic staff</small></div></div>
         <div className="ap-upcoming-place"><div><MapPin /><span><strong>{hasAppointment ? roomName(appointment) : 'Campus clinic'}</strong><small>{hasAppointment ? 'Campus clinic' : 'Room assigned on approval'}</small></span></div><div><Clock /><span><strong>{appointment?.time_slot || 'No time selected'}</strong><small>Asia/Manila</small></span></div></div>
         {/* State cell: only the live queue status. Left empty otherwise — never
@@ -377,7 +377,7 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
           {rows.map(appointment => {
             const date = appointmentDate(appointment.appointment_date);
             return <article key={appointment.id} className="ap-history-item">
-              <div className="ap-date-tile"><span>{date ? formatAppointmentDate(date, { month: 'short', year: undefined, day: undefined }).toUpperCase() : 'DATE'}</span><strong>{date ? date.slice(-2) : '—'}</strong><small>{date ? formatAppointmentDate(date, { weekday: 'short', day: undefined, month: undefined, year: undefined }) : '—'}</small></div>
+              <div className="ap-date-tile"><span>{date ? formatAppointmentDate(date, { month: 'short', year: undefined, day: undefined }).toUpperCase() : 'DATE'}</span><strong>{date ? date.slice(-2) : <span className="ap-date-placeholder is-day" />}</strong><small>{date ? formatAppointmentDate(date, { weekday: 'short', day: undefined, month: undefined, year: undefined }) : <span className="ap-date-placeholder is-weekday" />}</small></div>
               <div className="ap-history-info">
                 <strong>{serviceTitle(appointment.service)}</strong>
                 <p>{formatAppointmentDate(appointment.appointment_date)} · {appointment.time_slot || 'Time not set'}</p>

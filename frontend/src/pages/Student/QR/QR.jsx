@@ -35,6 +35,7 @@ import HealthProfileVerifyError from '../../../components/HealthProfileVerifyErr
 import { useStudentHealthProfileStatus } from '../../../hooks/useStudentHealthProfileStatus';
 import { formatPersonName } from '../../../utils/studentUser';
 import { escapeHtml } from '../../../utils/escapeHtml';
+import { StudentToast } from '../../../components/StudentFeedback';
 
 const formatDate = (value) => formatAppointmentDate(value, { month: 'long' });
 const formatDateWithWeekday = (value) =>
@@ -572,22 +573,7 @@ const QR = () => {
     >
       <StudentPageHero {...QR_HERO} />
 
-      {message && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          role={messageType === 'error' ? 'alert' : 'status'}
-          className={`rounded-xl border p-3 text-sm font-medium ${
-            messageType === 'error'
-              ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-800/30 dark:bg-red-900/20 dark:text-red-400'
-              : messageType === 'success'
-                ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-800/30 dark:bg-green-900/20 dark:text-green-400'
-                : 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800/30 dark:bg-blue-900/20 dark:text-blue-400'
-          }`}
-        >
-          {message}
-        </motion.div>
-      )}
+      <StudentToast message={message} type={messageType === 'error' ? 'error' : 'success'} onClose={() => setMessage('')} />
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         {/* Your QR Code */}

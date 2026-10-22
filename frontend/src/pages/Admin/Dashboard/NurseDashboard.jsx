@@ -1,15 +1,18 @@
 import { getToken, getUser } from '../../../services/session';
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { Users, Calendar, Clock, ClipboardList, QrCode, FileText, Bell, Activity, Stethoscope } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Users, Calendar, Clock, ClipboardList, Activity, LayoutDashboard, CalendarClock, CalendarCheck, CalendarRange, BellRing, ChevronRight } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
+import NursePageHero from '../../../components/NursePageHero';
+import NurseListCard, { CountChip } from '../../../components/NurseListCard';
+import ClinicCalendar from './ClinicCalendar';
 import { fetchNurseNotifications } from '../../../services/nurseNotifications';
 import useNurseSync from '../../../hooks/useNurseSync';
 
+const UPCOMING_ROWS = 3;
+
 const NurseDashboard = () => {
-  const navigate = useNavigate();
   const user = getUser('nurse');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -24,6 +27,7 @@ const NurseDashboard = () => {
   });
   const [todaySchedule, setTodaySchedule] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [upcoming, setUpcoming] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [notifCount, setNotifCount] = useState(0);
   const requests = useRef({ stats: 0, schedule: 0, activity: 0, notifications: 0 });
@@ -60,6 +64,10 @@ const NurseDashboard = () => {
           todayConsultations: data.today_consultations || data.todayConsultations || 0,
           completedConsultations: data.completed_consultations || data.completedConsultations || 0,
         });
+        // Approved visits after today (today's are in Today's Schedule).
+        const todayKey = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date());
+        const nextVisits = Array.isArray(data.upcoming_appointments) ? data.upcoming_appointments : [];
+        setUpcoming(nextVisits.filter(a => String(a.appointment_date).slice(0, 10) > todayKey).slice(0, UPCOMING_ROWS));
       }
     } catch (err) {
       console.log('Dashboard error:', err);
@@ -104,14 +112,22 @@ const NurseDashboard = () => {
       if (response.data.success) {
         const data = response.data.data;
         const activities = Array.isArray(data) ? data : (data?.data || []);
-        setRecentActivity(activities.slice(0, 5).map(a => ({
-          text: a.description || a.text || 'Activity',
-          time: formatTimeAgo(a.created_at),
-          type: a.type || 'info',
-        })));
+        // One feed of clinic events (bookings, approvals, check-ins, consultations…).
+        setRecentActivity(activities.slice(0, 3).map(a => {
+          const at = a.occurred_at || a.created_at;
+          return {
+            id: a.id,
+            text: a.title || a.description || a.text || 'Clinic activity',
+            detail: a.detail || a.chief_complaint || '',
+            time: formatTimeAgo(at),
+            exact: at ? new Date(at).toLocaleString('en-US', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '',
+            at,
+            type: a.tone || 'info',
+          };
+        }));
       }
     } catch (err) {
-      console.log('Notifications error:', err);
+      console.log('Recent activity error:', err);
     }
   };
 
@@ -123,8 +139,14 @@ const NurseDashboard = () => {
       if (response.data.success) {
         const data = response.data.data;
         const notifs = Array.isArray(data) ? data : (data?.data || []);
-        const unread = notifs.filter(n => !n.read).slice(0, 3);
-        setNotifications(unread.map(n => n.message || n.text || 'Notification'));
+        // The 4 newest notifications, read or not; unread ones are marked.
+        setNotifications(notifs.slice(0, 3).map(n => ({
+          id: n.id,
+          title: n.title || 'Notification',
+          message: n.message || n.text || '',
+          time: formatTimeAgo(n.created_at),
+          read: Boolean(n.read),
+        })));
         setNotifCount(Number(response.data.unread_count) || 0);
       }
     } catch (err) {
@@ -166,152 +188,180 @@ const NurseDashboard = () => {
     { icon: ClipboardList, title: 'Consultations', value: stats.todayConsultations, sub: `${stats.completedConsultations} completed today`, color: 'bg-purple-50 dark:bg-purple-900/20', iconColor: 'text-purple-600 dark:text-purple-400' },
   ];
 
-  const quickActions = [
-    { icon: QrCode, label: 'Scan QR', color: 'from-maroon-800 to-maroon-900', path: '/nurse/appointments' },
-    { icon: Calendar, label: 'Appointments', color: 'from-green-500 to-green-600', path: '/nurse/appointments' },
-    { icon: Users, label: 'Students', color: 'from-purple-500 to-purple-600', path: '/nurse/students' },
-    { icon: FileText, label: 'Records', color: 'from-orange-500 to-orange-600', path: '/nurse/records' },
-  ];
 
   if (loading) {
     return <NursePageSkeleton variant="dashboard" label="Loading dashboard" />;
   }
 
   return (
-    <div className="space-y-5">
+    <div className="mx-auto max-w-[1440px] space-y-5">
+      <NursePageHero
+        id="nurse-dashboard-title"
+        eyebrow={`${getGreeting()},`}
+        title={`Nurse ${user?.first_name || 'Head'}!`}
+        description="PUP Biñan Campus Clinic — here is what is happening in the clinic today."
+        art={LayoutDashboard}
+      >
+        {error && <p role="alert" className="mt-3 text-xs font-medium text-red-600 dark:text-red-400">{error}</p>}
+      </NursePageHero>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-maroon-800 to-maroon-900 dark:from-maroon-900 dark:to-maroon-950 rounded-3xl p-5 lg:p-6 text-white shadow-xl shadow-maroon-800/20">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-yellow-200/80 text-sm font-medium">{getGreeting()},</p>
-            <h1 className="text-2xl lg:text-3xl font-extrabold mt-1">Nurse {user.first_name || 'Head'}!</h1>
-            <p className="text-yellow-100/60 text-sm mt-2">PUP Biñan Campus Clinic</p>
-          </div>
-          <div className="hidden sm:flex w-16 h-16 lg:w-20 lg:h-20 bg-white/10 backdrop-blur-sm rounded-3xl border border-white/20 items-center justify-center">
-            <Stethoscope className="w-8 h-8 lg:w-10 lg:h-10 text-white" />
-          </div>
-        </div>
-        <div className="flex items-center space-x-4 mt-4 pt-4 border-t border-white/10">
-          <div className="flex items-center space-x-1.5">
-            <Activity className="w-4 h-4 text-yellow-300" />
-            <span className="text-xs text-yellow-200/80">On Duty</span>
-          </div>
-          {error && <span className="text-xs text-red-300">{error}</span>}
-        </div>
-      </motion.div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {summaryCards.map((card, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-            className="bg-white dark:bg-gray-800 rounded-3xl p-4 lg:p-5 border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-400 dark:text-gray-400">{card.title}</p>
-                <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mt-1">{card.value}</p>
-                <p className="text-xs text-gray-400 mt-1">{card.sub}</p>
-              </div>
-              <div className={`w-10 h-10 lg:w-12 lg:h-12 ${card.color} rounded-2xl flex items-center justify-center`}>
-                <card.icon className={`w-5 h-5 lg:w-6 lg:h-6 ${card.iconColor}`} />
-              </div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Clinic totals">
+        {summaryCards.map((card) => (
+          <div key={card.title} className="flex min-w-0 items-center gap-3 rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:gap-4 sm:p-5">
+            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${card.color}`}>
+              <card.icon className={`h-5 w-5 ${card.iconColor}`} aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-xs font-medium text-gray-500 dark:text-gray-400">{card.title}</p>
+              <p className="mt-0.5 text-2xl font-semibold tabular-nums text-gray-900 dark:text-white">{card.value}</p>
+              <p className="truncate text-[11px] text-gray-400">{card.sub}</p>
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="flex flex-col gap-5 lg:col-span-2">
+          <ClinicCalendar />
 
-        <div className="lg:col-span-2 space-y-5">
-
-          <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-gray-100 dark:border-gray-700">
-            <h3 className="font-bold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {quickActions.map((action, i) => (
-                <div key={i} onClick={() => navigate(action.path)}
-                  className="group flex flex-col items-center space-y-2 p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer">
-                  <div className={`w-10 h-10 bg-gradient-to-br ${action.color} rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
-                    <action.icon className="w-5 h-5 text-white" />
-                  </div>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300 text-center">{action.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-gray-100 dark:border-gray-700">
-            <h3 className="font-bold text-gray-900 dark:text-white mb-4">Today's Schedule</h3>
+          <NurseListCard
+            fill
+            aria-label="Today's schedule"
+            icon={CalendarClock}
+            title={<>Today&apos;s Schedule<CountChip>{todaySchedule.length}</CountChip></>}
+            description="Appointments booked for today, earliest time first."
+            actions={<Link to="/nurse/appointments" className="inline-flex items-center gap-1 text-sm font-semibold text-maroon-700 hover:text-maroon-900 dark:text-maroon-400">View all <ChevronRight className="h-4 w-4" /></Link>}
+          >
             {todaySchedule.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">No appointments for today.</p>
+              <div className="py-12 text-center">
+                <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-50 dark:bg-gray-700/50">
+                  <CalendarCheck className="h-7 w-7 text-gray-300 dark:text-gray-500" />
+                </span>
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">No appointments for today.</p>
+              </div>
             ) : (
-              <div className="divide-y divide-gray-100 dark:divide-gray-700">
+              <ul className="divide-y divide-gray-100 dark:divide-gray-700">
                 {todaySchedule.map((item, i) => (
-                  <div key={i} className="flex items-center space-x-4 py-3 first:pt-0 last:pb-0">
-                    <div className="w-16 text-xs font-bold text-gray-500 dark:text-gray-400">{item.time}</div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-gray-800 dark:text-white">{item.name}</p>
-                      <p className="text-xs text-gray-400">{item.concern}</p>
+                  <li key={i} className="flex items-center gap-4 px-4 py-3">
+                    <span className="w-20 shrink-0 text-xs font-bold text-gray-500 dark:text-gray-400">{item.time}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-gray-800 dark:text-white">{item.name}</p>
+                      <p className="truncate text-xs text-gray-400">{item.concern}</p>
                     </div>
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
                       item.status === 'confirmed' ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400'
                     }`}>{item.status}</span>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
-          </div>
+          </NurseListCard>
         </div>
 
-        <div className="space-y-5">
-
-          <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-gray-100 dark:border-gray-700">
-            <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
-              <Activity className="w-5 h-5 text-maroon-800 dark:text-maroon-400" />
-              <span>Recent Activity</span>
-            </h3>
-            {recentActivity.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-4">No recent activity.</p>
-            ) : (
-              <div className="space-y-3">
-                {recentActivity.map((item, i) => (
-                  <div key={i} className="flex items-start space-x-3">
-                    <div className={`w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0 ${item.type === 'success' ? 'bg-green-500' : 'bg-blue-500'}`}></div>
-                    <div>
-                      <p className="text-sm text-gray-700 dark:text-gray-200">{item.text}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{item.time}</p>
+        <div className="flex flex-col gap-5">
+          <NurseListCard
+            aria-label="Upcoming schedule"
+            icon={CalendarRange}
+            title={<>Upcoming Schedule<CountChip>{upcoming.length}</CountChip></>}
+            description={upcoming.length ? 'Next approved visits after today.' : 'No approved visits after today yet.'}
+            actions={<Link to="/nurse/appointments" className="inline-flex items-center gap-1 text-sm font-semibold text-maroon-700 hover:text-maroon-900 dark:text-maroon-400">View all <ChevronRight className="h-4 w-4" /></Link>}
+          >
+            {(
+              <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+                {upcoming.map((visit) => {
+                  const date = new Date(`${String(visit.appointment_date).slice(0, 10)}T00:00:00`);
+                  return (
+                    <li key={visit.id}>
+                      <Link to="/nurse/appointments" className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/40">
+                        <span className="flex w-11 shrink-0 flex-col items-center rounded-lg bg-maroon-50 py-1 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-300">
+                          <span className="text-[10px] font-bold uppercase leading-tight">{date.toLocaleDateString('en-US', { month: 'short' })}</span>
+                          <span className="text-base font-bold leading-tight">{date.getDate()}</span>
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">{[visit.user?.first_name, visit.user?.last_name].filter(Boolean).join(' ') || 'Student'}</p>
+                          <p className="truncate text-xs text-gray-500 dark:text-gray-400">{visit.service || 'Clinic visit'}</p>
+                          <p className="text-xs text-gray-400">{date.toLocaleDateString('en-US', { weekday: 'short' })} · {visit.time_slot}</p>
+                        </div>
+                      </Link>
+                    </li>
+                  );
+                })}
+                {/* Empty slots keep the card at a steady size: gray placeholder rows. */}
+                {Array.from({ length: UPCOMING_ROWS - upcoming.length }, (_, i) => (
+                  <li key={`placeholder-${i}`} className="flex items-center gap-3 px-4 py-2.5" aria-hidden="true">
+                    <span className="h-[42px] w-11 shrink-0 rounded-lg bg-gray-100 dark:bg-gray-700/60" />
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <span className="block h-3 w-2/3 rounded bg-gray-100 dark:bg-gray-700/60" />
+                      <span className="block h-2.5 w-1/2 rounded bg-gray-100 dark:bg-gray-700/60" />
+                      <span className="block h-2.5 w-1/3 rounded bg-gray-100 dark:bg-gray-700/60" />
                     </div>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
-          </div>
+            {upcoming.length === 0 && <p className="sr-only">No upcoming visits.</p>}
+          </NurseListCard>
 
-          <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-gray-100 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-gray-900 dark:text-white flex items-center space-x-2">
-                <Bell className="w-5 h-5 text-maroon-800 dark:text-maroon-400" />
-                <span>Notifications</span>
-              </h3>
-              {notifCount > 0 && (
-                <span className="w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{notifCount}</span>
-              )}
-            </div>
+          <NurseListCard
+            aria-label="Unread notifications"
+            icon={BellRing}
+            title={<>Notifications{notifCount > 0 && <span className="min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-bold leading-4 text-white">{notifCount}</span>}</>}
+            description="Latest clinic updates. Unread ones have a dot."
+            actions={<Link to="/nurse/notifications" className="inline-flex items-center gap-1 text-sm font-semibold text-maroon-700 hover:text-maroon-900 dark:text-maroon-400">View all <ChevronRight className="h-4 w-4" /></Link>}
+          >
             {notifications.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-4">No new notifications.</p>
+              <div className="px-4 py-10 text-center"><p className="text-sm font-medium text-gray-500 dark:text-gray-400">No notifications yet.</p><p className="mt-1 text-xs text-gray-400">New bookings and clinic alerts will show up here.</p></div>
             ) : (
-              <div className="space-y-2">
-                {notifications.map((text, i) => (
-                  <div key={i} className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300">
-                    <span className="w-1.5 h-1.5 bg-maroon-500 rounded-full flex-shrink-0"></span>
-                    <span>{text}</span>
-                  </div>
+              <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+                {notifications.map((item) => (
+                  <li key={item.id}>
+                    <Link to="/nurse/notifications" className="flex items-start gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/40">
+                      <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${item.read ? 'bg-gray-300 dark:bg-gray-600' : 'bg-maroon-600'}`} aria-label={item.read ? undefined : 'Unread'} />
+                      <div className="min-w-0 flex-1">
+                        <p className={`truncate text-sm ${item.read ? 'font-medium text-gray-600 dark:text-gray-300' : 'font-semibold text-gray-900 dark:text-white'}`}>{item.title}</p>
+                        {item.message && <p className="mt-0.5 line-clamp-1 text-xs text-gray-500 dark:text-gray-400">{item.message}</p>}
+                        <p className="mt-0.5 text-xs text-gray-400">{item.time}</p>
+                      </div>
+                    </Link>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
-          </div>
+          </NurseListCard>
 
+          <NurseListCard
+            fill
+            aria-label="Recent activity"
+            icon={Activity}
+            title="Recent Activity"
+            description="Latest bookings, approvals, and visits."
+          >
+            {recentActivity.length === 0 ? (
+              <div className="px-4 py-10 text-center"><p className="text-sm font-medium text-gray-500 dark:text-gray-400">No recent activity.</p><p className="mt-1 text-xs text-gray-400">Bookings, check-ins, and consultations will show up here.</p></div>
+            ) : (
+              /* Rows share any spare height so the panel never ends in a blank gap. */
+              <ul className="flex flex-1 flex-col divide-y divide-gray-100 dark:divide-gray-700">
+                {recentActivity.map((item, i) => (
+                  <li key={item.id || i} className="flex flex-1 items-center gap-3 px-4 py-2.5">
+                    <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
+                      { success: 'bg-green-500', warning: 'bg-orange-500', danger: 'bg-red-500' }[item.type] || 'bg-blue-500'
+                    }`} />
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-2 text-sm font-medium text-gray-800 dark:text-gray-100">{item.text}</p>
+                      {item.detail && <p className="mt-0.5 line-clamp-1 text-xs text-gray-500 dark:text-gray-400">{item.detail}</p>}
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-1 text-xs text-gray-400">
+                        <Clock className="h-3 w-3" aria-hidden="true" />
+                        <time dateTime={item.at} title={item.exact}>{item.time}</time>
+                        {item.exact && <span>· {item.exact}</span>}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </NurseListCard>
         </div>
       </div>
-
     </div>
   );
 };

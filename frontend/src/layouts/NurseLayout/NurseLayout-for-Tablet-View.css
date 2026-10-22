@@ -1,0 +1,87 @@
+/*
+ * Tablet / desktop outer shell styles for the Nurse portal (viewport >= 768px).
+ *
+ * The shared chrome (shell root, sidebar, header, main) lives in
+ * NurseLayout-for-Desktop-View.css; this file owns the collapsible sidebar,
+ * the pull-tab toggle, the fixed frame and the scroll container.
+ */
+
+.nurse-sidebar { transition:width .28s ease; }
+.nurse-shell-body { transition:margin-left .28s ease; }
+.nurse-header { transition:left .28s ease; }
+
+/*
+ * Icons stay on one vertical axis (38px from the sidebar edge, the folded
+ * rail's center line) in both states; only the text folds away.
+ */
+.nurse-sidebar-nav { padding:14px 12px;overflow-x:hidden;overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none; }
+.nurse-sidebar-nav::-webkit-scrollbar { display:none; }
+.nurse-nav-link { padding-left:16px; }
+.nurse-sidebar-brand { padding:20px 18px 20px 21px; }
+.nurse-nav-label { white-space:nowrap;overflow:hidden;max-width:200px;opacity:1;transition:max-width .28s ease,opacity .18s ease; }
+.nurse-sidebar .nurse-account-button { padding-left:9px; }
+.nurse-sidebar :is(.nurse-account-caption) { max-width:200px;opacity:1;transition:max-width .28s ease,opacity .18s ease; }
+.nurse-sidebar-brand a>div { white-space:nowrap;overflow:hidden;max-width:200px;opacity:1;transition:max-width .28s ease,opacity .18s ease; }
+.nurse-sidebar-campus { transition:opacity .28s ease; }
+
+/* Pull tab: flush against the sidebar's right edge, same maroon (or gray in
+   dark mode) as the sidebar so the two read as one shape. */
+.nurse-sidebar-toggle {
+  position:fixed;top:40px;left:var(--np-sidebar);z-index:45;
+  transform:translateY(-50%);
+  display:flex;align-items:center;justify-content:center;
+  width:22px;height:52px;
+  border:0;border-radius:0 10px 10px 0;
+  background:#7e0000;color:#ffffffcc;
+  box-shadow:2px 2px 10px #66000026;cursor:pointer;
+  transition:left .28s ease,color .15s ease;
+}
+.dark .nurse-sidebar-toggle { background:#1f2937;color:#9ca3af;box-shadow:2px 2px 10px #0000004d; }
+.nurse-sidebar-toggle svg { width:15px;height:15px; }
+.nurse-sidebar-toggle:hover { color:#fff; }
+
+.nurse-sidebar.is-collapsed { width:76px; }
+.nurse-sidebar.is-collapsed ~ .nurse-sidebar-toggle { left:76px; }
+.nurse-sidebar.is-collapsed ~ .nurse-shell-body { margin-left:76px; }
+.nurse-sidebar.is-collapsed ~ .nurse-shell-body .nurse-header { left:76px; }
+.nurse-sidebar.is-collapsed .nurse-sidebar-brand a>div { max-width:0;opacity:0; }
+.nurse-sidebar.is-collapsed .nurse-sidebar-campus { opacity:0; }
+.nurse-sidebar.is-collapsed .nurse-nav-label { max-width:0;opacity:0; }
+/* Unread count becomes a dot on the bell icon in the folded rail. */
+.nurse-sidebar.is-collapsed .nurse-nav-count { position:absolute;top:6px;left:34px;min-width:16px;height:16px;padding:0 4px;font-size:9px;line-height:16px; }
+.nurse-sidebar.is-collapsed .nurse-account-caption { max-width:0;opacity:0;overflow:hidden; }
+.nurse-sidebar.is-collapsed .nurse-account-button { gap:0;border-color:transparent;background:transparent; }
+
+@media (min-width:768px) and (max-width:1099px) {
+  .nurse-header-inner { padding:0 18px 0 40px;gap:10px; }
+}
+
+/*
+ * The frame is pinned to the viewport and the shell body is the scroll
+ * container, sitting below the fixed header so its scrollbar never runs
+ * behind it. Only where this shell exists (>= 768px).
+ */
+@media (min-width:768px) {
+  html:has(.nurse-shell),
+  body:has(.nurse-shell) { overflow:hidden; }
+  .nurse-shell { display:flow-root;position:fixed;inset:0;min-height:0;overflow:clip; }
+  .nurse-shell-body {
+    min-height:0;
+    height:calc(100dvh - var(--np-header-height));
+    margin-top:var(--np-header-height);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    scrollbar-width:thin;
+    scrollbar-color:#c9bfc2 transparent;
+  }
+  .nurse-main { min-height:100%;padding-top:20px; }
+  /* Clear the pull tab that sits over the header's left edge. */
+  .nurse-header-inner { padding-left:40px; }
+  .nurse-shell-body::-webkit-scrollbar { width:10px; }
+  .nurse-shell-body::-webkit-scrollbar-track { background:transparent; }
+  .nurse-shell-body::-webkit-scrollbar-thumb { background-color:#c9bfc2;border-radius:8px;border:3px solid transparent;background-clip:content-box; }
+  .nurse-shell-body::-webkit-scrollbar-thumb:hover { background-color:#ab9ea2; }
+  .dark .nurse-shell-body { scrollbar-color:#374151 transparent; }
+  .dark .nurse-shell-body::-webkit-scrollbar-thumb { background-color:#374151; }
+  .dark .nurse-shell-body::-webkit-scrollbar-thumb:hover { background-color:#4b5563; }
+}

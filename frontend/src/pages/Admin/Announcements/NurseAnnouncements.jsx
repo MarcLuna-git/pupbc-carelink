@@ -1,10 +1,12 @@
 import { getToken } from '../../../services/session';
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Megaphone, Plus, Trash2, Edit2, Loader2, X, Send, Search } from 'lucide-react';
+import { Megaphone, SquarePen, FilePenLine, Newspaper, ScrollText, Trash2, Edit2, Loader2, X, Send, Search, ChevronDown } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
+import NursePageHero from '../../../components/NursePageHero';
+import NurseListCard, { CountChip } from '../../../components/NurseListCard';
 import useNurseSync from '../../../hooks/useNurseSync';
+import { NurseToast } from '../../../components/NurseFeedback';
 
 const NurseAnnouncements = () => {
   const [announcements, setAnnouncements] = useState([]);
@@ -19,6 +21,7 @@ const NurseAnnouncements = () => {
   const [search, setSearch] = useState('');
   const [editVersion, setEditVersion] = useState(null);
   const requestId = useRef(0);
+  const composerRef = useRef(null);
   useNurseSync(['announcements'], () => fetchAnnouncements());
 
   const fetchAnnouncements = async () => {
@@ -124,99 +127,157 @@ const NurseAnnouncements = () => {
 
   const categories = ['General', 'Clinic Advisory', 'Health Advisory', 'School Events', 'Emergency'];
 
+  // Editing a post lower in the list brings the composer card into view.
+  useEffect(() => {
+    if (editingId) composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [editingId]);
+
   if (loading) {
     return <NursePageSkeleton label="Loading announcements" />;
   }
 
+  const resetComposer = () => { setEditingId(null); setForm({ title: '', content: '', category: 'General' }); };
+  const hasDraft = Boolean(form.title || form.content);
+  const inputClass = 'w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white';
+  const labelClass = 'mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400';
+  const formatDate = (value) => value ? new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+
   return (
-    <div className="space-y-5 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Announcements</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Post clinic and school announcements</p>
-        </div>
-        <button onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ title: '', content: '', category: 'General' }); }}
-          className={`flex items-center space-x-2 px-5 py-2.5 rounded-2xl font-semibold text-sm transition ${
-            showForm ? 'bg-gray-200 dark:bg-gray-700' : 'bg-maroon-800 text-white shadow-lg hover:bg-maroon-900'
-          }`}>
-          {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-          <span>{showForm ? 'Cancel' : 'New Post'}</span>
-        </button>
-      </div>
+    <div className="mx-auto max-w-[1440px] space-y-5">
+      <NursePageHero
+        id="nurse-announcements-title"
+        title="Announcements"
+        description="Post clinic and school announcements for students."
+        art={Megaphone}
+      />
 
-      {message && (
-        <div className={`p-3 rounded-2xl text-sm text-center ${messageType === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'}`} role="status">{message}</div>
-      )}
+      {/* Action results show as a floating toast */}
+      <NurseToast message={message} type={messageType} onClose={() => setMessage('')} />
 
-      <AnimatePresence>
-        {showForm && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-            className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-6 overflow-hidden">
-            <h3 className="font-bold text-gray-900 dark:text-white mb-4">{editingId ? 'Edit Announcement' : 'New Announcement'}</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Composer: a permanent card with its own heading. */}
+      <section
+        ref={composerRef}
+        aria-labelledby="announcement-composer-title"
+        className={`scroll-mt-4 overflow-hidden rounded-lg border bg-white dark:bg-gray-800 ${
+          editingId ? 'border-maroon-200 dark:border-maroon-900/50' : 'border-gray-100 dark:border-gray-700'
+        }`}
+      >
+        <header className="flex items-start gap-3 border-b border-gray-100 px-4 py-4 dark:border-gray-700 lg:px-6">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-maroon-50 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-400">
+            {editingId ? <FilePenLine className="h-5 w-5" /> : <SquarePen className="h-5 w-5" />}
+          </span>
+          <div className="min-w-0">
+            <h2 id="announcement-composer-title" className="font-bold text-gray-900 dark:text-white">
+              {editingId ? 'Edit Announcement' : 'Create Announcement'}
+            </h2>
+            <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+              {editingId
+                ? 'Update the details below, then save. Students will see the new version.'
+                : 'Write a clinic or school update. Posted announcements are shown to all students.'}
+            </p>
+          </div>
+        </header>
+          <form onSubmit={handleSubmit} className="space-y-4 p-4 lg:p-6">
+            <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_240px]">
               <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1.5">Title *</label>
-                <input className="w-full border rounded-2xl px-4 py-3 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:ring-2 focus:ring-maroon-500"
-                  value={form.title} onChange={(e) => setForm({...form, title: e.target.value})} required />
+                <label className={labelClass}>Title *</label>
+                <input className={inputClass} value={form.title} onChange={(e) => setForm({...form, title: e.target.value})} required />
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1.5">Content *</label>
-                <textarea className="w-full border rounded-2xl px-4 py-3 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:ring-2 focus:ring-maroon-500" rows={4}
-                  value={form.content} onChange={(e) => setForm({...form, content: e.target.value})} required />
-              </div>
-              <div>
-                  <label className="text-xs font-semibold text-gray-500 block mb-1.5">Category</label>
-                  <select className="w-full border rounded-2xl px-4 py-3 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                    value={form.category} onChange={(e) => setForm({...form, category: e.target.value})}>
+                <label className={labelClass}>Category</label>
+                <div className="relative">
+                  <select className={`${inputClass} cursor-pointer appearance-none pr-10`} value={form.category} onChange={(e) => setForm({...form, category: e.target.value})}>
                     {categories.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
-              </div>
-              <button type="submit" disabled={saving}
-                className="w-full py-3 bg-maroon-800 text-white font-semibold rounded-2xl hover:bg-maroon-900 transition flex items-center justify-center space-x-2 disabled:opacity-60">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                <span>{saving ? 'Saving...' : editingId ? 'Update' : 'Post'} Announcement</span>
-              </button>
-            </form>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input className="w-full border rounded-2xl pl-10 pr-4 py-2.5 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
-          value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search announcements..." />
-      </div>
-
-      <div className="space-y-3">
-        {filtered.length === 0 ? (
-          <div className="text-center py-12 text-gray-400">
-            <Megaphone className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p>No announcements yet.</p>
-          </div>
-        ) : (
-          filtered.map(ann => (
-            <div key={ann.id} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">{ann.title}</h3>
-                  <p className="text-sm text-gray-500 mt-1 line-clamp-2">{ann.content}</p>
-                  <div className="flex gap-2 mt-2">
-                    <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">{ann.category}</span>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-1 ml-4">
-                  <button onClick={() => handleEdit(ann)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-400 hover:text-blue-500">
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => handleDelete(ann.id)} disabled={deletingId === ann.id} aria-label="Delete announcement" className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-400 hover:text-red-500 disabled:opacity-50">
-                    {deletingId === ann.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                  </button>
+                  <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 </div>
               </div>
             </div>
-          ))
-        )}
-      </div>
+            <div>
+              <label className={labelClass}>Content *</label>
+              <textarea className={inputClass} rows={4} value={form.content} onChange={(e) => setForm({...form, content: e.target.value})} required />
+            </div>
+            <div className="flex flex-wrap justify-end gap-2">
+              {(editingId || hasDraft) && (
+                <button type="button" onClick={resetComposer}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50">
+                  <X className="h-4 w-4" />
+                  {editingId ? 'Cancel edit' : 'Clear'}
+                </button>
+              )}
+              <button type="submit" disabled={saving}
+                className="inline-flex items-center gap-2 rounded-lg bg-maroon-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900 disabled:opacity-60">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                <span>{saving ? 'Saving...' : editingId ? 'Update' : 'Post'} Announcement</span>
+              </button>
+            </div>
+          </form>
+      </section>
+
+      {/* List card: its own heading, search, and the posts in a nested panel. */}
+      <NurseListCard
+        aria-label="Announcement list"
+        icon={Newspaper}
+        title={<>Posted announcements<CountChip>{announcements.length}</CountChip></>}
+        description="Everything students can currently see. Edit a post to update it, or remove it."
+        toolbar={
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="search"
+              className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search announcements..."
+              aria-label="Search announcements"
+            />
+          </div>
+        }
+      >
+        <div className="p-3 sm:p-4">
+          {filtered.length === 0 ? (
+            <div className="py-14 text-center">
+              <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-50 dark:bg-gray-700/50">
+                <Newspaper className="h-8 w-8 text-gray-300 dark:text-gray-500" />
+              </span>
+              <h3 className="text-base font-semibold text-gray-600 dark:text-gray-300">{search ? 'No announcements match your search.' : 'No announcements yet.'}</h3>
+              <p className="mt-1 text-sm text-gray-400">{search ? 'Try a different keyword.' : 'Posts you create will appear here.'}</p>
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {filtered.map(ann => (
+                <li key={ann.id} className={`flex items-start gap-3 rounded-lg border p-4 transition-colors ${
+                  editingId === ann.id
+                    ? 'border-maroon-200 bg-maroon-50/50 dark:border-maroon-900/40 dark:bg-maroon-900/10'
+                    : 'border-gray-100 bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700/40'
+                }`}>
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-maroon-50 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-400">
+                    <ScrollText className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="break-words font-semibold text-gray-900 dark:text-white">{ann.title}</h3>
+                    <p className="mt-1 line-clamp-2 break-words text-sm text-gray-500 dark:text-gray-400">{ann.content}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">{ann.category || 'General'}</span>
+                      {ann.created_at && <span className="text-gray-400">{formatDate(ann.created_at)}</span>}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button type="button" onClick={() => handleEdit(ann)} aria-label="Edit announcement"
+                      className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-maroon-700 dark:hover:bg-gray-700 dark:hover:text-maroon-400">
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                    <button type="button" onClick={() => handleDelete(ann.id)} disabled={deletingId === ann.id} aria-label="Delete announcement"
+                      className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-900/20">
+                      {deletingId === ann.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </NurseListCard>
     </div>
   );
 };

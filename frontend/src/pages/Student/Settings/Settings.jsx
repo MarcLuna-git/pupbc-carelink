@@ -8,6 +8,7 @@ import useStudentWidgetPrefs from '../../../hooks/useStudentWidgetPrefs';
 import { readDarkMode, saveDarkMode } from '../../../hooks/useAccountTheme';
 import StudentPageHero from '../../../components/StudentPageHero';
 import { fetchDevTools, updateTimeGuardBypass, useTimeGuardBypass } from '../../../services/devTools';
+import { StudentToast } from '../../../components/StudentFeedback';
 
 // Same hero as the other Student pages (aurora + tab icon).
 const SETTINGS_HERO = {
@@ -650,14 +651,7 @@ const Settings = () => {
 
       <StudentPageHero {...SETTINGS_HERO} />
 
-      {message && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-          className={`p-3 rounded-lg text-sm font-medium text-center ${
-            messageType === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-          }`}>
-          {message}
-        </motion.div>
-      )}
+      <StudentToast message={message} type={messageType} onClose={() => setMessage('')} />
 
       {/* LOADED PHASE — the real tabs and panels fade in once route loading completes. */}
       <motion.div

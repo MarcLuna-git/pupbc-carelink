@@ -19,10 +19,49 @@ import {
   GraduationCap,
   Siren,
   Loader2,
-  RefreshCw,
   Stethoscope,
+  BellDot,
+  CheckCheck,
 } from 'lucide-react';
 import api from '../../../services/api';
+import { StudentToast } from '../../../components/StudentFeedback';
+import StudentPageHero from '../../../components/StudentPageHero';
+
+const CARD = 'rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)]';
+
+const ALERTS_HERO = {
+  id: 'alerts-title',
+  title: 'Alerts',
+  art: Bell,
+  description: 'Your clinic notifications and announcements in one inbox.',
+  benefits: [
+    { icon: Bell, label: 'Appointment and visit updates' },
+    { icon: Megaphone, label: 'Clinic advisories and news' },
+    { icon: CheckCheck, label: 'Stay on top of what needs you' },
+  ],
+};
+
+// Stacked and compact on phones (three across), side-by-side icon + text from sm up
+const StatCard = ({ icon: Icon, label, value, hint }) => (
+  <div className={`${CARD} flex flex-col items-center gap-2 p-3 text-center sm:flex-row sm:gap-4 sm:p-4 sm:text-left lg:p-5`}>
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-maroon-50 text-maroon-700 dark:bg-maroon-900/30 dark:text-maroon-300 sm:h-12 sm:w-12">
+      <Icon className="h-[18px] w-[18px] sm:h-6 sm:w-6" />
+    </div>
+    <div className="min-w-0 max-w-full">
+      <p className="truncate text-[11px] font-medium text-gray-700 dark:text-gray-300 sm:text-sm">{label}</p>
+      <p className="truncate text-xl font-bold text-maroon-800 dark:text-maroon-300 sm:text-2xl">{value}</p>
+      <p className="hidden truncate text-xs text-gray-500 dark:text-gray-400 sm:block">{hint}</p>
+    </div>
+  </div>
+);
+
+const EmptyState = ({ icon: Icon, title, text }) => (
+  <div className="rounded-xl border border-dashed border-[var(--sp-border)] py-14 text-center">
+    <Icon className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
+    <h3 className="font-semibold text-gray-600 dark:text-gray-300">{title}</h3>
+    <p className="mx-auto mt-1 max-w-xs text-sm text-gray-400">{text}</p>
+  </div>
+);
 
 const Skeleton = ({ className = '' }) => (
   <div
@@ -223,6 +262,8 @@ const Alerts = () => {
 
   const [error, setError] =
     useState('');
+  const [actionError, setActionError] = useState('');
+  const [notifFilter, setNotifFilter] = useState('all');
 
   const emitUnreadUpdate =
     useCallback((count) => {
@@ -527,7 +568,7 @@ const Alerts = () => {
           err
         );
 
-        setError(
+        setActionError(
           err?.response?.data
             ?.message ||
             'Unable to mark notification as read.'
@@ -618,7 +659,7 @@ const Alerts = () => {
           err
         );
 
-        setError(
+        setActionError(
           err?.response?.data
             ?.message ||
             'Unable to mark all notifications as read.'
@@ -723,7 +764,7 @@ const Alerts = () => {
         err
       );
 
-      setError(
+      setActionError(
         err?.response?.data
           ?.message ||
           'Unable to delete notification.'
@@ -733,427 +774,273 @@ const Alerts = () => {
     }
   };
 
-  const typeIcons = {
-    success: (
-      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-    ),
-
-    info: (
-      <AlertCircle className="w-4 h-4 text-blue-500 flex-shrink-0" />
-    ),
-
-    warning: (
-      <Clock className="w-4 h-4 text-yellow-500 flex-shrink-0" />
-    ),
-
-    error: (
-      <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-    ),
-
-    reminder: (
-      <Clock className="w-4 h-4 text-orange-500 flex-shrink-0" />
-    ),
-
-    appointment: (
-      <Calendar className="w-4 h-4 text-green-500 flex-shrink-0" />
-    ),
-
-    consultation: (
-      <Stethoscope className="w-4 h-4 text-blue-500 flex-shrink-0" />
-    ),
+  /* Icon + tile colour per notification type / announcement category */
+  const typeStyles = {
+    success: { icon: CheckCircle, tile: 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400' },
+    info: { icon: AlertCircle, tile: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' },
+    warning: { icon: Clock, tile: 'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' },
+    error: { icon: XCircle, tile: 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400' },
+    reminder: { icon: Clock, tile: 'bg-orange-50 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' },
+    appointment: { icon: Calendar, tile: 'bg-maroon-50 text-maroon-700 dark:bg-maroon-900/30 dark:text-maroon-300' },
+    consultation: { icon: Stethoscope, tile: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' },
   };
 
-  const categoryIcons = {
-    'Clinic Advisory': (
-      <Heart className="w-4 h-4 text-blue-500 flex-shrink-0" />
-    ),
-
-    'Health Advisory': (
-      <Heart className="w-4 h-4 text-green-500 flex-shrink-0" />
-    ),
-
-    'School Events': (
-      <GraduationCap className="w-4 h-4 text-purple-500 flex-shrink-0" />
-    ),
-
-    Emergency: (
-      <Siren className="w-4 h-4 text-red-500 flex-shrink-0" />
-    ),
-
-    General: (
-      <Megaphone className="w-4 h-4 text-gray-500 flex-shrink-0" />
-    ),
+  const categoryStyles = {
+    'Clinic Advisory': { icon: Heart, tile: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' },
+    'Health Advisory': { icon: Heart, tile: 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400' },
+    'School Events': { icon: GraduationCap, tile: 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' },
+    Emergency: { icon: Siren, tile: 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400' },
+    General: { icon: Megaphone, tile: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300' },
   };
+
+  const visibleNotifications = notifFilter === 'unread'
+    ? notifications.filter((notification) => !notification.read)
+    : notifications;
+
+  // Split into "Today" and "Earlier" so the inbox reads like a timeline
+  const todayKey = new Date().toDateString();
+  const notificationGroups = [
+    { label: 'Today', items: visibleNotifications.filter((n) => new Date(n.date).toDateString() === todayKey) },
+    { label: 'Earlier', items: visibleNotifications.filter((n) => new Date(n.date).toDateString() !== todayKey) },
+  ].filter((group) => group.items.length > 0);
 
   if (loading) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto space-y-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <Skeleton className="h-7 w-20 mb-1.5" />
-            <Skeleton className="h-4 w-32" />
-          </div>
+      <div className="w-full min-w-0 space-y-3">
+        <StudentPageHero {...ALERTS_HERO} loading />
 
-          <Skeleton className="h-10 w-10 rounded-xl" />
-        </div>
-
-        <div className="flex gap-2">
-          <Skeleton className="h-10 w-36 rounded-xl" />
-          <Skeleton className="h-10 w-36 rounded-xl" />
-        </div>
-
-        <div className="space-y-3">
-          {[1, 2, 3, 4].map(
-            (item) => (
-              <div
-                key={item}
-                className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4"
-              >
-                <div className="flex items-start gap-3">
-                  <Skeleton className="w-10 h-10 rounded-xl flex-shrink-0" />
-
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-48" />
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-3 w-20" />
-                  </div>
-                </div>
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          {[0, 1, 2].map((key) => (
+            <div key={key} className={`${CARD} flex flex-col items-center gap-2 p-3 sm:flex-row sm:gap-4 sm:p-4 lg:p-5`}>
+              <Skeleton className="h-9 w-9 shrink-0 rounded-xl sm:h-12 sm:w-12" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-3.5 w-28 max-w-full" />
+                <Skeleton className="h-6 w-12" />
               </div>
-            )
-          )}
+            </div>
+          ))}
+        </div>
+
+        <div className={`${CARD} space-y-4 p-4 lg:p-6`}>
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-40 rounded-xl" />
+            <Skeleton className="h-10 w-40 rounded-xl" />
+          </div>
+          {[0, 1, 2, 3].map((key) => (
+            <div key={key} className="flex items-start gap-3">
+              <Skeleton className="h-10 w-10 shrink-0 rounded-xl" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-48 max-w-full" />
+                <Skeleton className="h-3 w-full" />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto space-y-5 pb-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-            Alerts
-          </h1>
+    <div className="w-full min-w-0 space-y-3">
+      <StudentPageHero {...ALERTS_HERO} />
 
-          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            {tab ===
-            'notifications'
-              ? `${unreadCount} unread notification${
-                  unreadCount !== 1
-                    ? 's'
-                    : ''
-                }`
-              : `${announcements.length} announcement${
-                  announcements.length !==
-                  1
-                    ? 's'
-                    : ''
-                }`}
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() =>
-            fetchAll(true)
-          }
-          disabled={refreshing}
-          className="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-400 disabled:opacity-50"
-          title="Refresh alerts"
-        >
-          {refreshing ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <RefreshCw className="w-4 h-4" />
-          )}
-        </button>
-      </div>
+      <StudentToast message={actionError} type="error" onClose={() => setActionError('')} />
 
       {error && (
-        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 text-red-700 dark:text-red-400 rounded-2xl text-sm text-center">
-          {error}
+        <div className="flex flex-col items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-400 sm:flex-row">
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => fetchAll(true)}
+            className="inline-flex items-center gap-2 rounded-md border border-red-300 px-3 py-2 font-semibold hover:bg-red-100 dark:border-red-700 dark:hover:bg-red-900/30"
+          >
+            Retry
+          </button>
         </div>
       )}
 
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() =>
-            setTab(
-              'notifications'
-            )
-          }
-          className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-            tab ===
-            'notifications'
-              ? 'bg-maroon-800 text-white shadow-md'
-              : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
-          }`}
-        >
-          <Bell className="w-4 h-4" />
+      {/* Summary */}
+      <section aria-label="Alerts summary" className="grid grid-cols-3 gap-2 sm:gap-3">
+        <StatCard icon={BellDot} label="Unread" value={unreadCount} hint={unreadCount ? 'Waiting for you' : "You're all caught up"} />
+        <StatCard icon={Bell} label="Notifications" value={notifications.length} hint="Appointments and visits" />
+        <StatCard icon={Megaphone} label="Announcements" value={announcements.length} hint="From the clinic" />
+      </section>
 
-          <span>
-            Notifications
-            {unreadCount > 0 &&
-              ` (${unreadCount})`}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() =>
-            setTab(
-              'announcements'
-            )
-          }
-          className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-            tab ===
-            'announcements'
-              ? 'bg-maroon-800 text-white shadow-md'
-              : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
-          }`}
-        >
-          <Megaphone className="w-4 h-4" />
-
-          <span>
-            Announcements
-          </span>
-        </button>
-      </div>
-
-      {tab ===
-        'notifications' && (
-        <div className="space-y-2">
-          {unreadCount > 0 && (
-            <button
-              type="button"
-              onClick={
-                markAllRead
-              }
-              disabled={
-                markingAll
-              }
-              className="w-full py-2.5 bg-maroon-50 dark:bg-maroon-900/10 text-maroon-700 dark:text-maroon-400 rounded-2xl text-sm font-semibold hover:bg-maroon-100 dark:hover:bg-maroon-900/20 transition flex items-center justify-center gap-2 disabled:opacity-60"
-            >
-              {markingAll ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Check className="w-4 h-4" />
-              )}
-
-              <span>
-                {markingAll
-                  ? 'Updating...'
-                  : 'Mark All as Read'}
-              </span>
-            </button>
-          )}
-
-          {notifications.length ===
-          0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-10 text-center">
-              <Bell className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-
-              <p className="text-gray-500 dark:text-gray-400 font-medium">
-                No notifications
-              </p>
-
-              <p className="text-sm text-gray-400 mt-1">
-                You're all caught up!
-              </p>
-            </div>
-          ) : (
-            notifications.map(
-              (notification) => (
-                <div
-                  key={
-                    notification.id
-                  }
-                  className={`w-full bg-white dark:bg-gray-800 rounded-2xl border transition hover:shadow-md ${
-                    !notification.read
-                      ? 'border-l-4 border-l-maroon-800 border-y-gray-100 border-r-gray-100 dark:border-y-gray-700 dark:border-r-gray-700 bg-maroon-50/30 dark:bg-maroon-900/10'
-                      : 'border-gray-100 dark:border-gray-700'
+      {/* Inbox */}
+      <div className={`${CARD} p-4 lg:p-6`}>
+        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div role="tablist" aria-label="Alert type" className="grid grid-cols-2 gap-2 sm:flex">
+            {[
+              { id: 'notifications', label: 'Notifications', icon: Bell, count: unreadCount },
+              { id: 'announcements', label: 'Announcements', icon: Megaphone, count: announcements.length },
+            ].map(({ id, label, icon: Icon, count }) => {
+              const active = tab === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setTab(id)}
+                  className={`flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition sm:inline-flex sm:w-auto sm:px-4 ${
+                    active
+                      ? 'border-maroon-800 bg-maroon-800 text-white'
+                      : 'border-[var(--sp-border)] text-gray-700 hover:bg-maroon-50 dark:text-gray-300 dark:hover:bg-maroon-900/20'
                   }`}
                 >
-                  <div className="flex items-start gap-2 p-4">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleNotificationClick(
-                          notification
-                        )
-                      }
-                      className="flex flex-1 min-w-0 items-start space-x-3 text-left"
-                    >
-                      <div className="mt-0.5">
-                        {typeIcons[
-                          notification
-                            .displayType
-                        ] || (
-                          <Bell className="w-4 h-4 text-gray-400" />
-                        )}
-                      </div>
+                  <Icon className="hidden h-4 w-4 shrink-0 sm:block" />
+                  <span className="truncate text-[13px] sm:text-sm">{label}</span>
+                  <span className={`rounded-full px-1.5 text-[11px] ${active ? 'bg-white/20' : 'bg-gray-100 dark:bg-gray-700'}`}>{count}</span>
+                </button>
+              );
+            })}
+          </div>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <h3
-                            className={`text-sm ${
-                              notification.read
-                                ? 'font-medium text-gray-700 dark:text-gray-300'
-                                : 'font-bold text-gray-900 dark:text-white'
-                            }`}
-                          >
-                            {
-                              notification.title
-                            }
-                          </h3>
+          {tab === 'notifications' && (
+            <div className="flex items-center gap-2 lg:ml-auto">
+              <div className="inline-flex flex-1 rounded-xl border border-[var(--sp-border)] p-1 sm:flex-none" role="group" aria-label="Show">
+                {[
+                  { id: 'all', label: 'All' },
+                  { id: 'unread', label: 'Unread' },
+                ].map(({ id, label }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    aria-pressed={notifFilter === id}
+                    onClick={() => setNotifFilter(id)}
+                    className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition sm:flex-none ${
+                      notifFilter === id
+                        ? 'bg-maroon-50 text-maroon-800 dark:bg-maroon-900/30 dark:text-maroon-300'
+                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
 
-                          {!notification.read && (
-                            <span className="w-2 h-2 bg-maroon-600 rounded-full flex-shrink-0" />
-                          )}
-                        </div>
-
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
-                          {
-                            notification.message
-                          }
-                        </p>
-
-                        <p className="text-xs text-gray-400 mt-1.5">
-                          {formatDate(
-                            notification.date
-                          )}
-                        </p>
-                      </div>
-                    </button>
-
-                    <div className="flex items-center space-x-1 flex-shrink-0">
-                      {!notification.read && (
-                        <button
-                          type="button"
-                          onClick={(
-                            event
-                          ) =>
-                            markAsRead(
-                              notification.id,
-                              event
-                            )
-                          }
-                          disabled={
-                            markingId ===
-                            notification.id
-                          }
-                          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-green-500 disabled:opacity-50"
-                          title="Mark as read"
-                        >
-                          {markingId ===
-                          notification.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Check className="w-4 h-4" />
-                          )}
-                        </button>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={(
-                          event
-                        ) =>
-                          deleteNotif(
-                            notification.id,
-                            event
-                          )
-                        }
-                        disabled={
-                          deletingId ===
-                          notification.id
-                        }
-                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-red-500 disabled:opacity-50"
-                        title="Delete notification"
-                      >
-                        {deletingId ===
-                        notification.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="w-4 h-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )
-            )
-          )}
-        </div>
-      )}
-
-      {tab ===
-        'announcements' && (
-        <div className="space-y-3">
-          {announcements.length ===
-          0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-10 text-center">
-              <Megaphone className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-
-              <p className="text-gray-500 dark:text-gray-400 font-medium">
-                No announcements
-              </p>
-            </div>
-          ) : (
-            announcements.map(
-              (
-                announcement
-              ) => (
-                <div
-                  key={
-                    announcement.id
-                  }
-                  className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 hover:shadow-md transition"
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={markAllRead}
+                  disabled={markingAll}
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-[var(--sp-border)] px-3 py-2 text-[13px] font-semibold sm:px-4 sm:text-sm text-maroon-800 transition hover:bg-maroon-50 disabled:opacity-60 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
                 >
-                  <div className="flex items-start space-x-3">
-                    <div className="mt-0.5">
-                      {categoryIcons[
-                        announcement
-                          .category
-                      ] || (
-                        <Megaphone className="w-4 h-4 text-gray-400" />
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                        {
-                          announcement.title
-                        }
-                      </h3>
-
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-3">
-                        {
-                          announcement.content
-                        }
-                      </p>
-
-                      <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <span className="text-xs text-gray-400">
-                          {formatDate(
-                            announcement.date
-                          )}
-                        </span>
-
-                        <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded-full text-gray-500 dark:text-gray-400">
-                          {
-                            announcement.category
-                          }
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            )
+                  {markingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4" />}
+                  {markingAll ? 'Updating...' : 'Mark all read'}
+                </button>
+              )}
+            </div>
           )}
         </div>
-      )}
+
+        {tab === 'notifications' && (
+          visibleNotifications.length === 0 ? (
+            <EmptyState
+              icon={Bell}
+              title={notifFilter === 'unread' ? 'No unread notifications' : 'No notifications yet'}
+              text={notifFilter === 'unread' ? "You're all caught up." : 'Updates about your appointments and visits will show up here.'}
+            />
+          ) : (
+            <div className="space-y-5">
+              {notificationGroups.map((group) => (
+                <section key={group.label} aria-label={group.label}>
+                  <h3 className="mb-2 text-[11px] font-bold uppercase tracking-[1.2px] text-gray-500 dark:text-gray-400">{group.label}</h3>
+                  <ul className="divide-y divide-[var(--sp-border)] overflow-hidden rounded-xl border border-[var(--sp-border)]">
+                    {group.items.map((notification) => {
+                      const style = typeStyles[notification.displayType] || typeStyles.info;
+                      const Icon = style.icon;
+                      return (
+                        <li
+                          key={notification.id}
+                          className={`flex items-start gap-3 p-3.5 transition sm:p-4 ${
+                            notification.read ? 'hover:bg-gray-50 dark:hover:bg-gray-800/60' : 'bg-maroon-50/40 hover:bg-maroon-50/70 dark:bg-maroon-900/10 dark:hover:bg-maroon-900/20'
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => handleNotificationClick(notification)}
+                            className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                          >
+                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${style.tile}`}>
+                              <Icon className="h-5 w-5" />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="flex items-center gap-2">
+                                <span className={`truncate text-sm ${notification.read ? 'font-medium text-gray-700 dark:text-gray-300' : 'font-bold text-gray-900 dark:text-white'}`}>
+                                  {notification.title}
+                                </span>
+                                {!notification.read && <span className="h-2 w-2 shrink-0 rounded-full bg-maroon-600" aria-label="Unread" />}
+                              </span>
+                              <span className="mt-0.5 line-clamp-2 block text-xs text-gray-600 dark:text-gray-400 sm:text-[13px]">{notification.message}</span>
+                              <span className="mt-1.5 block text-[11px] text-gray-400">{formatDate(notification.date)}</span>
+                            </span>
+                          </button>
+
+                          <div className="flex shrink-0 items-center gap-1">
+                            {!notification.read && (
+                              <button
+                                type="button"
+                                onClick={(event) => markAsRead(notification.id, event)}
+                                disabled={markingId === notification.id}
+                                className="rounded-lg p-2 text-gray-400 transition hover:bg-white hover:text-green-600 disabled:opacity-50 dark:hover:bg-gray-700"
+                                aria-label="Mark as read"
+                                title="Mark as read"
+                              >
+                                {markingId === notification.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={(event) => deleteNotif(notification.id, event)}
+                              disabled={deletingId === notification.id}
+                              className="rounded-lg p-2 text-gray-400 transition hover:bg-white hover:text-red-600 disabled:opacity-50 dark:hover:bg-gray-700"
+                              aria-label="Delete notification"
+                              title="Delete notification"
+                            >
+                              {deletingId === notification.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          )
+        )}
+
+        {tab === 'announcements' && (
+          announcements.length === 0 ? (
+            <EmptyState icon={Megaphone} title="No announcements" text="Clinic advisories and campus health news will show up here." />
+          ) : (
+            <div className="grid gap-3 lg:grid-cols-2">
+              {announcements.map((announcement) => {
+                const style = categoryStyles[announcement.category] || categoryStyles.General;
+                const Icon = style.icon;
+                return (
+                  <article key={announcement.id} className="flex flex-col rounded-xl border border-[var(--sp-border)] p-4 transition hover:shadow-md">
+                    <div className="flex items-start gap-3">
+                      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${style.tile}`}>
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${style.tile}`}>{announcement.category || 'General'}</span>
+                        <h3 className="mt-1.5 text-sm font-bold text-gray-900 dark:text-white">{announcement.title}</h3>
+                      </div>
+                    </div>
+                    <p className="mt-3 line-clamp-4 flex-1 whitespace-pre-line text-[13px] leading-relaxed text-gray-600 dark:text-gray-400">{announcement.content}</p>
+                    <p className="mt-3 flex items-center gap-1.5 text-[11px] text-gray-400">
+                      <Clock className="h-3.5 w-3.5" /> {formatDate(announcement.date)}
+                    </p>
+                  </article>
+                );
+              })}
+            </div>
+          )
+        )}
+      </div>
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Check, Loader2, Heart, Shield, ClipboardList, AlertCircle, Info, PenLine, Users } from 'lucide-react';
 import api from '../../../services/api';
+import { StudentToast } from '../../../components/StudentFeedback';
 
 const getManilaDateString = () => {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -486,7 +487,7 @@ const HealthProfile = ({ onBack }) => {
           </div>
         </div>
 
-        {message && <div className={`p-3 rounded-2xl text-sm text-center mb-4 ${messageType === 'success' ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'}`}>{message}</div>}
+        <StudentToast message={message} type={messageType} onClose={() => setMessage('')} />
         {Object.keys(errors).length > 0 && <div role="alert" className="p-3 rounded-2xl text-sm mb-4 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400">{Object.values(errors).filter(Boolean).join('. ')}</div>}
 
         <AnimatePresence mode="wait">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, Search, SlidersHorizontal, Users, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Search, SlidersHorizontal, Users, X, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { mediaUrl } from '../../../utils/mediaUrl';
 import { academic, courses, years, sections, fullName, focus, inputStyle, secondary } from './directoryOptions';
 
@@ -16,7 +16,7 @@ export function StatusBadge({ status }) {
   const label = status || 'normal';
   return <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium capitalize ${colors[status] || 'bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-300'}`}>{label.replaceAll('_', ' ')}</span>;
 }
-export function StudentFilters({ filters, onChange, onClear, filterDefinitions, label = 'Student filters', searchLabel = 'Search students', searchPlaceholder = 'Search by name or student ID' }) {
+export function StudentFilters({ filters, onChange, onClear, filterDefinitions, label = 'Student filters', searchLabel = 'Search students', searchPlaceholder = 'Search by name or student ID', embedded = false }) {
   const active = Object.values(filters).some(Boolean);
   const definitions = filterDefinitions || [
     ['course', 'Course', 'All Courses', courses.map(([value, label]) => [value, `${value} — ${label}`])],
@@ -24,10 +24,10 @@ export function StudentFilters({ filters, onChange, onClear, filterDefinitions, 
     ['section', 'Section', 'All Sections', sections.map(value => [value, value])],
     ['status', 'Status', 'All Status', [['inactive', 'Inactive'], ['archived', 'Archived']]],
   ];
-  return <section aria-label={label} className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+  return <section aria-label={label} className={embedded ? "" : "rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"}>
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-[minmax(240px,2fr)_repeat(4,minmax(110px,1fr))]">
       <label className="col-span-2 lg:col-span-4 xl:col-span-1"><span className="sr-only">{searchLabel}</span><span className="relative block"><Search size={18} aria-hidden="true" className="absolute left-3 top-3 text-gray-400" /><input type="search" className={`${inputStyle} pl-10`} placeholder={searchPlaceholder} value={filters.search} onChange={e => onChange('search', e.target.value)} /></span></label>
-      {definitions.map(([key, label, all, options]) => <label key={key}><span className="sr-only">{label}</span><select aria-label={label} value={filters[key]} onChange={e => onChange(key, e.target.value)} className={`${inputStyle} ${filters[key] ? 'border-maroon-500 bg-maroon-50 dark:bg-maroon-950' : ''}`}><option value="">{all}</option>{options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></label>)}
+      {definitions.map(([key, label, all, options]) => <label key={key} className="relative block"><span className="sr-only">{label}</span><select aria-label={label} value={filters[key]} onChange={e => onChange(key, e.target.value)} className={`${inputStyle} cursor-pointer appearance-none truncate pr-10 ${filters[key] ? 'border-maroon-500 bg-maroon-50 dark:bg-maroon-950' : ''}`}><option value="">{all}</option>{options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select><ChevronDown size={16} aria-hidden="true" className={`pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 ${filters[key] ? 'text-maroon-700 dark:text-maroon-300' : 'text-gray-400'}`} /></label>)}
     </div>
     {active && <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3 dark:border-gray-700"><SlidersHorizontal size={14} aria-hidden="true" className="text-gray-400" />{Object.entries(filters).filter(([, value]) => value).map(([key, value]) => <button key={key} onClick={() => onChange(key, '')} aria-label={`Remove ${key} filter: ${value}`} className={`inline-flex max-w-full items-center gap-1 rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-200 ${focus}`}><span className="truncate">{key === 'search' ? `Search: ${value}` : key === 'section' ? `Section ${value}` : value}</span><X size={12} className="shrink-0" /></button>)}<button onClick={onClear} className={`ml-auto rounded px-2 py-1 text-sm font-medium text-maroon-800 dark:text-maroon-300 ${focus}`}>Clear filters</button></div>}
   </section>;

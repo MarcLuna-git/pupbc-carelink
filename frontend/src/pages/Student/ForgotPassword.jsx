@@ -19,6 +19,8 @@ import {
   Lock,
   ShieldCheck,
 } from 'lucide-react';
+import { StudentToast } from '../../components/StudentFeedback';
+import { NurseToast } from '../../components/NurseFeedback';
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -26,12 +28,17 @@ const ForgotPassword = () => {
   const accountType = new URLSearchParams(location.search).get('portal') === 'nurse'
     ? 'nurse'
     : 'student';
+  // This page serves both portals, so use that portal's own feedback
+  const Toast = accountType === 'nurse' ? NurseToast : StudentToast;
 
   const [email, setEmail] =
     useState('');
 
   const [message, setMessage] =
     useState('');
+
+  const [messageType, setMessageType] =
+    useState('error');
 
   const [loading, setLoading] =
     useState(false);
@@ -44,6 +51,7 @@ const ForgotPassword = () => {
         email.trim();
 
       if (!cleanEmail) {
+        setMessageType('error');
         setMessage(
           'Please enter your email address.'
         );
@@ -63,6 +71,7 @@ const ForgotPassword = () => {
             );
 
         if (res.success) {
+          setMessageType('success');
           setMessage(
             res.message ||
               'A password reset code was sent to your email.'
@@ -84,15 +93,17 @@ const ForgotPassword = () => {
                 }
               );
             },
-            700
+            1500
           );
         } else {
+          setMessageType('error');
           setMessage(
             res.message ||
               'Failed to send OTP.'
           );
         }
       } catch (err) {
+        setMessageType('error');
         setMessage(
           err.response?.data
             ?.message ||
@@ -156,20 +167,7 @@ const ForgotPassword = () => {
           </p>
         </div>
 
-        {message && (
-          <div
-            className={`mb-4 rounded-xl p-3 text-center text-sm ${
-              message
-                .toLowerCase()
-                .includes('sent')
-                ? 'bg-green-50 text-green-700'
-                : 'bg-red-50 text-red-700'
-            }`}
-            role="status"
-          >
-            {message}
-          </div>
-        )}
+        <Toast message={message} type={messageType} onClose={() => setMessage('')} />
 
         <form
           onSubmit={
@@ -234,7 +232,7 @@ const ForgotPassword = () => {
 
         <div className="text-center">
           <Link
-            to={accountType === 'nurse' ? '/nurse/login' : '/login'}
+            to={accountType === 'nurse' ? '/carelink-portal' : '/login'}
             className="inline-flex items-center gap-2 text-sm font-semibold text-maroon-800 hover:text-maroon-950 hover:underline"
           >
             <ArrowLeft className="h-4 w-4" />

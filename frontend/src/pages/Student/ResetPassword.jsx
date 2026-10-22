@@ -17,9 +17,10 @@ import {
   Eye,
   EyeOff,
   ArrowLeft,
-  RefreshCw,
   Mail,
 } from 'lucide-react';
+import { StudentNoticeModal, StudentToast } from '../../components/StudentFeedback';
+import { NurseNoticeModal, NurseToast } from '../../components/NurseFeedback';
 
 const OTP_RESEND_COOLDOWN = 60;
 const OTP_EXPIRY_MINUTES = 10;
@@ -37,6 +38,10 @@ const ResetPassword = () => {
       ? 'nurse'
       : 'student';
 
+  // This page serves both portals, so use that portal's own feedback
+  const Toast = accountType === 'nurse' ? NurseToast : StudentToast;
+  const NoticeModal = accountType === 'nurse' ? NurseNoticeModal : StudentNoticeModal;
+
   const initialOtpSent = Boolean(
     location.state?.otpSent
   );
@@ -49,6 +54,9 @@ const ResetPassword = () => {
   });
 
   const [message, setMessage] =
+    useState('');
+
+  const [resetDone, setResetDone] =
     useState('');
 
   const [messageType, setMessageType] =
@@ -382,28 +390,10 @@ const ResetPassword = () => {
             );
 
         if (res.success) {
-          setMessageType(
-            'success'
-          );
-
-          setMessage(
+          // Shown as a popup; its button goes to the sign-in page
+          setResetDone(
             res.message ||
-              'Password reset successfully.'
-          );
-
-          window.setTimeout(
-            () => {
-              navigate(
-                accountType === 'nurse'
-                  ? '/nurse/login'
-                  : '/login',
-                {
-                  replace:
-                    true,
-                }
-              );
-            },
-            1500
+              'Your password was reset. You can now sign in with your new password.'
           );
 
           return;
@@ -461,18 +451,15 @@ const ResetPassword = () => {
           </p>
         </div>
 
-        {message && (
-          <div
-            className={`mb-4 p-3 rounded-xl text-sm text-center border ${
-              messageType ===
-              'success'
-                ? 'bg-green-50 text-green-700 border-green-200'
-                : 'bg-red-50 text-red-700 border-red-200'
-            }`}
-          >
-            {message}
-          </div>
-        )}
+        <Toast message={message} type={messageType === 'success' ? 'success' : 'error'} onClose={() => { setMessage(''); setMessageType(''); }} />
+        <NoticeModal
+          open={Boolean(resetDone)}
+          type="success"
+          title="Password updated"
+          message={resetDone}
+          actionLabel="Go to sign in"
+          onClose={() => navigate(accountType === 'nurse' ? '/carelink-portal' : '/login', { replace: true })}
+        />
 
         <form
           onSubmit={
@@ -552,10 +539,8 @@ const ResetPassword = () => {
                   }
                   className="inline-flex items-center gap-1.5 text-sm font-semibold text-maroon-800 hover:text-maroon-900 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {resendingOtp ? (
+                  {resendingOtp && (
                     <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4" />
                   )}
 
                   {resendingOtp
@@ -704,7 +689,7 @@ const ResetPassword = () => {
 
         <div className="mt-6 text-center">
           <Link
-            to={accountType === 'nurse' ? '/nurse/login' : '/login'}
+            to={accountType === 'nurse' ? '/carelink-portal' : '/login'}
             className="text-sm text-gray-500 hover:text-maroon-800 hover:underline inline-flex items-center space-x-1"
           >
             <ArrowLeft className="w-4 h-4" />

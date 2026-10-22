@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Eye, EyeOff, FileText,
   GraduationCap, Loader2, LockKeyhole, Mail, Phone,
-  RefreshCw, ShieldCheck, UserRound, X,
+  ShieldCheck, UserRound, X,
 } from 'lucide-react';
 import authService from '../../services/authService';
 import { formatPersonName } from '../../utils/studentUser';
@@ -11,6 +11,7 @@ import COURSES from '../../data/registration-academics.json';
 import clinicLogo from '../../assets/clinic logo.jpg';
 import campusPhoto from '../../assets/pup-binan-hero.jpg';
 import clinicPhoto from '../../assets/clinic-waiting-area.jpg';
+import { StudentNoticeModal, StudentToast } from '../../components/StudentFeedback';
 
 const YEARS = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
 const MONTHS = [
@@ -268,10 +269,8 @@ export default function Register() {
           setMessage('Verification was not accepted. Please try again.');
           return;
         }
+        // The popup's button takes the student to sign in
         setVerified(true);
-        setMessageType('success');
-        setMessage('Account created successfully. You can now sign in.');
-        navigate('/login', { replace: true });
       } catch (error) {
         setMessageType('error');
         setMessage(apiMessage(error, 'The code is incorrect or expired. Please try again.'));
@@ -450,11 +449,15 @@ export default function Register() {
             <Link to="/login" aria-label="Back to login" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#741126] dark:text-rose-300 hover:bg-[#f9e9ee] dark:hover:bg-rose-950/40"><ArrowLeft size={18} /></Link>
           </div>
 
-          {message && (
-            <div role="alert" className={`mb-4 rounded-xl border px-4 py-3 text-sm leading-6 ${messageType === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-red-200 bg-red-50 text-red-700'}`}>
-              {message}
-            </div>
-          )}
+          <StudentToast message={message} type={messageType} onClose={() => setMessage('')} />
+          <StudentNoticeModal
+            open={verified}
+            type="success"
+            title="Account created"
+            message="Your CareLink account is ready. You can now sign in with your Student ID, birthday and password."
+            actionLabel="Go to sign in"
+            onClose={() => navigate('/login', { replace: true })}
+          />
 
           <form onSubmit={handleSubmit} noValidate autoComplete="on" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_50px_rgba(25,32,51,0.07)] sm:p-6">
             {!otpStep ? (
@@ -650,7 +653,7 @@ export default function Register() {
                 </div>
                 <div className="mt-4 text-xs text-slate-500">
                   {cooldown > 0 ? `Resend code in ${cooldown}s` : (
-                    <button type="button" onClick={resendOtp} disabled={resending || loading || verified} className="inline-flex items-center gap-1.5 font-bold text-[#741126] dark:text-rose-300 hover:underline disabled:opacity-50">{resending ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}{resending ? 'Resending...' : 'Resend verification code'}</button>
+                    <button type="button" onClick={resendOtp} disabled={resending || loading || verified} className="inline-flex items-center gap-1.5 font-bold text-[#741126] dark:text-rose-300 hover:underline disabled:opacity-50">{resending ? <Loader2 size={15} className="animate-spin" /> : null}{resending ? 'Resending...' : 'Resend verification code'}</button>
                   )}
                 </div>
               </div>

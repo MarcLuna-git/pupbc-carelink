@@ -67,6 +67,7 @@ class User extends Authenticatable implements JWTSubject
         'birthday' => 'date:Y-m-d',
         'last_login_at' => 'datetime',
         'archived_at' => 'datetime',
+        'on_duty' => 'boolean',
     ];
 
     public function getJWTIdentifier()

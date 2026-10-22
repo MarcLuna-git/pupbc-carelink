@@ -15,6 +15,7 @@ class NurseSync
         'StudentEnrollment' => 'academic', 'Course' => 'academic',
         'CourseSection' => 'academic', 'AcademicPeriod' => 'academic',
         'Announcement' => 'announcements', 'Notification' => 'notifications',
+        'CalendarNote' => 'calendar',
     ];
 
     public static function changed(string $topic): void

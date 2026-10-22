@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { FileText, RefreshCw } from 'lucide-react';
+import { FileText, ClipboardList } from 'lucide-react';
 import api from '../../../services/api';
 import RecordDirectory, { RecordDetailsModal } from './RecordDirectory';
 import useNurseSync from '../../../hooks/useNurseSync';
 import { StudentFilters } from '../Students/StudentDirectory';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
+import NursePageHero from '../../../components/NursePageHero';
+import NurseListCard from '../../../components/NurseListCard';
 import academics from '../../../data/registration-academics.json';
 import { secondary } from '../Students/directoryOptions';
 import { emptyRecordFilters, filterClinicRecords, recordAcademic, yearLabel, yearValue } from '../../../utils/clinicRecordFilters';
@@ -52,18 +54,36 @@ export default function NurseRecords() {
   ];
   const clearFilters = () => { setFilters(emptyRecordFilters); };
   const visibleRecords = filtered;
-  return <div className="mx-auto max-w-7xl space-y-5 text-gray-900 dark:text-gray-100">
-    <header className="flex flex-wrap items-center justify-between gap-4">
-      <div><div className="mb-2 h-1 w-9 rounded-full bg-yellow-400" /><h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Clinic History</h1><p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">View completed consultations and emergency encounters.</p></div>
-      <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800"><span className="rounded-lg bg-maroon-50 p-2 text-maroon-800 dark:bg-maroon-950/40 dark:text-maroon-300"><FileText size={20} aria-hidden="true" /></span><div><p className="text-xs text-gray-500 dark:text-gray-400">{active ? 'Matching records' : 'Total records'}</p><p className="text-xl font-semibold tabular-nums" aria-live="polite">{loading || error ? '—' : filtered.length.toLocaleString()}</p></div></div>
-    </header>
-    <StudentFilters filters={filters} onChange={changeFilter} onClear={clearFilters} filterDefinitions={definitions} label="Clinic record filters" searchLabel="Search clinic records" searchPlaceholder="Search student, ID, or complaint" />
-    <section aria-label="Clinic history directory" aria-busy={loading} className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3 dark:border-gray-700"><h2 className="text-sm font-semibold">Clinic records</h2><div className="flex items-center gap-3"><span className="text-xs text-gray-500 dark:text-gray-400">Newest first</span><button type="button" onClick={() => setRefresh(current => current + 1)} disabled={loading} className={secondary}><RefreshCw size={16} className={loading ? 'animate-spin' : ''} />Refresh</button></div></div>
+  return <div className="mx-auto max-w-[1440px] space-y-5 text-gray-900 dark:text-gray-100">
+    <NursePageHero
+      id="nurse-records-title"
+      title="Clinic History"
+      description="View completed consultations and emergency encounters."
+      art={FileText}
+    >
+      <div className="mt-4 inline-flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-700/50">
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-maroon-800 shadow-sm dark:bg-gray-800 dark:text-maroon-400"><FileText size={16} aria-hidden="true" /></span>
+        <div>
+          <p className="text-[11px] text-gray-500 dark:text-gray-400">{active ? 'Matching records' : 'Total records'}</p>
+          {loading
+            ? <span role="status" className="mt-1 block h-5 w-12 animate-pulse rounded-md bg-gray-200 dark:bg-gray-600"><span className="sr-only">Loading record count</span></span>
+            : <p className="text-lg font-bold leading-tight tabular-nums" aria-live="polite">{error ? <span className="text-sm font-semibold text-gray-400">Unavailable</span> : filtered.length.toLocaleString()}</p>}
+        </div>
+      </div>
+    </NursePageHero>
+
+    <NurseListCard
+      aria-label="Clinic history directory"
+      aria-busy={loading}
+      icon={ClipboardList}
+      title="Clinic records"
+      description="Completed consultations and emergency encounters, newest first."
+      toolbar={<StudentFilters embedded filters={filters} onChange={changeFilter} onClear={clearFilters} filterDefinitions={definitions} label="Clinic record filters" searchLabel="Search clinic records" searchPlaceholder="Search student, ID, or complaint" />}
+    >
       {error ? <div role="alert" className="space-y-3 p-8 text-center"><p className="text-sm text-red-600 dark:text-red-300">{error}</p><button type="button" className={secondary} onClick={() => setRefresh(current => current + 1)}>Try again</button></div> : <>
-        {loading ? <div className="p-4"><NursePageSkeleton contentOnly label="Loading clinic records" /></div> : visibleRecords.length ? <RecordDirectory records={visibleRecords} onView={setSelectedRecord} /> : <div className="px-6 py-16 text-center"><FileText size={30} aria-hidden="true" className="mx-auto mb-4 text-gray-400" /><h2 className="font-semibold">{active ? 'No records match your current filters.' : 'No clinic records found yet.'}</h2><p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{active ? 'Try a different student, course, year, or section.' : 'Completed consultations and emergency encounters will appear here.'}</p>{active && <button type="button" onClick={clearFilters} className={`${secondary} mt-5 text-maroon-800 dark:text-maroon-300`}>Clear filters</button>}</div>}
+        {loading ? <div className="p-4"><NursePageSkeleton contentOnly label="Loading clinic records" /></div> : visibleRecords.length ? <RecordDirectory records={visibleRecords} onView={setSelectedRecord} /> : <div className="px-6 py-16 text-center"><span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-50 dark:bg-gray-700/50"><FileText size={30} aria-hidden="true" className="text-gray-300 dark:text-gray-500" /></span><h2 className="font-semibold">{active ? 'No records match your current filters.' : 'No clinic records found yet.'}</h2><p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{active ? 'Try a different student, course, year, or section.' : 'Completed consultations and emergency encounters will appear here.'}</p>{active && <button type="button" onClick={clearFilters} className={`${secondary} mt-5 text-maroon-800 dark:text-maroon-300`}>Clear filters</button>}</div>}
       </>}
-    </section>
+    </NurseListCard>
     {selectedRecord && <RecordDetailsModal record={selectedRecord} onClose={() => setSelectedRecord(null)} />}
   </div>;
 }

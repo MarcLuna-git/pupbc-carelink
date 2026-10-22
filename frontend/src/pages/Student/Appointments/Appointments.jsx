@@ -280,13 +280,14 @@ const Appointments = () => {
 
   const fetchAvailableSlots =
     useCallback(
-      async (date, signal) => {
+      // `silent` is for the background re-check: update the slots without the loading placeholder
+      async (date, signal, silent = false) => {
         if (!date || isSunday(date)) {
           setAvailableSlots([]);
           return;
         }
 
-        setSlotsLoading(true);
+        if (!silent) setSlotsLoading(true);
 
         try {
           const response =
@@ -310,9 +311,7 @@ const Appointments = () => {
             err
           );
         } finally {
-          setSlotsLoading(
-            false
-          );
+          if (!silent) setSlotsLoading(false);
         }
       },
       []
@@ -337,7 +336,7 @@ const Appointments = () => {
 
       slotPollingRef.current = setInterval(
         () =>
-          fetchAvailableSlots(form.date),
+          fetchAvailableSlots(form.date, undefined, true),
         30000
       );
     }

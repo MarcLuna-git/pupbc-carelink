@@ -97,6 +97,7 @@ class NurseOperation
             'medicines' => \App\Models\Medicine::class,
             'consultations' => \App\Models\Consultation::class,
             'announcements' => \App\Models\Announcement::class,
+            'calendar-notes' => \App\Models\CalendarNote::class,
             'academic-periods' => \App\Models\AcademicPeriod::class,
             'courses' => \App\Models\Course::class,
             'course-sections' => \App\Models\CourseSection::class,

@@ -21,4 +21,20 @@ class ProfileController extends Controller
         $request->user()->update($data);
         return response()->json(['success' => true, 'data' => $request->user()->fresh(), 'message' => 'Profile updated.']);
     }
+
+    /**
+     * On duty / Off duty switch from the nurse account menu.
+     */
+    public function updateDutyStatus(Request $request)
+    {
+        $data = $request->validate(['on_duty' => 'required|boolean']);
+        $user = $request->user();
+        $user->forceFill(['on_duty' => (bool) $data['on_duty']])->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => $user->fresh(),
+            'message' => $data['on_duty'] ? 'You are now on duty.' : 'You are now off duty.',
+        ]);
+    }
 }

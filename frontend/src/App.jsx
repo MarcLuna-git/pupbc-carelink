@@ -41,7 +41,7 @@ const NurseAnnouncements = lazy(() => import('./pages/Admin/Announcements/NurseA
 const NurseSettings = lazy(() => import('./pages/Admin/Settings/NurseSettings'));
 const CourseManagement = lazy(() => import('./pages/Admin/Academic/CourseManagement'));
 
-const AdminLayout = lazy(() => import('./layouts/AdminLayout'));
+const NurseLayoutForDesktopView = lazy(() => import('./layouts/NurseLayout/NurseLayout-for-Desktop-View'));
 import ProtectedRoute from './components/ProtectedRoute';
 import HealthProfileVerifyError from './components/HealthProfileVerifyError';
 import { useStudentHealthProfileStatus } from './hooks/useStudentHealthProfileStatus';
@@ -353,9 +353,9 @@ function App() {
             path="/nurse"
             element={
               <ProtectedRoute role="nurse">
-                <AdminLayout>
+                <NurseLayoutForDesktopView>
                   <Outlet />
-                </AdminLayout>
+                </NurseLayoutForDesktopView>
               </ProtectedRoute>
             }
           >

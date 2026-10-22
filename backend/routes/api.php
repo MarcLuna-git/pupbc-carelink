@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\Nurse\ConsultationController as NurseConsultationCo
 use App\Http\Controllers\Api\Nurse\StudentController as NurseStudentController;
 use App\Http\Controllers\Api\Nurse\DashboardController as NurseDashboardController;
 use App\Http\Controllers\Api\Nurse\AnnouncementController;
+use App\Http\Controllers\Api\Nurse\CalendarNoteController;
 use App\Http\Controllers\Api\Nurse\MedicineController;
 use App\Http\Controllers\Api\Nurse\EmergencyEncounterController;
 
@@ -1102,6 +1103,20 @@ Route::middleware([
                     '/medicines/{id}',
                     [MedicineController::class, 'destroy']
                 );
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Nurse Dashboard Calendar Notes
+                |--------------------------------------------------------------------------
+                */
+
+                Route::patch('/duty-status', [\App\Http\Controllers\Api\Nurse\ProfileController::class, 'updateDutyStatus']);
+
+                Route::get('/calendar-notes', [CalendarNoteController::class, 'index']);
+                Route::post('/calendar-notes', [CalendarNoteController::class, 'store']);
+                Route::put('/calendar-notes/{id}', [CalendarNoteController::class, 'update']);
+                Route::delete('/calendar-notes/{id}', [CalendarNoteController::class, 'destroy']);
 
 
                 /*

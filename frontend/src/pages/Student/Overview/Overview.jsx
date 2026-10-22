@@ -16,7 +16,6 @@ import {
   Pencil,
   Phone,
   Pill,
-  RefreshCw,
   Save,
   ShieldAlert,
   ShieldCheck,
@@ -34,6 +33,7 @@ import HealthProfile from '../HealthProfile/HealthProfile';
 import { formatPersonName } from '../../../utils/studentUser';
 import { mediaUrl } from '../../../utils/mediaUrl';
 import { clinicDate } from '../../../utils/appointmentDate';
+import { StudentToast } from '../../../components/StudentFeedback';
 
 /*
  * ROUTE LOADING — same restored effect as the Settings page, scoped to this
@@ -222,16 +222,18 @@ const Overview = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const showHealthProfile = searchParams.get('view') === 'health-profile';
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [photoError, setPhotoError] = useState('');
+  // Photo and profile-save results show as a toast: { type: 'success' | 'error', text }
+  const [notice, setNotice] = useState({ type: 'success', text: '' });
+  const showNotice = (type, text) => setNotice({ type, text });
 
   const handlePhotoChange = async (event) => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { setPhotoError('Use a JPG, PNG, or WebP image.'); return; }
-    if (file.size > 2 * 1024 * 1024) { setPhotoError('Image must be less than 2MB.'); return; }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { showNotice('error', 'Use a JPG, PNG, or WebP image.'); return; }
+    if (file.size > 2 * 1024 * 1024) { showNotice('error', 'Image must be less than 2MB.'); return; }
 
-    setPhotoError('');
+    setNotice({ type: 'success', text: '' });
     setUploadingPhoto(true);
     try {
       const data = new FormData();
@@ -243,8 +245,9 @@ const Overview = () => {
       setStudent(updated);
       setUser({ ...readStoredUser(), ...updated }, 'student');
       window.dispatchEvent(new Event('studentProfileUpdated'));
+      showNotice('success', 'Profile photo updated.');
     } catch (err) {
-      setPhotoError(err.response?.data?.errors?.avatar?.[0] || 'We could not upload your photo. Please try again.');
+      showNotice('error', err.response?.data?.errors?.avatar?.[0] || 'We could not upload your photo. Please try again.');
     } finally {
       setUploadingPhoto(false);
     }
@@ -273,7 +276,7 @@ const Overview = () => {
   const removePhoto = async () => {
     setPhotoMenuOpen(false);
     if (!window.confirm('Remove your profile photo?')) return;
-    setPhotoError('');
+    setNotice({ type: 'success', text: '' });
     setUploadingPhoto(true);
     try {
       await api.delete('/student/profile/avatar');
@@ -281,8 +284,9 @@ const Overview = () => {
       setStudent(updated);
       setUser({ ...readStoredUser(), ...updated }, 'student');
       window.dispatchEvent(new Event('studentProfileUpdated'));
+      showNotice('success', 'Profile photo removed.');
     } catch {
-      setPhotoError('We could not remove your photo. Please try again.');
+      showNotice('error', 'We could not remove your photo. Please try again.');
     } finally {
       setUploadingPhoto(false);
     }
@@ -411,10 +415,11 @@ const Overview = () => {
         window.dispatchEvent(new CustomEvent('healthProfileUpdated'));
       }
       setEditing(false);
+      showNotice('success', 'Your profile was updated.');
       await loadOverview({ refresh: true });
     } catch (err) {
       const messages = Object.values(err.response?.data?.errors || {}).flat().filter((value) => typeof value === 'string');
-      setEditError(messages.join(' ') || err.response?.data?.message || 'We could not save your changes. Please try again.');
+      showNotice('error', messages.join(' ') || err.response?.data?.message || 'We could not save your changes. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -478,7 +483,7 @@ const Overview = () => {
       <h2 className="mt-3 text-lg font-semibold text-gray-900 dark:text-white">Profile unavailable</h2>
       <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{error || 'We could not load your profile. Please try again.'}</p>
       <button onClick={() => loadOverview()} className="mt-4 inline-flex items-center gap-2 rounded-md bg-maroon-800 px-4 py-2 text-sm font-semibold text-white hover:bg-maroon-900">
-        <RefreshCw className="h-4 w-4" /> Retry
+        Retry
       </button>
     </div>
   );
@@ -526,6 +531,7 @@ const Overview = () => {
       transition={{ duration: 0.35, ease: 'easeOut' }}
       className="w-full min-w-0 space-y-3"
     >
+      <StudentToast message={notice.text} type={notice.type} onClose={() => setNotice((current) => ({ ...current, text: '' }))} />
       <StudentPageHero
         id="profile-title"
         eyebrow={null}
@@ -584,7 +590,6 @@ const Overview = () => {
         {ready ? (
           <>
             <p className="mt-1 text-xs text-gray-700 dark:text-gray-300 sm:text-sm">Student ID: {student.student_id || '—'}</p>
-            {photoError && <p role="alert" className="mt-2 text-xs text-red-600 dark:text-red-400">{photoError}</p>}
           </>
         ) : (
           <>

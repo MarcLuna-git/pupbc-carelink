@@ -1,7 +1,7 @@
 import { getToken } from '../../../services/session';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Search, Calendar, ChevronDown, Megaphone, AlertTriangle, Heart, GraduationCap, Siren, Loader2, RefreshCw } from 'lucide-react';
+import { Bell, Search, Calendar, ChevronDown, Megaphone, AlertTriangle, Heart, GraduationCap, Siren, Loader2 } from 'lucide-react';
 import api from '../../../services/api';
 
 const Skeleton = ({ className = '' }) => (
@@ -168,12 +168,6 @@ const Announcements = () => {
             {newAnnouncements.length} new
           </span>
         )}
-        <button 
-          onClick={fetchAnnouncements} 
-          className="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          title="Refresh">
-          <RefreshCw className="w-4 h-4" />
-        </button>
       </div>
 
       {error && (

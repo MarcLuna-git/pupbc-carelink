@@ -2,6 +2,10 @@
 
 @variant dark (&:where(.dark, .dark *));
 
+/* Big screens that are also tall enough (used by the login pages to avoid scrolling) */
+@custom-variant tall (@media (min-width: 96rem) and (min-height: 62.5rem));
+@custom-variant roomy (@media (min-height: 50rem));
+
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {
   display: none;

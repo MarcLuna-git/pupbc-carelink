@@ -1,12 +1,28 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  Eye, EyeOff, Loader2, Lock, Mail, Stethoscope, 
-  Heart, CalendarCheck, QrCode, ShieldCheck, ClipboardList,
-  Building2, GraduationCap, ChevronRight, AlertCircle, CheckCircle2
+import {
+  Eye, EyeOff, Loader2, Lock, Mail, Stethoscope,
+  Heart, CalendarCheck, QrCode, ShieldCheck, Hospital,
+  Building2, GraduationCap, LockKeyhole, AlertCircle, CheckCircle2, Headset
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import authService from '../../../services/authService';
+import clinicPhoto from '../../../assets/clinic-waiting-area.jpg';
+
+/*
+ * Hero photo for the brand panel. Drop a `nurse-login-hero.(jpg|png|webp)`
+ * into src/assets to use it; until then the clinic photo is shown.
+ */
+const heroOverride = Object.values(
+  import.meta.glob('../../../assets/nurse-login-hero.{jpg,jpeg,png,webp}', { eager: true, import: 'default' })
+)[0];
+const heroPhoto = heroOverride || clinicPhoto;
+
+const LogoTile = ({ className = '' }) => (
+  <div className={`flex items-center justify-center rounded-2xl bg-gradient-to-br from-red-600 via-maroon-700 to-maroon-900 shadow-lg shadow-maroon-900/40 ${className}`}>
+    <Stethoscope className="h-1/2 w-1/2 text-yellow-400" strokeWidth={2.25} />
+  </div>
+);
 
 const NurseLogin = () => {
   const navigate = useNavigate();
@@ -20,6 +36,19 @@ const NurseLogin = () => {
   useEffect(() => {
     emailRef.current?.focus();
   }, []);
+
+  const closeMessage = () => {
+    setMessage({ type: '', text: '' });
+    emailRef.current?.focus();
+  };
+
+  // Esc closes an error popup (success just redirects on its own)
+  useEffect(() => {
+    if (message.type !== 'error') return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') closeMessage(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [message.type]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -37,31 +66,31 @@ const NurseLogin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!form.email.trim()) {
-      setMessage({ type: 'error', text: 'Please enter your email address.' });
+      setMessage({ type: 'error', title: 'Missing details', text: 'Please enter your email address.' });
       return;
     }
     if (!form.password.trim()) {
-      setMessage({ type: 'error', text: 'Please enter your password.' });
+      setMessage({ type: 'error', title: 'Missing details', text: 'Please enter your password.' });
       return;
     }
 
     setLoading(true);
     setMessage({ type: '', text: '' });
-    
+
     try {
       const res = await authService.nurseLogin(form.email, form.password);
       if (res.success) {
-        setMessage({ type: 'success', text: 'Login successful! Redirecting...' });
-        setTimeout(() => navigate('/nurse/dashboard'), 800);
+        setMessage({ type: 'success', text: 'Login successful. Taking you to the nurse dashboard.' });
+        setTimeout(() => navigate('/nurse/dashboard'), 1200);
       } else {
         setMessage({ type: 'error', text: res.message || 'Invalid credentials.' });
       }
     } catch (err) {
-      setMessage({ 
-        type: 'error', 
-        text: err.response?.data?.message || 'Unable to connect. Please try again.' 
+      setMessage({
+        type: 'error',
+        text: err.response?.data?.message || 'Unable to connect. Please try again.'
       });
     } finally {
       setLoading(false);
@@ -72,159 +101,151 @@ const NurseLogin = () => {
     { icon: CalendarCheck, label: 'Appointment Management' },
     { icon: QrCode, label: 'QR Check-in System' },
     { icon: ShieldCheck, label: 'Secure Student Records' },
-    { icon: ClipboardList, label: 'Clinic Operations' },
+    { icon: Hospital, label: 'Clinic Operations' },
   ];
 
+  const inputClass =
+    'w-full h-12 tall:h-14 rounded-2xl border border-slate-200 bg-white pl-14 text-[15px] text-gray-800 outline-none transition-colors placeholder:text-gray-400 hover:border-maroon-300 focus:border-maroon-800';
+
   return (
-    <div className="min-h-screen flex bg-[#FAFAFA] overflow-hidden">
-      <div className="hidden lg:flex lg:w-[48%] xl:w-[45%] relative bg-gradient-to-br from-maroon-900 via-maroon-800 to-maroon-950 overflow-hidden">
-        <div 
-          className="absolute inset-0 opacity-[0.03]"
-          style={{ 
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-            backgroundSize: '60px 60px'
-          }}
+    <div className="flex min-h-screen overflow-hidden bg-[#F7F7F8]">
+      {/* ==================== Brand panel (lg and up) ==================== */}
+      <div className="relative hidden overflow-hidden bg-maroon-900 lg:flex lg:w-1/2 xl:w-3/5">
+        {/* Photo on the right half, fading into the maroon on the left */}
+        <img
+          src={heroPhoto}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-y-0 right-0 h-full w-[62%] object-cover object-center"
         />
-        
-        <div className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full bg-yellow-500/5 blur-[120px]" />
-        <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-maroon-400/10 blur-[100px]" />
-        <div className="absolute top-1/3 right-20 w-72 h-72 rounded-full bg-yellow-400/5 blur-[80px]" />
-        
-        <div className="relative z-10 flex flex-col justify-between h-full p-12 xl:p-16">
-          <div>
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="flex items-center gap-4"
-            >
-              <div className="w-14 h-14 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20">
-                <Stethoscope className="w-7 h-7 text-yellow-400" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white tracking-tight">PUPBC CareLink</h1>
-                <p className="text-sm text-white/60 tracking-wide">Clinic Management System</p>
-              </div>
-            </motion.div>
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,#660000_0%,#660000_36%,rgba(102,0,0,0.78)_58%,rgba(128,0,0,0.35)_100%)]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-maroon-950/80 via-transparent to-maroon-950/30" />
+        <div className="absolute inset-0 bg-red-700/20 mix-blend-multiply" />
 
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="mt-12 space-y-3"
-            >
-              <div className="flex items-center gap-2 text-white/50 text-sm">
-                <Building2 className="w-4 h-4" />
-                <span>Polytechnic University of the Philippines</span>
-              </div>
-              <div className="flex items-center gap-2 text-white/50 text-sm">
-                <GraduationCap className="w-4 h-4" />
-                <span>Biñan Campus</span>
-              </div>
-            </motion.div>
+        {/* Sweeping arc and faded cross */}
+        <svg
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 h-full w-full"
+          viewBox="0 0 800 900"
+          preserveAspectRatio="none"
+        >
+          <path d="M-40 900 C 260 640, 620 760, 860 560" fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="70" />
+          <path d="M-40 940 C 300 700, 640 820, 880 620" fill="none" stroke="rgba(185,28,28,0.35)" strokeWidth="40" />
+        </svg>
+        <svg aria-hidden="true" viewBox="0 0 100 100" className="pointer-events-none absolute -bottom-8 -left-8 h-44 w-44 rotate-[-18deg] text-red-500/25">
+          <path fill="currentColor" d="M36 6h28v30h30v28H64v30H36V64H6V36h30z" />
+        </svg>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.4 }}
-              className="mt-16"
-            >
-              <h2 className="text-4xl xl:text-5xl font-bold text-white leading-tight tracking-tight">
-                Nurse
-                <br />
-                <span className="text-yellow-400">Portal</span>
-              </h2>
-              <p className="mt-4 text-white/60 text-lg leading-relaxed max-w-md">
-                Manage clinic operations efficiently with a modern healthcare management platform.
-              </p>
-            </motion.div>
-          </div>
+        <div className="relative z-10 flex h-full w-full flex-col px-10 py-6 xl:px-14 roomy:py-8 tall:px-[92px] tall:py-12">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+            className="flex items-center gap-4 tall:gap-5"
+          >
+            <LogoTile className="h-14 w-14 tall:h-[72px] tall:w-[72px]" />
+            <div>
+              <h1 className="text-[22px] font-bold tracking-tight text-white tall:text-[26px]">PUPBC CareLink</h1>
+              <p className="text-base text-white/85 tall:text-lg">Clinic Management System</p>
+            </div>
+          </motion.div>
 
-          <motion.div 
+          {/* Main block, vertically centred so it lines up with the sign-in card */}
+          <div className="my-auto py-4 roomy:py-6">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="space-y-2 text-[15px] text-white/90 roomy:space-y-3 tall:text-[17px]"
+          >
+            <div className="flex items-center gap-3">
+              <Building2 className="h-5 w-5" />
+              <span>Polytechnic University of the Philippines</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <GraduationCap className="h-5 w-5" />
+              <span>Biñan Campus</span>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.4 }}
+            className="mt-7 roomy:mt-16 tall:mt-10"
+          >
+            <h2 className="text-5xl font-extrabold leading-[1.05] tracking-tight text-white xl:text-6xl tall:text-[80px]">
+              Nurse
+              <br />
+              <span className="text-yellow-400">Portal</span>
+            </h2>
+            <p className="mt-4 max-w-xl text-lg roomy:mt-5 leading-relaxed text-white/90 tall:mt-6 tall:text-xl">
+              Manage clinic operations efficiently with a modern healthcare management platform.
+            </p>
+          </motion.div>
+
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.6 }}
-            className="grid grid-cols-2 gap-3"
+            className="mt-6 grid max-w-[540px] roomy:mt-14 grid-cols-2 gap-2.5 tall:mt-10 tall:max-w-[620px] tall:gap-3"
           >
-            {features.map((feature, index) => (
-              <div 
-                key={index}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm"
+            {features.map((feature) => (
+              <div
+                key={feature.label}
+                className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 backdrop-blur-md roomy:py-3.5 tall:px-4 tall:py-3"
               >
-                <feature.icon className="w-4 h-4 text-yellow-400 flex-shrink-0" />
-                <span className="text-sm text-white/80 font-medium">{feature.label}</span>
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 tall:h-11 tall:w-11">
+                  <feature.icon className="h-[18px] w-[18px] text-yellow-400 tall:h-5 tall:w-5" />
+                </span>
+                <span className="text-[13px] font-medium leading-snug text-white tall:text-[15px]">{feature.label}</span>
               </div>
             ))}
           </motion.div>
+          </div>
 
-          <motion.p 
+          {/* Same height as the logo row above, so the main block sits at the true centre */}
+          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.8 }}
-            className="text-white/30 text-sm"
+            className="flex h-14 items-end text-sm text-white/70 tall:h-[72px] tall:text-[15px]"
           >
             © {new Date().getFullYear()} PUPBC CareLink. All rights reserved.
           </motion.p>
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-8 lg:p-12 xl:p-16 bg-[#FAFAFA]">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-maroon-50/50 rounded-full blur-[150px] pointer-events-none" />
-        <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-yellow-50/50 rounded-full blur-[120px] pointer-events-none" />
-
-        <motion.div 
+      {/* ==================== Sign-in panel ==================== */}
+      <div className="relative flex flex-1 items-center justify-center overflow-hidden px-5 pb-10 pt-16 sm:px-8 lg:w-1/2 lg:px-12 xl:w-2/5 lg:py-6 roomy:lg:py-8 tall:py-12">
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="relative z-10 w-full max-w-[440px]"
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+          className="relative z-10 w-full max-w-[420px] tall:max-w-[480px]"
         >
-          <div className="lg:hidden text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-maroon-800 to-maroon-900 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-maroon-800/20">
-              <Stethoscope className="w-8 h-8 text-yellow-400" />
+          <div className="relative rounded-[32px] border border-gray-100 bg-white px-7 pb-7 pt-14 shadow-[0_20px_60px_-24px_rgba(17,24,39,0.18)] sm:px-9 tall:px-11 tall:pb-11 tall:pt-20">
+            {/* Logo tile overlapping the card's top edge */}
+            <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-[30px] bg-white p-3 shadow-[0_-6px_20px_-12px_rgba(17,24,39,0.15)]">
+              <LogoTile className="h-16 w-16 tall:h-[76px] tall:w-[76px]" />
             </div>
-            <h2 className="mt-4 text-xl font-bold text-gray-900">Nurse Portal</h2>
-            <p className="text-sm text-gray-500">PUPBC CareLink</p>
-          </div>
 
-          <div className="bg-white rounded-[28px] shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)] border border-gray-100 p-8 sm:p-10">
-            <div className="mb-8">
-              <div className="flex items-center gap-3 mb-1">
-                <Heart className="w-5 h-5 text-red-400" />
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Healthcare Provider</span>
+            <div className="mb-5 tall:mb-8">
+              <div className="mb-2 flex items-center gap-3">
+                <Heart className="h-6 w-6 text-red-500" />
+                <span className="text-[15px] font-semibold uppercase tracking-[0.18em] text-gray-500">Healthcare Provider</span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900">Welcome back</h3>
-              <p className="text-sm text-gray-500 mt-1">Sign in to access the nurse dashboard</p>
+              <h3 className="text-[30px] font-extrabold leading-tight tracking-tight text-gray-900 sm:text-[34px] tall:text-[40px]">Welcome back</h3>
+              <p className="mt-1 text-[15px] text-gray-500 tall:text-[17px]">Sign in to access the nurse dashboard</p>
             </div>
 
-            <AnimatePresence>
-              {message.text && (
-                <motion.div 
-                  initial={{ opacity: 0, y: -10, height: 0 }}
-                  animate={{ opacity: 1, y: 0, height: 'auto' }}
-                  exit={{ opacity: 0, y: -10, height: 0 }}
-                  className={`mb-5 p-4 rounded-2xl flex items-start gap-3 text-sm ${
-                    message.type === 'error' 
-                      ? 'bg-red-50 text-red-700 border border-red-200' 
-                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                  }`}
-                >
-                  {message.type === 'error' ? (
-                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  ) : (
-                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  )}
-                  <span>{message.text}</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4 tall:space-y-6">
               <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="email" className="mb-2 block text-[15px] font-semibold tall:mb-2.5 tall:text-base text-gray-900">
                   Email Address
                 </label>
-                <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-maroon-600 transition-colors" />
+                <div className="group relative">
+                  <Mail className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500 transition-colors group-focus-within:text-maroon-700" />
                   <input
                     ref={emailRef}
                     id="email"
@@ -234,17 +255,17 @@ const NurseLogin = () => {
                     onChange={handleChange}
                     placeholder="nurse@pupbc.edu.ph"
                     autoComplete="email"
-                    className="w-full h-12 border border-gray-200 rounded-2xl pl-12 pr-4 text-sm bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-maroon-500/20 focus:border-maroon-500 outline-none transition-all duration-200 placeholder:text-gray-400"
+                    className={`${inputClass} pr-5`}
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="password" className="mb-2 block text-[15px] font-semibold tall:mb-2.5 tall:text-base text-gray-900">
                   Password
                 </label>
-                <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-maroon-600 transition-colors" />
+                <div className="group relative">
+                  <Lock className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500 transition-colors group-focus-within:text-maroon-700" />
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
@@ -255,87 +276,146 @@ const NurseLogin = () => {
                     onKeyUp={handleKeyDown}
                     placeholder="Enter your password"
                     autoComplete="current-password"
-                    className="w-full h-12 border border-gray-200 rounded-2xl pl-12 pr-12 text-sm bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-maroon-500/20 focus:border-maroon-500 outline-none transition-all duration-200 placeholder:text-gray-400"
+                    className={`${inputClass} pr-14`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
                     tabIndex={-1}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
                 <AnimatePresence>
                   {capsLockOn && (
-                    <motion.p 
+                    <motion.p
                       initial={{ opacity: 0, y: -5 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -5 }}
-                      className="text-xs text-amber-600 mt-2 flex items-center gap-1.5"
+                      className="mt-2 flex items-center gap-1.5 text-xs text-amber-600"
                     >
-                      <AlertCircle className="w-3 h-3" />
+                      <AlertCircle className="h-3 w-3" />
                       Caps Lock is on
                     </motion.p>
                   )}
                 </AnimatePresence>
               </div>
 
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
+              <div className="flex items-center justify-between gap-3">
+                <label className="flex cursor-pointer select-none items-center gap-3">
                   <input
                     type="checkbox"
                     name="remember"
                     checked={form.remember}
                     onChange={handleChange}
-                    className="w-4 h-4 rounded-[6px] border-gray-300 text-maroon-700 focus:ring-maroon-500/20 cursor-pointer"
+                    className="h-5 w-5 cursor-pointer rounded-md border-gray-300 text-maroon-700 focus:ring-maroon-500/20"
                   />
-                  <span className="text-sm text-gray-600">Remember me</span>
+                  <span className="text-base text-gray-600">Remember me</span>
                 </label>
                 <Link
                   to="/forgot-password?portal=nurse"
-                  className="text-sm font-medium text-maroon-700 hover:text-maroon-900 transition-colors"
+                  className="text-sm font-medium text-maroon-700 transition-colors hover:text-maroon-900"
                 >
                   Forgot password?
                 </Link>
               </div>
 
-              <motion.button
+              <button
                 type="submit"
                 disabled={loading}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                className="w-full h-12 bg-gradient-to-r from-maroon-800 to-maroon-900 hover:from-maroon-900 hover:to-maroon-950 text-white font-semibold rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-maroon-800/10"
+                className="flex h-[52px] w-full tall:h-[58px] items-center justify-center gap-3 rounded-full bg-maroon-800 text-[17px] font-semibold text-white transition-colors hover:text-gray-300 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2 className="h-5 w-5 animate-spin" />
                     <span>Signing in...</span>
                   </>
                 ) : (
                   <>
+                    <LockKeyhole className="h-5 w-5" />
                     <span>Access Nurse Portal</span>
-                    <ChevronRight className="w-5 h-5" />
                   </>
                 )}
-              </motion.button>
+              </button>
             </form>
 
-            <p className="text-center text-xs text-gray-400 mt-6 flex items-center justify-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              Secure, encrypted connection
-            </p>
+            <div className="mt-5 flex items-center gap-4 tall:mt-8">
+              <span className="h-px flex-1 bg-gray-100" />
+              <p className="flex items-center gap-2 text-sm text-gray-500">
+                <ShieldCheck className="h-4 w-4" />
+                Secure, encrypted connection
+              </p>
+              <span className="h-px flex-1 bg-gray-100" />
+            </div>
           </div>
 
-          <p className="text-center text-sm text-gray-400 mt-6">
-            Need help? Contact{' '}
-            <a href="#" className="text-maroon-700 font-medium hover:text-maroon-900 transition-colors">
-              IT Support
-            </a>
+          <p className="mt-5 flex items-center justify-center gap-2 text-sm lg:absolute lg:inset-x-0 lg:top-full tall:mt-7 tall:text-base text-gray-500">
+            <Headset className="h-5 w-5" />
+            <span>
+              Need help? Contact{' '}
+              <a href="#" className="font-semibold text-maroon-700 transition-colors hover:text-maroon-900">
+                IT Support
+              </a>
+            </span>
           </p>
         </motion.div>
       </div>
+
+      {/* ==================== Result popup ==================== */}
+      <AnimatePresence>
+        {message.text && (
+          <motion.div
+            key="login-message"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 px-5 backdrop-blur-sm"
+            onClick={message.type === 'error' ? closeMessage : undefined}
+          >
+            <motion.div
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="login-message-title"
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm rounded-3xl bg-white p-7 text-center shadow-2xl"
+            >
+              <span
+                className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full ${
+                  message.type === 'error' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'
+                }`}
+              >
+                {message.type === 'error' ? <AlertCircle className="h-8 w-8" /> : <CheckCircle2 className="h-8 w-8" />}
+              </span>
+              <h4 id="login-message-title" className="mt-5 text-xl font-bold text-gray-900">
+                {message.title || (message.type === 'error' ? 'Sign-in failed' : 'Welcome back!')}
+              </h4>
+              <p className="mt-2 text-[15px] leading-relaxed text-gray-500">{message.text}</p>
+
+              {message.type === 'error' ? (
+                <button
+                  type="button"
+                  autoFocus
+                  onClick={closeMessage}
+                  className="mt-6 h-12 w-full rounded-full bg-maroon-800 text-[15px] font-semibold text-white transition-colors hover:bg-maroon-900"
+                >
+                  Try again
+                </button>
+              ) : (
+                <div className="mt-6 flex items-center justify-center gap-2 text-sm font-medium text-emerald-700">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Redirecting to your dashboard...
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

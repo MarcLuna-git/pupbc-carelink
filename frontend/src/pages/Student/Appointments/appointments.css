@@ -90,6 +90,12 @@
 .ap-upcoming-actions .ap-button { min-height:31px; }
 /* Empty upcoming card: same grid, placeholder values in muted tones. */
 .ap-upcoming.is-empty .ap-date-tile { background:var(--sp-bg);color:var(--sp-muted);border-style:dashed; }
+/* Empty tile: pulsing gray blocks stand in for the day and weekday. */
+.ap-date-tile .ap-date-placeholder { display:block;margin:0 auto;border-radius:5px;background:var(--sp-border);animation:ap-date-pulse 1.6s ease-in-out infinite; }
+.ap-date-tile .ap-date-placeholder.is-day { width:26px;height:22px;margin-top:4px;margin-bottom:5px; }
+.ap-date-tile .ap-date-placeholder.is-weekday { width:20px;height:8px; }
+@keyframes ap-date-pulse { 50% { opacity:.45; } }
+@media (prefers-reduced-motion:reduce) { .ap-date-tile .ap-date-placeholder { animation:none; } }
 /* No check-in data yet (no booking, or the clinic hasn't set a window): the
    cell stays in the grid on desktop but drops its divider. */
 .ap-upcoming-state:empty { border-left:0; }

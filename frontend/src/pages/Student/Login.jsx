@@ -19,6 +19,7 @@ import {
 import clinicLogo from '../../assets/clinic logo.jpg';
 import campusPhoto from '../../assets/pup-binan-hero.jpg';
 import { forgetStudentLogin, getRememberedStudentLogin, rememberStudentLogin } from '../../services/studentRememberLogin';
+import { StudentNoticeModal } from '../../components/StudentFeedback';
 
 const LOCK_KEY_PREFIX = 'carelink.student.login-lock.';
 
@@ -575,14 +576,14 @@ const Login = () => {
               </p>
             </div>
 
-            {message && (
-              <div
-                role="alert"
-                className="mb-4 p-3 rounded-xl text-sm text-center animate-shake bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400"
-              >
-                {message}
-              </div>
-            )}
+            {/* Sign-in errors open as a popup */}
+            <StudentNoticeModal
+              open={Boolean(message)}
+              title="Sign-in failed"
+              message={message}
+              actionLabel="Try again"
+              onClose={() => setMessage('')}
+            />
 
             {isLocked && (
               <div

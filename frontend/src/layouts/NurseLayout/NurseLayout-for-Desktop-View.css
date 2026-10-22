@@ -1,0 +1,96 @@
+/*
+ * Nurse portal outer shell / main frame styles.
+ *
+ * Base chrome shared by BOTH view shells (same class names); each shell's
+ * stylesheet overrides these inside its own breakpoint:
+ *   - NurseLayout-for-Tablet-View.css  (>= 768px)
+ *   - NurseLayout-for-Mobile-View.css  (<= 767px)
+ * Colors are the Nurse portal's own: maroon sidebar (gray in dark mode),
+ * white header on a warm maroon-tinted page (same tones as the Student
+ * portal) in light mode, gray-900 in dark mode.
+ */
+.nurse-shell {
+  --np-bg:#f8f5f3; --np-surface:#fff; --np-soft:#faeeec; --np-border:#ebdfe0; --np-outline:#ebdfe0;
+  --np-text:#1f2937; --np-muted:#9ca3af; --np-icon:#9ca3af; --np-icon-hover:#4b5563;
+  --np-sidebar:220px; --np-nav-height:0px; --np-header-height:62px;
+  background:var(--np-bg); color:var(--np-text); min-height:100dvh; overflow-x:hidden;
+}
+.dark .nurse-shell {
+  --np-bg:#111827; --np-surface:#111827; --np-soft:#1f2937; --np-border:#1f2937; --np-outline:#374151;
+  --np-text:#f3f4f6; --np-muted:#9ca3af; --np-icon:#9ca3af; --np-icon-hover:#d1d5db;
+}
+.nurse-skip-link { position:fixed;left:12px;top:-70px;z-index:200;padding:12px 18px;background:var(--np-surface);border-radius:8px;color:#800000; }
+.nurse-skip-link:focus { top:12px; }
+
+/* Sidebar */
+.nurse-sidebar { position:fixed;inset:0 auto 0 0;z-index:40;display:flex;flex-direction:column;width:var(--np-sidebar);overflow:hidden;background:linear-gradient(to bottom,#800000,#660000);color:#fff;box-shadow:0 25px 50px -12px #6600004d; }
+.dark .nurse-sidebar { background:linear-gradient(to bottom,#1f2937,#111827);box-shadow:0 25px 50px -12px #0000004d; }
+.nurse-sidebar-brand { position:relative;padding:20px 18px;border-bottom:1px solid #ffffff1a; }
+.dark .nurse-sidebar-brand { border-bottom-color:#ffffff0d; }
+.nurse-brand-symbol { display:flex;width:34px;height:34px;flex-shrink:0;align-items:center;justify-content:center;border-radius:12px;background:#ffffff33;color:#fff; }
+.dark .nurse-brand-symbol { background:#ffffff1a; }
+.nurse-brand-symbol svg { width:19px;height:19px; }
+.nurse-sidebar-nav { position:relative;flex:1;padding:14px 12px;overflow-y:auto; }
+.nurse-nav-link { position:relative;display:flex;align-items:center;gap:12px;min-height:42px;margin-bottom:4px;padding:10px 12px;border-radius:12px;font-size:13px;font-weight:500;color:#ffffff99;transition:background-color .2s ease,color .2s ease; }
+.nurse-nav-link:hover { background:#ffffff1a;color:#fff; }
+.nurse-nav-link[aria-current=page] { background:#ffffff33;color:#fff;box-shadow:0 10px 15px -3px #0000001a; }
+.dark .nurse-nav-link { color:#9ca3af; }
+.dark .nurse-nav-link:hover { background:#ffffff0d;color:#fff; }
+.dark .nurse-nav-link[aria-current=page] { background:#ffffff1a;color:#fff; }
+.nurse-nav-label { flex:1;min-width:0; }
+.nurse-nav-count { min-width:20px;border-radius:999px;background:#ef4444;padding:2px 6px;text-align:center;font-size:10px;font-weight:700;color:#fff; }
+.nurse-sidebar-footer { position:relative;padding:12px 12px 16px;border-top:1px solid #ffffff1a; }
+.dark .nurse-sidebar-footer { border-top-color:#ffffff0d; }
+.nurse-sidebar-campus { position:absolute;bottom:76px;left:0;width:100%;height:245px;object-fit:cover;filter:grayscale(1);mix-blend-mode:luminosity;opacity:.14;mask-image:linear-gradient(transparent,#000 35%);pointer-events:none; }
+.dark .nurse-sidebar-campus { opacity:.08; }
+
+/* Account button (sidebar foot on tablet / desktop, header on mobile) */
+.nurse-account-button { display:flex;width:100%;align-items:center;gap:10px;min-width:0;padding:8px 10px;border:1px solid;border-radius:12px;text-align:left;cursor:pointer;transition:background-color .15s ease,border-color .15s ease; }
+.nurse-account-avatar { display:flex;flex-shrink:0;align-items:center;justify-content:center;overflow:hidden;border-radius:999px;background:#fde8e8;color:#800000;font-weight:700; }
+.dark .nurse-account-avatar { background:#4d00004d;color:#f98080; }
+.nurse-account-avatar img { width:100%;height:100%;object-fit:cover; }
+.nurse-account-avatar.is-small { width:32px;height:32px;font-size:12px; }
+.nurse-account-avatar.is-large { width:48px;height:48px;font-size:14px; }
+.nurse-account-caption { display:flex;flex:1;min-width:0;flex-direction:column;line-height:1.35; }
+.nurse-account-caption strong,.nurse-account-caption small { overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.nurse-account-caption strong { font-size:13px;font-weight:600; }
+.nurse-account-caption small { font-size:11px; }
+.nurse-account-button.is-sidebar { border-color:#ffffff1f;background:#ffffff12;color:#fff; }
+.nurse-account-button.is-sidebar:hover { background:#ffffff1f;border-color:#ffffff33; }
+.nurse-account-button.is-sidebar.is-open { background:#ffffff26;border-color:#ffffff40; }
+.nurse-account-button.is-sidebar .nurse-account-avatar { background:#ffffff33;color:#fff; }
+.dark .nurse-account-button.is-sidebar .nurse-account-avatar { background:#ffffff1a; }
+.nurse-account-button.is-sidebar small { color:#fde047cc; }
+.dark .nurse-account-button.is-sidebar small { color:#9ca3af; }
+.nurse-account-button.is-header { justify-content:center;gap:0;width:44px;height:44px;padding:0;border-color:var(--np-outline);border-radius:999px;background:var(--np-surface); }
+.nurse-account-button.is-header:hover,.nurse-account-button.is-header.is-open { background:var(--np-soft); }
+.nurse-account-button.is-header .nurse-account-caption { display:none; }
+
+/* Header */
+.nurse-shell-body { min-height:100dvh;min-width:0;margin-left:var(--np-sidebar);display:flex;flex-direction:column;background:var(--np-bg); }
+.nurse-header { position:fixed;top:0;left:var(--np-sidebar);right:0;z-index:30;background:color-mix(in srgb,var(--np-surface) 80%,transparent);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid var(--np-border); }
+.nurse-header-inner { height:var(--np-header-height);display:flex;align-items:center;gap:16px;padding:0 24px; }
+.nurse-header-page { flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px;font-weight:600;color:var(--np-text); }
+.nurse-header-brand { display:none; }
+.nurse-header-actions { display:flex;align-items:center;gap:8px;flex-shrink:0; }
+.nurse-header-icon { position:relative;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid var(--np-outline);border-radius:12px;color:var(--np-icon);cursor:pointer;transition:background-color .15s ease,color .15s ease; }
+.nurse-header-icon:hover { background:var(--np-soft);color:var(--np-icon-hover); }
+.nurse-header-icon svg { width:19px;height:19px; }
+.nurse-bell-count { position:absolute;top:3px;right:3px;display:flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#ef4444;color:#fff;font-size:9px;font-weight:700;line-height:1;box-shadow:0 0 0 2px var(--np-surface);pointer-events:none; }
+
+/* Page */
+.nurse-main { flex:1 0 auto;min-width:0;overflow-x:auto;padding:calc(var(--np-header-height) + 20px) 24px 24px; }
+.nurse-page-content { width:100%;max-width:1440px;margin:0 auto;min-width:0; }
+.nurse-bottom-nav { display:none; }
+
+.nurse-shell :is(button,a,input,select,textarea):focus-visible { outline:2px solid #b91c1c;outline-offset:2px; }
+.dark .nurse-shell :is(button,a,input,select,textarea):focus-visible { outline-color:#f98080; }
+
+/* Duty status on the account button: the label in the caption, and one
+   status dot on the avatar (also seen on the folded rail and mobile header). */
+.nurse-account-avatar { position:relative;overflow:visible; }
+.nurse-account-avatar img { border-radius:999px; }
+.nurse-avatar-duty { position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:999px;background:#9ca3af;box-shadow:0 0 0 2px #fff; }
+.nurse-avatar-duty.is-on { background:#22c55e; }
+.nurse-account-button.is-sidebar .nurse-avatar-duty { box-shadow:0 0 0 2px #7a0000; }
+.dark .nurse-avatar-duty, .dark .nurse-account-button.is-sidebar .nurse-avatar-duty { box-shadow:0 0 0 2px #1f2937; }

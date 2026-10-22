@@ -66,14 +66,73 @@ class DashboardController extends Controller
         return response()->json(['success' => true, 'data' => $appointments]);
     }
 
+    /**
+     * One clinic activity feed, newest first: bookings, approvals and
+     * cancellations, kiosk check-ins, consultations and emergency encounters.
+     * Each item: id, kind, title, detail, tone (success|warning|danger|info), occurred_at.
+     */
     public function recentActivity()
     {
-        $consultations = Consultation::with('user:id,first_name,last_name')
-            ->orderBy('created_at', 'desc')
-            ->limit(10)
-            ->get();
+        $limit = 10;
+        $name = fn ($user) => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: 'A student';
+        $items = collect();
 
-        return response()->json(['success' => true, 'data' => $consultations]);
+        Appointment::with('user:id,first_name,last_name')->latest()->limit($limit)->get()
+            ->each(fn ($a) => $items->push([
+                'id' => "booked-{$a->id}", 'kind' => 'appointment_booked', 'tone' => 'info',
+                'title' => "{$name($a->user)} booked an appointment",
+                'detail' => trim(($a->service ?? 'Clinic visit') . ' · ' . optional($a->appointment_date)->format('M j') . ' ' . ($a->time_slot ?? '')),
+                'occurred_at' => $a->created_at,
+            ]));
+
+        Appointment::with('user:id,first_name,last_name')->whereNotNull('approved_at')->orderByDesc('approved_at')->limit($limit)->get()
+            ->each(fn ($a) => $items->push([
+                'id' => "approved-{$a->id}", 'kind' => 'appointment_approved', 'tone' => 'success',
+                'title' => "Appointment approved for {$name($a->user)}",
+                'detail' => trim(($a->service ?? 'Clinic visit') . ' · ' . optional($a->appointment_date)->format('M j') . ' ' . ($a->time_slot ?? '')),
+                'occurred_at' => $a->approved_at,
+            ]));
+
+        Appointment::with('user:id,first_name,last_name')->whereNotNull('cancelled_at')->orderByDesc('cancelled_at')->limit($limit)->get()
+            ->each(fn ($a) => $items->push([
+                'id' => "cancelled-{$a->id}", 'kind' => 'appointment_cancelled', 'tone' => 'danger',
+                'title' => "Appointment cancelled for {$name($a->user)}",
+                'detail' => $a->cancellation_reason ?: ($a->service ?? 'Clinic visit'),
+                'occurred_at' => $a->cancelled_at,
+            ]));
+
+        \App\Models\AppointmentCheckin::with('user:id,first_name,last_name')->whereNotNull('checked_in_at')->orderByDesc('checked_in_at')->limit($limit)->get()
+            ->each(fn ($c) => $items->push([
+                'id' => "checkin-{$c->id}", 'kind' => 'checked_in', 'tone' => 'info',
+                'title' => "{$name($c->user)} checked in at the kiosk",
+                'detail' => $c->queue_number ? "Queue number {$c->queue_number}" : null,
+                'occurred_at' => $c->checked_in_at,
+            ]));
+
+        Consultation::with('user:id,first_name,last_name')->latest()->limit($limit)->get()
+            ->each(fn ($c) => $items->push([
+                'id' => "consultation-{$c->id}", 'kind' => 'consultation',
+                'tone' => $c->status === 'completed' ? 'success' : ($c->status === 'cancelled' ? 'warning' : 'info'),
+                'title' => "Consultation with {$name($c->user)}",
+                'detail' => $c->chief_complaint,
+                'occurred_at' => $c->created_at,
+            ]));
+
+        \App\Models\EmergencyEncounter::with('student:id,first_name,last_name')->latest()->limit($limit)->get()
+            ->each(fn ($e) => $items->push([
+                'id' => "emergency-{$e->id}", 'kind' => 'emergency', 'tone' => 'danger',
+                'title' => "Emergency encounter for {$name($e->student)}",
+                'detail' => $e->reason,
+                'occurred_at' => $e->created_at,
+            ]));
+
+        $feed = $items->filter(fn ($item) => $item['occurred_at'])
+            ->sortByDesc(fn ($item) => $item['occurred_at']->getTimestamp())
+            ->take($limit)
+            ->map(fn ($item) => array_merge($item, ['occurred_at' => $item['occurred_at']->toIso8601String()]))
+            ->values();
+
+        return response()->json(['success' => true, 'data' => $feed])->header('Cache-Control', 'private, no-store');
     }
 
     public function consultationReport(Request $request)
