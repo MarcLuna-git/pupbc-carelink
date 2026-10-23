@@ -468,6 +468,13 @@ public function login(Request $request): JsonResponse
         ], 422);
 
     } catch (\Throwable $e) {
+        if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface && $e->getStatusCode() === 403) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 403);
+        }
+
         $credentialErrors = [
             'Invalid credentials.',
             'Invalid birthday.',

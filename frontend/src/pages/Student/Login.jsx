@@ -451,6 +451,9 @@ const Login = () => {
         setMessage(
           'Student ID, birthday, or password is incorrect.'
         );
+      } else if (status === 403) {
+        setAttemptsRemaining(null);
+        setMessage(body.message || 'Your student account has been archived. Please contact the clinic for assistance.');
       } else if (status === 422) {
         setMessage(
           'Please check your Student ID, birthday, and password.'

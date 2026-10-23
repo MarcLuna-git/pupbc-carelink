@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\AuthService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -124,10 +125,78 @@ class StudentModuleTest extends TestCase
     {
         return [
             'inactive student' => ['student', 'inactive'],
-            'archived student' => ['student', 'archived'],
+            'archived status without soft delete' => ['student', 'archived'],
             'inactive nurse' => ['nurse', 'inactive'],
             'archived nurse' => ['nurse', 'archived'],
         ];
+    }
+
+    public function test_archived_student_login_discloses_archive_only_after_correct_credentials(): void
+    {
+        $this->withoutMiddleware(ThrottleRequests::class);
+        $student = $this->student([
+            'student_id' => '2026-12345-BN-0',
+            'status' => 'archived',
+        ]);
+        $student->delete();
+        $credentials = [
+            'student_id' => $student->student_id,
+            'birthday' => '2002-05-15',
+            'password' => 'TestPassword123!',
+        ];
+        $generic = 'Student ID, birthday, or password is incorrect.';
+
+        $wrongPassword = $this->postJson('/api/auth/login', array_merge($credentials, ['password' => 'WrongPassword123!']))
+            ->assertStatus(401)->assertJsonPath('message', $generic)->assertJsonPath('attempts_remaining', 4);
+        $this->postJson('/api/auth/login', array_merge($credentials, ['birthday' => '2001-05-15']))
+            ->assertStatus(401)->assertJsonPath('message', $generic)->assertJsonPath('attempts_remaining', 3);
+        $this->postJson('/api/auth/login', $credentials)
+            ->assertStatus(403)->assertExactJson([
+                'success' => false,
+                'message' => 'Your student account has been archived. Please contact the clinic for assistance.',
+            ]);
+        $this->postJson('/api/auth/login', array_merge($credentials, ['password' => 'WrongPassword123!']))
+            ->assertStatus(401)->assertJsonPath('message', $generic)->assertJsonPath('attempts_remaining', 2);
+
+        $unknown = $this->postJson('/api/auth/login', array_merge($credentials, ['student_id' => '2026-54321-BN-0', 'password' => 'WrongPassword123!']))
+            ->assertStatus(401)->assertJsonPath('message', $generic)->assertJsonPath('attempts_remaining', 4);
+        $this->assertSame($wrongPassword->json(), $unknown->json());
+
+        foreach ([1, 0] as $remaining) {
+            $this->postJson('/api/auth/login', array_merge($credentials, ['password' => 'WrongPassword123!']))
+                ->assertStatus($remaining ? 401 : 429)
+                ->assertJsonPath('attempts_remaining', $remaining);
+        }
+        $this->postJson('/api/auth/login', $credentials)->assertStatus(429)->assertJsonPath('locked', true);
+    }
+
+    public function test_other_student_account_states_keep_their_login_behavior(): void
+    {
+        $this->withoutMiddleware(ThrottleRequests::class);
+        foreach ([
+            ['2026-12346-BN-0', null, true],
+            ['2026-12347-BN-0', 'inactive', false],
+            ['2026-12348-BN-0', 'archived', false],
+            ['2026-12349-BN-0', null, false],
+            ['2026-12350-BN-0', 'pending', false],
+        ] as [$studentId, $status, $deleted]) {
+            $student = $this->student(['student_id' => $studentId, 'status' => $status]);
+            if ($deleted) {
+                $student->delete();
+            }
+            $response = $this->postJson('/api/auth/login', [
+                'student_id' => $studentId,
+                'birthday' => '2002-05-15',
+                'password' => 'TestPassword123!',
+            ]);
+            if ($deleted || in_array($status, ['inactive', 'archived'], true)) {
+                $response->assertStatus(401)
+                    ->assertJsonPath('message', 'Student ID, birthday, or password is incorrect.')
+                    ->assertJsonPath('attempts_remaining', 4);
+            } else {
+                $response->assertOk()->assertJsonPath('user.id', $student->id);
+            }
+        }
     }
 
     private function login(User $user): array

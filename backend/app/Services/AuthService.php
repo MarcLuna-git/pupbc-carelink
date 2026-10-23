@@ -21,6 +21,7 @@ class AuthService
     protected UserRepositoryInterface $userRepository;
 
     private const OTP_EXPIRY_MINUTES = 10;
+    private const DUMMY_LOGIN_HASH = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
 
     public function __construct(
         UserRepositoryInterface $userRepository
@@ -251,45 +252,36 @@ class AuthService
 
     public function login(array $credentials): array
     {
-        $user = $this->userRepository
-            ->findByStudentId(
-                $credentials['student_id']
+        $user = User::withTrashed()
+            ->where('role', 'student')
+            ->where('student_id', $credentials['student_id'])
+            ->first();
+
+        // Unknown IDs still perform one password check, like archived IDs.
+        if (!$user) {
+            $this->verifyPassword($credentials['password'], self::DUMMY_LOGIN_HASH);
+        }
+
+        if ($user && $user->trashed() && $user->status === 'archived') {
+            $this->verifyStudentLoginCredentials($user, $credentials);
+            throw new \Symfony\Component\HttpKernel\Exception\HttpException(
+                403,
+                'Your student account has been archived. Please contact the clinic for assistance.'
             );
+        }
 
         if (
             !$user ||
             $user->role !== 'student' ||
-            in_array($user->status, ['inactive', 'archived'], true)
+            in_array($user->status, ['inactive', 'archived'], true) ||
+            $user->trashed()
         ) {
             throw new \Exception(
                 'Invalid credentials.'
             );
         }
 
-        $birthday = $user->birthday instanceof \DateTime
-            ? $user->birthday->format('Y-m-d')
-            : Carbon::parse($user->birthday)
-                ->format('Y-m-d');
-
-        if (
-            $birthday !==
-            $credentials['birthday']
-        ) {
-            throw new \Exception(
-                'Invalid birthday.'
-            );
-        }
-
-        if (
-            !$this->verifyPassword(
-                $credentials['password'],
-                $user->password
-            )
-        ) {
-            throw new \Exception(
-                'Invalid password.'
-            );
-        }
+        $this->verifyStudentLoginCredentials($user, $credentials);
 
         $token = JWTAuth::fromUser($user);
 
@@ -305,6 +297,34 @@ class AuthService
             'expires_in' => $ttl * 60,
             'role' => $user->role,
         ];
+    }
+
+    private function verifyStudentLoginCredentials(User $user, array $credentials): void
+    {
+        $birthday = $user->birthday instanceof \DateTime
+            ? $user->birthday->format('Y-m-d')
+            : Carbon::parse($user->birthday)
+                ->format('Y-m-d');
+
+        $passwordMatches = $this->verifyPassword(
+            $credentials['password'],
+            $user->password
+        );
+
+        if (
+            $birthday !==
+            $credentials['birthday']
+        ) {
+            throw new \Exception(
+                'Invalid birthday.'
+            );
+        }
+
+        if (!$passwordMatches) {
+            throw new \Exception(
+                'Invalid password.'
+            );
+        }
     }
 
     public function nurseLogin(
