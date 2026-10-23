@@ -286,6 +286,33 @@ class CareLinkWorkflowTest extends TestCase
         $this->assertDatabaseHas('notifications', ['user_id' => $student->id, 'type' => 'appointment_expired']);
     }
 
+    public function test_nurse_student_status_filter_treats_normal_and_pending_as_active()
+    {
+        $nurse = $this->person('nurse');
+        $normal = $this->person();
+        $pending = $this->person();
+        $inactive = $this->person();
+        $archived = $this->person();
+        $pendingNurse = $this->person('nurse');
+        foreach ([$normal, $pending, $inactive, $archived, $pendingNurse] as $user) {
+            $user->update(['last_name' => 'SCRUM356']);
+        }
+        $pending->update(['status' => 'pending']);
+        $inactive->update(['status' => 'inactive']);
+        $archived->update(['status' => 'archived']);
+        $archived->delete();
+        $pendingNurse->update(['status' => 'pending']);
+
+        $this->actingAs($nurse, 'api');
+        $ids = fn($status) => array_column($this->getJson('/api/nurse/students?search=SCRUM356&status='.$status)
+            ->assertOk()->json('data.data'), 'id');
+
+        $this->assertEqualsCanonicalizing([$normal->id, $pending->id], $ids('active'));
+        $this->assertEqualsCanonicalizing([$archived->id], $ids('archived'));
+        $this->assertEqualsCanonicalizing([$inactive->id], $ids('inactive'));
+        $this->assertEqualsCanonicalizing([$normal->id, $pending->id, $inactive->id], $ids(''));
+    }
+
     public function test_archive_and_restore_returns_null_status()
     {
         $nurse = $this->person('nurse');

@@ -18,6 +18,9 @@ export const directorySections = [...new Set(academics.flatMap(({ sections }) =>
 export const directorySectionsForYear = year => year ? directorySections.filter(section => section.startsWith(`${years.indexOf(year) + 1}-`)) : directorySections;
 export const nextDirectoryFilters = (previous, key, value) => ({ ...previous, [key]: value, ...(key === 'year' && value !== previous.year ? { section: '' } : {}) });
 export const emptyFilters = { search: '', course: '', year: '', section: '', status: '' };
+export const directoryStatusOptions = [['active', 'Active'], ['archived', 'Archived']];
+export const directoryDefaultFilters = { ...emptyFilters, status: 'active' };
+export const appliedDirectoryFilters = filters => Object.entries(filters).filter(([key, value]) => value && (key !== 'status' || value !== directoryDefaultFilters.status));
 export const academic = (student, field) => student?.student_profile?.[field] || student?.[field] || '';
 export const fullName = student => [student?.first_name, student?.middle_name, student?.last_name].filter(Boolean).join(' ');
 export const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon-500 focus-visible:ring-offset-2';

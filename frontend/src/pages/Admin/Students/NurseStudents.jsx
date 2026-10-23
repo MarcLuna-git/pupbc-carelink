@@ -8,13 +8,13 @@ import useNurseSync from '../../../hooks/useNurseSync';
 import { StudentDirectory, StudentFilters, Pagination } from './StudentDirectory';
 import { StudentDetailsModal, ArchiveStudentModal, EmergencyModal } from './StudentDetailsModal';
 import { StudentFilesModal } from './StudentFilesModal';
-import { emptyFilters, nextDirectoryFilters, secondary } from './directoryOptions';
+import { appliedDirectoryFilters, directoryDefaultFilters, nextDirectoryFilters, secondary } from './directoryOptions';
 import { archiveReasonError } from './archiveReason';
 
 const emptyEmergency = { incident_datetime: '', reason: '', symptoms: '', assessment: '', intervention: '', disposition: '', notes: '' };
 export default function NurseStudents() {
   const [params] = useSearchParams();
-  const [filters, setFilters] = useState(emptyFilters);
+  const [filters, setFilters] = useState(directoryDefaultFilters);
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ total: 0, last_page: 1, from: 0, to: 0 });
   const [students, setStudents] = useState([]);
@@ -38,7 +38,7 @@ export default function NurseStudents() {
   const [listRefresh, setListRefresh] = useState(0);
   const [statusSaving, setStatusSaving] = useState(false);
   const [filesStudent, setFilesStudent] = useState(null);
-  const filtered = Object.values(filters).some(Boolean);
+  const filtered = appliedDirectoryFilters(filters).length > 0;
   const listRequest = useRef(0);
   const detailRequest = useRef(0);
   const archiveSubmitting = useRef(false);
@@ -96,7 +96,7 @@ export default function NurseStudents() {
   }, [selectedId, refresh]);
 
   const changeFilter = (key, value) => { setFilters(previous => nextDirectoryFilters(previous, key, value)); setPage(1); };
-  const clearFilters = () => { setFilters({ ...emptyFilters }); setPage(1); };
+  const clearFilters = () => { setFilters({ ...directoryDefaultFilters }); setPage(1); };
   const submitEmergency = async event => {
     event.preventDefault(); if (saving) return; setSaving(true); setEmergencyError('');
     try { await api.post('/nurse/emergency-encounters', { ...emergency, student_id: selectedId }); setEmergencyOpen(false); setEmergency(emptyEmergency); setTab('Clinic History'); setRefresh(value => value + 1); }

@@ -38,9 +38,14 @@ class StudentController extends Controller
         }
 
         if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
-            if ($request->input('status') === 'archived') {
-                $query->withTrashed();
+            $status = $request->input('status');
+            if ($status === 'active') {
+                $query->where(fn($q) => $q->whereNull('status')->orWhere('status', 'pending'));
+            } else {
+                $query->where('status', $status);
+                if ($status === 'archived') {
+                    $query->withTrashed();
+                }
             }
         }
 
