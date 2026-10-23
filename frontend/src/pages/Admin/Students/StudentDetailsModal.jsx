@@ -42,7 +42,13 @@ function DetailGrid({ data }) {
 function Group({ title, children }) { return <section className="space-y-4"><h3 className="border-b border-gray-100 pb-3 text-sm font-semibold dark:border-gray-700">{title}</h3>{children}</section>; }
 function Overview({ student }) {
   const profile = student.student_profile || {};
-  return <div className="space-y-8"><Group title="Personal information"><DetailGrid data={{ first_name: student.first_name, middle_name: student.middle_name, last_name: student.last_name, student_id: student.student_id, course: academic(student, 'course'), year_level: academic(student, 'year'), section: academic(student, 'section'), birthday: (profile.birthday || student.birthday)?.slice(0, 10), gender: profile.gender || student.gender, mobile_number: profile.mobile_number || student.mobile_number, email: student.email, address: profile.address }} /></Group><Group title="Emergency contact"><DetailGrid data={{ guardian_name: profile.guardian_name, relationship: profile.guardian_relationship, contact_number: profile.guardian_contact }} /></Group></div>;
+  const health = student.health_profile;
+  const useHealth = ['emergency_name', 'emergency_relationship', 'emergency_phone'].some(field => String(health?.[field] ?? '').trim());
+  const contact = useHealth
+    ? { full_name: health.emergency_name, relationship: health.emergency_relationship, phone_number: health.emergency_phone }
+    : { full_name: profile.guardian_name, relationship: profile.guardian_relationship, phone_number: profile.guardian_contact };
+  const displayedContact = Object.fromEntries(Object.entries(contact).map(([field, value]) => [field, String(value ?? '').trim() ? value : null]));
+  return <div className="space-y-8"><Group title="Personal information"><DetailGrid data={{ first_name: student.first_name, middle_name: student.middle_name, last_name: student.last_name, student_id: student.student_id, course: academic(student, 'course'), year_level: academic(student, 'year'), section: academic(student, 'section'), birthday: (profile.birthday || student.birthday)?.slice(0, 10), gender: profile.gender || student.gender, mobile_number: profile.mobile_number || student.mobile_number, email: student.email, address: profile.address }} /></Group><Group title="Emergency contact"><DetailGrid data={displayedContact} /></Group></div>;
 }
 const healthGroups = [
   ['Medical history', ['medical_history', 'allergy_details', 'other_medical_history', 'medications', 'family_history']],
