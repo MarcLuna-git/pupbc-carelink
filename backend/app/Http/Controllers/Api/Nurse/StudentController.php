@@ -19,11 +19,15 @@ class StudentController extends Controller
     {
         $query = User::query()->with('studentProfile')->where('role', 'student');
 
-        if ($request->search) {
-            $query->where(function ($q) use ($request) {
-                $q->where('first_name', DatabaseSearch::like($q), "%{$request->search}%")
-                  ->orWhere('last_name', DatabaseSearch::like($q), "%{$request->search}%")
-                  ->orWhere('student_id', DatabaseSearch::like($q), "%{$request->search}%");
+        $tokens = array_slice(preg_split('/[\s,]+/u', (string) $request->input('search', ''), -1, PREG_SPLIT_NO_EMPTY) ?: [], 0, 8);
+        foreach ($tokens as $token) {
+            $query->where(function ($q) use ($token) {
+                $pattern = "%{$token}%";
+                $operator = DatabaseSearch::like($q);
+                $q->where('first_name', $operator, $pattern)
+                  ->orWhere('middle_name', $operator, $pattern)
+                  ->orWhere('last_name', $operator, $pattern)
+                  ->orWhere('student_id', $operator, $pattern);
             });
         }
 
