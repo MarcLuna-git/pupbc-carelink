@@ -488,7 +488,7 @@ const HealthProfile = ({ onBack }) => {
         </div>
 
         <StudentToast message={message} type={messageType} onClose={() => setMessage('')} />
-        {Object.keys(errors).length > 0 && <div role="alert" className="p-3 rounded-2xl text-sm mb-4 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400">{Object.values(errors).filter(Boolean).join('. ')}</div>}
+        {step !== 1 && Object.keys(errors).length > 0 && <div role="alert" className="p-3 rounded-2xl text-sm mb-4 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400">{Object.values(errors).filter(Boolean).join('. ')}</div>}
 
         <AnimatePresence mode="wait">
           <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
