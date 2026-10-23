@@ -34,6 +34,7 @@ import { formatPersonName } from '../../../utils/studentUser';
 import { mediaUrl } from '../../../utils/mediaUrl';
 import { clinicDate } from '../../../utils/appointmentDate';
 import { StudentToast } from '../../../components/StudentFeedback';
+import { contactNameError } from '../../../utils/contactValidation';
 
 /*
  * ROUTE LOADING — same restored effect as the Settings page, scoped to this
@@ -138,7 +139,7 @@ const RowEditor = ({ editor, draft, onChange }) => {
  * optional third item is its editor, shown in place of the value while the
  * section is in edit mode.
  */
-const InfoCard = ({ icon: Icon, title, rows, footer, editing = false, draft = {}, onChange }) => (
+const InfoCard = ({ icon: Icon, title, rows, footer, editing = false, draft = {}, onChange, fieldErrors = {} }) => (
   <section className="flex flex-col rounded-xl border border-[var(--sp-border)] p-4 sm:p-5">
     <div className="mb-4 flex items-center justify-between gap-3">
       <h3 className="flex items-center gap-2.5 font-bold text-maroon-800 dark:text-maroon-300">
@@ -153,7 +154,7 @@ const InfoCard = ({ icon: Icon, title, rows, footer, editing = false, draft = {}
             {editing && editor ? <label htmlFor={`profile-${editor.name}`}>{label}</label> : label}
           </dt>
           <dd className={`break-words ${value ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}`}>
-            {editing && editor ? <RowEditor editor={editor} draft={draft} onChange={onChange} /> : value || 'Not provided'}
+            {editing && editor ? <><RowEditor editor={editor} draft={draft} onChange={onChange} />{fieldErrors[editor.name] && <p role="alert" className="mt-1 text-xs text-red-600">{fieldErrors[editor.name]}</p>}</> : value || 'Not provided'}
           </dd>
         </div>
       ))}
@@ -351,6 +352,7 @@ const Overview = () => {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState('');
+  const [nameError, setNameError] = useState('');
   const [draft, setDraft] = useState({});
 
 
@@ -365,6 +367,7 @@ const Overview = () => {
       medications: hp.medications || '',
     });
     setEditError('');
+    setNameError('');
     setEditing(true);
   };
 
@@ -372,10 +375,12 @@ const Overview = () => {
     if (saving) return;
     setEditing(false);
     setEditError('');
+    setNameError('');
   };
 
   const handleDraftChange = (event) => {
     const { name, value } = event.target;
+    if (name === 'emergency_name') setNameError('');
     const next = name === 'mobile_number'
       ? value.replace(/[^\d+]/g, '').slice(0, 13)
       : name === 'emergency_phone'
@@ -388,7 +393,9 @@ const Overview = () => {
     if (saving) return;
     const trimmed = Object.fromEntries(Object.entries(draft).map(([key, value]) => [key, value.trim()]));
     if (!/^(?:09\d{9}|\+639\d{9})$/.test(trimmed.mobile_number)) { setEditError('Use 09XXXXXXXXX or +639XXXXXXXXX for your mobile number.'); return; }
-    if (hasHealthProfile && (!trimmed.emergency_name || !trimmed.emergency_relationship)) { setEditError('Emergency contact name and relationship are required.'); return; }
+    const invalidName = contactNameError(trimmed.emergency_name, hasHealthProfile);
+    if (invalidName) { setNameError(invalidName); return; }
+    if (hasHealthProfile && !trimmed.emergency_relationship) { setEditError('Emergency contact name and relationship are required.'); return; }
     if ((hasHealthProfile || trimmed.emergency_phone) && !/^09\d{9}$/.test(trimmed.emergency_phone)) { setEditError('Emergency contact number must be 11 digits starting with 09.'); return; }
 
     setSaving(true);
@@ -418,8 +425,11 @@ const Overview = () => {
       showNotice('success', 'Your profile was updated.');
       await loadOverview({ refresh: true });
     } catch (err) {
-      const messages = Object.values(err.response?.data?.errors || {}).flat().filter((value) => typeof value === 'string');
-      showNotice('error', messages.join(' ') || err.response?.data?.message || 'We could not save your changes. Please try again.');
+      const responseErrors = err.response?.data?.errors || {};
+      const contactError = responseErrors.emergency_name || responseErrors.guardian_name;
+      if (contactError) setNameError(Array.isArray(contactError) ? contactError[0] : contactError);
+      const messages = Object.entries(responseErrors).filter(([key]) => !['emergency_name', 'guardian_name'].includes(key)).flatMap(([, values]) => values).filter((value) => typeof value === 'string');
+      if (messages.length || !contactError) showNotice('error', messages.join(' ') || err.response?.data?.message || 'We could not save your changes. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -736,6 +746,7 @@ const Overview = () => {
             editing={editing}
             draft={draft}
             onChange={handleDraftChange}
+            fieldErrors={{ emergency_name: nameError }}
             rows={[
               ['Name', contact.name || hp.emergency_name, { name: 'emergency_name', maxLength: 100, placeholder: 'Juan Dela Cruz' }],
               ['Relationship', contact.relationship || hp.emergency_relationship, { name: 'emergency_relationship', type: 'select', options: EMERGENCY_RELATIONSHIPS }],

@@ -122,4 +122,19 @@ class StudentProfileContactTest extends TestCase
         $this->putJson('/api/student/profile', ['mobile_number' => '09123456789', 'guardian_contact' => '+639123456789'])
             ->assertOk()->assertJsonPath('data.profile.guardian_contact', '+639123456789');
     }
+
+    public function test_legacy_guardian_name_uses_registration_name_rule(): void
+    {
+        $student = $this->student();
+        $this->actingAs($student, 'api');
+        foreach (['Juan2', 'Juan@', 'O’Brien', 123] as $name) {
+            $this->putJson('/api/student/profile', ['mobile_number' => '09123456789', 'guardian_name' => $name])
+                ->assertUnprocessable()->assertJsonPath('errors.guardian_name.0', 'Enter a valid name.');
+        }
+        foreach (['Juan Dela Cruz', 'Peña', 'José', "O'Brien", 'Anne-Marie', 'Jr.'] as $name) {
+            $this->putJson('/api/student/profile', ['mobile_number' => '09123456789', 'guardian_name' => $name])
+                ->assertOk()->assertJsonPath('data.profile.guardian_name', $name);
+        }
+        $this->assertSame('Jr.', $student->profile()->first()->guardian_name);
+    }
 }

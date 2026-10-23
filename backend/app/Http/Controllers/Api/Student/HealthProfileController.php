@@ -8,6 +8,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 class HealthProfileController extends Controller
 {
+    private const NAME_MESSAGES = [
+        'emergency_name.string' => 'Enter a valid name.',
+        'emergency_name.regex' => 'Enter a valid name.',
+    ];
+
     public function show() { return response()->json(['success' => true, 'data' => $this->profileData(auth()->user()->healthProfile()->first())]); }
     public function checkStatus()
     {
@@ -20,7 +25,7 @@ class HealthProfileController extends Controller
             // Lock the existing user row even when no health profile exists yet.
             User::whereKey(auth()->id())->lockForUpdate()->firstOrFail();
             abort_if(HealthProfile::where('user_id', auth()->id())->exists(), 409, 'Health profile already exists. Reload before editing.');
-            $data = $request->validate(HealthProfile::validationRules());
+            $data = $request->validate(HealthProfile::validationRules(), self::NAME_MESSAGES);
             return HealthProfile::create(array_merge($data, ['user_id' => auth()->id(), 'completed_at' => now()]));
         });
         return response()->json(['success' => true, 'data' => $this->profileData($profile)], 201);
@@ -29,7 +34,7 @@ class HealthProfileController extends Controller
     {
         $profile = HealthProfile::where('user_id', auth()->id())->firstOrFail();
         // Dapat valid pa rin ang buong record at consent pagkatapos ng partial edit.
-        $data = Validator::make(array_merge($this->profileData($profile), $request->all()), HealthProfile::validationRules())->validate();
+        $data = Validator::make(array_merge($this->profileData($profile), $request->all()), HealthProfile::validationRules(), self::NAME_MESSAGES)->validate();
         $profile->fill($data);
         $profile->completed_at = $profile->completed_at ?: now();
         $profile->save();

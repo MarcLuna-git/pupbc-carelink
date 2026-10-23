@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Check, Loader2, Heart, Shield, ClipboardList, AlertCircle, Info, PenLine, Users } from 'lucide-react';
 import api from '../../../services/api';
 import { StudentToast } from '../../../components/StudentFeedback';
+import { contactNameError } from '../../../utils/contactValidation';
 
 const getManilaDateString = () => {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -204,7 +205,7 @@ const HealthProfile = ({ onBack }) => {
    */
   const blank = (value) => !String(value ?? '').trim();
   const stepMissing = {
-    1: blank(form.emergency_name) || blank(form.emergency_relationship) || !/^09\d{9}$/.test(form.emergency_phone),
+    1: Boolean(contactNameError(form.emergency_name, true)) || blank(form.emergency_relationship) || !/^09\d{9}$/.test(form.emergency_phone),
     2: form.medical_history.length === 0 || blank(form.allergy_details) || blank(form.medications),
     3: [['hospitalized', 'hospitalization_date', 'hospitalization_diagnosis'], ['surgery', 'surgery_date', 'surgery_diagnosis'], ['had_covid', 'covid_date', 'covid_diagnosis']]
       .some(([answer, date, diagnosis]) => form[answer] && (blank(form[date]) || blank(form[diagnosis]))),
@@ -220,7 +221,8 @@ const HealthProfile = ({ onBack }) => {
     const newErrors = {};
 
     if (s === 1) {
-      if (!form.emergency_name.trim()) newErrors.emergency_name = 'Full name is required';
+      const nameError = contactNameError(form.emergency_name, true);
+      if (nameError) newErrors.emergency_name = nameError;
       if (!form.emergency_relationship.trim()) newErrors.emergency_relationship = 'Relationship is required';
       if (!form.emergency_phone.trim()) newErrors.emergency_phone = 'Phone number is required';
       else if (!/^09\d{9}$/.test(form.emergency_phone)) newErrors.emergency_phone = 'Must be 11 digits starting with 09';
@@ -302,10 +304,12 @@ const HealthProfile = ({ onBack }) => {
     } catch (err) {
       setMessageType('error');
       if (err.response?.status === 409 || err.response?.status === 404) setLoadFailed(true);
-      const firstInvalidField = Object.keys(err.response?.data?.errors || {})[0]?.split('.')[0];
+      const responseErrors = err.response?.data?.errors || {};
+      const firstInvalidField = Object.keys(responseErrors)[0]?.split('.')[0];
       if (fieldSteps[firstInvalidField]) setStep(fieldSteps[firstInvalidField]);
-      setErrors(Object.fromEntries(Object.entries(err.response?.data?.errors || {}).map(([key, values]) => [key, values[0]])));
-      setMessage(Object.values(err.response?.data?.errors || {}).flat().join(' ') || err.response?.data?.message || 'Failed to save.');
+      setErrors(Object.fromEntries(Object.entries(responseErrors).map(([key, values]) => [key, values[0]])));
+      const otherErrors = Object.entries(responseErrors).filter(([key]) => fieldSteps[key.split('.')[0]] !== 1).flatMap(([, values]) => values);
+      setMessage(otherErrors.join(' ') || (Object.keys(responseErrors).length ? '' : err.response?.data?.message || 'Failed to save.'));
     } finally { setLoading(false); }
   };
 

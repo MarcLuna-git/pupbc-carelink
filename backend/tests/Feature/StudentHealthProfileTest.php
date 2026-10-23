@@ -122,4 +122,27 @@ class StudentHealthProfileTest extends TestCase
         $this->actingAs($other, 'api')->getJson('/api/student/health-profile')->assertJsonPath('data', null);
         $this->putJson('/api/student/health-profile', $this->healthData())->assertNotFound();
     }
+
+    public function test_emergency_name_uses_registration_name_rule_on_create_and_update(): void
+    {
+        $student = $this->student();
+        $this->actingAs($student, 'api');
+        foreach (['Juan2', 'Juan@', 'O’Brien', 123] as $name) {
+            $this->postJson('/api/student/health-profile', array_merge($this->healthData(), ['emergency_name' => $name]))
+                ->assertUnprocessable()->assertJsonPath('errors.emergency_name.0', 'Enter a valid name.');
+        }
+        $this->assertSame(0, HealthProfile::where('user_id', $student->id)->count());
+
+        $this->postJson('/api/student/health-profile', array_merge($this->healthData(), ['emergency_name' => 'Juan Dela Cruz']))
+            ->assertCreated()->assertJsonPath('data.emergency_name', 'Juan Dela Cruz');
+        foreach (['Peña', 'José', "O'Brien", 'Anne-Marie', 'Jr.'] as $name) {
+            $this->putJson('/api/student/health-profile', ['emergency_name' => $name])
+                ->assertOk()->assertJsonPath('data.emergency_name', $name);
+        }
+        foreach (['Juan2', 'Juan@', 'O’Brien', 123] as $name) {
+            $this->putJson('/api/student/health-profile', ['emergency_name' => $name])
+                ->assertUnprocessable()->assertJsonPath('errors.emergency_name.0', 'Enter a valid name.');
+        }
+        $this->assertSame('Jr.', $student->healthProfile()->first()->emergency_name);
+    }
 }

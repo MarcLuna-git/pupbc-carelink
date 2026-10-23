@@ -148,6 +148,7 @@ class HealthProfile extends Model
                 'required',
                 'string',
                 'max:100',
+                'regex:/^[\pL\s\-\'.]+$/u',
             ],
 
             'emergency_relationship' => [
