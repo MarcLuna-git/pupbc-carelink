@@ -182,4 +182,29 @@ class StudentHealthProfileTest extends TestCase
         }
         $this->assertSame('09123456789', $student->healthProfile()->first()->emergency_phone);
     }
+
+    public function test_emergency_phone_cannot_match_either_stored_student_mobile(): void
+    {
+        $student = $this->student();
+        $student->update(['mobile_number' => '+639171234567']);
+        $student->profile()->create(['mobile_number' => '09987654321']);
+        $this->actingAs($student, 'api');
+        $message = 'Emergency contact number must be different from your mobile number.';
+
+        foreach (['09171234567', '+639987654321'] as $phone) {
+            $this->postJson('/api/student/health-profile', array_merge($this->healthData(), ['emergency_phone' => $phone]))
+                ->assertUnprocessable()->assertJsonPath('errors.emergency_phone.0', $message);
+        }
+        $this->assertSame(0, HealthProfile::where('user_id', $student->id)->count());
+
+        $this->postJson('/api/student/health-profile', $this->healthData())->assertCreated();
+        foreach (['09171234567', '+639987654321'] as $phone) {
+            $this->putJson('/api/student/health-profile', ['emergency_phone' => $phone])
+                ->assertUnprocessable()->assertJsonPath('errors.emergency_phone.0', $message);
+        }
+        $student->update(['mobile_number' => '639171234567']);
+        $this->putJson('/api/student/health-profile', ['emergency_phone' => '+639171234567'])
+            ->assertUnprocessable()->assertJsonPath('errors.emergency_phone.0', $message);
+        $this->assertSame('09123456789', $student->healthProfile()->first()->emergency_phone);
+    }
 }

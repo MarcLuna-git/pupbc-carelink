@@ -34,7 +34,7 @@ import { formatPersonName } from '../../../utils/studentUser';
 import { mediaUrl } from '../../../utils/mediaUrl';
 import { clinicDate } from '../../../utils/appointmentDate';
 import { StudentToast } from '../../../components/StudentFeedback';
-import { contactNameError, contactPhoneError, formatContactPhone } from '../../../utils/contactValidation';
+import { contactNameError, contactPhoneError, formatContactPhone, ownMobileContactError } from '../../../utils/contactValidation';
 
 /*
  * ROUTE LOADING — same restored effect as the Settings page, scoped to this
@@ -384,7 +384,7 @@ const Overview = () => {
   const handleDraftChange = (event) => {
     const { name, value } = event.target;
     if (name === 'emergency_name') setNameError('');
-    if (name === 'emergency_phone') setPhoneError('');
+    if (name === 'emergency_phone' || name === 'mobile_number') setPhoneError('');
     const next = name === 'mobile_number'
       ? value.replace(/[^\d+]/g, '').slice(0, 13)
       : name === 'emergency_phone'
@@ -404,6 +404,8 @@ const Overview = () => {
     if (hasHealthProfile && !trimmed.emergency_relationship) { setEditError('Emergency contact name and relationship are required.'); return; }
     const invalidPhone = contactPhoneError(trimmed.emergency_phone, hasHealthProfile);
     if (invalidPhone) { setPhoneError(invalidPhone); return; }
+    const ownPhoneError = ownMobileContactError(trimmed.emergency_phone, trimmed.mobile_number);
+    if (ownPhoneError) { setPhoneError(ownPhoneError); return; }
 
     setSaving(true);
     setEditError('');

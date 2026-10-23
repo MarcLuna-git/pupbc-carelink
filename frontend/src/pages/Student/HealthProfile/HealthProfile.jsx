@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Check, Loader2, Heart, Shield, ClipboardList, AlertCircle, Info, PenLine, Users } from 'lucide-react';
 import api from '../../../services/api';
 import { StudentToast } from '../../../components/StudentFeedback';
-import { contactNameError, contactPhoneError, formatContactPhone } from '../../../utils/contactValidation';
+import { contactNameError, contactPhoneError, formatContactPhone, ownMobileContactError } from '../../../utils/contactValidation';
 
 const getManilaDateString = () => {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -202,8 +202,10 @@ const HealthProfile = ({ onBack }) => {
    * without its details.
    */
   const blank = (value) => !String(value ?? '').trim();
+  const ownPhoneError = ownMobileContactError(form.emergency_phone, user.mobile_number)
+    || ownMobileContactError(form.emergency_phone, user.profile?.mobile_number);
   const stepMissing = {
-    1: Boolean(contactNameError(form.emergency_name, true)) || blank(form.emergency_relationship) || Boolean(contactPhoneError(form.emergency_phone, true)),
+    1: Boolean(contactNameError(form.emergency_name, true)) || blank(form.emergency_relationship) || Boolean(contactPhoneError(form.emergency_phone, true)) || Boolean(ownPhoneError),
     2: form.medical_history.length === 0 || blank(form.allergy_details) || blank(form.medications),
     3: [['hospitalized', 'hospitalization_date', 'hospitalization_diagnosis'], ['surgery', 'surgery_date', 'surgery_diagnosis'], ['had_covid', 'covid_date', 'covid_diagnosis']]
       .some(([answer, date, diagnosis]) => form[answer] && (blank(form[date]) || blank(form[diagnosis]))),
@@ -224,6 +226,7 @@ const HealthProfile = ({ onBack }) => {
       if (!form.emergency_relationship.trim()) newErrors.emergency_relationship = 'Relationship is required';
       const phoneError = contactPhoneError(form.emergency_phone, true);
       if (phoneError) newErrors.emergency_phone = phoneError;
+      else if (ownPhoneError) newErrors.emergency_phone = ownPhoneError;
     }
 
     if (s === 6) {

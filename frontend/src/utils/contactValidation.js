@@ -21,3 +21,16 @@ export const contactPhoneError = (phone, required = false) => {
   if (!value) return required ? 'Phone number is required' : '';
   return validPhone.test(value) ? '' : 'Use 09XXXXXXXXX or +639XXXXXXXXX.';
 };
+
+export const canonicalContactPhone = (phone) => {
+  const value = String(phone ?? '');
+  if (validPhone.test(value)) return value.startsWith('09') ? `+63${value.slice(1)}` : value;
+  return /^639\d{9}$/.test(value) ? `+${value}` : null;
+};
+
+export const ownMobileContactError = (contact, mobile) => {
+  const number = canonicalContactPhone(contact);
+  return number && number === canonicalContactPhone(mobile)
+    ? 'Emergency contact number must be different from your mobile number.'
+    : '';
+};

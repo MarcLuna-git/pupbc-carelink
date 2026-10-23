@@ -29,7 +29,7 @@ class ProfileController extends Controller
 
     public function update(Request $request)
     {
-        $user = auth()->user();
+        $user = auth()->user()->load('profile', 'healthProfile');
 
         $data = $request->validate([
             'mobile_number' => ['required', 'string', 'max:20', 'regex:/^(?:09\d{9}|\+639\d{9})$/'],
@@ -44,6 +44,20 @@ class ProfileController extends Controller
             'guardian_name.regex' => 'Enter a valid name.',
             'guardian_contact.regex' => 'Use 09XXXXXXXXX or +639XXXXXXXXX for the guardian contact.',
         ]);
+
+        $mobile = self::canonicalPhone($data['mobile_number'] ?? ($user->profile?->mobile_number ?? $user->mobile_number));
+        $guardian = array_key_exists('guardian_contact', $data) ? $data['guardian_contact'] : $user->profile?->guardian_contact;
+        $mobileChanged = array_key_exists('mobile_number', $data)
+            && ($mobile !== self::canonicalPhone($user->mobile_number)
+                || ($user->profile?->mobile_number !== null && $mobile !== self::canonicalPhone($user->profile->mobile_number)));
+        $guardianChanged = array_key_exists('guardian_contact', $data)
+            && self::canonicalPhone($guardian) !== self::canonicalPhone($user->profile?->guardian_contact);
+        $savedContact = $user->healthProfile?->emergency_phone ?? $user->profile?->guardian_contact;
+        if (($mobileChanged || $guardianChanged) && $mobile !== null
+            && ($mobile === self::canonicalPhone($guardian)
+                || ($mobileChanged && $mobile === self::canonicalPhone($savedContact)))) {
+            throw ValidationException::withMessages(['guardian_contact' => ['Emergency contact number must be different from your mobile number.']]);
+        }
 
         $user->update([
             'mobile_number' => $data['mobile_number'] ?? $user->mobile_number,
@@ -71,6 +85,13 @@ class ProfileController extends Controller
                 'profile' => $this->profileData($profile->fresh()),
             ],
         ]);
+    }
+
+    private static function canonicalPhone(?string $phone): ?string
+    {
+        if (preg_match('/^09[0-9]{9}$/', (string) $phone)) return '+63' . substr($phone, 1);
+        if (preg_match('/^639[0-9]{9}$/', (string) $phone)) return '+' . $phone;
+        return preg_match('/^\+639[0-9]{9}$/', (string) $phone) ? $phone : null;
     }
 
     public function uploadAvatar(Request $request)

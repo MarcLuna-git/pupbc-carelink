@@ -99,8 +99,11 @@ class StudentProfileContactTest extends TestCase
     public function test_optional_guardian_contact_can_be_omitted_or_cleared(): void
     {
         $student = $this->student();
-        $profile = StudentProfile::create(['user_id' => $student->id, 'guardian_contact' => '09123456789']);
-        $this->actingAs($student, 'api')->putJson('/api/student/profile', ['mobile_number' => '09123456789'])->assertOk();
+        $student->update(['mobile_number' => '09123456789']);
+        $profile = StudentProfile::create(['user_id' => $student->id, 'mobile_number' => '09123456789', 'guardian_contact' => '09123456789']);
+        $this->actingAs($student, 'api')->putJson('/api/student/profile', [
+            'mobile_number' => '09123456789', 'guardian_contact' => '09123456789', 'address' => 'Unrelated edit',
+        ])->assertOk();
         $this->assertSame('09123456789', $profile->fresh()->guardian_contact);
         foreach (['', null, '   '] as $blank) {
             $profile->update(['guardian_contact' => '09123456789']);
@@ -119,8 +122,44 @@ class StudentProfileContactTest extends TestCase
         }
         $this->putJson('/api/student/profile', ['guardian_contact' => null])
             ->assertStatus(422)->assertJsonValidationErrors('mobile_number');
-        $this->putJson('/api/student/profile', ['mobile_number' => '09123456789', 'guardian_contact' => '+639123456789'])
+        $this->putJson('/api/student/profile', ['mobile_number' => '09987654321', 'guardian_contact' => '+639123456789'])
             ->assertOk()->assertJsonPath('data.profile.guardian_contact', '+639123456789');
+    }
+
+    public function test_guardian_contact_cannot_match_mobile_in_another_format_or_same_request(): void
+    {
+        $student = $this->student();
+        $student->update(['mobile_number' => '+639171234567']);
+        $this->actingAs($student, 'api');
+        $message = 'Emergency contact number must be different from your mobile number.';
+
+        $this->putJson('/api/student/profile', ['mobile_number' => '+639171234567', 'guardian_contact' => '09171234567'])
+            ->assertUnprocessable()->assertJsonPath('errors.guardian_contact.0', $message);
+        $this->putJson('/api/student/profile', ['mobile_number' => '09987654321', 'guardian_contact' => '+639987654321'])
+            ->assertUnprocessable()->assertJsonPath('errors.guardian_contact.0', $message);
+        $this->assertSame('+639171234567', $student->fresh()->mobile_number);
+        $this->assertNull(StudentProfile::where('user_id', $student->id)->first());
+    }
+
+    public function test_mobile_change_cannot_match_saved_legacy_or_health_contact(): void
+    {
+        $student = $this->student();
+        $student->update(['mobile_number' => '09171234567']);
+        $profile = StudentProfile::create(['user_id' => $student->id, 'mobile_number' => '09171234567', 'guardian_contact' => '+639987654321']);
+        $this->actingAs($student, 'api');
+        $message = 'Emergency contact number must be different from your mobile number.';
+
+        $this->putJson('/api/student/profile', ['mobile_number' => '09987654321'])
+            ->assertUnprocessable()->assertJsonPath('errors.guardian_contact.0', $message);
+        $this->assertSame('09171234567', $student->fresh()->mobile_number);
+        $this->assertSame('09171234567', $profile->fresh()->mobile_number);
+
+        $profile->update(['guardian_contact' => '09123456789']);
+        HealthProfile::create(['user_id' => $student->id, 'emergency_phone' => '+639987654321']);
+        $this->putJson('/api/student/profile', ['mobile_number' => '09987654321'])
+            ->assertUnprocessable()->assertJsonPath('errors.guardian_contact.0', $message);
+        $this->assertSame('09171234567', $student->fresh()->mobile_number);
+        $this->assertSame('09171234567', $profile->fresh()->mobile_number);
     }
 
     public function test_legacy_guardian_name_uses_registration_name_rule(): void

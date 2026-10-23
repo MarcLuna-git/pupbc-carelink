@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import * as contactValidation from './contactValidation.js';
 
-const { contactNameError, contactPhoneError, formatContactPhone } = contactValidation;
+const { contactNameError, contactPhoneError, formatContactPhone, canonicalContactPhone, ownMobileContactError } = contactValidation;
 
 test('emergency contact names follow the registration name rule', () => {
   for (const name of ['Juan Dela Cruz', 'Peña', 'José', "O'Brien", 'Anne-Marie', 'Jr.']) {
@@ -48,4 +48,20 @@ test('loading a saved emergency phone preserves both stored formats', () => {
     });
     assert.equal(loaded.emergency_phone, phone);
   }
+});
+
+test('own mobile comparison treats all three Philippine prefixes as equivalent', () => {
+  const message = 'Emergency contact number must be different from your mobile number.';
+  assert.equal(canonicalContactPhone('09171234567'), '+639171234567');
+  assert.equal(canonicalContactPhone('639171234567'), '+639171234567');
+  assert.equal(canonicalContactPhone('+639171234567'), '+639171234567');
+  for (const phone of ['', '   ', '0917123456', '+638171234567', 'not a phone', null]) {
+    assert.equal(canonicalContactPhone(phone), null, String(phone));
+  }
+  assert.equal(ownMobileContactError('09171234567', '+639171234567'), message);
+  assert.equal(ownMobileContactError('639171234567', '09171234567'), message);
+  assert.equal(ownMobileContactError('+639171234567', '639171234567'), message);
+  assert.equal(ownMobileContactError('09171234567', '09987654321'), '');
+  assert.equal(ownMobileContactError('', ''), '');
+  assert.equal(ownMobileContactError('bad', 'bad'), '');
 });

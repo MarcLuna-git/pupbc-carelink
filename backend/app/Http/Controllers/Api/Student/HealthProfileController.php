@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 class HealthProfileController extends Controller
 {
     private const FIELD_MESSAGES = [
@@ -25,9 +26,10 @@ class HealthProfileController extends Controller
     {
         $profile = DB::transaction(function () use ($request) {
             // Lock the existing user row even when no health profile exists yet.
-            User::whereKey(auth()->id())->lockForUpdate()->firstOrFail();
+            $user = User::whereKey(auth()->id())->lockForUpdate()->firstOrFail()->load('profile');
             abort_if(HealthProfile::where('user_id', auth()->id())->exists(), 409, 'Health profile already exists. Reload before editing.');
             $data = $request->validate(HealthProfile::validationRules(), self::FIELD_MESSAGES);
+            $this->rejectOwnMobile($data['emergency_phone'], $user);
             return HealthProfile::create(array_merge($data, ['user_id' => auth()->id(), 'completed_at' => now()]));
         });
         return response()->json(['success' => true, 'data' => $this->profileData($profile)], 201);
@@ -37,10 +39,29 @@ class HealthProfileController extends Controller
         $profile = HealthProfile::where('user_id', auth()->id())->firstOrFail();
         // Dapat valid pa rin ang buong record at consent pagkatapos ng partial edit.
         $data = Validator::make(array_merge($this->profileData($profile), $request->all()), HealthProfile::validationRules(), self::FIELD_MESSAGES)->validate();
+        if (array_key_exists('emergency_phone', $request->all())) {
+            $this->rejectOwnMobile($data['emergency_phone'], User::with('profile')->findOrFail(auth()->id()));
+        }
         $profile->fill($data);
         $profile->completed_at = $profile->completed_at ?: now();
         $profile->save();
         return response()->json(['success' => true, 'data' => $this->profileData($profile->fresh())]);
+    }
+
+    private function rejectOwnMobile(string $phone, User $user): void
+    {
+        $number = self::canonicalPhone($phone);
+        if ($number !== null && ($number === self::canonicalPhone($user->mobile_number)
+            || $number === self::canonicalPhone($user->profile?->mobile_number))) {
+            throw ValidationException::withMessages(['emergency_phone' => ['Emergency contact number must be different from your mobile number.']]);
+        }
+    }
+
+    private static function canonicalPhone(?string $phone): ?string
+    {
+        if (preg_match('/^09[0-9]{9}$/', (string) $phone)) return '+63' . substr($phone, 1);
+        if (preg_match('/^639[0-9]{9}$/', (string) $phone)) return '+' . $phone;
+        return preg_match('/^\+639[0-9]{9}$/', (string) $phone) ? $phone : null;
     }
 
     private function profileData(?HealthProfile $profile): ?array
