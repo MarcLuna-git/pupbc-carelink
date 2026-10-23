@@ -6,9 +6,10 @@ import NurseListCard from '../../../components/NurseListCard';
 import api from '../../../services/api';
 import useNurseSync from '../../../hooks/useNurseSync';
 import { StudentDirectory, StudentFilters, Pagination } from './StudentDirectory';
-import { StudentDetailsModal, EmergencyModal } from './StudentDetailsModal';
+import { StudentDetailsModal, ArchiveStudentModal, EmergencyModal } from './StudentDetailsModal';
 import { StudentFilesModal } from './StudentFilesModal';
 import { emptyFilters, nextDirectoryFilters, secondary } from './directoryOptions';
+import { archiveReasonError } from './archiveReason';
 
 const emptyEmergency = { incident_datetime: '', reason: '', symptoms: '', assessment: '', intervention: '', disposition: '', notes: '' };
 export default function NurseStudents() {
@@ -29,6 +30,9 @@ export default function NurseStudents() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [emergencyOpen, setEmergencyOpen] = useState(false);
   const [emergency, setEmergency] = useState(emptyEmergency);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [archiveReason, setArchiveReason] = useState('');
+  const [archiveError, setArchiveError] = useState('');
   const [saving, setSaving] = useState(false);
   const [refresh, setRefresh] = useState(0);
   const [listRefresh, setListRefresh] = useState(0);
@@ -37,6 +41,7 @@ export default function NurseStudents() {
   const filtered = Object.values(filters).some(Boolean);
   const listRequest = useRef(0);
   const detailRequest = useRef(0);
+  const archiveSubmitting = useRef(false);
   useNurseSync(['students', 'academic', 'appointments', 'consultations'], async signal => {
     const listId = ++listRequest.current;
     const list = await api.get('/nurse/students', { params: { ...filters, page }, signal });
@@ -98,16 +103,26 @@ export default function NurseStudents() {
     catch (err) { setEmergencyError(Object.values(err.response?.data?.errors || {}).flat().join(' ') || err.response?.data?.message || 'Unable to save emergency encounter.'); }
     finally { setSaving(false); }
   };
-  const archiveStudent = async () => {
-    const reason = window.prompt('Reason for archiving this student:');
-    if (!reason?.trim() || statusSaving) return;
+  const resetArchive = () => { setArchiveOpen(false); setArchiveReason(''); setArchiveError(''); };
+  const openArchive = () => { if (statusSaving) return; setArchiveReason(''); setArchiveError(''); setDetailError(''); setArchiveOpen(true); };
+  const closeArchive = () => { if (!statusSaving && !archiveSubmitting.current) resetArchive(); };
+  const archiveStudent = async event => {
+    event.preventDefault();
+    if (statusSaving || archiveSubmitting.current) return;
+    const error = archiveReasonError(archiveReason);
+    if (error) { setArchiveError(error); return; }
+    archiveSubmitting.current = true;
     setStatusSaving(true); setDetailError('');
     try {
-      await api.patch(`/nurse/students/${selectedId}/archive`, { reason: reason.trim() });
+      await api.patch(`/nurse/students/${selectedId}/archive`, { reason: archiveReason.trim() });
+      resetArchive();
       setRefresh(value => value + 1); setListRefresh(value => value + 1);
     } catch (err) {
-      setDetailError(err.response?.data?.message || 'Unable to archive student.');
-    } finally { setStatusSaving(false); }
+      const reasonErrors = err.response?.status === 422 ? err.response.data?.errors?.reason : null;
+      const reasonError = Array.isArray(reasonErrors) ? reasonErrors[0] : reasonErrors;
+      if (reasonError) setArchiveError(reasonError);
+      else { resetArchive(); setDetailError(err.response?.data?.message || 'Unable to archive student.'); }
+    } finally { archiveSubmitting.current = false; setStatusSaving(false); }
   };
   const restoreStudent = async () => {
     if (statusSaving || !window.confirm('Restore this student account?')) return;
@@ -119,7 +134,7 @@ export default function NurseStudents() {
       setDetailError(err.response?.data?.message || 'Unable to restore student.');
     } finally { setStatusSaving(false); }
   };
-  const close = () => { setSelectedId(null); setEmergencyOpen(false); setEmergency(emptyEmergency); setDetailError(''); setEmergencyError(''); };
+  const close = () => { setSelectedId(null); setEmergencyOpen(false); setEmergency(emptyEmergency); resetArchive(); setDetailError(''); setEmergencyError(''); };
 
   return <div className="mx-auto max-w-[1440px] space-y-5 text-gray-900 dark:text-gray-100">
     <NursePageHero id="nurse-students-title" title="Students" description="Manage and view registered student records." art={Users}>
@@ -143,8 +158,9 @@ export default function NurseStudents() {
     >
       {listError ? <div role="alert" className="space-y-3 p-8 text-center"><p className="text-sm text-red-600">{listError}</p><button className={secondary} onClick={() => setListRefresh(value => value + 1)}>Try again</button></div> : <><StudentDirectory students={students} loading={loading} filtered={filtered} onClear={clearFilters} onView={id => { setSelectedId(id); setTab('Overview'); }} onFiles={setFilesStudent} /><Pagination meta={meta} page={page} onPage={setPage} loading={loading} hideShowingText /></>}
     </NurseListCard>
-    {selectedId && <StudentDetailsModal student={selected} loading={detailLoading} error={detailError} appointments={appointments} history={history} tab={tab} onTab={setTab} onClose={close} emergencyOpen={emergencyOpen} onEmergency={() => { setEmergencyError(''); setEmergencyOpen(true); }} onArchive={archiveStudent} onRestore={restoreStudent} statusSaving={statusSaving} />}
+    {selectedId && <StudentDetailsModal student={selected} loading={detailLoading} error={detailError} appointments={appointments} history={history} tab={tab} onTab={setTab} onClose={close} emergencyOpen={emergencyOpen} archiveOpen={archiveOpen} onEmergency={() => { setEmergencyError(''); setEmergencyOpen(true); }} onArchive={openArchive} onRestore={restoreStudent} statusSaving={statusSaving} />}
     {filesStudent && <StudentFilesModal student={filesStudent} onClose={() => setFilesStudent(null)} />}
+    {archiveOpen && selectedId && <ArchiveStudentModal reason={archiveReason} reasonError={archiveError} onReasonChange={value => { setArchiveReason(value); setArchiveError(''); }} onSubmit={archiveStudent} onClose={closeArchive} saving={statusSaving} />}
     {emergencyOpen && selectedId && <EmergencyModal emergency={emergency} onChange={(field, value) => setEmergency(previous => ({ ...previous, [field]: value }))} onSubmit={submitEmergency} onClose={() => setEmergencyOpen(false)} saving={saving} error={emergencyError} />}
   </div>;
 }
