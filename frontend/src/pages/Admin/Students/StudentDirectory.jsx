@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Eye, Paperclip, Search, SlidersHorizontal, Users, X, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { mediaUrl } from '../../../utils/mediaUrl';
-import { academic, courses, years, sections, fullName, focus, inputStyle, secondary } from './directoryOptions';
+import { academic, directoryCourses, years, directorySections, fullName, focus, inputStyle, secondary } from './directoryOptions';
 
 export function Avatar({ student }) {
   const path = student?.student_profile?.profile_picture;
@@ -19,9 +19,9 @@ export function StatusBadge({ status }) {
 export function StudentFilters({ filters, onChange, onClear, filterDefinitions, label = 'Student filters', searchLabel = 'Search students', searchPlaceholder = 'Search by name or student ID', embedded = false }) {
   const active = Object.values(filters).some(Boolean);
   const definitions = filterDefinitions || [
-    ['course', 'Course', 'All Courses', courses.map(([value, label]) => [value, `${value} — ${label}`])],
+    ['course', 'Course', 'All Courses', directoryCourses.map(([value, label]) => [value, `${value} — ${label}`])],
     ['year', 'Year', 'All Years', years.map(value => [value, value])],
-    ['section', 'Section', 'All Sections', sections.map(value => [value, value])],
+    ['section', 'Section', 'All Sections', directorySections.map(value => [value, value])],
     ['status', 'Status', 'All Status', [['inactive', 'Inactive'], ['archived', 'Archived']]],
   ];
   return <section aria-label={label} className={embedded ? "" : "rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"}>
