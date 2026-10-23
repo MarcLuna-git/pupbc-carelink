@@ -34,7 +34,7 @@ import { formatPersonName } from '../../../utils/studentUser';
 import { mediaUrl } from '../../../utils/mediaUrl';
 import { clinicDate } from '../../../utils/appointmentDate';
 import { StudentToast } from '../../../components/StudentFeedback';
-import { contactNameError } from '../../../utils/contactValidation';
+import { contactNameError, contactPhoneError, formatContactPhone } from '../../../utils/contactValidation';
 
 /*
  * ROUTE LOADING — same restored effect as the Settings page, scoped to this
@@ -353,6 +353,7 @@ const Overview = () => {
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState('');
   const [nameError, setNameError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   const [draft, setDraft] = useState({});
 
 
@@ -368,6 +369,7 @@ const Overview = () => {
     });
     setEditError('');
     setNameError('');
+    setPhoneError('');
     setEditing(true);
   };
 
@@ -376,27 +378,32 @@ const Overview = () => {
     setEditing(false);
     setEditError('');
     setNameError('');
+    setPhoneError('');
   };
 
   const handleDraftChange = (event) => {
     const { name, value } = event.target;
     if (name === 'emergency_name') setNameError('');
+    if (name === 'emergency_phone') setPhoneError('');
     const next = name === 'mobile_number'
       ? value.replace(/[^\d+]/g, '').slice(0, 13)
       : name === 'emergency_phone'
-        ? value.replace(/\D/g, '').slice(0, 11)
+        ? formatContactPhone(value)
         : value;
+    if (next === null) return;
     setDraft((current) => ({ ...current, [name]: next }));
   };
 
   const saveEdit = async () => {
     if (saving) return;
     const trimmed = Object.fromEntries(Object.entries(draft).map(([key, value]) => [key, value.trim()]));
+    setEditError('');
     if (!/^(?:09\d{9}|\+639\d{9})$/.test(trimmed.mobile_number)) { setEditError('Use 09XXXXXXXXX or +639XXXXXXXXX for your mobile number.'); return; }
     const invalidName = contactNameError(trimmed.emergency_name, hasHealthProfile);
     if (invalidName) { setNameError(invalidName); return; }
     if (hasHealthProfile && !trimmed.emergency_relationship) { setEditError('Emergency contact name and relationship are required.'); return; }
-    if ((hasHealthProfile || trimmed.emergency_phone) && !/^09\d{9}$/.test(trimmed.emergency_phone)) { setEditError('Emergency contact number must be 11 digits starting with 09.'); return; }
+    const invalidPhone = contactPhoneError(trimmed.emergency_phone, hasHealthProfile);
+    if (invalidPhone) { setPhoneError(invalidPhone); return; }
 
     setSaving(true);
     setEditError('');
@@ -427,9 +434,11 @@ const Overview = () => {
     } catch (err) {
       const responseErrors = err.response?.data?.errors || {};
       const contactError = responseErrors.emergency_name || responseErrors.guardian_name;
+      const emergencyPhoneError = responseErrors.emergency_phone || responseErrors.guardian_contact;
       if (contactError) setNameError(Array.isArray(contactError) ? contactError[0] : contactError);
-      const messages = Object.entries(responseErrors).filter(([key]) => !['emergency_name', 'guardian_name'].includes(key)).flatMap(([, values]) => values).filter((value) => typeof value === 'string');
-      if (messages.length || !contactError) showNotice('error', messages.join(' ') || err.response?.data?.message || 'We could not save your changes. Please try again.');
+      if (emergencyPhoneError) setPhoneError(Array.isArray(emergencyPhoneError) ? emergencyPhoneError[0] : emergencyPhoneError);
+      const messages = Object.entries(responseErrors).filter(([key]) => !['emergency_name', 'guardian_name', 'emergency_phone', 'guardian_contact'].includes(key)).flatMap(([, values]) => values).filter((value) => typeof value === 'string');
+      if (messages.length || (!contactError && !emergencyPhoneError)) showNotice('error', messages.join(' ') || err.response?.data?.message || 'We could not save your changes. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -746,11 +755,11 @@ const Overview = () => {
             editing={editing}
             draft={draft}
             onChange={handleDraftChange}
-            fieldErrors={{ emergency_name: nameError }}
+            fieldErrors={{ emergency_name: nameError, emergency_phone: phoneError }}
             rows={[
               ['Name', contact.name || hp.emergency_name, { name: 'emergency_name', maxLength: 100, placeholder: 'Juan Dela Cruz' }],
               ['Relationship', contact.relationship || hp.emergency_relationship, { name: 'emergency_relationship', type: 'select', options: EMERGENCY_RELATIONSHIPS }],
-              ['Mobile Number', contact.phone || hp.emergency_phone, { name: 'emergency_phone', inputMode: 'numeric', maxLength: 11, placeholder: '09123456789' }],
+              ['Mobile Number', contact.phone || hp.emergency_phone, { name: 'emergency_phone', inputMode: 'tel', maxLength: 13, placeholder: '09XXXXXXXXX or +639XXXXXXXXX' }],
             ]}
           />
 

@@ -160,17 +160,7 @@ class HealthProfile extends Model
             'emergency_phone' => [
                 'required',
                 'string',
-
-                /*
-                 * Existing Health Profile form currently stores the
-                 * Philippine local format:
-                 *
-                 * 09XXXXXXXXX
-                 *
-                 * We will centralize +63 normalization later when we
-                 * update the contact/profile forms.
-                 */
-                'regex:/^09[0-9]{9}$/',
+                'regex:/^(?:09[0-9]{9}|\+639[0-9]{9})$/',
             ],
 
             'consent_signature' => [

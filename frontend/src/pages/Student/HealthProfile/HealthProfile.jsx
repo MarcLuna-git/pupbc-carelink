@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Check, Loader2, Heart, Shield, ClipboardList, AlertCircle, Info, PenLine, Users } from 'lucide-react';
 import api from '../../../services/api';
 import { StudentToast } from '../../../components/StudentFeedback';
-import { contactNameError } from '../../../utils/contactValidation';
+import { contactNameError, contactPhoneError, formatContactPhone } from '../../../utils/contactValidation';
 
 const getManilaDateString = () => {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -156,8 +156,6 @@ const HealthProfile = ({ onBack }) => {
             value = Array.isArray(value) ? value : [];
           } else if (key === 'consent_date') {
             value = getManilaDateString();
-          } else if (key === 'emergency_phone') {
-            value = String(value).replace(/[\s\-()]/g, '').replace(/^\+63/, '0');
           } else if (key.includes('date') || key === 'last_menstrual_period') {
             value = typeof value === 'string' ? value.slice(0, 10) : '';
           }
@@ -205,7 +203,7 @@ const HealthProfile = ({ onBack }) => {
    */
   const blank = (value) => !String(value ?? '').trim();
   const stepMissing = {
-    1: Boolean(contactNameError(form.emergency_name, true)) || blank(form.emergency_relationship) || !/^09\d{9}$/.test(form.emergency_phone),
+    1: Boolean(contactNameError(form.emergency_name, true)) || blank(form.emergency_relationship) || Boolean(contactPhoneError(form.emergency_phone, true)),
     2: form.medical_history.length === 0 || blank(form.allergy_details) || blank(form.medications),
     3: [['hospitalized', 'hospitalization_date', 'hospitalization_diagnosis'], ['surgery', 'surgery_date', 'surgery_diagnosis'], ['had_covid', 'covid_date', 'covid_diagnosis']]
       .some(([answer, date, diagnosis]) => form[answer] && (blank(form[date]) || blank(form[diagnosis]))),
@@ -224,8 +222,8 @@ const HealthProfile = ({ onBack }) => {
       const nameError = contactNameError(form.emergency_name, true);
       if (nameError) newErrors.emergency_name = nameError;
       if (!form.emergency_relationship.trim()) newErrors.emergency_relationship = 'Relationship is required';
-      if (!form.emergency_phone.trim()) newErrors.emergency_phone = 'Phone number is required';
-      else if (!/^09\d{9}$/.test(form.emergency_phone)) newErrors.emergency_phone = 'Must be 11 digits starting with 09';
+      const phoneError = contactPhoneError(form.emergency_phone, true);
+      if (phoneError) newErrors.emergency_phone = phoneError;
     }
 
     if (s === 6) {
@@ -266,7 +264,10 @@ const HealthProfile = ({ onBack }) => {
     const { name, value, type, checked } = e.target;
     let formatted = type === 'checkbox' ? checked : value;
 
-    if (name === 'emergency_phone') formatted = value.replace(/\D/g, '').slice(0, 11);
+    if (name === 'emergency_phone') {
+      formatted = formatContactPhone(value);
+      if (formatted === null) return;
+    }
 
     setForm({ ...form, [name]: formatted });
     if (errors[name]) setErrors({ ...errors, [name]: '' });
@@ -514,7 +515,7 @@ const HealthProfile = ({ onBack }) => {
                 </div>
                 <div>
                   <label className={labelClass}>Phone Number <span className="text-red-400">*</span></label>
-                  <input className={inputClass('emergency_phone')} name="emergency_phone" value={form.emergency_phone} onChange={handleChange} placeholder="09123456789" maxLength={11} inputMode="numeric" />
+                  <input className={inputClass('emergency_phone')} name="emergency_phone" value={form.emergency_phone} onChange={handleChange} placeholder="09XXXXXXXXX or +639XXXXXXXXX" maxLength={13} inputMode="tel" />
                   {errors.emergency_phone && <p className={errorClass}>{errors.emergency_phone}</p>}
                 </div>
               </div>

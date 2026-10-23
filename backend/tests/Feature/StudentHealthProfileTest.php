@@ -145,4 +145,41 @@ class StudentHealthProfileTest extends TestCase
         }
         $this->assertSame('Jr.', $student->healthProfile()->first()->emergency_name);
     }
+
+    public function test_emergency_phone_accepts_both_philippine_formats_without_rewriting(): void
+    {
+        $student = $this->student();
+        $this->actingAs($student, 'api');
+        $this->postJson('/api/student/health-profile', array_merge($this->healthData(), ['emergency_phone' => '+639123456789']))
+            ->assertCreated()->assertJsonPath('data.emergency_phone', '+639123456789');
+        $this->putJson('/api/student/health-profile', ['emergency_phone' => '09123456789'])
+            ->assertOk()->assertJsonPath('data.emergency_phone', '09123456789');
+        $this->putJson('/api/student/health-profile', ['emergency_phone' => '+639123456789'])
+            ->assertOk()->assertJsonPath('data.emergency_phone', '+639123456789');
+        $this->putJson('/api/student/health-profile', ['medications' => 'Updated'])
+            ->assertOk()->assertJsonPath('data.emergency_phone', '+639123456789');
+        $this->assertSame('+639123456789', $student->healthProfile()->first()->emergency_phone);
+
+        $other = $this->student();
+        $this->actingAs($other, 'api')->postJson('/api/student/health-profile', $this->healthData())
+            ->assertCreated()->assertJsonPath('data.emergency_phone', '09123456789');
+    }
+
+    public function test_invalid_emergency_phone_has_the_same_message_on_create_and_update(): void
+    {
+        $student = $this->student();
+        $this->actingAs($student, 'api');
+        foreach (['639123456789', '0912345678', '+63912345678', '08123456789', '0912345678a'] as $phone) {
+            $this->postJson('/api/student/health-profile', array_merge($this->healthData(), ['emergency_phone' => $phone]))
+                ->assertUnprocessable()->assertJsonPath('errors.emergency_phone.0', 'Use 09XXXXXXXXX or +639XXXXXXXXX.');
+        }
+        $this->assertSame(0, HealthProfile::where('user_id', $student->id)->count());
+
+        $this->postJson('/api/student/health-profile', $this->healthData())->assertCreated();
+        foreach (['639123456789', '0912345678', '+63912345678', '08123456789', '0912345678a'] as $phone) {
+            $this->putJson('/api/student/health-profile', ['emergency_phone' => $phone])
+                ->assertUnprocessable()->assertJsonPath('errors.emergency_phone.0', 'Use 09XXXXXXXXX or +639XXXXXXXXX.');
+        }
+        $this->assertSame('09123456789', $student->healthProfile()->first()->emergency_phone);
+    }
 }
