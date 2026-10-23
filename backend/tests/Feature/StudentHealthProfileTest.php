@@ -207,4 +207,44 @@ class StudentHealthProfileTest extends TestCase
             ->assertUnprocessable()->assertJsonPath('errors.emergency_phone.0', $message);
         $this->assertSame('09123456789', $student->healthProfile()->first()->emergency_phone);
     }
+
+    public function test_signature_must_match_registered_name_before_create_or_update_writes(): void
+    {
+        $student = $this->student();
+        $this->actingAs($student, 'api');
+        $message = 'Signature must match your registered name.';
+
+        $this->postJson('/api/student/health-profile', array_merge($this->healthData(), ['consent_signature' => 'Other Student']))
+            ->assertUnprocessable()->assertJsonPath('errors.consent_signature.0', $message);
+        $this->assertSame(0, HealthProfile::where('user_id', $student->id)->count());
+
+        $this->postJson('/api/student/health-profile', $this->healthData())->assertCreated();
+        $this->putJson('/api/student/health-profile', ['consent_signature' => 'Other Student', 'medications' => 'Should not save'])
+            ->assertUnprocessable()->assertJsonPath('errors.consent_signature.0', $message);
+        $profile = $student->healthProfile()->first();
+        $this->assertSame('Student Test', $profile->consent_signature);
+        $this->assertSame('Prescribed medication', $profile->medications);
+
+        $student->update(['first_name' => 'Renamed']);
+        $this->putJson('/api/student/health-profile', ['medications' => 'Updated without signature'])
+            ->assertOk()->assertJsonPath('data.consent_signature', 'Student Test');
+        $this->putJson('/api/student/health-profile', ['consent_signature' => 'Student Test', 'medications' => 'Should not save'])
+            ->assertUnprocessable()->assertJsonPath('errors.consent_signature.0', $message);
+        $profile = $student->healthProfile()->first();
+        $this->assertSame('Student Test', $profile->consent_signature);
+        $this->assertSame('Updated without signature', $profile->medications);
+    }
+
+    public function test_signature_accepts_first_last_or_full_middle_name_ignoring_case_and_extra_spaces(): void
+    {
+        $student = $this->student();
+        $student->update(['middle_name' => 'Peña']);
+        $this->actingAs($student, 'api');
+
+        $this->postJson('/api/student/health-profile', array_merge($this->healthData(), ['consent_signature' => '  sTuDeNt   tEsT  ']))
+            ->assertCreated()->assertJsonPath('data.consent_signature', 'sTuDeNt   tEsT');
+        $this->putJson('/api/student/health-profile', ['consent_signature' => 'STUDENT   PEÑA   TEST'])
+            ->assertOk()->assertJsonPath('data.consent_signature', 'STUDENT   PEÑA   TEST');
+        $this->assertSame('STUDENT   PEÑA   TEST', $student->healthProfile()->first()->consent_signature);
+    }
 }

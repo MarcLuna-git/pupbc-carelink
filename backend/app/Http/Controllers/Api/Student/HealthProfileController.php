@@ -29,6 +29,7 @@ class HealthProfileController extends Controller
             $user = User::whereKey(auth()->id())->lockForUpdate()->firstOrFail()->load('profile');
             abort_if(HealthProfile::where('user_id', auth()->id())->exists(), 409, 'Health profile already exists. Reload before editing.');
             $data = $request->validate(HealthProfile::validationRules(), self::FIELD_MESSAGES);
+            $this->rejectInvalidSignature($data['consent_signature'], $user);
             $this->rejectOwnMobile($data['emergency_phone'], $user);
             return HealthProfile::create(array_merge($data, ['user_id' => auth()->id(), 'completed_at' => now()]));
         });
@@ -42,10 +43,23 @@ class HealthProfileController extends Controller
         if (array_key_exists('emergency_phone', $request->all())) {
             $this->rejectOwnMobile($data['emergency_phone'], User::with('profile')->findOrFail(auth()->id()));
         }
+        if (array_key_exists('consent_signature', $request->all())) {
+            $this->rejectInvalidSignature($data['consent_signature'], auth()->user());
+        }
         $profile->fill($data);
         $profile->completed_at = $profile->completed_at ?: now();
         $profile->save();
         return response()->json(['success' => true, 'data' => $this->profileData($profile->fresh())]);
+    }
+
+    private function rejectInvalidSignature(string $signature, User $user): void
+    {
+        $normalize = static fn (string $name): string => mb_strtolower(preg_replace('/\s+/u', ' ', trim($name)));
+        $names = [$user->full_name];
+        if (trim((string) $user->middle_name) !== '') $names[] = $user->full_name_with_middle;
+        if (!in_array($normalize($signature), array_map($normalize, $names), true)) {
+            throw ValidationException::withMessages(['consent_signature' => ['Signature must match your registered name.']]);
+        }
     }
 
     private function rejectOwnMobile(string $phone, User $user): void

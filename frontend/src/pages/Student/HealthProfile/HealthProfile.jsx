@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Check, Loader2, Heart, Shield, ClipboardList, AlertCircle, Info, PenLine, Users } from 'lucide-react';
 import api from '../../../services/api';
 import { StudentToast } from '../../../components/StudentFeedback';
-import { contactNameError, contactPhoneError, formatContactPhone, ownMobileContactError } from '../../../utils/contactValidation';
+import { contactNameError, contactPhoneError, formatContactPhone, ownMobileContactError, signatureNameError } from '../../../utils/contactValidation';
 
 const getManilaDateString = () => {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -213,7 +213,7 @@ const HealthProfile = ({ onBack }) => {
       || (['Past', 'Present'].includes(form.tobacco_use) && (blank(form.tobacco_amount) || blank(form.tobacco_duration)))
       || (form.has_disability && blank(form.disability_details)),
     5: form.family_history.length === 0,
-    6: blank(form.consent_signature) || !form.agree_privacy || !form.agree_terms,
+    6: Boolean(signatureNameError(form.consent_signature, user)) || !form.agree_privacy || !form.agree_terms,
   };
   const stepsNeedingInput = new Set(Object.keys(stepMissing).filter((key) => stepMissing[key]).map(Number));
 
@@ -230,7 +230,8 @@ const HealthProfile = ({ onBack }) => {
     }
 
     if (s === 6) {
-      if (!form.consent_signature.trim()) newErrors.consent_signature = 'Full name is required as signature';
+      const signatureError = signatureNameError(form.consent_signature, user);
+      if (signatureError) newErrors.consent_signature = signatureError;
       if (!form.agree_privacy) newErrors.agree_privacy = 'You must agree to the Privacy Policy';
       if (!form.agree_terms) newErrors.agree_terms = 'You must agree to the Terms of Service';
     }
@@ -309,15 +310,16 @@ const HealthProfile = ({ onBack }) => {
       setMessageType('error');
       if (err.response?.status === 409 || err.response?.status === 404) setLoadFailed(true);
       const responseErrors = err.response?.data?.errors || {};
-      const firstInvalidField = Object.keys(responseErrors)[0]?.split('.')[0];
+      const firstInvalidField = responseErrors.consent_signature ? 'consent_signature' : Object.keys(responseErrors)[0]?.split('.')[0];
       if (fieldSteps[firstInvalidField]) setStep(fieldSteps[firstInvalidField]);
       setErrors(Object.fromEntries(Object.entries(responseErrors).map(([key, values]) => [key, values[0]])));
-      const otherErrors = Object.entries(responseErrors).filter(([key]) => fieldSteps[key.split('.')[0]] !== 1).flatMap(([, values]) => values);
+      const otherErrors = Object.entries(responseErrors).filter(([key]) => fieldSteps[key.split('.')[0]] !== 1 && key.split('.')[0] !== 'consent_signature').flatMap(([, values]) => values);
       setMessage(otherErrors.join(' ') || (Object.keys(responseErrors).length ? '' : err.response?.data?.message || 'Failed to save.'));
     } finally { setLoading(false); }
   };
 
   const steps = ['Emergency', 'Medical', 'History', 'Personal', 'Family', 'Consent'];
+  const summaryErrors = Object.entries(errors).filter(([field, value]) => field !== 'consent_signature' && value).map(([, value]) => value);
   const progress = Math.round((step / totalSteps) * 100);
   const inputClass = (field) => `w-full border rounded-xl px-4 py-3 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:border-maroon-800 transition ${errors[field] ? 'border-red-300 bg-red-50 dark:bg-red-900/20' : 'border-slate-200 bg-white'}`;
   const labelClass = 'text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1.5';
@@ -496,7 +498,7 @@ const HealthProfile = ({ onBack }) => {
         </div>
 
         <StudentToast message={message} type={messageType} onClose={() => setMessage('')} />
-        {step !== 1 && Object.keys(errors).length > 0 && <div role="alert" className="p-3 rounded-2xl text-sm mb-4 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400">{Object.values(errors).filter(Boolean).join('. ')}</div>}
+        {step !== 1 && summaryErrors.length > 0 && <div role="alert" className="p-3 rounded-2xl text-sm mb-4 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400">{summaryErrors.join('. ')}</div>}
 
         <AnimatePresence mode="wait">
           <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
@@ -595,7 +597,7 @@ const HealthProfile = ({ onBack }) => {
             {step === 6 && (
               <div className="space-y-4">
                 <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 rounded-2xl p-4 text-xs text-yellow-700 dark:text-yellow-400 leading-relaxed"><strong>Important:</strong> I certify that all information is true. I consent to data processing per RA 10173.</div>
-                <div><label className={labelClass}>Full Name (Electronic Signature) <span className="text-red-400">*</span></label><input className={inputClass('consent_signature')} name="consent_signature" value={form.consent_signature} onChange={handleChange} placeholder="Type your full name" maxLength={191} />{errors.consent_signature && <p className={errorClass}>{errors.consent_signature}</p>}</div>
+                <div><label className={labelClass}>Full Name (Electronic Signature) <span className="text-red-400">*</span></label><input className={inputClass('consent_signature')} name="consent_signature" value={form.consent_signature} onChange={handleChange} placeholder="Type your full name" maxLength={191} aria-invalid={Boolean(errors.consent_signature)} />{errors.consent_signature && <p role="alert" className={errorClass}>{errors.consent_signature}</p>}</div>
                 <div><label className={labelClass}>Date</label><input className={`${inputClass('consent_date')} bg-gray-50 dark:bg-gray-600 text-gray-500 cursor-not-allowed`} value={form.consent_date} disabled /></div>
                 <div className="flex items-start space-x-2"><input type="checkbox" name="agree_privacy" checked={form.agree_privacy} onChange={handleChange} className="mt-1 w-4 h-4 rounded accent-maroon-800 flex-shrink-0" /><span className="text-xs text-gray-500 dark:text-gray-400">I agree to the <span className="text-maroon-600 dark:text-maroon-400 underline">Privacy Policy</span> <span className="text-red-400">*</span></span></div>{errors.agree_privacy && <p className={errorClass}>{errors.agree_privacy}</p>}
                 <div className="flex items-start space-x-2"><input type="checkbox" name="agree_terms" checked={form.agree_terms} onChange={handleChange} className="mt-1 w-4 h-4 rounded accent-maroon-800 flex-shrink-0" /><span className="text-xs text-gray-500 dark:text-gray-400">I agree to the <span className="text-maroon-600 dark:text-maroon-400 underline">Terms of Service</span> <span className="text-red-400">*</span></span></div>{errors.agree_terms && <p className={errorClass}>{errors.agree_terms}</p>}

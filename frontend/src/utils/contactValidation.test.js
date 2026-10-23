@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import * as contactValidation from './contactValidation.js';
 
-const { contactNameError, contactPhoneError, formatContactPhone, canonicalContactPhone, ownMobileContactError } = contactValidation;
+const { contactNameError, contactPhoneError, formatContactPhone, canonicalContactPhone, ownMobileContactError, signatureNameError } = contactValidation;
 
 test('emergency contact names follow the registration name rule', () => {
   for (const name of ['Juan Dela Cruz', 'Peña', 'José', "O'Brien", 'Anne-Marie', 'Jr.']) {
@@ -64,4 +64,22 @@ test('own mobile comparison treats all three Philippine prefixes as equivalent',
   assert.equal(ownMobileContactError('09171234567', '09987654321'), '');
   assert.equal(ownMobileContactError('', ''), '');
   assert.equal(ownMobileContactError('bad', 'bad'), '');
+});
+
+test('electronic signature matches either registered full-name form', () => {
+  const user = { first_name: 'Juan', middle_name: 'Peña', last_name: 'Dela Cruz' };
+  const mismatch = 'Signature must match your registered name.';
+  for (const signature of ['Juan Dela Cruz', 'Juan Peña Dela Cruz', '  jUaN   pEñA  dElA   cRuZ  ', 'Juan Pen\u0303a Dela Cruz']) {
+    assert.equal(signatureNameError(signature, user), '', signature);
+  }
+  for (const signature of ['Other Student', 'Juan Pena Dela Cruz', 'Dela Cruz, Juan', 'J. Dela Cruz', 'Juan Dela Cruz Jr.']) {
+    assert.equal(signatureNameError(signature, user), mismatch, signature);
+  }
+  assert.equal(signatureNameError('   ', user), 'Full name is required as signature');
+  assert.equal(signatureNameError('Anything', {}), '');
+  assert.equal(signatureNameError('Anything', { first_name: 'Juan' }), '');
+  assert.equal(signatureNameError('Juan Dela Cruz', { first_name: 'Juan', middle_name: null, last_name: 'Dela Cruz' }), '');
+  assert.equal(signatureNameError('Juan Dela Cruz', { first_name: 'Juan', middle_name: '  ', last_name: 'Dela Cruz' }), '');
+  assert.equal(signatureNameError('Juan Peña Dela Cruz', { first_name: 'Juan', middle_name: null, last_name: 'Dela Cruz' }), mismatch);
+  assert.equal(signatureNameError('Juan Peña Dela Cruz', { first_name: 'Juan', middle_name: 'Pen\u0303a', last_name: 'Dela Cruz' }), '');
 });

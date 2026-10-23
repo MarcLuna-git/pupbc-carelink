@@ -6,6 +6,19 @@ export const contactNameError = (name, required = false) => {
   return validName.test(value) ? '' : 'Enter a valid name.';
 };
 
+export const signatureNameError = (signature, user) => {
+  const normalize = (value) => String(value ?? '').normalize('NFC').trim().replace(/\s+/gu, ' ').toLowerCase();
+  const signed = normalize(signature);
+  if (!signed) return 'Full name is required as signature';
+  const first = String(user?.first_name ?? '').trim();
+  const middle = String(user?.middle_name ?? '').trim();
+  const last = String(user?.last_name ?? '').trim();
+  if (!first || !last) return '';
+  const names = [`${first} ${last}`];
+  if (middle) names.push(`${first} ${middle} ${last}`);
+  return names.some((name) => normalize(name) === signed) ? '' : 'Signature must match your registered name.';
+};
+
 const validPhone = /^(?:09\d{9}|\+639\d{9})$/;
 
 // Keep partial-entry behavior in sync with Register.jsx's formatPhilippineMobile.
