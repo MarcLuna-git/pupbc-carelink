@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Nurse;
 
 use App\Http\Controllers\Controller;
+use App\Services\ClinicQueue;
 use App\Support\DatabaseSearch;
 use App\Models\User;
 use App\Models\Appointment;
@@ -75,36 +76,19 @@ class StudentController extends Controller
         $data = $request->validate(['reason' => 'required|string|max:500']);
 
         return DB::transaction(function () use ($data, $id) {
+            ClinicQueue::lock();
             $student = User::where('role', 'student')->lockForUpdate()->findOrFail($id);
             abort_unless($student->status !== 'archived' && !$student->trashed(), 422, 'Student is already archived.');
 
             abort_if(Appointment::where('user_id', $student->id)
-                ->where('status', 'approved')
+                ->whereIn('status', ['pending', 'approved'])
                 ->whereDate('appointment_date', '>=', today('Asia/Manila')->toDateString())
-                ->exists(), 422, 'Student cannot be archived with a future approved appointment.');
+                ->exists(), 422, 'Student cannot be archived with an upcoming appointment.');
 
-            $pending = Appointment::where('user_id', $student->id)
-                ->where('status', 'pending')
-                ->whereDate('appointment_date', '>=', today('Asia/Manila')->toDateString())
-                ->lockForUpdate()
-                ->get();
-
-            foreach ($pending as $appointment) {
-                $appointment->update([
-                    'status' => 'cancelled',
-                    'cancellation_reason' => $data['reason'],
-                    'cancelled_by' => auth()->id(),
-                    'cancelled_at' => now(),
-                ]);
-                Notification::create([
-                    'user_id' => $student->id,
-                    'type' => 'appointment_cancelled',
-                    'title' => 'Appointment Cancelled',
-                    'message' => 'Your appointment was cancelled because your student account was archived: ' . $data['reason'],
-                    'data' => ['appointment_id' => $appointment->id],
-                ]);
-                app(\App\Services\StudentAppointmentMail::class)->afterCommit($appointment);
-            }
+            abort_if(ClinicQueue::ordered()
+                ->where('appointment_checkins.user_id', $student->id)
+                ->whereIn('appointment_checkins.status', ['waiting', 'called', 'serving', 'skipped'])
+                ->exists(), 422, 'Student cannot be archived with an active queue entry.');
 
             $student->update([
                 'status' => 'archived',

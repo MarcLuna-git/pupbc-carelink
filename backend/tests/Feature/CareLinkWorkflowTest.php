@@ -286,30 +286,108 @@ class CareLinkWorkflowTest extends TestCase
         $this->assertDatabaseHas('notifications', ['user_id' => $student->id, 'type' => 'appointment_expired']);
     }
 
-    public function test_archive_cancels_future_pending_appointments_and_restore_returns_null_status()
+    public function test_archive_and_restore_returns_null_status()
     {
         $nurse = $this->person('nurse');
         $student = $this->person();
-        $appointment = $this->appointment($student, 'pending', \Carbon\Carbon::tomorrow()->toDateString());
 
         $this->actingAs($nurse, 'api')->patchJson('/api/nurse/students/'.$student->id.'/archive', ['reason' => 'Student is no longer enrolled'])->assertOk();
         $this->assertSoftDeleted('users', ['id' => $student->id]);
         $this->assertSame('archived', $student->fresh()->status);
-        $this->assertSame('cancelled', $appointment->fresh()->status);
         $this->assertDatabaseHas('notifications', ['user_id' => $student->id, 'type' => 'student_archived']);
 
         $this->actingAs($nurse, 'api')->patchJson('/api/nurse/students/'.$student->id.'/restore')->assertOk();
         $this->assertDatabaseHas('users', ['id' => $student->id, 'status' => null, 'deleted_at' => null]);
     }
 
-    public function test_archive_is_blocked_by_a_future_approved_appointment()
+    public function test_archive_is_blocked_by_pending_and_approved_appointments_today_or_later()
+    {
+        Mail::fake();
+        $nurse = $this->person('nurse');
+        foreach (['pending', 'approved'] as $status) {
+            foreach ([today('Asia/Manila')->toDateString(), today('Asia/Manila')->addDay()->toDateString()] as $date) {
+                $student = $this->person();
+                $appointment = $this->appointment($student, $status, $date);
+
+                $this->actingAs($nurse, 'api')->patchJson('/api/nurse/students/'.$student->id.'/archive', ['reason' => 'Archive requested'])
+                    ->assertUnprocessable()->assertJsonPath('message', 'Student cannot be archived with an upcoming appointment.');
+                $this->assertNotSoftDeleted('users', ['id' => $student->id]);
+                $this->assertNull($student->fresh()->status);
+                $this->assertNull($student->fresh()->archive_reason);
+                $this->assertSame($status, $appointment->fresh()->status);
+                $this->assertSame(0, \App\Models\Notification::where('user_id', $student->id)->count());
+            }
+        }
+        Mail::assertNothingSent();
+    }
+
+    public function test_archive_is_blocked_by_each_active_queue_status_today()
+    {
+        Mail::fake();
+        $nurse = $this->person('nurse');
+        foreach (['waiting', 'called', 'serving', 'skipped'] as $status) {
+            $student = $this->person();
+            $appointment = $this->appointment($student, 'completed');
+            $checkin = AppointmentCheckin::create([
+                'appointment_id' => $appointment->id, 'user_id' => $student->id,
+                'checked_in_at' => now(), 'check_in_time' => now(), 'is_walk_in' => false, 'status' => $status,
+            ]);
+
+            $this->actingAs($nurse, 'api')->patchJson('/api/nurse/students/'.$student->id.'/archive', ['reason' => 'Archive requested'])
+                ->assertUnprocessable()->assertJsonPath('message', 'Student cannot be archived with an active queue entry.');
+            $this->assertNotSoftDeleted('users', ['id' => $student->id]);
+            $this->assertNull($student->fresh()->status);
+            $this->assertNull($student->fresh()->archive_reason);
+            $this->assertSame($status, $checkin->fresh()->status);
+            $this->assertSame(0, \App\Models\Notification::where('user_id', $student->id)->count());
+        }
+        Mail::assertNothingSent();
+    }
+
+    public function test_archive_allows_stale_and_terminal_queue_entries()
     {
         $nurse = $this->person('nurse');
-        $student = $this->person();
-        $this->appointment($student, 'approved', \Carbon\Carbon::tomorrow()->toDateString());
+        foreach (['waiting', 'called', 'serving', 'skipped', 'no_show', 'completed'] as $status) {
+            $student = $this->person();
+            $appointment = $this->appointment($student, 'completed', today('Asia/Manila')->subDay()->toDateString());
+            $checkin = AppointmentCheckin::create([
+                'appointment_id' => $appointment->id, 'user_id' => $student->id,
+                'checked_in_at' => now(), 'check_in_time' => now(), 'is_walk_in' => false, 'status' => $status,
+            ]);
+            $checkin->forceFill(['created_at' => today('Asia/Manila')->subDay()->addHours(12)])->save();
+            $this->assertSame(today('Asia/Manila')->subDay()->toDateString(), $checkin->fresh()->created_at->toDateString());
 
-        $this->actingAs($nurse, 'api')->patchJson('/api/nurse/students/'.$student->id.'/archive', ['reason' => 'Archive requested'])->assertUnprocessable();
-        $this->assertNotSoftDeleted('users', ['id' => $student->id]);
+            $this->actingAs($nurse, 'api')->patchJson('/api/nurse/students/'.$student->id.'/archive', ['reason' => 'Archive requested'])->assertOk();
+            $this->assertSoftDeleted('users', ['id' => $student->id]);
+        }
+        foreach (['no_show', 'completed'] as $status) {
+            $student = $this->person();
+            $appointment = $this->appointment($student, 'completed');
+            AppointmentCheckin::create([
+                'appointment_id' => $appointment->id, 'user_id' => $student->id,
+                'checked_in_at' => now(), 'check_in_time' => now(), 'is_walk_in' => false, 'status' => $status,
+            ]);
+
+            $this->actingAs($nurse, 'api')->patchJson('/api/nurse/students/'.$student->id.'/archive', ['reason' => 'Archive requested'])->assertOk();
+            $this->assertSoftDeleted('users', ['id' => $student->id]);
+        }
+    }
+
+    public function test_archive_allows_past_and_terminal_appointments()
+    {
+        $nurse = $this->person('nurse');
+        foreach (['pending', 'approved'] as $status) {
+            $student = $this->person();
+            $this->appointment($student, $status, today('Asia/Manila')->subDay()->toDateString());
+            $this->actingAs($nurse, 'api')->patchJson('/api/nurse/students/'.$student->id.'/archive', ['reason' => 'Archive requested'])->assertOk();
+            $this->assertSoftDeleted('users', ['id' => $student->id]);
+        }
+        foreach (['rejected', 'completed', 'cancelled', 'expired'] as $status) {
+            $student = $this->person();
+            $this->appointment($student, $status, today('Asia/Manila')->addDay()->toDateString());
+            $this->actingAs($nurse, 'api')->patchJson('/api/nurse/students/'.$student->id.'/archive', ['reason' => 'Archive requested'])->assertOk();
+            $this->assertSoftDeleted('users', ['id' => $student->id]);
+        }
     }
 
     public function test_nurse_can_update_only_medical_history_and_medications()

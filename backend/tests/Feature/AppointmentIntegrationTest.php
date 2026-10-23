@@ -245,21 +245,23 @@ class AppointmentIntegrationTest extends TestCase
         $this->eventMail($student, $appointment, 'expired');
     }
 
-    public function test_archive_cancellation_sends_to_the_archived_student_after_commit(): void
+    public function test_archive_does_not_cancel_or_email_a_pending_appointment(): void
     {
         $student = $this->person();
         $nurse = $this->person('nurse');
         $appointment = $this->book($student);
         $this->actingAs($nurse, 'api')->patchJson('/api/nurse/students/' . $student->id . '/archive',
-            ['reason' => 'No longer enrolled'])->assertOk();
+            ['reason' => 'No longer enrolled'])->assertUnprocessable()
+            ->assertJsonPath('message', 'Student cannot be archived with an upcoming appointment.');
+        $this->assertNotSoftDeleted('users', ['id' => $student->id]);
+        $this->assertNull($student->fresh()->status);
+        $this->assertNull($student->fresh()->archive_reason);
+        $this->assertSame('pending', $appointment->fresh()->status);
+        $this->assertSame(1, Notification::where('user_id', $student->id)->count()); // original booking only
         Mail::assertNothingSent();
         DB::commit();
-        Mail::assertSent(StudentAppointmentStatusMail::class, 2);
-        Mail::assertSent(StudentAppointmentStatusMail::class, function ($mail) use ($student, $appointment) {
-            return $mail->event === 'cancelled' && $mail->appointmentId === $appointment->id
-                && $mail->hasTo($student->email) && $mail->reason === 'No longer enrolled';
-        });
-        $this->assertSoftDeleted('users', ['id' => $student->id]);
+        Mail::assertSent(StudentAppointmentStatusMail::class, 1); // original booking only
+        $this->eventMail($student, $appointment, 'pending');
     }
 
     public function test_email_template_renders_with_real_array_transport_without_smtp(): void
