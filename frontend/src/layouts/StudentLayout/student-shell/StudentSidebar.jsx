@@ -3,6 +3,7 @@ import { ChevronRight, HeartPulse, X } from 'lucide-react';
 import StudentAccountMenu from './StudentAccountMenu';
 import campusBackground from '../../../assets/pup-binan-hero.jpg';
 import { preloadForPath } from '../../../utils/preloadStudentPages';
+import { STUDENT_NAV_GROUPS } from '../../../utils/studentPortalNavigation';
 
 /*
  * The primary Student navigation.
@@ -28,7 +29,8 @@ const StudentSidebar = ({
       src={campusBackground}
       alt=""
       aria-hidden="true"
-      loading="lazy"
+      // Loaded right away: lazy loading can skip images inside a fixed, overflow-hidden sidebar.
+      loading="eager"
       className="student-sidebar-campus"
     />
 
@@ -60,42 +62,45 @@ const StudentSidebar = ({
     </div>
 
     <nav aria-label="Primary student navigation" className="student-sidebar-nav">
-      <p className="px-4 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/70">
-        Main Menu
-      </p>
+      {/* One labelled section per group; links stay direct children of the nav for the shell CSS. */}
+      {STUDENT_NAV_GROUPS.map((group) => {
+        const items = navItems.filter((item) => item.group === group.key);
+        if (!items.length) return null;
+        return [
+          <h2 key={`${group.key}-heading`} className="student-nav-section">{group.label}</h2>,
+          ...items.map((item) => {
+            const active = isActive(item.path);
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={onNavigate}
+                onMouseEnter={() => preloadForPath(item.path)}
+                onFocus={() => preloadForPath(item.path)}
+                aria-label={item.label}
+                aria-current={active ? 'page' : undefined}
+                title={item.label}
+                className={`group relative flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold transition-all duration-200 ${
+                  active
+                    ? 'bg-white text-maroon-900 shadow-lg shadow-black/10'
+                    : 'text-white/80 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <Icon
+                  aria-hidden="true"
+                  className={`h-5 w-5 shrink-0 ${
+                    active ? 'text-maroon-800' : 'text-white/75'
+                  }`}
+                />
 
-      {navItems.map((item) => {
-        const active = isActive(item.path);
-        const Icon = item.icon;
+                <span className="flex-1">{item.label}</span>
 
-        return (
-          <Link
-            key={item.path}
-            to={item.path}
-            onClick={onNavigate}
-            onMouseEnter={() => preloadForPath(item.path)}
-            onFocus={() => preloadForPath(item.path)}
-            aria-label={item.label}
-            aria-current={active ? 'page' : undefined}
-            title={item.label}
-            className={`group relative flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold transition-all duration-200 ${
-              active
-                ? 'bg-white text-maroon-900 shadow-lg shadow-black/10'
-                : 'text-white/80 hover:bg-white/10 hover:text-white'
-            }`}
-          >
-            <Icon
-              aria-hidden="true"
-              className={`h-5 w-5 shrink-0 ${
-                active ? 'text-maroon-800' : 'text-white/75'
-              }`}
-            />
-
-            <span className="flex-1">{item.label}</span>
-
-            {active && <ChevronRight className="h-4 w-4 text-maroon-700" />}
-          </Link>
-        );
+                {active && <ChevronRight className="h-4 w-4 text-maroon-700" />}
+              </Link>
+            );
+          }),
+        ];
       })}
     </nav>
 

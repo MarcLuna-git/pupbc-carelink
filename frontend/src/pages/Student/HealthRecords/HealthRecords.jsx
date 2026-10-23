@@ -12,15 +12,13 @@ import {
   Users,
   Filter,
   ChevronDown,
-  MoreHorizontal,
   Eye,
-  Download,
   Printer,
   X,
   } from 'lucide-react';
 import api from '../../../services/api';
 import StudentPageHero from '../../../components/StudentPageHero';
-import { DOCUMENTS, openRecordDocument } from './recordDocuments';
+import { openRecordDocument } from './recordDocuments';
 import { StudentToast } from '../../../components/StudentFeedback';
 
 /*
@@ -150,38 +148,21 @@ const TypeTag = ({ record }) =>
     </span>
   ) : null;
 
-/* Row "···" menu: details plus the printable documents for that record. */
-const RowMenu = ({ record, open, onToggle, onClose, onView, onDocument }) => {
-  const ref = useDismiss(open, onClose);
-  const item = 'flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-maroon-50 dark:text-gray-200 dark:hover:bg-maroon-900/20';
+/* Row print button: the certificate on the Certificates tab, the consultation form otherwise.
+   Styled like View Details; the "Print" label shows only with the desktop table (lg+), icon only below. */
+const PrintButton = ({ record, kind, onDocument }) => {
+  const label = kind === 'certificate' ? 'Print medical certificate' : 'Print consultation form';
   return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label="More actions"
-        className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
-      >
-        <MoreHorizontal className="h-5 w-5" />
-      </button>
-      {open && (
-        <div role="menu" className="absolute right-0 top-full z-20 mt-1 w-56 overflow-hidden rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)] py-1 shadow-lg">
-          <button type="button" role="menuitem" className={item} onClick={() => { onClose(); onView(record); }}>
-            <Eye className="h-4 w-4" /> View details
-          </button>
-          <button type="button" role="menuitem" className={item} onClick={() => { onClose(); onDocument('consultation', record, 'print'); }}>
-            <Printer className="h-4 w-4" /> Print consultation form
-          </button>
-          {record.medicalCertificate && (
-            <button type="button" role="menuitem" className={item} onClick={() => { onClose(); onDocument('certificate', record, 'print'); }}>
-              <FileText className="h-4 w-4" /> Print medical certificate
-            </button>
-          )}
-        </div>
-      )}
-    </div>
+    <button
+      type="button"
+      onClick={() => onDocument(kind, record, 'print')}
+      aria-label={label}
+      title={label}
+      className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 px-2.5 py-2 text-sm font-semibold text-maroon-800 transition hover:border-maroon-200 hover:bg-maroon-50 dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-maroon-900/20 lg:px-3"
+    >
+      <Printer className="h-4 w-4" />
+      <span className="hidden lg:inline">Print</span>
+    </button>
   );
 };
 
@@ -309,44 +290,6 @@ const RecordDialog = ({ record, onClose, onDocument }) => {
   );
 };
 
-/* One "Printable Documents" tile — acts on the latest eligible record. */
-const DocumentTile = ({ kind, description, record, emptyText, onDocument }) => {
-  const disabled = !record;
-  const base = 'inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50';
-  const outline = `${base} border border-gray-200 text-maroon-800 hover:bg-maroon-50 dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-maroon-900/20`;
-  return (
-    <div className="flex flex-col gap-4 rounded-xl border border-[var(--sp-border)] p-4 sm:flex-row sm:items-start">
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-maroon-50 text-maroon-700 dark:bg-maroon-900/30 dark:text-maroon-300">
-        <FileText className="h-6 w-6" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="font-semibold text-gray-900 dark:text-white">{DOCUMENTS[kind].label}</p>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{description}</p>
-        <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
-          {record ? `Latest: ${formatDate(record.date)}${record.medicalCertificateRef && kind === 'certificate' ? ` · Ref ${record.medicalCertificateRef}` : ''}` : emptyText}
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button type="button" disabled={disabled} onClick={() => onDocument(kind, record, 'preview')} className={outline}>
-            <Eye className="h-4 w-4" /> Preview
-          </button>
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={() => onDocument(kind, record, 'print')}
-            title='Opens the print dialog — choose "Save as PDF"'
-            className={`${base} bg-maroon-800 text-white hover:bg-maroon-900`}
-          >
-            <Download className="h-4 w-4" /> Download PDF
-          </button>
-          <button type="button" disabled={disabled} onClick={() => onDocument(kind, record, 'print')} className={outline}>
-            <Printer className="h-4 w-4" /> Print Preview
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const HealthRecords = () => {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -356,7 +299,6 @@ const HealthRecords = () => {
   const [tab, setTab] = useState('consultations');
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [openMenuId, setOpenMenuId] = useState(null);
   const [selectedRecord, setSelectedRecord] = useState(null);
   /* Cosmetic hold for the route-loading animation — see ROUTE LOADING note. */
   const [routeReady, setRouteReady] = useState(false);
@@ -427,13 +369,11 @@ const HealthRecords = () => {
   const consultationCount = records.filter((r) => r.recordType === 'consultation').length;
   const followUpCount = records.filter((r) => r.followUpRequired).length;
   const lastVisit = records[0] || null;
-  const latestConsultationForm = records[0] || null;
-  const latestCertificate = certificates[0] || null;
 
   /*
    * LOADING PHASE — the hero is real, with the looping progress bar on its
    * bottom edge ONLY (same as the Settings hero — never on the cards). The
-   * stats, records and documents cards render as 1:1 ghosts. Skipped
+   * stats and records cards render as 1:1 ghosts. Skipped
    * entirely on error so the Retry banner appears right away.
    */
   if (loading || (!routeReady && !error)) {
@@ -472,15 +412,6 @@ const HealthRecords = () => {
                 <Skeleton className="h-9 w-28 rounded-lg" />
               </div>
             ))}
-          </div>
-        </div>
-
-        <div className={`${CARD} p-4 lg:p-6`}>
-          <Skeleton className="mb-2 h-6 w-48" />
-          <Skeleton className="mb-5 h-3.5 w-72 max-w-full" />
-          <div className="grid gap-3 lg:grid-cols-2">
-            <Skeleton className="h-36 rounded-xl" />
-            <Skeleton className="h-36 rounded-xl" />
           </div>
         </div>
       </div>
@@ -643,9 +574,10 @@ const HealthRecords = () => {
         ) : (
           <>
             {/* Desktop table */}
-            <div className="hidden overflow-visible rounded-xl border border-[var(--sp-border)] lg:block">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50 text-xs font-medium text-gray-500 dark:bg-gray-900/30 dark:text-gray-400">
+            {/* Scrolls sideways instead of wrapping when the screen is narrow. */}
+            <div className="hidden overflow-x-auto rounded-xl border border-[var(--sp-border)] lg:block">
+              <table className="w-full min-w-[960px] text-left text-sm">
+                <thead className="whitespace-nowrap bg-gray-50 text-xs font-medium text-gray-500 dark:bg-gray-900/30 dark:text-gray-400">
                   <tr>
                     <th className="rounded-tl-xl px-4 py-3 font-medium">{tab === 'certificates' ? 'Visit Date' : 'Date & Time'}</th>
                     <th className="px-4 py-3 font-medium">{tab === 'certificates' ? 'Reason for Visit' : 'Chief Complaint'}</th>
@@ -662,7 +594,7 @@ const HealthRecords = () => {
                         <p className="font-semibold text-gray-900 dark:text-white">{formatDate(record.date)}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">{formatDayTime(record.date)}</p>
                       </td>
-                      <td className="px-4 py-3.5 text-gray-800 dark:text-gray-200">
+                      <td className="min-w-[10rem] px-4 py-3.5 text-gray-800 dark:text-gray-200">
                         <span className="line-clamp-2">{record.complaint}</span>
                         <TypeTag record={record} />
                       </td>
@@ -671,7 +603,7 @@ const HealthRecords = () => {
                           ? <span className="font-mono text-xs">{record.medicalCertificateRef || '—'}</span>
                           : <span className="line-clamp-2">{record.diagnosis || <span className="text-gray-400">Not recorded</span>}</span>}
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="whitespace-nowrap px-4 py-3.5">
                         <p className="text-gray-900 dark:text-white">{record.staff}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">{record.staffRole}</p>
                       </td>
@@ -689,14 +621,7 @@ const HealthRecords = () => {
                           ) : (
                             <ViewButton onClick={() => setSelectedRecord(record)} />
                           )}
-                          <RowMenu
-                            record={record}
-                            open={openMenuId === record.id}
-                            onToggle={() => setOpenMenuId((id) => (id === record.id ? null : record.id))}
-                            onClose={() => setOpenMenuId(null)}
-                            onView={setSelectedRecord}
-                            onDocument={handleDocument}
-                          />
+                          <PrintButton record={record} kind={tab === 'certificates' ? 'certificate' : 'consultation'} onDocument={handleDocument} />
                         </div>
                       </td>
                     </tr>
@@ -730,14 +655,7 @@ const HealthRecords = () => {
                     <p className="truncate text-xs text-gray-500 dark:text-gray-400">{record.staff}</p>
                     <div className="flex items-center gap-1">
                       <ViewButton onClick={() => setSelectedRecord(record)} />
-                      <RowMenu
-                        record={record}
-                        open={openMenuId === `m-${record.id}`}
-                        onToggle={() => setOpenMenuId((id) => (id === `m-${record.id}` ? null : `m-${record.id}`))}
-                        onClose={() => setOpenMenuId(null)}
-                        onView={setSelectedRecord}
-                        onDocument={handleDocument}
-                      />
+                      <PrintButton record={record} kind={tab === 'certificates' ? 'certificate' : 'consultation'} onDocument={handleDocument} />
                     </div>
                   </div>
                 </div>
@@ -745,33 +663,6 @@ const HealthRecords = () => {
             </div>
           </>
         )}
-      </div>
-
-      {/* Printable Documents */}
-      <div className={`${CARD} p-4 lg:p-6`}>
-        <div className="mb-5 flex items-start gap-2.5">
-          <FileText className="mt-0.5 h-6 w-6 text-maroon-800 dark:text-maroon-300" />
-          <div>
-            <h2 className="text-lg font-bold text-maroon-800 dark:text-maroon-300">Printable Documents</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Download or print your official clinic documents.</p>
-          </div>
-        </div>
-        <div className="grid gap-3 lg:grid-cols-2">
-          <DocumentTile
-            kind="certificate"
-            description="Official medical certificate issued by the clinic."
-            record={latestCertificate}
-            emptyText="No certificate issued yet."
-            onDocument={handleDocument}
-          />
-          <DocumentTile
-            kind="consultation"
-            description="Official consultation record form."
-            record={latestConsultationForm}
-            emptyText="No clinic visits recorded yet."
-            onDocument={handleDocument}
-          />
-        </div>
       </div>
 
       <AnimatePresence>

@@ -30,6 +30,12 @@ RUN { \
     echo 'opcache.max_accelerated_files=20000'; \
     } > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
+# Student record files (hal. x-ray photo) hanggang 10MB; 2MB lang ang default ng PHP image.
+RUN { \
+    echo 'upload_max_filesize=12M'; \
+    echo 'post_max_size=14M'; \
+    } > /usr/local/etc/php/conf.d/uploads.ini
+
 # Maraming worker para hindi maharangan ng mabagal na request (hal. SMTP) ang health check.
 ENV PHP_CLI_SERVER_WORKERS=4
 

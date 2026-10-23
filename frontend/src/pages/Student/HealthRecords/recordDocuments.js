@@ -1,6 +1,7 @@
 import { escapeHtml } from '../../../utils/escapeHtml';
 import { formatPersonName } from '../../../utils/studentUser';
 import { getUser } from '../../../services/session';
+import api from '../../../services/api';
 
 /*
  * Printable clinic documents, filled in the browser from a clinic-history
@@ -15,6 +16,8 @@ import { getUser } from '../../../services/session';
 const TEMPLATE_DIR = `${import.meta.env.BASE_URL}templates/print/`;
 
 const CLINIC_NAME = 'PUP Biñan Campus Student Clinic';
+const CLINIC_ADDRESS = 'Barangay Zapote, Biñan City, Laguna';
+const CLINIC_EMAIL = 'pupclinicbc@gmail.com / pupclinicbc@yahoo.com';
 
 const formatDateTime = (value) => {
   const date = new Date(value);
@@ -41,13 +44,45 @@ const formatDay = (value) => {
   });
 };
 
-const studentInfo = () => {
-  const user = getUser('student');
+const ageFrom = (birthday) => {
+  const born = birthday ? new Date(birthday) : null;
+  if (!born || Number.isNaN(born.getTime())) return '';
+  const today = new Date();
+  let age = today.getFullYear() - born.getFullYear();
+  if (today < new Date(today.getFullYear(), born.getMonth(), born.getDate())) age -= 1;
+  return String(age);
+};
+
+/*
+ * The student block of the consultation form, from a student account, its
+ * student profile and its emergency contact (health profile, or the older
+ * guardian fields). Missing parts stay empty and print blank.
+ */
+export const studentDetails = (user = {}, profile = {}, emergency = {}) => {
+  user ||= {};
+  profile ||= {};
+  emergency ||= {};
   return {
-    name: formatPersonName(`${user.first_name || ''} ${user.last_name || ''}`.trim()) || 'Student',
-    studentId: user.student_id || '—',
-    program: [user.course, user.year, user.section].filter(Boolean).join(' • ') || '—',
+    name: formatPersonName(`${user.first_name || ''} ${user.last_name || ''}`.trim()),
+    studentId: user.student_id || '',
+    program: [profile.course || user.course, profile.year || user.year, profile.section || user.section].filter(Boolean).join(' • '),
+    age: ageFrom(profile.birthday || user.birthday),
+    address: profile.address || '',
+    contact: profile.mobile_number || '',
+    emergencyName: [emergency.name || profile.guardian_name, emergency.relationship || profile.guardian_relationship]
+      .filter(Boolean).join(' — '),
+    emergencyContact: emergency.phone || profile.guardian_contact || '',
   };
+};
+
+// Student portal: the signed-in student's own profile, or the session account if that cannot be loaded.
+const loadOwnDetails = async () => {
+  try {
+    const { data } = await api.get('/student/profile');
+    return studentDetails(data.data?.user, data.data?.profile, data.data?.emergency_contact);
+  } catch {
+    return studentDetails(getUser('student'));
+  }
 };
 
 const NOT_RECORDED = 'Not recorded';
@@ -55,9 +90,9 @@ const NOT_RECORDED = 'Not recorded';
 /*
  * Fills a template: {{#key}}…{{/key}} keeps its part when key has a value,
  * {{^key}}…{{/key}} when it does not, {{{key}}} inserts HTML as is, and
- * {{key}} inserts the value as text (or "Not recorded" when empty).
+ * {{key}} inserts the value as text (or `empty` when it has none).
  */
-const fillTemplate = (template, data) => {
+const fillTemplate = (template, data, empty = NOT_RECORDED) => {
   const filled = (key) => {
     const value = data[key];
     return Array.isArray(value) ? value.length > 0 : Boolean(value);
@@ -73,7 +108,7 @@ const fillTemplate = (template, data) => {
     .replace(/\{\{\{(\w+)\}\}\}/g, (_, key) => data[key] ?? '')
     .replace(/\{\{(\w+)\}\}/g, (_, key) => {
       const value = data[key];
-      return escapeHtml(Array.isArray(value) ? value.join('\n') : (value || NOT_RECORDED));
+      return escapeHtml((Array.isArray(value) ? value.join('\n') : value) || empty);
     });
 };
 
@@ -84,6 +119,9 @@ const loadTemplate = async (file) => {
 };
 
 const certificateData = (record) => ({
+  // The certificate header also carries the clinic's address and email.
+  clinic_address: CLINIC_ADDRESS,
+  clinic_email: CLINIC_EMAIL,
   visit_date: formatDay(record.date),
   complaint: record.complaint,
   findings: record.diagnosis,
@@ -91,25 +129,26 @@ const certificateData = (record) => ({
     ? `Follow-up visit${record.followUpDate ? ` on ${formatDay(record.followUpDate)}` : ''}`
     : '',
   certificate_ref: record.medicalCertificateRef,
+  // Not recorded by the system yet; the nurse writes the number of days by hand.
+  rest_days: '',
 });
 
 const consultationData = (record) => {
   const isEmergency = record.recordType === 'emergency';
   const vitals = record.vitals || {};
   return {
-    document_title: isEmergency ? 'Emergency Encounter Record' : 'Consultation Record',
+    document_title: isEmergency ? 'Emergency Encounter Form' : 'Consultation Form',
     is_emergency: isEmergency,
     visit_datetime: formatDateTime(record.date),
     complaint: record.complaint,
     history: record.history,
     symptoms: record.symptoms,
     service: record.appointment?.service,
-    has_vitals: ['bp', 'hr', 'temp', 'rr', 'o2'].some((key) => vitals[key]),
-    vital_bp: vitals.bp || '—',
-    vital_hr: vitals.hr || '—',
-    vital_temp: vitals.temp || '—',
-    vital_rr: vitals.rr || '—',
-    vital_o2: vitals.o2 || '—',
+    vital_bp: vitals.bp,
+    vital_hr: vitals.hr,
+    vital_temp: vitals.temp,
+    vital_rr: vitals.rr,
+    vital_o2: vitals.o2,
     diagnosis: record.diagnosis,
     assessment: record.assessment,
     interventions: record.interventions,
@@ -120,16 +159,18 @@ const consultationData = (record) => {
     follow_up: record.followUpRequired
       ? `Required${record.followUpDate ? ` — ${formatDay(record.followUpDate)}` : ''}`
       : 'Not required',
-    medical_certificate: record.medicalCertificate ? record.medicalCertificateRef || 'Issued' : '',
+    medical_certificate: record.medicalCertificate ? record.medicalCertificateRef || 'Issued' : 'Not issued',
   };
 };
 
 export const DOCUMENTS = {
-  certificate: { label: 'Medical Certificate', file: 'Medical-Certificate', template: 'medical-certificate.html', data: certificateData },
-  consultation: { label: 'Consultation Form', file: 'Consultation-Form', template: 'consultation-form.html', data: consultationData },
+  // Both documents print every row; fields with no value are left blank instead of "Not recorded".
+  certificate: { label: 'Medical Certificate', file: 'Medical-Certificate', template: 'medical-certificate.html', data: certificateData, empty: '' },
+  consultation: { label: 'Consultation Form', file: 'Consultation-Form', template: 'consultation-form.html', data: consultationData, empty: '' },
 };
 
-// `student` lets the nurse portal print for the student being seen; the student portal uses its own session.
+// `student` (from studentDetails) lets the nurse portal print for the student being seen;
+// the student portal loads the signed-in student's own profile.
 export const openRecordDocument = (kind, record, mode = 'preview', student = null) => {
   const doc = DOCUMENTS[kind];
   // Opened right away (inside the click) so the browser does not block it; the template fills it in after.
@@ -137,10 +178,11 @@ export const openRecordDocument = (kind, record, mode = 'preview', student = nul
   if (!printWindow) return false;
   printWindow.document.write('<p style="font-family: Arial, sans-serif; color: #6b7280;">Preparing document…</p>');
 
-  const info = student || studentInfo();
   const reference = record.medicalCertificateRef || record.id;
-  const data = {
+  const pageData = (info) => ({
     clinic_name: CLINIC_NAME,
+    // Full URL: the pop-up is about:blank, so relative image paths would not resolve.
+    template_dir: new URL(TEMPLATE_DIR, window.location.origin).href,
     issued_date: formatDay(new Date()),
     reference,
     // The title becomes the default file name in "Save as PDF".
@@ -148,18 +190,29 @@ export const openRecordDocument = (kind, record, mode = 'preview', student = nul
     student_name: info.name,
     student_id: info.studentId,
     student_program: info.program,
+    student_age: info.age,
+    student_address: info.address,
+    student_contact: info.contact,
+    emergency_name: info.emergencyName,
+    emergency_contact: info.emergencyContact,
     staff_name: record.staff,
     staff_role: record.staffRole,
     ...doc.data(record),
-  };
+  });
 
-  Promise.all([loadTemplate('layout.html'), loadTemplate(doc.template)])
-    .then(([layout, body]) => {
-      const page = fillTemplate(layout, { ...data, content: fillTemplate(body, data) });
+  Promise.all([loadTemplate('layout.html'), loadTemplate(doc.template), student || loadOwnDetails()])
+    .then(([layout, body, info]) => {
+      const data = pageData(info);
+      const page = fillTemplate(layout, { ...data, content: fillTemplate(body, data, doc.empty ?? NOT_RECORDED) });
       printWindow.document.open();
       printWindow.document.write(page);
       printWindow.document.close();
-      if (mode === 'print') printWindow.setTimeout(() => printWindow.print(), 400);
+      if (mode === 'print') {
+        // Wait for the logo so it is on the printout.
+        const images = [...printWindow.document.images].filter((img) => !img.complete);
+        Promise.all(images.map((img) => new Promise((done) => { img.onload = done; img.onerror = done; })))
+          .then(() => printWindow.setTimeout(() => printWindow.print(), 200));
+      }
     })
     .catch((error) => {
       printWindow.document.open();

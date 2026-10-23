@@ -19,7 +19,9 @@ class NotificationController extends Controller
         $validated = $request->validate([
             'limit' => 'nullable|integer|min:1|max:50',
             'page' => 'nullable|integer|min:1',
+            'status' => 'nullable|in:all,unread',
         ]);
+        $unreadOnly = ($validated['status'] ?? 'all') === 'unread';
 
         $limit = (int) (
             $validated['limit'] ?? 20
@@ -32,6 +34,8 @@ class NotificationController extends Controller
                 'user_id',
                 $userId
             )
+                // The header dropdown's "Unread" tab.
+                ->when($unreadOnly, fn($query) => $query->where('read', false))
                 ->orderBy(
                     'created_at',
                     'desc'

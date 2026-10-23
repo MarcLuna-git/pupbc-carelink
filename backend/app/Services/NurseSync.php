@@ -12,6 +12,7 @@ class NurseSync
         'EmergencyEncounter' => 'consultations', 'Medicine' => 'medicines',
         'MedicineBatch' => 'medicines', 'MedicineStockMovement' => 'medicines',
         'User' => 'students', 'StudentProfile' => 'students', 'HealthProfile' => 'students',
+        'StudentAttachment' => 'students',
         'StudentEnrollment' => 'academic', 'Course' => 'academic',
         'CourseSection' => 'academic', 'AcademicPeriod' => 'academic',
         'Announcement' => 'announcements', 'Notification' => 'notifications',

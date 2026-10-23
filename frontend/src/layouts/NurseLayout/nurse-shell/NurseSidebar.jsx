@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Stethoscope } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, Stethoscope } from 'lucide-react';
 import NurseAccountMenu from './NurseAccountMenu';
+import { NURSE_NAV_GROUPS } from './nurseNavigation';
 import clinicBackground from '../../../assets/clinic-waiting-area.jpg';
 
 /*
@@ -11,7 +12,7 @@ const NurseSidebar = ({
   navItems = [],
   isActive = () => false,
   collapsed = false,
-  unreadCount = 0,
+  onToggle,
   accountMenuProps,
 }) => (
   <aside
@@ -23,7 +24,8 @@ const NurseSidebar = ({
       src={clinicBackground}
       alt=""
       aria-hidden="true"
-      loading="lazy"
+      // Loaded right away: lazy loading can skip images inside a fixed, overflow-hidden sidebar.
+      loading="eager"
       className="nurse-sidebar-campus"
     />
 
@@ -40,37 +42,55 @@ const NurseSidebar = ({
           </p>
         </div>
       </Link>
+
+      {/* Collapse / expand toggle inside the brand row. On the folded rail it
+          sits over the logo and shows on hover or focus (a tap on touch). */}
+      {onToggle && (
+        <button
+          type="button"
+          className="nurse-sidebar-collapse"
+          aria-controls="nurse-sidebar"
+          aria-expanded={!collapsed}
+          aria-label={collapsed ? 'Expand navigation sidebar' : 'Collapse navigation sidebar'}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          onClick={onToggle}
+        >
+          {collapsed ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
+        </button>
+      )}
     </div>
 
     <nav aria-label="Primary nurse navigation" className="nurse-sidebar-nav">
-      {navItems.map((item) => {
-        const active = isActive(item.path);
-        const Icon = item.icon;
-        const showCount = item.path === '/nurse/notifications' && unreadCount > 0;
-
-        return (
-          <Link
-            key={item.path}
-            to={item.path}
-            aria-label={item.label}
-            aria-current={active ? 'page' : undefined}
-            title={item.label}
-            className="nurse-nav-link"
-          >
-            <Icon aria-hidden="true" className="h-5 w-5 shrink-0" />
-            <span className="nurse-nav-label">{item.label}</span>
-            {showCount && (
-              <span className="nurse-nav-count" aria-hidden="true">
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </span>
-            )}
-          </Link>
-        );
+      {/* Ungrouped links (Dashboard) first, then one labelled section per group.
+          Links stay direct children of the nav for the shell CSS. */}
+      {[{ key: null }, ...NURSE_NAV_GROUPS].map((group) => {
+        const items = navItems.filter((item) => (item.group || null) === group.key);
+        if (!items.length) return null;
+        return [
+          group.label && <h2 key={`${group.key}-heading`} className="nurse-nav-section">{group.label}</h2>,
+          ...items.map((item) => {
+            const active = isActive(item.path);
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                aria-label={item.label}
+                aria-current={active ? 'page' : undefined}
+                title={item.label}
+                className="nurse-nav-link"
+              >
+                <Icon aria-hidden="true" className="h-5 w-5 shrink-0" />
+                <span className="nurse-nav-label">{item.label}</span>
+              </Link>
+            );
+          }),
+        ];
       })}
     </nav>
 
     <div className="nurse-sidebar-footer">
-      <NurseAccountMenu variant="sidebar" collapsed={collapsed} unreadCount={unreadCount} {...accountMenuProps} />
+      <NurseAccountMenu variant="sidebar" collapsed={collapsed} {...accountMenuProps} />
     </div>
   </aside>
 );

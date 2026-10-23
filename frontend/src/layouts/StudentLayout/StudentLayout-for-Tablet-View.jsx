@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Bell, ChevronsLeft, ChevronsRight, Moon, Sun } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, Moon, Sun } from 'lucide-react';
 
 import StudentSidebar from './student-shell/StudentSidebar';
+import StudentNotificationsMenu from './student-shell/StudentNotificationsMenu';
 import './StudentLayout-for-Tablet-View.css';
 
 /*
@@ -109,23 +109,8 @@ const StudentLayoutForTabletView = ({
 
           {/* Header actions */}
           <div className="student-header-actions">
-            {/* Combined Notifications + Announcements */}
-            <Link
-              to="/student/alerts"
-              aria-label={unreadCount > 0 ? `Open notifications and announcements (${unreadCount} unread)` : 'Open notifications and announcements'}
-              title="Notifications & Announcements"
-              className={`student-header-icon student-notification-bell${unreadCount > 0 ? ' has-unread' : ''}`}
-            >
-              <Bell className="h-5 w-5" />
-
-              {unreadCount > 0 && (
-                <span className="student-bell-count" aria-hidden="true">
-                  {unreadCount > 99
-                    ? '99+'
-                    : unreadCount}
-                </span>
-              )}
-            </Link>
+            {/* Combined Notifications + Announcements drop-down */}
+            <StudentNotificationsMenu unreadCount={unreadCount} />
 
             {/* Quick appearance toggle */}
             <button

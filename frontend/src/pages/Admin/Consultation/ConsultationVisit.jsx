@@ -6,7 +6,7 @@ import {
 import api from '../../../services/api';
 import { getUser } from '../../../services/session';
 import { formatAppointmentDate } from '../../../utils/appointmentDate';
-import { openRecordDocument } from '../../Student/HealthRecords/recordDocuments';
+import { openRecordDocument, studentDetails } from '../../Student/HealthRecords/recordDocuments';
 
 /*
  * One clinic visit, opened from the queue: who the student is, why they came,
@@ -237,7 +237,9 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
       staff: `Nurse ${[nurse.first_name, nurse.last_name].filter(Boolean).join(' ')}`.trim(),
       staffRole: 'School Nurse',
     };
-    const ok = openRecordDocument(kind, record, 'print', { name: visit.name.trim(), studentId: visit.id, program: program || '—' });
+    const health = student?.health_profile;
+    const details = studentDetails(student, profile, health && { name: health.emergency_name, relationship: health.emergency_relationship, phone: health.emergency_phone });
+    const ok = openRecordDocument(kind, record, 'print', { ...details, name: visit.name.trim(), studentId: visit.id, program });
     if (!ok) notify('Allow pop-ups to print the record.', 'error');
   };
 

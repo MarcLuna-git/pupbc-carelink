@@ -7,6 +7,7 @@ import api from '../../../services/api';
 import useNurseSync from '../../../hooks/useNurseSync';
 import { StudentDirectory, StudentFilters, Pagination } from './StudentDirectory';
 import { StudentDetailsModal, EmergencyModal } from './StudentDetailsModal';
+import { StudentFilesModal } from './StudentFilesModal';
 import { emptyFilters, secondary } from './directoryOptions';
 
 const emptyEmergency = { incident_datetime: '', reason: '', symptoms: '', assessment: '', intervention: '', disposition: '', notes: '' };
@@ -32,6 +33,7 @@ export default function NurseStudents() {
   const [refresh, setRefresh] = useState(0);
   const [listRefresh, setListRefresh] = useState(0);
   const [statusSaving, setStatusSaving] = useState(false);
+  const [filesStudent, setFilesStudent] = useState(null);
   const filtered = Object.values(filters).some(Boolean);
   const listRequest = useRef(0);
   const detailRequest = useRef(0);
@@ -139,9 +141,10 @@ export default function NurseStudents() {
       description="Registered students sorted by last name, A–Z. Open a student to see their health record."
       toolbar={<StudentFilters embedded filters={filters} onChange={changeFilter} onClear={clearFilters} />}
     >
-      {listError ? <div role="alert" className="space-y-3 p-8 text-center"><p className="text-sm text-red-600">{listError}</p><button className={secondary} onClick={() => setListRefresh(value => value + 1)}>Try again</button></div> : <><StudentDirectory students={students} loading={loading} filtered={filtered} onClear={clearFilters} onView={id => { setSelectedId(id); setTab('Overview'); }} /><Pagination meta={meta} page={page} onPage={setPage} loading={loading} /></>}
+      {listError ? <div role="alert" className="space-y-3 p-8 text-center"><p className="text-sm text-red-600">{listError}</p><button className={secondary} onClick={() => setListRefresh(value => value + 1)}>Try again</button></div> : <><StudentDirectory students={students} loading={loading} filtered={filtered} onClear={clearFilters} onView={id => { setSelectedId(id); setTab('Overview'); }} onFiles={setFilesStudent} /><Pagination meta={meta} page={page} onPage={setPage} loading={loading} /></>}
     </NurseListCard>
     {selectedId && <StudentDetailsModal student={selected} loading={detailLoading} error={detailError} appointments={appointments} history={history} tab={tab} onTab={setTab} onClose={close} emergencyOpen={emergencyOpen} onEmergency={() => { setEmergencyError(''); setEmergencyOpen(true); }} onArchive={archiveStudent} onRestore={restoreStudent} statusSaving={statusSaving} />}
+    {filesStudent && <StudentFilesModal student={filesStudent} onClose={() => setFilesStudent(null)} />}
     {emergencyOpen && selectedId && <EmergencyModal emergency={emergency} onChange={(field, value) => setEmergency(previous => ({ ...previous, [field]: value }))} onSubmit={submitEmergency} onClose={() => setEmergencyOpen(false)} saving={saving} error={emergencyError} />}
   </div>;
 }

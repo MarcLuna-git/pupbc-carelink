@@ -1,5 +1,4 @@
 import {
-  Bell,
   BookOpen,
   Calendar,
   FileText,
@@ -15,18 +14,28 @@ import {
  * Nurse portal navigation, shared by the sidebar (tablet / desktop) and the
  * bottom dock + "More" sheet (mobile). `dock: true` items sit in the mobile
  * bottom dock; the rest are reached through its "More" button.
+ *
+ * `group` sorts the sidebar into labelled sections (one-word labels).
+ * Management holds the clinic visit flow in order: appointments, then the
+ * QR check-in queue and consultation, and the students being seen.
+ * Dashboard has no group and sits on top.
  */
+export const NURSE_NAV_GROUPS = [
+  { key: 'management', label: 'Management' },
+  { key: 'records', label: 'Records' },
+  { key: 'admin', label: 'Admin' },
+];
+
 export const NURSE_NAV_ITEMS = [
   { path: '/nurse/dashboard', icon: LayoutDashboard, label: 'Dashboard', dock: true },
-  { path: '/nurse/appointments', icon: Calendar, label: 'Appointments', dock: true },
-  { path: '/nurse/consultation', icon: Stethoscope, label: 'Consultation', dock: true },
-  { path: '/nurse/students', icon: Users, label: 'Students', dock: true },
-  { path: '/nurse/academic', icon: BookOpen, label: 'Courses' },
-  { path: '/nurse/medicines', icon: Pill, label: 'Medicines' },
-  { path: '/nurse/announcements', icon: Megaphone, label: 'Announcements' },
-  { path: '/nurse/records', icon: FileText, label: 'Records' },
-  { path: '/nurse/notifications', icon: Bell, label: 'Notifications' },
-  { path: '/nurse/settings', icon: Settings, label: 'Settings' },
+  { path: '/nurse/appointments', icon: Calendar, label: 'Appointments', dock: true, group: 'management' },
+  { path: '/nurse/consultation', icon: Stethoscope, label: 'Consultation', dock: true, group: 'management' },
+  { path: '/nurse/students', icon: Users, label: 'Students', dock: true, group: 'management' },
+  { path: '/nurse/records', icon: FileText, label: 'Records', group: 'records' },
+  { path: '/nurse/medicines', icon: Pill, label: 'Medicines', group: 'records' },
+  { path: '/nurse/academic', icon: BookOpen, label: 'Courses', group: 'records' },
+  { path: '/nurse/announcements', icon: Megaphone, label: 'Announcements', group: 'admin' },
+  { path: '/nurse/settings', icon: Settings, label: 'Settings', group: 'admin' },
 ];
 
 export const isNurseNavActive = (pathname, path) =>

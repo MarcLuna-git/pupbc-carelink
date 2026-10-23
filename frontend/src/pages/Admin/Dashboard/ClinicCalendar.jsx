@@ -34,7 +34,6 @@ export default function ClinicCalendar() {
   const today = manilaToday();
   const [month, setMonth] = useState(() => { const [y, m] = today.split('-').map(Number); return new Date(y, m - 1, 1); });
   const [notes, setNotes] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [selected, setSelected] = useState(null);
   const requestId = useRef(0);
@@ -59,14 +58,11 @@ export default function ClinicCalendar() {
     } catch (err) {
       if (signal?.aborted || err.code === 'ERR_CANCELED') return;
       setLoadError('Calendar notes could not be loaded.');
-    } finally {
-      if (request === requestId.current) setLoading(false);
     }
   }, [from, to]);
 
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true);
     load(controller.signal);
     return () => controller.abort();
   }, [load]);
@@ -93,10 +89,7 @@ export default function ClinicCalendar() {
             <CalendarDays className="h-5 w-5" aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <h2 className="flex flex-wrap items-center gap-2 font-bold text-gray-900 dark:text-white">
-              Clinic Calendar
-              {loading && <Loader2 role="status" aria-label="Loading calendar notes" className="h-3.5 w-3.5 animate-spin text-gray-400" />}
-            </h2>
+            <h2 className="font-bold text-gray-900 dark:text-white">Clinic Calendar</h2>
             <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Click a date to add notes like meetings or reminders. Philippine holidays show automatically.</p>
           </div>
         </div>

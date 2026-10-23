@@ -235,8 +235,10 @@ Route::middleware([
                 Route::get('/', function (Request $request) {
                     $filters = $request->validate([
                         'category' => 'nullable|in:all,medicine,appointment,consultation',
+                        'status' => 'nullable|in:all,unread',
                     ]);
                     $category = $filters['category'] ?? 'all';
+                    $unreadOnly = ($filters['status'] ?? 'all') === 'unread';
                     $user = auth()->user();
 
                     /*
@@ -298,6 +300,10 @@ Route::middleware([
                     )
                         ->when($category !== 'all', function ($query) use ($category) {
                             $query->where('type', 'like', $category . '\_%');
+                        })
+                        // The header dropdown's "Unread" tab.
+                        ->when($unreadOnly, function ($query) {
+                            $query->where('read', false);
                         })
                         ->where(function ($query) {
                             $query->where('type', '!=', 'medicine_expiring_soon')
@@ -983,6 +989,12 @@ Route::middleware([
                         'clinicHistory',
                     ]
                 );
+
+                // Extra record files (x-ray photos, lab results, documents) attached to a student.
+                Route::get('/students/{id}/attachments', [\App\Http\Controllers\Api\Nurse\StudentAttachmentController::class, 'index']);
+                Route::post('/students/{id}/attachments', [\App\Http\Controllers\Api\Nurse\StudentAttachmentController::class, 'store']);
+                Route::get('/students/{id}/attachments/{attachmentId}/file', [\App\Http\Controllers\Api\Nurse\StudentAttachmentController::class, 'file']);
+                Route::delete('/students/{id}/attachments/{attachmentId}', [\App\Http\Controllers\Api\Nurse\StudentAttachmentController::class, 'destroy']);
 
                 Route::get(
                     '/students/{id}',

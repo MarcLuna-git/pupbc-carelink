@@ -20,7 +20,6 @@ const Welcome = lazy(() => import('./pages/Student/Welcome/Welcome'));
 const Appointments = lazy(() => import('./pages/Student/Appointments/Appointments'));
 const QR = lazy(() => import('./pages/Student/QR/QR'));
 const Overview = lazy(() => import('./pages/Student/Overview/Overview'));
-const Alerts = lazy(() => import('./pages/Student/Alerts/Alerts'));
 const Announcements = lazy(() => import('./pages/Student/Announcements/Announcements'));
 const HealthRecords = lazy(() => import('./pages/Student/HealthRecords/HealthRecords'));
 const Settings = lazy(() => import('./pages/Student/Settings/Settings'));
@@ -36,7 +35,6 @@ const NurseStudents = lazy(() => import('./pages/Admin/Students/NurseStudents'))
 const NurseConsultation = lazy(() => import('./pages/Admin/Consultation/NurseConsultation'));
 const NurseMedicine = lazy(() => import('./pages/Admin/Medicine/NurseMedicine'));
 const NurseRecords = lazy(() => import('./pages/Admin/Records/NurseRecords'));
-const NurseNotifications = lazy(() => import('./pages/Admin/Notifications/NurseNotifications'));
 const NurseAnnouncements = lazy(() => import('./pages/Admin/Announcements/NurseAnnouncements'));
 const NurseSettings = lazy(() => import('./pages/Admin/Settings/NurseSettings'));
 const CourseManagement = lazy(() => import('./pages/Admin/Academic/CourseManagement'));
@@ -286,14 +284,12 @@ function App() {
             ================================================== */}
 
             {/*
-              Bell destination.
-
-              Alerts.jsx will be refined later so Notifications +
-              Announcements feel like one unified Student inbox.
+              Notifications and announcements now open from the header
+              bell's drop-down; old links land on the normal Student page.
             */}
             <Route
               path="alerts"
-              element={<Alerts />}
+              element={<StudentHomeRedirect />}
             />
 
             {/*
@@ -394,9 +390,10 @@ function App() {
               element={<NurseRecords />}
             />
 
+            {/* Notifications moved to the header bell's drop-down; old links land on the dashboard. */}
             <Route
               path="notifications"
-              element={<NurseNotifications />}
+              element={<Navigate to="/nurse/dashboard" replace />}
             />
 
             <Route

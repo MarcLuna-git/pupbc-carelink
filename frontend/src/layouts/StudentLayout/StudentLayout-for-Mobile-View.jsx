@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Bell, HeartPulse, Moon, Sun } from 'lucide-react';
+import { HeartPulse, Moon, Sun } from 'lucide-react';
 
 import StudentAccountMenu from './student-shell/StudentAccountMenu';
+import StudentNotificationsMenu from './student-shell/StudentNotificationsMenu';
 import { preloadForPath } from '../../utils/preloadStudentPages';
 import './StudentLayout-for-Mobile-View.css';
 
@@ -41,20 +42,7 @@ const StudentLayoutForMobileView = ({
             </div>
 
             <div className="student-header-actions">
-              <Link
-                to="/student/alerts"
-                aria-label={unreadCount > 0 ? `Open notifications and announcements (${unreadCount} unread)` : 'Open notifications and announcements'}
-                title="Notifications & Announcements"
-                className={`student-header-icon student-notification-bell${unreadCount > 0 ? ' has-unread' : ''}`}
-              >
-                <Bell className="h-5 w-5" />
-
-                {unreadCount > 0 && (
-                  <span className="student-bell-count" aria-hidden="true">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
-              </Link>
+              <StudentNotificationsMenu unreadCount={unreadCount} />
 
               <button
                 type="button"

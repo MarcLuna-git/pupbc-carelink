@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, LayoutGrid, Moon, Stethoscope, Sun, X } from 'lucide-react';
+import { LayoutGrid, Moon, Stethoscope, Sun, X } from 'lucide-react';
 
 import NurseAccountMenu from './nurse-shell/NurseAccountMenu';
+import NurseNotificationsMenu from './nurse-shell/NurseNotificationsMenu';
 import './NurseLayout-for-Mobile-View.css';
 
 /*
@@ -18,6 +19,7 @@ const NurseLayoutForMobileView = ({
   navItems,
   isActive,
   unreadCount,
+  onUnreadCount,
   darkMode,
   toggleDarkMode,
   accountMenuProps,
@@ -69,19 +71,7 @@ const NurseLayoutForMobileView = ({
             </Link>
 
             <div className="nurse-header-actions">
-              <Link
-                to="/nurse/notifications"
-                aria-label={unreadCount > 0 ? `Open notifications (${unreadCount} unread)` : 'Open notifications'}
-                title="Notifications"
-                className="nurse-header-icon nurse-notification-bell"
-              >
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <span className="nurse-bell-count" aria-hidden="true">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
-              </Link>
+              <NurseNotificationsMenu unreadCount={unreadCount} onUnreadCount={onUnreadCount} />
 
               <button
                 type="button"
@@ -174,7 +164,6 @@ const NurseLayoutForMobileView = ({
                 {moreItems.map((item) => {
                   const active = isActive(item.path);
                   const Icon = item.icon;
-                  const showCount = item.path === '/nurse/notifications' && unreadCount > 0;
                   return (
                     <Link
                       key={item.path}
@@ -190,11 +179,6 @@ const NurseLayoutForMobileView = ({
                         <Icon className="h-5 w-5" />
                       </span>
                       <span className="text-xs font-medium">{item.label}</span>
-                      {showCount && (
-                        <span className="absolute right-3 top-2 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                          {unreadCount > 99 ? '99+' : unreadCount}
-                        </span>
-                      )}
                     </Link>
                   );
                 })}

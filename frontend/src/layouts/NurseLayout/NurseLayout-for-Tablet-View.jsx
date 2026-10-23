@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Bell, ChevronsLeft, ChevronsRight, Moon, Sun } from 'lucide-react';
+import { Moon, Sun } from 'lucide-react';
 
 import NurseSidebar from './nurse-shell/NurseSidebar';
+import NurseNotificationsMenu from './nurse-shell/NurseNotificationsMenu';
 import './NurseLayout-for-Tablet-View.css';
 
 /*
@@ -22,25 +22,11 @@ const NurseLayoutForTabletView = ({
   navItems,
   isActive,
   unreadCount,
+  onUnreadCount,
   darkMode,
   toggleDarkMode,
   accountMenuProps,
 }) => {
-  // Center the pull tab on the brand symbol's rendered position.
-  const [toggleTop, setToggleTop] = useState(40);
-
-  useEffect(() => {
-    const measure = () => {
-      const symbol = document.querySelector('.nurse-brand-symbol');
-      if (!symbol) return;
-      const rect = symbol.getBoundingClientRect();
-      if (rect.height > 0) setToggleTop(rect.top + rect.height / 2);
-    };
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, []);
-
   // Folded rail on tablet widths, full sidebar on desktop; crossing the
   // breakpoint re-applies its default, the toggle changes it otherwise.
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -62,42 +48,15 @@ const NurseLayoutForTabletView = ({
         navItems={navItems}
         isActive={isActive}
         collapsed={sidebarCollapsed}
-        unreadCount={unreadCount}
+        onToggle={() => setSidebarCollapsed((value) => !value)}
         accountMenuProps={accountMenuProps}
       />
-
-      {/* Pull tab merged with the sidebar's right edge (rendered outside the
-          <aside>, which clips overflow). */}
-      <button
-        type="button"
-        className="nurse-sidebar-toggle"
-        style={{ top: `${toggleTop}px` }}
-        aria-controls="nurse-sidebar"
-        aria-expanded={!sidebarCollapsed}
-        aria-label={sidebarCollapsed ? 'Expand navigation sidebar' : 'Collapse navigation sidebar'}
-        title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        onClick={() => setSidebarCollapsed((value) => !value)}
-      >
-        {sidebarCollapsed ? <ChevronsRight aria-hidden="true" /> : <ChevronsLeft aria-hidden="true" />}
-      </button>
 
       <div className="nurse-shell-body" data-route-scroll>
         <header className="nurse-header">
           <div className="nurse-header-inner">
             <div className="nurse-header-actions">
-              <Link
-                to="/nurse/notifications"
-                aria-label={unreadCount > 0 ? `Open notifications (${unreadCount} unread)` : 'Open notifications'}
-                title="Notifications"
-                className="nurse-header-icon nurse-notification-bell"
-              >
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <span className="nurse-bell-count" aria-hidden="true">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
-              </Link>
+              <NurseNotificationsMenu unreadCount={unreadCount} onUnreadCount={onUnreadCount} />
 
               <button
                 type="button"

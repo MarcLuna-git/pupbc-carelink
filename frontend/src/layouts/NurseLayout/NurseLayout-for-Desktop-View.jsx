@@ -178,6 +178,7 @@ const NurseLayoutForDesktopView = ({ children }) => {
     navItems: NURSE_NAV_ITEMS,
     isActive,
     unreadCount,
+    onUnreadCount: setUnreadCount,
     darkMode,
     toggleDarkMode,
     accountMenuProps,

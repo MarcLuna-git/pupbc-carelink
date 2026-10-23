@@ -109,6 +109,8 @@
 .student-sidebar.is-collapsed .student-sidebar-brand a>div { max-width:0;opacity:0; }
 .student-sidebar.is-collapsed .student-sidebar-campus { opacity:0; }
 .student-sidebar.is-collapsed .student-sidebar-nav>a span { max-width:0;opacity:0; }
+/* The folded rail keeps the gap between groups but hides their labels. */
+.student-sidebar.is-collapsed .student-nav-section { color:transparent; }
 .student-sidebar.is-collapsed :is(.student-account-caption,.student-account-chevron) { max-width:0;opacity:0;overflow:hidden; }
 .student-sidebar.is-collapsed .student-account-button { gap:0;border-color:transparent;background:transparent; }
 

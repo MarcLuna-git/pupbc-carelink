@@ -1,9 +1,18 @@
+/* `group` sorts the sidebar into labelled sections. Management holds the
+   clinic visit flow in order: book an appointment, then check in with the QR
+   code to join the queue. */
+export const STUDENT_NAV_GROUPS = [
+  { key: 'management', label: 'Management' },
+  { key: 'record', label: 'Record' },
+  { key: 'account', label: 'Account' },
+];
+
 export const STUDENT_PRIMARY_LINKS = [
-  { key: 'appointments', path: '/student/appointments', label: 'Appointments' },
-  { key: 'qr', path: '/student/qr', label: 'QR Code' },
-  { key: 'records', path: '/student/health-records', label: 'Records' },
-  { key: 'profile', path: '/student/profile', label: 'Profile' },
-  { key: 'settings', path: '/student/settings', label: 'Settings' },
+  { key: 'appointments', path: '/student/appointments', label: 'Appointments', group: 'management' },
+  { key: 'qr', path: '/student/qr', label: 'QR Code', group: 'management' },
+  { key: 'records', path: '/student/health-records', label: 'Records', group: 'record' },
+  { key: 'profile', path: '/student/profile', label: 'Profile', group: 'account' },
+  { key: 'settings', path: '/student/settings', label: 'Settings', group: 'account' },
 ];
 
 /* Ask the portal frame to open its Sign out confirmation (used by pages that

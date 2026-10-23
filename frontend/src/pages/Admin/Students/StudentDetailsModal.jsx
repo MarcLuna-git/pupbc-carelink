@@ -4,7 +4,7 @@ import ClinicHistoryList from '../../../components/ClinicHistoryList';
 import { Avatar, StatusBadge } from './StudentDirectory';
 import { academic, fullName, focus, inputStyle, primary, secondary } from './directoryOptions';
 
-function Modal({ title, children, onClose, topmost = true, wide = false }) {
+export function Modal({ title, children, onClose, topmost = true, wide = false }) {
   const ref = useRef(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;

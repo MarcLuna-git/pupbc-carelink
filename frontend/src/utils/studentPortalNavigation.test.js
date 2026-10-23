@@ -1,11 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { STUDENT_PRIMARY_LINKS, isStudentNavActive, studentPageTitle } from './studentPortalNavigation.js';
+import { STUDENT_NAV_GROUPS, STUDENT_PRIMARY_LINKS, isStudentNavActive, studentPageTitle } from './studentPortalNavigation.js';
 
 test('student primary navigation contains exactly the five approved destinations', () => {
   assert.deepEqual(STUDENT_PRIMARY_LINKS.map(item => item.label), ['Appointments', 'QR Code', 'Records', 'Profile', 'Settings']);
   assert.equal(new Set(STUDENT_PRIMARY_LINKS.map(item => item.path)).size, 5);
   assert.equal(STUDENT_PRIMARY_LINKS.some(item => /dashboard|alerts|assistant/.test(item.path)), false);
+});
+test('queue flow tabs are grouped under Management, in order', () => {
+  assert.deepEqual(STUDENT_PRIMARY_LINKS.filter(item => item.group === 'management').map(item => item.label), ['Appointments', 'QR Code']);
+  assert.equal(STUDENT_NAV_GROUPS[0].label, 'Management');
+  assert.equal(STUDENT_PRIMARY_LINKS.every(item => STUDENT_NAV_GROUPS.some(group => group.key === item.group)), true);
 });
 test('profile owns health profile without adding primary destinations', () => {
   for (const path of ['/student/profile', '/student/profile/edit', '/student/health-profile']) {

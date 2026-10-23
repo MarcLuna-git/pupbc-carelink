@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, BriefcaseMedical, LogOut, Moon, Palette, Settings, Sun } from 'lucide-react';
+import { BriefcaseMedical, LogOut, Moon, Palette, Settings, Sun } from 'lucide-react';
 
 import { getAvatar } from '../../../utils/studentUser';
 import { nurseDisplayName, nurseInitials } from './nurseNavigation';
@@ -25,7 +25,6 @@ const NurseAccountMenu = ({
   variant = 'sidebar',
   collapsed = false,
   user,
-  unreadCount = 0,
   darkMode,
   toggleDarkMode,
   onToggleDuty,
@@ -153,16 +152,6 @@ const NurseAccountMenu = ({
               <span>
                 <span className="block font-semibold">Settings</span>
                 <span className="block text-[11px] text-gray-500 dark:text-gray-400">Manage account preferences</span>
-              </span>
-            </Link>
-
-            <Link to="/nurse/notifications" role="menuitem" onClick={closeMenu} className={`mt-1 ${itemClass}`}>
-              <span className={iconBox}><Bell className="h-4 w-4" /></span>
-              <span className="min-w-0 flex-1">
-                <span className="block font-semibold">Notifications</span>
-                <span className="block text-[11px] text-gray-500 dark:text-gray-400">
-                  {unreadCount > 0 ? `${unreadCount} unread` : 'You are all caught up'}
-                </span>
               </span>
             </Link>
 
