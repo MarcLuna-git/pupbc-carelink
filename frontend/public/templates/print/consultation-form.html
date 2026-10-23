@@ -1,0 +1,42 @@
+<!-- Consultation Form (also used for emergency encounters). Printed inside layout.html. Placeholders are listed in README.md. -->
+<h1>{{document_title}}</h1>
+
+<h2>Student</h2>
+<table>
+  <tr><th>Name</th><td>{{student_name}}</td></tr>
+  <tr><th>Student ID</th><td>{{student_id}}</td></tr>
+  <tr><th>Program</th><td>{{student_program}}</td></tr>
+</table>
+
+<h2>Visit</h2>
+<table>
+  <tr><th>Date &amp; Time</th><td>{{visit_datetime}}</td></tr>
+  <tr><th>{{^is_emergency}}Chief Complaint{{/is_emergency}}{{#is_emergency}}Reason{{/is_emergency}}</th><td>{{complaint}}</td></tr>
+  {{#history}}<tr><th>History / Present Illness</th><td>{{history}}</td></tr>{{/history}}
+  {{#symptoms}}<tr><th>Symptoms</th><td>{{symptoms}}</td></tr>{{/symptoms}}
+  {{#service}}<tr><th>Appointment Service</th><td>{{service}}</td></tr>{{/service}}
+</table>
+
+{{#has_vitals}}
+<h2>Vital Signs</h2>
+<table class="vitals">
+  <tr><th>BP</th><th>HR</th><th>Temp</th><th>RR</th><th>O₂ Sat</th></tr>
+  <tr><td>{{vital_bp}}</td><td>{{vital_hr}}</td><td>{{vital_temp}}</td><td>{{vital_rr}}</td><td>{{vital_o2}}</td></tr>
+</table>
+{{/has_vitals}}
+
+<h2>Findings</h2>
+<table>
+  <tr><th>{{^is_emergency}}Diagnosis / Findings{{/is_emergency}}{{#is_emergency}}Assessment{{/is_emergency}}</th><td>{{diagnosis}}</td></tr>
+  {{#assessment}}<tr><th>Nursing Assessment</th><td>{{assessment}}</td></tr>{{/assessment}}
+  {{#interventions}}<tr><th>Nursing Interventions</th><td>{{interventions}}</td></tr>{{/interventions}}
+  {{#treatment}}<tr><th>Treatment / Plan</th><td>{{treatment}}</td></tr>{{/treatment}}
+  {{#medicines}}<tr><th>Medicines Dispensed</th><td>{{medicines}}</td></tr>{{/medicines}}
+  {{#is_emergency}}<tr><th>Intervention</th><td>{{intervention}}</td></tr>{{/is_emergency}}
+  {{#disposition}}<tr><th>Disposition</th><td>{{disposition}}</td></tr>{{/disposition}}
+  <tr><th>Follow-up</th><td>{{follow_up}}</td></tr>
+  {{#medical_certificate}}<tr><th>Medical Certificate</th><td>{{medical_certificate}}</td></tr>{{/medical_certificate}}
+</table>
+
+<div class="sign"><div>{{staff_name}}<small>{{staff_role}}</small></div></div>
+<p class="note">System-generated copy from the {{clinic_name}} records.</p>

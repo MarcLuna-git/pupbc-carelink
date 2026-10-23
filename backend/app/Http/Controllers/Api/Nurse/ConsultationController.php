@@ -42,6 +42,10 @@ class ConsultationController extends Controller
             'vital_signs' => 'nullable|array:bp,hr,rr,temp,o2_sat',
             'vital_signs.*' => 'nullable|string|max:50',
             'general_remarks' => 'nullable|string|max:5000',
+            'history_present_illness' => 'nullable|string|max:2000',
+            'nursing_assessment' => 'nullable|string|max:2000',
+            'nursing_interventions' => 'nullable|string|max:2000',
+            'treatment_plan' => 'nullable|string|max:2000',
             'medical_certificate' => 'sometimes|boolean',
             'medical_certificate_ref' => 'nullable|string|max:191',
             'follow_up_required' => 'sometimes|boolean',
@@ -89,6 +93,8 @@ class ConsultationController extends Controller
         $consultation->update($request->validate([
             'chief_complaint' => 'sometimes|required|string|max:2000', 'vital_signs' => 'nullable|array:bp,hr,rr,temp,o2_sat', 'vital_signs.*' => 'nullable|string|max:50',
             'general_remarks' => 'nullable|string|max:5000', 'medical_certificate' => 'sometimes|boolean', 'medical_certificate_ref' => 'nullable|string|max:191',
+            'history_present_illness' => 'nullable|string|max:2000', 'nursing_assessment' => 'nullable|string|max:2000',
+            'nursing_interventions' => 'nullable|string|max:2000', 'treatment_plan' => 'nullable|string|max:2000',
             'follow_up_required' => 'sometimes|boolean', 'follow_up_date' => 'nullable|date',
         ]));
         return response()->json(['success' => true, 'data' => $consultation->fresh(), 'message' => 'Consultation updated']);

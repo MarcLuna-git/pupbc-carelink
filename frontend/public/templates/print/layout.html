@@ -1,0 +1,47 @@
+<!doctype html>
+<!--
+  Shared page for every printable clinic document: the styles, the header and the page box.
+  The document itself (consultation-form.html or medical-certificate.html) goes where {{{content}}} is.
+  See README.md in this folder for the placeholders you can use.
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{file_title}}</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #f4f1f0; color: #1f2937; font-family: Arial, Helvetica, sans-serif; }
+      .page { max-width: 720px; margin: 24px auto; padding: 40px 44px; background: #fff; border: 1px solid #e5e7eb; }
+      .head { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 14px; border-bottom: 3px solid #800000; }
+      .brand { color: #800000; font-size: 20px; font-weight: 700; margin: 0; }
+      .clinic { color: #6b7280; font-size: 12px; margin: 2px 0 0; }
+      .ref { color: #6b7280; font-size: 11px; text-align: right; }
+      h1 { margin: 28px 0 20px; text-align: center; font-size: 22px; letter-spacing: 2px; text-transform: uppercase; }
+      h2 { margin: 22px 0 8px; color: #800000; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+      p { font-size: 14px; line-height: 1.7; }
+      table { width: 100%; border-collapse: collapse; font-size: 13px; }
+      th, td { padding: 7px 10px; border: 1px solid #e5e7eb; text-align: left; vertical-align: top; }
+      th { width: 34%; background: #faf5f4; color: #4b5563; font-weight: 600; }
+      td { white-space: pre-wrap; }
+      .vitals td, .vitals th { width: auto; text-align: center; }
+      .sign { margin-top: 56px; display: flex; justify-content: flex-end; }
+      .sign div { width: 240px; text-align: center; border-top: 1px solid #1f2937; padding-top: 6px; font-size: 13px; }
+      .sign small { display: block; color: #6b7280; }
+      .note { margin-top: 32px; color: #9ca3af; font-size: 10px; text-align: center; }
+      @media print { body { background: #fff; } .page { margin: 0; border: 0; } }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="head">
+        <div>
+          <p class="brand">PUPBC CareLink</p>
+          <p class="clinic">{{clinic_name}}</p>
+        </div>
+        <div class="ref">Issued {{issued_date}}<br />Ref: {{reference}}</div>
+      </div>
+      {{{content}}}
+    </div>
+  </body>
+</html>

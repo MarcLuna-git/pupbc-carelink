@@ -1,13 +1,44 @@
 import { getToken } from '../../../services/session';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { Heart, Save, Loader2, ClipboardList, CheckCircle, RotateCcw, SkipForward, Stethoscope, ListOrdered, BellRing, UserRound, ClipboardPenLine, Activity, ArrowLeft } from 'lucide-react';
+import { Loader2, ClipboardList, CheckCircle, RotateCcw, SkipForward, Stethoscope, ListOrdered, BellRing, UserRound, ClipboardPenLine, Users, UserX, Star } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import NursePageHero from '../../../components/NursePageHero';
 import NurseListCard, { CountChip } from '../../../components/NurseListCard';
 import useNurseSync from '../../../hooks/useNurseSync';
 import { NurseNoticeModal, NurseToast } from '../../../components/NurseFeedback';
+import ConsultationVisit from './ConsultationVisit';
+
+// Triage priority shown in the queue table.
+const PRIORITY = {
+  HIGH: { label: 'Priority', className: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/30' },
+  MEDIUM: { label: 'Medium', className: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/30' },
+  LOW: { label: 'Regular', className: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/30' },
+};
+
+// Queue status shown in the table.
+const QUEUE_STATUS = {
+  waiting: { label: 'Waiting', className: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/30' },
+  called: { label: 'Now Calling', className: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800/30' },
+  serving: { label: 'In Consultation', className: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800/30' },
+  skipped: { label: 'Skipped', className: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800/30' },
+  no_show: { label: 'No Show', className: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/30' },
+};
+
+// "5 mins" since check-in; "00:42" (mm:ss) since a student was called.
+const minutesSince = (value, now) => {
+  const start = value ? new Date(value).getTime() : NaN;
+  if (Number.isNaN(start)) return '—';
+  const minutes = Math.max(0, Math.floor((now - start) / 60000));
+  return minutes < 60 ? `${minutes} min${minutes === 1 ? '' : 's'}` : `${Math.floor(minutes / 60)} hr ${minutes % 60} min`;
+};
+const clockSince = (value, now) => {
+  const start = value ? new Date(value).getTime() : NaN;
+  if (Number.isNaN(start)) return '00:00';
+  const seconds = Math.max(0, Math.floor((now - start) / 1000));
+  return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+};
 
 const NurseConsultation = () => {
   const [step, setStep] = useState(1);
@@ -19,12 +50,11 @@ const NurseConsultation = () => {
   const [conflict, setConflict] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [checkedInStudents, setCheckedInStudents] = useState([]);
+  const [stats, setStats] = useState({ completed_today: 0, no_show_today: 0 });
+  const [now, setNow] = useState(() => Date.now());
   const queueRequest = useRef(0);
-  const [form, setForm] = useState({
-    chief_complaint: '', bp: '', hr: '', rr: '', temp: '', o2_sat: '',
-    general_remarks: '', medical_certificate: false, medical_certificate_ref: '',
-    follow_up: false, follow_up_date: '',
-  });
+  // Set once the open visit is saved, so the sync loop stops re-claiming a finished visit.
+  const [visitSaved, setVisitSaved] = useState(false);
 
   const queueAction = async (student, action) => {
     setLoading(true); setMessage('');
@@ -55,14 +85,19 @@ const NurseConsultation = () => {
   useEffect(() => {
     fetchCheckedInStudents();
   }, []);
+  // Ticks the waiting times and the "now calling" timer.
   useEffect(() => {
-    if (step !== 2 || !selectedStudent) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  useEffect(() => {
+    if (step !== 2 || !selectedStudent || visitSaved) return;
     const id = selectedStudent.checkin_id;
     return () => { api.delete(`/nurse/queue/${id}/claim`).catch(() => {}); };
-  }, [step, selectedStudent]);
+  }, [step, selectedStudent, visitSaved]);
   useNurseSync(['queue', 'appointments', 'consultations', 'students'], async () => {
     await fetchCheckedInStudents(true);
-    if (step === 2 && selectedStudent) {
+    if (step === 2 && selectedStudent && !visitSaved) {
       try { await api.post(`/nurse/queue/${selectedStudent.checkin_id}/claim`); }
       catch (err) {
         if (err.response?.status === 409) setConflict(err.response.data.message);
@@ -77,7 +112,7 @@ const NurseConsultation = () => {
     try {
       await api.post(`/nurse/queue/${student.checkin_id}/claim`);
       setSelectedStudent(student);
-      setForm(current => ({ ...current, chief_complaint: student.complaint }));
+      setVisitSaved(false);
       setStep(2);
     } catch (err) {
       if (err.response?.status === 409) setConflict(err.response.data?.message || 'Another nurse is already handling this visit.');
@@ -111,9 +146,13 @@ const NurseConsultation = () => {
           priority: c.triage?.priority || 'LOW',
           queue_number: c.queue_number || 'N/A',
           called_at: c.called_at || null,
+          check_in_time: c.check_in_time || c.checked_in_at || c.created_at || null,
+          time_slot: c.appointment?.time_slot || '—',
+          appointment_details: c.appointment || {},
           sync_version: c.sync_version,
         }));
         setCheckedInStudents(formatted);
+        if (response.data.stats) setStats(response.data.stats);
       }
     } catch (err) {
       console.log('Checkins error:', err);
@@ -131,83 +170,51 @@ const NurseConsultation = () => {
     finally { setLoading(false); }
   };
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm({ ...form, [name]: type === 'checkbox' ? checked : value });
-  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedStudent) return;
-
-    setLoading(true);
-    setMessage('');
-
-    try {
-      const token = getToken('nurse');
-      const payload = {
-        user_id: selectedStudent.user_id || selectedStudent.id,
-        appointment_id: selectedStudent.appointment_id || null,
-        appointment_checkin_id: selectedStudent.checkin_id || null,
-        chief_complaint: form.chief_complaint,
-        vital_signs: { bp: form.bp || null, hr: form.hr || null, rr: form.rr || null, temp: form.temp || null, o2_sat: form.o2_sat || null },
-        general_remarks: form.general_remarks || null,
-        medical_certificate: form.medical_certificate,
-        medical_certificate_ref: form.medical_certificate_ref || null,
-        follow_up_required: form.follow_up,
-        follow_up_date: form.follow_up ? form.follow_up_date || null : null,
-      };
-
-      const response = await api.post('/nurse/consultations', payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.data.success) {
-        setMessageType('success');
-        setMessage('Consultation recorded successfully!');
-        setStep(1);
-        setSelectedStudent(null);
-        setForm({
-          chief_complaint: '', bp: '', hr: '', rr: '', temp: '', o2_sat: '',
-          general_remarks: '', medical_certificate: false, medical_certificate_ref: '',
-          follow_up: false, follow_up_date: '',
-        });
-        fetchCheckedInStudents();
-        setTimeout(() => setMessage(''), 3000);
-      }
-    } catch (err) {
-      if (err.response?.status === 409) setConflict(err.response.data?.message || 'This visit was changed by another nurse.');
-      else { setMessageType('error'); setMessage(err.response?.data?.message || 'Failed to save consultation.'); }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const inputClass = "w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:ring-maroon-300/30 dark:focus:border-maroon-300";
-  const labelClass = "text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5";
 
   if (pageLoading) {
     return <NursePageSkeleton label="Loading consultations" />;
   }
 
-  const statusBadge = {
-    called: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 animate-pulse',
-    serving: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-    waiting: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-    skipped: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
-    no_show: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  };
-  const linkButton = 'inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700/50';
   const someoneCalled = checkedInStudents.some(s => ['serving', 'called'].includes(s.status));
+  // The queue is already in call order, so the first waiting student is the one Call Next will call.
+  const nextInLine = checkedInStudents.find(s => s.status === 'waiting');
+
+  const btn = 'inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50';
+  const primary = `${btn} bg-maroon-800 text-white hover:bg-maroon-900`;
+  const outline = `${btn} border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700/50`;
+  const queueActions = s => {
+    if (s.status === 'called') return (
+      <div className="flex gap-1.5">
+        <button type="button" onClick={() => queueAction(s, 'arrived')} disabled={loading} className={`${btn} bg-green-600 text-white hover:bg-green-700`}><CheckCircle className="h-3.5 w-3.5" /> Arrived</button>
+        <button type="button" onClick={() => queueAction(s, 'recall')} disabled={loading} className={outline}><RotateCcw className="h-3.5 w-3.5" /> Recall</button>
+        <button type="button" onClick={() => queueAction(s, 'skip')} disabled={loading} className={`${btn} border border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800/40 dark:text-red-400 dark:hover:bg-red-900/20`}><SkipForward className="h-3.5 w-3.5" /> Skip</button>
+      </div>
+    );
+    if (s.status === 'serving') return (
+      <div className="flex gap-1.5">
+        <button type="button" onClick={() => openVisit(s)} disabled={loading} className={primary}><ClipboardPenLine className="h-3.5 w-3.5" /> Open Visit</button>
+        <Link to={`/nurse/students?student=${s.user_id}`} className={outline}><UserRound className="h-3.5 w-3.5" /> Student</Link>
+      </div>
+    );
+    if (s.status === 'skipped') return (
+      <button type="button" onClick={() => queueAction(s, 'returned')} disabled={loading} className={`${btn} border border-green-300 text-green-700 hover:bg-green-50 dark:border-green-800/40 dark:text-green-400 dark:hover:bg-green-900/20`}><RotateCcw className="h-3.5 w-3.5" /> Mark Returned</button>
+    );
+    if (s.status === 'waiting' && s.checkin_id === nextInLine?.checkin_id) return (
+      <button type="button" onClick={callNext} disabled={loading || someoneCalled} title={someoneCalled ? 'Finish the student who is called or being served first' : undefined} className={primary}><BellRing className="h-3.5 w-3.5" /> Call Next</button>
+    );
+    if (s.status === 'waiting') return <span className="text-xs text-gray-400">In line</span>;
+    return <span className="text-xs text-gray-400">—</span>;
+  };
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-5">
-      <NursePageHero
+      {step === 1 && <NursePageHero
         id="nurse-consultation-title"
-        title="Consultation"
-        description="Call students from the clinic queue, then record their consultation."
+        title="Queue & Consultation"
+        description="Manage the clinic queue, call the next student, and record their consultation."
         art={Stethoscope}
-      />
+      />}
 
       {/* Action results show as a floating toast */}
       <NurseToast message={message} type={messageType} onClose={() => setMessage('')} />
@@ -219,15 +226,33 @@ const NurseConsultation = () => {
         onClose={() => setConflict('')}
       />
 
-      {step === 1 && (
+      {step === 1 && (<>
+        {/* Today at a glance */}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[
+            { label: 'Waiting', value: checkedInStudents.filter(s => ['waiting', 'called'].includes(s.status)).length, icon: Users, tone: 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300' },
+            { label: 'In Consultation', value: checkedInStudents.filter(s => s.status === 'serving').length, icon: Stethoscope, tone: 'bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300' },
+            { label: 'Completed today', value: stats.completed_today, icon: CheckCircle, tone: 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300' },
+            { label: 'Skipped / No Show', value: checkedInStudents.filter(s => s.status === 'skipped').length + stats.no_show_today, icon: UserX, tone: 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300' },
+          ].map(({ label, value, icon: Icon, tone }) => (
+            <div key={label} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tone}`}><Icon className="h-5 w-5" aria-hidden="true" /></span>
+              <div className="min-w-0">
+                <p className="truncate text-xs font-medium text-gray-500 dark:text-gray-400">{label}</p>
+                <p className="text-xl font-bold text-gray-900 tabular-nums dark:text-white">{value}<span className="ml-1 text-xs font-medium text-gray-400">student{value === 1 ? '' : 's'}</span></p>
+              </div>
+            </div>
+          ))}
+        </div>
+
         <NurseListCard
           aria-label="Clinic queue"
           icon={ListOrdered}
-          title={<>Clinic queue<CountChip>{checkedInStudents.length}</CountChip></>}
-          description="Confirm arrival or skip after calling attempts. Skipped students stay in the waiting queue until marked returned or their original check-in deadline passes."
+          title={<>Queue list<CountChip>{checkedInStudents.length}</CountChip></>}
+          description={`${new Date(now).toLocaleDateString('en-US', { timeZone: 'Asia/Manila', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} · Priority students are called first. Call the next student, confirm arrival, then open the visit.`}
           actions={
-            <button type="button" onClick={callNext} disabled={loading || someoneCalled}
-              title={someoneCalled ? 'Finish the student who is called or being served first' : undefined}
+            <button type="button" onClick={callNext} disabled={loading || someoneCalled || !nextInLine}
+              title={someoneCalled ? 'Finish the student who is called or being served first' : !nextInLine ? 'No one is waiting' : undefined}
               className="inline-flex items-center gap-2 rounded-lg bg-maroon-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900 disabled:opacity-50">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellRing className="h-4 w-4" />}
               Call Next
@@ -243,158 +268,60 @@ const NurseConsultation = () => {
               <p className="mt-1 text-sm text-gray-400">Students who check in via QR will appear here.</p>
             </div>
           ) : (
-            <ul className="space-y-2 p-3 sm:p-4">
-              {checkedInStudents.map(s => (
-                <li key={s.checkin_id} className={`space-y-3 rounded-lg border p-4 ${
-                  s.status === 'called' ? 'border-yellow-200 bg-yellow-50/40 dark:border-yellow-800/40 dark:bg-yellow-900/10'
-                    : s.status === 'serving' ? 'border-green-200 bg-green-50/40 dark:border-green-800/40 dark:bg-green-900/10'
-                    : 'border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800'
-                }`}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className="flex h-10 min-w-10 shrink-0 items-center justify-center rounded-lg bg-maroon-50 px-2 text-sm font-bold text-maroon-800 tabular-nums dark:bg-maroon-900/20 dark:text-maroon-400">
-                        {s.queue_number}
-                      </span>
-                      <div className="min-w-0">
-                        <h3 className="truncate font-semibold text-gray-900 dark:text-white">{s.name}</h3>
-                        <p className="truncate text-xs text-gray-500 dark:text-gray-400">{s.id} · {s.appointment}</p>
-                      </div>
-                    </div>
-                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${statusBadge[s.status] || 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}>
-                      {s.status.toUpperCase().replace('_', ' ')}
-                    </span>
-                  </div>
-
-                  {s.complaint && <p className="text-sm text-gray-600 dark:text-gray-300">{s.complaint}</p>}
-
-                  {s.status === 'called' && (
-                    <div className="flex flex-wrap gap-2">
-                      <button onClick={() => queueAction(s, 'arrived')} disabled={loading} className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-green-700 disabled:opacity-50">
-                        <CheckCircle className="h-4 w-4" /> Patient Arrived
-                      </button>
-                      <button onClick={() => queueAction(s, 'recall')} disabled={loading} className="inline-flex items-center gap-1.5 rounded-lg border border-yellow-500 px-3 py-2 text-sm font-semibold text-yellow-700 transition hover:bg-yellow-50 disabled:opacity-50 dark:text-yellow-400 dark:hover:bg-yellow-900/20">
-                        <RotateCcw className="h-4 w-4" /> Recall
-                      </button>
-                      <button onClick={() => queueAction(s, 'skip')} disabled={loading} className="inline-flex items-center gap-1.5 rounded-lg border border-red-500 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-900/20">
-                        <SkipForward className="h-4 w-4" /> Skip
-                      </button>
-                    </div>
-                  )}
-                  {s.status === 'skipped' && (
-                    <button onClick={() => queueAction(s, 'returned')} disabled={loading} className="inline-flex items-center gap-1.5 rounded-lg border border-green-600 px-3 py-2 text-sm font-semibold text-green-700 transition hover:bg-green-50 disabled:opacity-50 dark:text-green-400 dark:hover:bg-green-900/20">
-                      <RotateCcw className="h-4 w-4" /> Mark Returned
-                    </button>
-                  )}
-                  {['waiting', 'serving'].includes(s.status) && (
-                    <div className="flex flex-wrap gap-2">
-                      <Link className={linkButton} to={`/nurse/students?student=${s.user_id}`}><UserRound className="h-4 w-4" /> Open Student</Link>
-                      {s.status === 'serving' && (
-                        <button className="inline-flex items-center gap-1.5 rounded-lg bg-maroon-800 px-3 py-2 text-sm font-semibold text-white transition hover:bg-maroon-900 disabled:opacity-50" disabled={loading} onClick={() => openVisit(s)}>
-                          <ClipboardPenLine className="h-4 w-4" /> Open Visit
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <caption className="sr-only">Today's clinic queue in call order</caption>
+                <thead className="border-b border-gray-200 bg-gray-50 text-xs font-medium text-gray-500 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-400">
+                  <tr>{['#', 'Student', 'Priority', 'Appointment Time', 'Waiting Time', 'Status', 'Actions'].map(label => <th scope="col" key={label} className="whitespace-nowrap px-3 py-3 sm:px-4">{label}</th>)}</tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {checkedInStudents.map(s => {
+                    const priority = PRIORITY[s.priority] || PRIORITY.LOW;
+                    const status = QUEUE_STATUS[s.status] || { label: s.status, className: 'bg-gray-100 text-gray-600 border-gray-200' };
+                    return (
+                      <tr key={s.checkin_id}
+                        onClick={s.status === 'serving' ? () => openVisit(s) : undefined}
+                        title={s.status === 'serving' ? 'Open this visit' : undefined}
+                        className={`${s.status === 'serving' ? 'cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/20' : ''} ${
+                        s.status === 'called' ? 'bg-amber-50/50 dark:bg-amber-900/10'
+                          : s.status === 'serving' ? 'bg-purple-50/40 dark:bg-purple-900/10'
+                          : s.priority === 'HIGH' ? 'bg-red-50/30 dark:bg-red-900/5' : ''
+                      }`}>
+                        <td className="whitespace-nowrap px-3 py-3 font-semibold tabular-nums text-gray-700 sm:px-4 dark:text-gray-200">
+                          <span className="inline-flex items-center gap-1">{s.queue_number}{s.priority === 'HIGH' && <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-label="Priority" />}</span>
+                        </td>
+                        <td className="px-3 py-3 sm:px-4">
+                          <p className="whitespace-nowrap font-semibold text-gray-900 dark:text-white">{s.name}</p>
+                          <p className="font-mono text-xs text-gray-400">{s.id}</p>
+                        </td>
+                        <td className="px-3 py-3 sm:px-4"><span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${priority.className}`}>{priority.label}</span></td>
+                        <td className="whitespace-nowrap px-3 py-3 text-gray-600 sm:px-4 dark:text-gray-300">{s.time_slot}</td>
+                        <td className="whitespace-nowrap px-3 py-3 text-gray-600 sm:px-4 dark:text-gray-300">{['waiting', 'called', 'skipped'].includes(s.status) ? minutesSince(s.check_in_time, now) : '—'}</td>
+                        <td className="px-3 py-3 sm:px-4">
+                          <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold ${status.className}`}>
+                            {status.label}{s.status === 'called' && <span className="font-mono tabular-nums">{clockSince(s.called_at, now)}</span>}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 sm:px-4" onClick={e => e.stopPropagation()}>{queueActions(s)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </NurseListCard>
-      )}
+      </>)}
 
       {step === 2 && selectedStudent && (
-        <section aria-labelledby="consultation-form-title" className="overflow-hidden rounded-lg border border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
-          <header className="flex items-start gap-3 border-b border-gray-100 px-4 py-4 dark:border-gray-700 lg:px-6">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-maroon-50 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-400">
-              <ClipboardPenLine className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <h2 id="consultation-form-title" className="font-bold text-gray-900 dark:text-white">Consultation for {selectedStudent.name}</h2>
-              <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{selectedStudent.id} · {selectedStudent.appointment} · Queue {selectedStudent.queue_number}</p>
-            </div>
-          </header>
-
-          <form onSubmit={handleSubmit} className="space-y-5 p-4 lg:p-6">
-            <div className="flex items-start gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 text-sm dark:border-gray-700 dark:bg-gray-700/40">
-              <Activity className="mt-0.5 h-4 w-4 shrink-0 text-maroon-800 dark:text-maroon-400" />
-              <p className="text-gray-700 dark:text-gray-200">
-                <span className="font-semibold">Triage:</span> {selectedStudent.priority} / {selectedStudent.triage?.severity}.{' '}
-                <span className="font-semibold">Red flags:</span> {selectedStudent.triage?.red_flags?.join(', ') || 'None'}. {selectedStudent.triage?.notes}
-              </p>
-            </div>
-
-            <div>
-              <label className={labelClass}>Chief Complaint *</label>
-              <textarea name="chief_complaint" value={form.chief_complaint} onChange={handleChange} rows={3}
-                className={inputClass} placeholder="Describe the student's main concern..." required />
-            </div>
-
-            <div>
-              <label className={`${labelClass} flex items-center gap-2`}>
-                <Heart className="h-4 w-4 text-red-500" /><span>Vital Signs (Optional)</span>
-              </label>
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-                {[
-                  { name: 'bp', label: 'BP', placeholder: '120/80' },
-                  { name: 'hr', label: 'HR', placeholder: '72 bpm' },
-                  { name: 'rr', label: 'RR', placeholder: '16' },
-                  { name: 'temp', label: 'Temp', placeholder: '36.5°C' },
-                  { name: 'o2_sat', label: 'O2 Sat', placeholder: '98%' }
-                ].map(v => (
-                  <div key={v.name}>
-                    <label className="mb-1 block text-[11px] font-medium text-gray-400">{v.label}</label>
-                    <input name={v.name} value={form[v.name]} onChange={handleChange} className={inputClass} placeholder={v.placeholder} />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className={labelClass}>General Remarks</label>
-              <textarea name="general_remarks" value={form.general_remarks} onChange={handleChange} rows={3}
-                className={inputClass} placeholder="Additional notes..." />
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="space-y-3">
-                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/50">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-white">Issue Medical Certificate?</span>
-                  <input type="checkbox" name="medical_certificate" checked={form.medical_certificate} onChange={handleChange} className="h-5 w-5 accent-maroon-800" />
-                </label>
-                {form.medical_certificate && (
-                  <div>
-                    <label className={labelClass}>Certificate Reference</label>
-                    <input name="medical_certificate_ref" value={form.medical_certificate_ref} onChange={handleChange} className={inputClass} placeholder="MED-2024-001" />
-                  </div>
-                )}
-              </div>
-              <div className="space-y-3">
-                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/50">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-white">Follow-up Required?</span>
-                  <input type="checkbox" name="follow_up" checked={form.follow_up} onChange={handleChange} className="h-5 w-5 accent-maroon-800" />
-                </label>
-                {form.follow_up && (
-                  <div>
-                    <label className={labelClass}>Follow-up Date</label>
-                    <input type="date" name="follow_up_date" value={form.follow_up_date} onChange={handleChange} className={inputClass} />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-4 dark:border-gray-700">
-              <button type="button" onClick={() => setStep(1)}
-                className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50">
-                <ArrowLeft className="h-4 w-4" /> Back to Queue
-              </button>
-              <button type="submit" disabled={loading}
-                className="inline-flex items-center gap-2 rounded-lg bg-maroon-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900 disabled:opacity-50">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                <span>{loading ? 'Saving...' : 'Save Consultation'}</span>
-              </button>
-            </div>
-          </form>
-        </section>
+        <ConsultationVisit
+          key={selectedStudent.checkin_id}
+          visit={selectedStudent}
+          onBack={() => { setStep(1); setSelectedStudent(null); fetchCheckedInStudents(true).catch(() => {}); }}
+          onSaved={() => { setVisitSaved(true); fetchCheckedInStudents(true).catch(() => {}); }}
+          onConflict={setConflict}
+          notify={(text, type) => { setMessageType(type); setMessage(text); }}
+        />
       )}
     </div>
   );

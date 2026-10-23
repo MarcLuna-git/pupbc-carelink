@@ -3,12 +3,16 @@ import { formatPersonName } from '../../../utils/studentUser';
 import { getUser } from '../../../services/session';
 
 /*
- * Printable clinic documents, built in the browser from a clinic-history
- * record. `mode: 'print'` opens the browser print dialog right away (where
- * "Save as PDF" downloads it); `mode: 'preview'` only shows the page.
+ * Printable clinic documents, filled in the browser from a clinic-history
+ * record. The page design lives in editable HTML files under
+ * public/templates/print/ (see the README there). `mode: 'print'` opens the
+ * browser print dialog right away (where "Save as PDF" downloads it);
+ * `mode: 'preview'` only shows the page.
  *
  * Returns false when the pop-up was blocked so the caller can say so.
  */
+
+const TEMPLATE_DIR = `${import.meta.env.BASE_URL}templates/print/`;
 
 const CLINIC_NAME = 'PUP Biñan Campus Student Clinic';
 
@@ -46,135 +50,121 @@ const studentInfo = () => {
   };
 };
 
-const STYLES = `
-  * { box-sizing: border-box; }
-  body { margin: 0; background: #f4f1f0; color: #1f2937; font-family: Arial, Helvetica, sans-serif; }
-  .page { max-width: 720px; margin: 24px auto; padding: 40px 44px; background: #fff; border: 1px solid #e5e7eb; }
-  .head { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 14px; border-bottom: 3px solid #800000; }
-  .brand { color: #800000; font-size: 20px; font-weight: 700; margin: 0; }
-  .clinic { color: #6b7280; font-size: 12px; margin: 2px 0 0; }
-  .ref { color: #6b7280; font-size: 11px; text-align: right; }
-  h1 { margin: 28px 0 20px; text-align: center; font-size: 22px; letter-spacing: 2px; text-transform: uppercase; }
-  h2 { margin: 22px 0 8px; color: #800000; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
-  p { font-size: 14px; line-height: 1.7; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th, td { padding: 7px 10px; border: 1px solid #e5e7eb; text-align: left; vertical-align: top; }
-  th { width: 34%; background: #faf5f4; color: #4b5563; font-weight: 600; }
-  .vitals td, .vitals th { width: auto; text-align: center; }
-  .sign { margin-top: 56px; display: flex; justify-content: flex-end; }
-  .sign div { width: 240px; text-align: center; border-top: 1px solid #1f2937; padding-top: 6px; font-size: 13px; }
-  .sign small { display: block; color: #6b7280; }
-  .note { margin-top: 32px; color: #9ca3af; font-size: 10px; text-align: center; }
-  @media print { body { background: #fff; } .page { margin: 0; border: 0; } }
-`;
+const NOT_RECORDED = 'Not recorded';
 
-const row = (label, value) =>
-  `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value || 'Not recorded')}</td></tr>`;
+/*
+ * Fills a template: {{#key}}…{{/key}} keeps its part when key has a value,
+ * {{^key}}…{{/key}} when it does not, {{{key}}} inserts HTML as is, and
+ * {{key}} inserts the value as text (or "Not recorded" when empty).
+ */
+const fillTemplate = (template, data) => {
+  const filled = (key) => {
+    const value = data[key];
+    return Array.isArray(value) ? value.length > 0 : Boolean(value);
+  };
+  let html = template;
+  let previous;
+  do {
+    previous = html;
+    html = html.replace(/\{\{([#^])(\w+)\}\}([\s\S]*?)\{\{\/\2\}\}/g,
+      (_, type, key, inner) => ((type === '#') === filled(key) ? inner : ''));
+  } while (html !== previous);
+  return html
+    .replace(/\{\{\{(\w+)\}\}\}/g, (_, key) => data[key] ?? '')
+    .replace(/\{\{(\w+)\}\}/g, (_, key) => {
+      const value = data[key];
+      return escapeHtml(Array.isArray(value) ? value.join('\n') : (value || NOT_RECORDED));
+    });
+};
 
-const certificateBody = (record, student) => `
-  <h1>Medical Certificate</h1>
-  <p>
-    This is to certify that <strong>${escapeHtml(student.name)}</strong>,
-    Student ID <strong>${escapeHtml(student.studentId)}</strong>
-    (${escapeHtml(student.program)}), was seen and attended to at the
-    ${escapeHtml(CLINIC_NAME)} on <strong>${escapeHtml(formatDay(record.date))}</strong>
-    for <strong>${escapeHtml(record.complaint)}</strong>.
-  </p>
-  <table>
-    ${row('Findings / Remarks', record.diagnosis)}
-    ${record.followUpRequired ? row('Recommendation', `Follow-up visit${record.followUpDate ? ` on ${formatDay(record.followUpDate)}` : ''}`) : ''}
-    ${row('Certificate Reference', record.medicalCertificateRef)}
-  </table>
-  <p>This certificate is issued upon the request of the student for whatever purpose it may serve.</p>
-  <div class="sign"><div>${escapeHtml(record.staff)}<small>${escapeHtml(record.staffRole)}</small></div></div>
-  <p class="note">
-    System-generated copy of a certificate issued by the ${escapeHtml(CLINIC_NAME)}.
-    Verify the reference number with the clinic.
-  </p>
-`;
+const loadTemplate = async (file) => {
+  const response = await fetch(`${TEMPLATE_DIR}${file}`, { cache: 'no-cache' });
+  if (!response.ok) throw new Error(`${file} could not be loaded`);
+  return response.text();
+};
 
-const consultationBody = (record, student) => {
-  const vitals = [
-    ['BP', record.vitals.bp],
-    ['HR', record.vitals.hr],
-    ['Temp', record.vitals.temp],
-    ['RR', record.vitals.rr],
-    ['O₂ Sat', record.vitals.o2],
-  ];
-  const hasVitals = vitals.some(([, value]) => value);
+const certificateData = (record) => ({
+  visit_date: formatDay(record.date),
+  complaint: record.complaint,
+  findings: record.diagnosis,
+  recommendation: record.followUpRequired
+    ? `Follow-up visit${record.followUpDate ? ` on ${formatDay(record.followUpDate)}` : ''}`
+    : '',
+  certificate_ref: record.medicalCertificateRef,
+});
+
+const consultationData = (record) => {
   const isEmergency = record.recordType === 'emergency';
-
-  return `
-    <h1>${isEmergency ? 'Emergency Encounter Record' : 'Consultation Record'}</h1>
-    <h2>Student</h2>
-    <table>
-      ${row('Name', student.name)}
-      ${row('Student ID', student.studentId)}
-      ${row('Program', student.program)}
-    </table>
-    <h2>Visit</h2>
-    <table>
-      ${row('Date & Time', formatDateTime(record.date))}
-      ${row(isEmergency ? 'Reason' : 'Chief Complaint', record.complaint)}
-      ${record.symptoms ? row('Symptoms', record.symptoms) : ''}
-      ${record.appointment?.service ? row('Appointment Service', record.appointment.service) : ''}
-    </table>
-    ${hasVitals ? `
-      <h2>Vital Signs</h2>
-      <table class="vitals">
-        <tr>${vitals.map(([label]) => `<th>${escapeHtml(label)}</th>`).join('')}</tr>
-        <tr>${vitals.map(([, value]) => `<td>${escapeHtml(value || '—')}</td>`).join('')}</tr>
-      </table>` : ''}
-    <h2>Findings</h2>
-    <table>
-      ${row(isEmergency ? 'Assessment' : 'Diagnosis / Findings', record.diagnosis)}
-      ${isEmergency ? row('Intervention', record.notesValue) : ''}
-      ${record.disposition ? row('Disposition', record.disposition) : ''}
-      ${row('Follow-up', record.followUpRequired ? `Required${record.followUpDate ? ` — ${formatDay(record.followUpDate)}` : ''}` : 'Not required')}
-      ${record.medicalCertificate ? row('Medical Certificate', record.medicalCertificateRef || 'Issued') : ''}
-    </table>
-    <div class="sign"><div>${escapeHtml(record.staff)}<small>${escapeHtml(record.staffRole)}</small></div></div>
-    <p class="note">System-generated copy from the ${escapeHtml(CLINIC_NAME)} records.</p>
-  `;
+  const vitals = record.vitals || {};
+  return {
+    document_title: isEmergency ? 'Emergency Encounter Record' : 'Consultation Record',
+    is_emergency: isEmergency,
+    visit_datetime: formatDateTime(record.date),
+    complaint: record.complaint,
+    history: record.history,
+    symptoms: record.symptoms,
+    service: record.appointment?.service,
+    has_vitals: ['bp', 'hr', 'temp', 'rr', 'o2'].some((key) => vitals[key]),
+    vital_bp: vitals.bp || '—',
+    vital_hr: vitals.hr || '—',
+    vital_temp: vitals.temp || '—',
+    vital_rr: vitals.rr || '—',
+    vital_o2: vitals.o2 || '—',
+    diagnosis: record.diagnosis,
+    assessment: record.assessment,
+    interventions: record.interventions,
+    treatment: record.treatment,
+    medicines: record.dispensed || [],
+    intervention: record.notesValue,
+    disposition: record.disposition,
+    follow_up: record.followUpRequired
+      ? `Required${record.followUpDate ? ` — ${formatDay(record.followUpDate)}` : ''}`
+      : 'Not required',
+    medical_certificate: record.medicalCertificate ? record.medicalCertificateRef || 'Issued' : '',
+  };
 };
 
 export const DOCUMENTS = {
-  certificate: { label: 'Medical Certificate', file: 'Medical-Certificate', body: certificateBody },
-  consultation: { label: 'Consultation Form', file: 'Consultation-Form', body: consultationBody },
+  certificate: { label: 'Medical Certificate', file: 'Medical-Certificate', template: 'medical-certificate.html', data: certificateData },
+  consultation: { label: 'Consultation Form', file: 'Consultation-Form', template: 'consultation-form.html', data: consultationData },
 };
 
-export const openRecordDocument = (kind, record, mode = 'preview') => {
+// `student` lets the nurse portal print for the student being seen; the student portal uses its own session.
+export const openRecordDocument = (kind, record, mode = 'preview', student = null) => {
   const doc = DOCUMENTS[kind];
-  const printWindow = window.open('', '_blank');
-  if (!doc || !printWindow) return false;
+  // Opened right away (inside the click) so the browser does not block it; the template fills it in after.
+  const printWindow = doc && window.open('', '_blank');
+  if (!printWindow) return false;
+  printWindow.document.write('<p style="font-family: Arial, sans-serif; color: #6b7280;">Preparing document…</p>');
 
-  const student = studentInfo();
+  const info = student || studentInfo();
   const reference = record.medicalCertificateRef || record.id;
-  // The title becomes the default file name in "Save as PDF".
-  const title = `PUPBC-${doc.file}-${reference}`;
+  const data = {
+    clinic_name: CLINIC_NAME,
+    issued_date: formatDay(new Date()),
+    reference,
+    // The title becomes the default file name in "Save as PDF".
+    file_title: `PUPBC-${doc.file}-${reference}`,
+    student_name: info.name,
+    student_id: info.studentId,
+    student_program: info.program,
+    staff_name: record.staff,
+    staff_role: record.staffRole,
+    ...doc.data(record),
+  };
 
-  printWindow.document.write(`<!doctype html>
-    <html>
-      <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>${escapeHtml(title)}</title>
-        <style>${STYLES}</style>
-      </head>
-      <body>
-        <div class="page">
-          <div class="head">
-            <div>
-              <p class="brand">PUPBC CareLink</p>
-              <p class="clinic">${escapeHtml(CLINIC_NAME)}</p>
-            </div>
-            <div class="ref">Issued ${escapeHtml(formatDay(new Date()))}<br />Ref: ${escapeHtml(reference)}</div>
-          </div>
-          ${doc.body(record, student)}
-        </div>
-        ${mode === 'print' ? '<script>setTimeout(function () { window.print(); }, 400);</script>' : ''}
-      </body>
-    </html>`);
-  printWindow.document.close();
+  Promise.all([loadTemplate('layout.html'), loadTemplate(doc.template)])
+    .then(([layout, body]) => {
+      const page = fillTemplate(layout, { ...data, content: fillTemplate(body, data) });
+      printWindow.document.open();
+      printWindow.document.write(page);
+      printWindow.document.close();
+      if (mode === 'print') printWindow.setTimeout(() => printWindow.print(), 400);
+    })
+    .catch((error) => {
+      printWindow.document.open();
+      printWindow.document.write(`<p style="font-family: Arial, sans-serif; color: #b91c1c;">Unable to load the print template: ${escapeHtml(error.message)}.</p>`);
+      printWindow.document.close();
+    });
   return true;
 };

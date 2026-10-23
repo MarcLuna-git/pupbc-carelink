@@ -16,21 +16,62 @@ class AppointmentController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Appointment::with(['user:id,student_id,first_name,last_name', 'user.studentProfile'])
-            ->when($request->status, fn($q) => $q->where('status', $request->status))
+        $query = Appointment::with(['user:id,student_id,first_name,last_name', 'user.studentProfile', 'latestCheckin'])
             ->when($request->date, fn($q) => $q->whereDate('appointment_date', $request->date))
+            ->when($request->service, fn($q) => $q->where('service', $request->service))
             ->when($request->search, function($q) use ($request) {
                 $q->whereHas('user', fn($q) => 
                     $q->where('first_name', DatabaseSearch::like($q), "%{$request->search}%")
                       ->orWhere('last_name', DatabaseSearch::like($q), "%{$request->search}%")
                       ->orWhere('student_id', DatabaseSearch::like($q), "%{$request->search}%")
                 );
-            })
+            });
+
+        // Status tab counts follow the search and filters, but not the selected tab.
+        $counts = ['all' => (clone $query)->setEagerLoads([])->count()];
+        foreach (array_keys(self::STAGES) as $stage) {
+            $counts[$stage] = $this->whereStage((clone $query)->setEagerLoads([]), $stage)->count();
+        }
+
+        $perPage = min(max((int) $request->input('per_page', 20), 1), 50);
+        $page = $query
+            ->when($request->status, fn($q) => $this->whereStage($q, $request->status))
             // Most recently booked first, so new requests show at the top.
             ->orderByDesc('created_at')
-            ->orderByDesc('id');
+            ->orderByDesc('id')
+            ->paginate($perPage);
 
-        return response()->json(['success' => true, 'data' => $query->paginate(20)]);
+        return response()->json(['success' => true, 'data' => $page, 'counts' => $counts]);
+    }
+
+    /*
+     * Appointments-page tabs. Approved, Waiting and In consultation are all
+     * approved appointments, split by the kiosk check-in's queue status:
+     * not checked in yet, in the queue (waiting / called / skipped), or
+     * being served by the nurse.
+     */
+    private const STAGES = [
+        'pending' => null,
+        'approved' => null,
+        'waiting' => ['waiting', 'called', 'skipped'],
+        'in_consultation' => ['serving'],
+        'completed' => null,
+        'cancelled' => null,
+    ];
+
+    private function whereStage($query, string $stage)
+    {
+        $kioskCheckin = fn($q) => $q->where('is_walk_in', false);
+
+        if ($stage === 'approved') {
+            return $query->where('status', 'approved')->whereDoesntHave('checkins', $kioskCheckin);
+        }
+        if (! empty(self::STAGES[$stage])) {
+            return $query->where('status', 'approved')
+                ->whereHas('checkins', fn($q) => $kioskCheckin($q)->whereIn('status', self::STAGES[$stage]));
+        }
+
+        return $query->where('status', $stage);
     }
 
     public function show($id)

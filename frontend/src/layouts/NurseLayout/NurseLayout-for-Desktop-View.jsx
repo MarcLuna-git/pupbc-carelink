@@ -10,7 +10,7 @@ import api from '../../services/api';
 import { fetchNurseNotifications } from '../../services/nurseNotifications';
 import { fetchNurseDevTools } from '../../services/devTools';
 import NursePageSkeleton from '../../components/NursePageSkeleton';
-import { NURSE_NAV_ITEMS, isNurseNavActive, nursePageTitle } from './nurse-shell/nurseNavigation';
+import { NURSE_NAV_ITEMS, isNurseNavActive } from './nurse-shell/nurseNavigation';
 
 /*
  * Base styles first, then the two shells (each imports its own stylesheet),
@@ -207,7 +207,7 @@ const NurseLayoutForDesktopView = ({ children }) => {
       {isMobileView ? (
         <NurseLayoutForMobileView {...shellProps}>{pageSlot}</NurseLayoutForMobileView>
       ) : (
-        <NurseLayoutForTabletView {...shellProps} pageTitle={nursePageTitle(location.pathname)}>
+        <NurseLayoutForTabletView {...shellProps}>
           {pageSlot}
         </NurseLayoutForTabletView>
       )}

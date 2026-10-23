@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Api\Kiosk;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
+use App\Models\AppointmentCheckin;
 use App\Services\ClinicQueue;
 use Illuminate\Http\Request;
 class CheckinController extends Controller
@@ -13,7 +14,15 @@ class CheckinController extends Controller
         return app(KioskController::class)->lookup($request);
     }
     public function checkin(Request $request) { return response()->json(['message' => 'Use scheduled check-in with triage.'], 410); }
-    public function todayCheckins() { return response()->json(['success' => true, 'data' => ClinicQueue::ordered()->get()]); }
+    public function todayCheckins()
+    {
+        // Today's finished visits leave the live queue, so the summary cards count them separately.
+        $today = AppointmentCheckin::where('created_at', '>=', today())->where('created_at', '<', today()->addDay())->where('is_walk_in', false);
+        return response()->json(['success' => true, 'data' => ClinicQueue::ordered()->get(), 'stats' => [
+            'completed_today' => (clone $today)->where('status', 'completed')->count(),
+            'no_show_today' => (clone $today)->where('status', 'no_show')->count(),
+        ]]);
+    }
     public function getAppointment($reference)
     {
         $appointment = Appointment::where('reference_number', $reference)->where('status', 'approved')->whereDate('appointment_date', today('Asia/Manila')->toDateString())->firstOrFail();

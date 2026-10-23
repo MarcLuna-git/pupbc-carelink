@@ -24,7 +24,6 @@ const NurseLayoutForTabletView = ({
   unreadCount,
   darkMode,
   toggleDarkMode,
-  pageTitle,
   accountMenuProps,
 }) => {
   // Center the pull tab on the brand symbol's rendered position.
@@ -85,8 +84,6 @@ const NurseLayoutForTabletView = ({
       <div className="nurse-shell-body" data-route-scroll>
         <header className="nurse-header">
           <div className="nurse-header-inner">
-            <h1 className="nurse-header-page">{pageTitle}</h1>
-
             <div className="nurse-header-actions">
               <Link
                 to="/nurse/notifications"

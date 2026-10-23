@@ -32,9 +32,6 @@ export const NURSE_NAV_ITEMS = [
 export const isNurseNavActive = (pathname, path) =>
   pathname === path || pathname.startsWith(`${path}/`);
 
-export const nursePageTitle = (pathname) =>
-  NURSE_NAV_ITEMS.find((item) => isNurseNavActive(pathname, item.path))?.label || 'Nurse Portal';
-
 export const nurseDisplayName = (user) =>
   [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim() || 'Nurse';
 

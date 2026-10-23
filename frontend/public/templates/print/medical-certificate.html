@@ -1,0 +1,19 @@
+<!-- Medical Certificate. Printed inside layout.html. Placeholders are listed in README.md. -->
+<h1>Medical Certificate</h1>
+<p>
+  This is to certify that <strong>{{student_name}}</strong>,
+  Student ID <strong>{{student_id}}</strong> ({{student_program}}),
+  was seen and attended to at the {{clinic_name}} on <strong>{{visit_date}}</strong>
+  for <strong>{{complaint}}</strong>.
+</p>
+<table>
+  <tr><th>Findings / Remarks</th><td>{{findings}}</td></tr>
+  {{#recommendation}}<tr><th>Recommendation</th><td>{{recommendation}}</td></tr>{{/recommendation}}
+  <tr><th>Certificate Reference</th><td>{{certificate_ref}}</td></tr>
+</table>
+<p>This certificate is issued upon the request of the student for whatever purpose it may serve.</p>
+<div class="sign"><div>{{staff_name}}<small>{{staff_role}}</small></div></div>
+<p class="note">
+  System-generated copy of a certificate issued by the {{clinic_name}}.
+  Verify the reference number with the clinic.
+</p>

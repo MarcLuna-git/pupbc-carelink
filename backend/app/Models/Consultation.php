@@ -28,6 +28,7 @@ class Consultation extends Model
     protected $fillable = [
         'appointment_id', 'appointment_checkin_id', 'user_id', 'nurse_id',
         'chief_complaint', 'vital_signs', 'general_remarks',
+        'history_present_illness', 'nursing_assessment', 'nursing_interventions', 'treatment_plan',
         'medical_certificate', 'medical_certificate_ref',
         'follow_up_required', 'follow_up_date', 'status',
     ];
