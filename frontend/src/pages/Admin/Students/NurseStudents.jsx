@@ -8,7 +8,7 @@ import useNurseSync from '../../../hooks/useNurseSync';
 import { StudentDirectory, StudentFilters, Pagination } from './StudentDirectory';
 import { StudentDetailsModal, EmergencyModal } from './StudentDetailsModal';
 import { StudentFilesModal } from './StudentFilesModal';
-import { emptyFilters, secondary } from './directoryOptions';
+import { emptyFilters, nextDirectoryFilters, secondary } from './directoryOptions';
 
 const emptyEmergency = { incident_datetime: '', reason: '', symptoms: '', assessment: '', intervention: '', disposition: '', notes: '' };
 export default function NurseStudents() {
@@ -90,7 +90,7 @@ export default function NurseStudents() {
     return () => controller.abort();
   }, [selectedId, refresh]);
 
-  const changeFilter = (key, value) => { setFilters(previous => ({ ...previous, [key]: value })); setPage(1); };
+  const changeFilter = (key, value) => { setFilters(previous => nextDirectoryFilters(previous, key, value)); setPage(1); };
   const clearFilters = () => { setFilters({ ...emptyFilters }); setPage(1); };
   const submitEmergency = async event => {
     event.preventDefault(); if (saving) return; setSaving(true); setEmergencyError('');

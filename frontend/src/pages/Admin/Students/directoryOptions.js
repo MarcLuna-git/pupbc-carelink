@@ -15,6 +15,8 @@ export const years = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
 export const sections = ['1-1', '1-2', '1-3', '1-4', '1-5', '2-1', '2-2', '2-3', '2-4', '2-5', '3-1', '3-2', '3-3', '3-4', '3-5', '4-1', '4-2', '4-3', '4-4', '4-5'];
 export const directoryCourses = academics.map(({ code, name }) => [code, name]);
 export const directorySections = [...new Set(academics.flatMap(({ sections }) => sections))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+export const directorySectionsForYear = year => year ? directorySections.filter(section => section.startsWith(`${years.indexOf(year) + 1}-`)) : directorySections;
+export const nextDirectoryFilters = (previous, key, value) => ({ ...previous, [key]: value, ...(key === 'year' && value !== previous.year ? { section: '' } : {}) });
 export const emptyFilters = { search: '', course: '', year: '', section: '', status: '' };
 export const academic = (student, field) => student?.student_profile?.[field] || student?.[field] || '';
 export const fullName = student => [student?.first_name, student?.middle_name, student?.last_name].filter(Boolean).join(' ');
