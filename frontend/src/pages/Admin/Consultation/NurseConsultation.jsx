@@ -1,7 +1,7 @@
 import { getToken } from '../../../services/session';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { Loader2, ClipboardList, CheckCircle, RotateCcw, SkipForward, Stethoscope, ListOrdered, BellRing, UserRound, ClipboardPenLine, Users, UserX, Star } from 'lucide-react';
+import { Loader2, ClipboardList, CheckCircle, RotateCcw, SkipForward, Stethoscope, ListOrdered, BellRing, UserRound, ClipboardPenLine, Users, UserX, Star, LogIn } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import NursePageHero from '../../../components/NursePageHero';
@@ -80,6 +80,29 @@ const NurseConsultation = () => {
     }
   };
 
+  const handleServe = async (student) => {
+    setLoading(true); setMessage('');
+    try {
+      const { data } = await api.post(`/nurse/queue/${student.checkin_id}/serve`, {}, {
+        headers: { 'If-Match': student.sync_version },
+      });
+      if (data.success) {
+        setMessageType('success');
+        setMessage(data.message);
+        await fetchCheckedInStudents(true);
+      }
+    } catch (err) {
+      if (err.response?.status === 409) {
+        setConflict(err.response.data?.message || 'This queue entry was changed by another nurse.');
+        await fetchCheckedInStudents(true).catch(() => {});
+      } else {
+        setMessageType('error');
+        setMessage(err.response?.data?.message || 'Failed to serve patient.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   useEffect(() => {
@@ -203,7 +226,9 @@ const NurseConsultation = () => {
     if (s.status === 'waiting' && s.checkin_id === nextInLine?.checkin_id) return (
       <button type="button" onClick={callNext} disabled={loading || someoneCalled} title={someoneCalled ? 'Finish the student who is called or being served first' : undefined} className={primary}><BellRing className="h-3.5 w-3.5" /> Call Next</button>
     );
-    if (s.status === 'waiting') return <span className="text-xs text-gray-400">In line</span>;
+    if (s.status === 'waiting') return (
+      <button type="button" onClick={() => handleServe(s)} disabled={loading || someoneCalled} className={`${btn} bg-blue-600 text-white hover:bg-blue-700`}><LogIn className="h-3.5 w-3.5" /> Serve</button>
+    );
     return <span className="text-xs text-gray-400">—</span>;
   };
 

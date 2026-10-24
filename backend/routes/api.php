@@ -808,6 +808,11 @@ Route::middleware([
                 );
 
                 Route::post(
+                    '/queue/{id}/serve',
+                    [KioskController::class, 'servePatient']
+                );
+
+                Route::post(
                     '/queue/{id}/recall',
                     [KioskController::class, 'recallPatient']
                 );

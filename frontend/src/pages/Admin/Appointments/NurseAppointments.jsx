@@ -70,7 +70,7 @@ const NurseAppointments = () => {
   const [rejectReason, setRejectReason] = useState('');
   const [cancelModal, setCancelModal] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
-  const [actionLoading, setActionLoading] = useState(false);
+  const actionLoadingRef = useRef(0);
   const requestId = useRef(0);
 
   const fetchAppointments = useCallback(async signal => {
@@ -116,79 +116,63 @@ const NurseAppointments = () => {
   useNurseSync(['appointments', 'students'], fetchAppointments, JSON.stringify([filter, search, service, date, page]));
 
   const handleApprove = async (id) => {
-    setActionLoading(true);
+    const loadingId = ++actionLoadingRef.current;
     try {
       const token = getToken('nurse');
       await api.patch(`/nurse/appointments/${id}/approve`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (loadingId !== actionLoadingRef.current) return;
       showMessage('Appointment approved successfully!', 'success');
       setSelectedAppointment(null);
       fetchAppointments();
     } catch (err) {
+      if (loadingId !== actionLoadingRef.current) return;
       showMessage(err.response?.data?.message || 'Failed to approve', 'error');
-    } finally {
-      setActionLoading(false);
     }
   };
 
   const handleReject = async () => {
     if (!rejectReason.trim()) return;
-    setActionLoading(true);
+    const loadingId = ++actionLoadingRef.current;
     try {
       const token = getToken('nurse');
       await api.patch(`/nurse/appointments/${rejectModal}/reject`,
         { reason: rejectReason },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      if (loadingId !== actionLoadingRef.current) return;
       showMessage('Appointment rejected.', 'success');
       setRejectModal(null);
       setRejectReason('');
       setSelectedAppointment(null);
       fetchAppointments();
     } catch (err) {
+      if (loadingId !== actionLoadingRef.current) return;
       showMessage(err.response?.data?.message || 'Failed to reject', 'error');
-    } finally {
-      setActionLoading(false);
     }
   };
 
   const handleCancel = async () => {
     if (!cancelReason.trim()) return;
-    setActionLoading(true);
+    const loadingId = ++actionLoadingRef.current;
     try {
       const token = getToken('nurse');
       await api.patch(`/nurse/appointments/${cancelModal}/cancel`, { reason: cancelReason }, { headers: { Authorization: `Bearer ${token}` } });
+      if (loadingId !== actionLoadingRef.current) return;
       showMessage('Appointment cancelled.', 'success');
       setCancelModal(null);
       setCancelReason('');
       setSelectedAppointment(null);
       fetchAppointments();
     } catch (err) {
+      if (loadingId !== actionLoadingRef.current) return;
       showMessage(err.response?.data?.message || 'Failed to cancel', 'error');
-    } finally {
-      setActionLoading(false);
     }
   };
 
   const handleComplete = () => { window.location.assign('/nurse/consultation'); };
-
-  // Queue actions from a Waiting row: call the next patient in queue order, or confirm a called patient arrived.
-  const queueAction = async (path, success) => {
-    setActionLoading(true);
-    try {
-      const { data } = await api.post(`/nurse/queue/${path}`, {}, { headers: { Authorization: `Bearer ${getToken('nurse')}` } });
-      showMessage(data.message || success, 'success');
-      fetchAppointments();
-    } catch (err) {
-      showMessage(err.response?.data?.message || 'Queue action failed', 'error');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-
-  const showMessage = (msg, type) => {
+const showMessage = (msg, type) => {
     setMessage(msg);
     setMessageType(type);
     setTimeout(() => setMessage(''), 3000);
@@ -252,6 +236,9 @@ const NurseAppointments = () => {
   const primaryBtn = `${btnBase} bg-maroon-800 text-white hover:bg-maroon-900`;
   const outlineBtn = `${btnBase} border border-maroon-200 bg-white text-maroon-800 hover:bg-maroon-50 dark:border-maroon-800/50 dark:bg-transparent dark:text-maroon-300 dark:hover:bg-maroon-900/20`;
   const declineBtn = `${btnBase} bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30`;
+  const approvedBtn = `${btnBase} bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30`;
+  const serveBtn = `${btnBase} bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-900/40 dark:text-blue-400 dark:hover:bg-blue-900`;
+  const declinedBtn = `${btnBase} bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-900/20 dark:text-gray-300 dark:hover:bg-gray-900/30`;
   const actionBtn = (className, Icon, label, onClick, disabled = false) => (
     <button type="button" onClick={onClick} disabled={disabled} className={className} title={label} aria-label={label}>
       <Icon className="h-3.5 w-3.5" aria-hidden="true" /><span className="hidden sm:inline">{label}</span>
@@ -260,28 +247,31 @@ const NurseAppointments = () => {
 
   /*
    * One set of actions per stage, shared by the list cards and the table rows:
-   * Pending: Approve / Decline. Waiting: Call Next (Mark Arrived once called).
-   * In Consultation: Complete Consultation. Completed: View Record. The rest: View Details.
-   * Cancelling stays in the details modal (open a row).
+   * Pending / Waiting / In Consultation / Completed / Cancelled: Approve / Decline.
+   * Approved: Approved (view-only). Rejected / Expired: Declined (view-only).
+   * View Details available via modal for all statuses.
    */
   const rowActions = app => {
     const stage = stageOf(app);
     const checkin = app.latest_checkin;
     const details = actionBtn(outlineBtn, Eye, 'View Details', () => setSelectedAppointment(app));
     let main;
-    if (stage === 'pending') {
+    if (app.status === 'pending') {
       main = <>
-        {actionBtn(primaryBtn, CheckCircle, 'Approve', () => handleApprove(app.id), actionLoading)}
-        {actionBtn(declineBtn, X, 'Decline', () => setRejectModal(app.id), actionLoading)}
+        {actionBtn(primaryBtn, CheckCircle, 'Approve', () => handleApprove(app.id))}
+        {actionBtn(declineBtn, X, 'Decline', () => setRejectModal(app.id))}
       </>;
-    } else if (stage === 'waiting' && checkin?.status === 'called') {
-      main = <>{actionBtn(primaryBtn, LogIn, 'Mark Arrived', () => queueAction(`${checkin.id}/arrived`, 'Patient marked as arrived.'), actionLoading)}{details}</>;
-    } else if (stage === 'waiting' && checkin?.status === 'waiting') {
-      main = <>{actionBtn(primaryBtn, Phone, 'Call Next', () => queueAction('call-next', 'Patient called.'), actionLoading)}{details}</>;
-    } else if (stage === 'in_consultation') {
-      main = <>{actionBtn(primaryBtn, CheckCircle, 'Complete Consultation', handleComplete)}{details}</>;
-    } else if (stage === 'completed') {
-      main = actionBtn(outlineBtn, FileText, 'View Record', () => setSelectedAppointment(app));
+    } else if (stage === 'waiting') {
+      main = <>
+        {actionBtn(primaryBtn, CheckCircle, 'Approve', () => handleApprove(app.id))}
+        {actionBtn(declineBtn, X, 'Decline', () => setRejectModal(app.id))}
+      </>;
+    } else if (app.status === 'completed') {
+      main = actionBtn(primaryBtn, CheckCircle2, 'Completed', () => setSelectedAppointment(app));
+    } else if (app.status === 'approved') {
+      main = actionBtn(approvedBtn, CheckCircle2, 'Approved', () => setSelectedAppointment(app));
+    } else if (app.status === 'rejected' || app.status === 'expired') {
+      main = actionBtn(declinedBtn, XCircle, 'Declined', () => setSelectedAppointment(app));
     } else {
       main = details;
     }
@@ -553,13 +543,12 @@ const NurseAppointments = () => {
                 </div>
 
                 <div className="space-y-2">
-                  {selectedAppointment.status === 'pending' && (
+                  {selectedAppointment.status === 'pending' ? (
                     <>
                       <button
                         onClick={() => handleApprove(selectedAppointment.id)}
-                        disabled={actionLoading}
                         className="w-full py-3 bg-green-500 text-white font-semibold rounded-2xl hover:bg-green-600 transition flex items-center justify-center gap-1.5 text-sm disabled:opacity-50">
-                        {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                        {<CheckCircle className="w-4 h-4" />}
                         Approve Appointment
                       </button>
                       <button
@@ -568,22 +557,39 @@ const NurseAppointments = () => {
                         Reject Appointment
                       </button>
                     </>
-                  )}
-                  {selectedAppointment.status === 'approved' && (
+                  ) : stageOf(selectedAppointment) === 'waiting' ? (
+                    <>
+                      <button
+                        onClick={() => handleApprove(selectedAppointment.id)}
+                        className="w-full py-3 bg-green-500 text-white font-semibold rounded-2xl hover:bg-green-600 transition flex items-center justify-center gap-1.5 text-sm disabled:opacity-50">
+                        {<CheckCircle className="w-4 h-4" />}
+                        Approve Appointment
+                      </button>
+                      <button
+                        onClick={() => { setRejectModal(selectedAppointment.id); }}
+                        className="w-full py-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold rounded-2xl hover:bg-red-100 dark:hover:bg-red-900/30 transition text-sm border border-red-200 dark:border-red-800/20">
+                        Reject Appointment
+                      </button>
+                    </>
+                  ) : selectedAppointment.status === 'completed' ? (
                     <button
-                      onClick={() => handleComplete(selectedAppointment.id)}
-                      disabled={actionLoading}
+                      onClick={() => setSelectedAppointment(null)}
                       className="w-full py-3 bg-maroon-800 text-white font-semibold rounded-2xl hover:bg-maroon-900 transition flex items-center justify-center gap-1.5 text-sm disabled:opacity-50">
-                      {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                      Open Clinic Queue
+                      {<CheckCircle2 className="w-4 h-4" />}
+                      Completed
                     </button>
-                  )}
-                  {['pending', 'rejected'].includes(selectedAppointment.status) && (
+                  ) : selectedAppointment.status === 'approved' ? (
                     <button
-                      onClick={() => setCancelModal(selectedAppointment.id)}
-                      disabled={actionLoading}
-                      className="w-full py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm">
-                      Cancel Appointment
+                      onClick={() => setSelectedAppointment(null)}
+                      className="w-full py-3 bg-green-100 text-green-700 font-semibold rounded-2xl hover:bg-green-200 transition flex items-center justify-center gap-1.5 text-sm disabled:opacity-50">
+                      {<CheckCircle2 className="w-4 h-4" />}
+                      Approved
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setSelectedAppointment(null)}
+                      className="w-full py-3 bg-gray-100 text-gray-600 font-semibold rounded-2xl hover:bg-gray-200 transition flex items-center justify-center gap-1.5 text-sm">
+                      Declined
                     </button>
                   )}
                   <button onClick={() => setSelectedAppointment(null)}
@@ -631,9 +637,9 @@ const NurseAppointments = () => {
                 </button>
                 <button
                   onClick={handleReject}
-                  disabled={!rejectReason.trim() || actionLoading}
+                  disabled={!rejectReason.trim()}
                   className="flex-1 py-3 bg-red-500 text-white font-semibold rounded-2xl hover:bg-red-600 transition text-sm disabled:opacity-50 flex items-center justify-center gap-1.5">
-                  {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+                  {<XCircle className="w-4 h-4" />}
                   Reject
                 </button>
               </div>
@@ -663,7 +669,7 @@ const NurseAppointments = () => {
               />
               <div className="flex gap-3 mt-4">
                 <button onClick={() => { setCancelModal(null); setCancelReason(''); }} className="flex-1 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-2xl text-sm">Back</button>
-                <button onClick={handleCancel} disabled={!cancelReason.trim() || actionLoading} className="flex-1 py-3 bg-gray-700 text-white font-semibold rounded-2xl text-sm disabled:opacity-50">{actionLoading ? 'Cancelling...' : 'Confirm'}</button>
+                <button onClick={handleCancel} disabled={!cancelReason.trim()} className="flex-1 py-3 bg-gray-700 text-white font-semibold rounded-2xl text-sm disabled:opacity-50">Confirm</button>
               </div>
             </motion.div>
           </motion.div>

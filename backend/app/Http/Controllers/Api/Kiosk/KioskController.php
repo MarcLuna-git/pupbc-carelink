@@ -154,6 +154,22 @@ class KioskController extends Controller
         }, 3);
         return response()->json(['success' => true, 'data' => $checkin, 'message' => 'Patient marked as arrived.']);
     }
+    public function servePatient(Request $request, $id)
+    {
+        $checkin = DB::transaction(function () use ($id) {
+            ClinicQueue::lock();
+            $checkin = AppointmentCheckin::findOrFail($id);
+            abort_unless($checkin->status === 'waiting', 409, 'This patient is not in waiting status.');
+            abort_if(AppointmentCheckin::where('is_walk_in', false)->whereIn('status', ['serving', 'called'])->exists(), 409, 'Confirm arrival or skip the called patient, and complete the serving visit before calling another.');
+            $checkin->update([
+                'status' => 'serving',
+                'served_at' => now(),
+                'served_by' => auth()->id(),
+            ]);
+            return $checkin;
+        }, 3);
+        return response()->json(['success' => true, 'data' => $checkin, 'message' => 'Patient now in consultation.']);
+    }
     public function recallPatient(Request $request, $id)
     {
         $checkin = DB::transaction(function () use ($id) {

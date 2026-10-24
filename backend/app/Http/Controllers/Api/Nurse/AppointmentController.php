@@ -128,8 +128,9 @@ class AppointmentController extends Controller
     {
         $result = DB::transaction(function () use ($id, $status, $reason) {
             \App\Services\ClinicQueue::lock();
-            $appointment = Appointment::findOrFail($id);
-            abort_unless($appointment->status === 'pending', 422, 'Only pending appointments can be approved or rejected.');
+            $appointment = Appointment::with(['checkins' => fn($q) => $q->where('is_walk_in', false)->orderByDesc('created_at')])->findOrFail($id);
+            $isWaitingQueue = $appointment->status === 'approved' && $appointment->checkins->isNotEmpty() && in_array($appointment->checkins->first()->status, ['waiting', 'called', 'skipped'], true);
+            abort_unless($appointment->status === 'pending' || $isWaitingQueue, 422, 'Only pending or waiting queue appointments can be approved or rejected.');
             $appointment->update(['status' => $status, 'approved_by' => $status === 'approved' ? auth()->id() : null, 'approved_at' => $status === 'approved' ? now() : null, 'rejection_reason' => $reason]);
             app(AppointmentEventNotification::class)->send($appointment);
             return response()->json(['success' => true, 'message' => 'Appointment ' . $status, 'data' => $appointment]);
