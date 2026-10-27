@@ -488,9 +488,9 @@ const Login = () => {
     className="absolute inset-0 h-full w-full object-cover object-[60%_center]"
   />
 
-  <div className="absolute inset-0 bg-gradient-to-r from-[#4D0D1B]/95 via-[#741126]/78 to-[#4D0D1B]/35" />
+  <div className="absolute inset-0 bg-gradient-to-r from-maroon-950/95 via-maroon-800/78 to-maroon-950/35" />
 
-  <div className="absolute inset-0 bg-gradient-to-t from-[#4D0D1B]/70 via-transparent to-transparent" />
+  <div className="absolute inset-0 bg-gradient-to-t from-maroon-950/70 via-transparent to-transparent" />
 
   <div className="relative z-10 flex w-full flex-col items-center justify-center px-8 py-12 text-center text-white xl:px-14">
     <div className="mb-7 flex h-28 w-28 items-center justify-center rounded-full border border-white/30 bg-white/15 p-3 shadow-xl backdrop-blur-sm">
@@ -547,7 +547,7 @@ const Login = () => {
     alt=""
     className="absolute inset-0 -z-20 h-full w-full object-cover object-center lg:hidden"
   />
-  <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#4D0D1B]/88 via-[#741126]/70 to-[#4D0D1B]/90 lg:hidden" />
+  <div className="absolute inset-0 -z-10 bg-gradient-to-b from-maroon-950/88 via-maroon-800/70 to-maroon-950/90 lg:hidden" />
         <div className="w-full max-w-md">
           <div className="flex flex-col items-center mb-8 lg:hidden">
             <div className="w-20 h-20 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center shadow-lg mb-3 p-1.5">

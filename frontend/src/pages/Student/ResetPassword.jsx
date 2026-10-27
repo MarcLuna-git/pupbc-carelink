@@ -666,7 +666,7 @@ const ResetPassword = () => {
           )}
 
           <button
-            className="w-full py-3 bg-gradient-to-r from-maroon-800 to-maroon-900 hover:from-maroon-900 hover:to-maroon-950 text-white font-semibold rounded-xl flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition"
+            className="w-full py-3 bg-maroon-800 hover:bg-maroon-900 text-white font-semibold rounded-xl flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed transition"
             type="submit"
             disabled={
               loading ||

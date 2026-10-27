@@ -528,7 +528,7 @@ const lastAssistantIndex = messages.reduce(
                         key={suggestion}
                         type="button"
                         onClick={() => send(suggestion)}
-                        className="chip-stagger rounded-full border border-maroon-200 bg-maroon-50 px-3 py-1.5 text-[11px] font-medium text-maroon-800 transition-colors hover:bg-maroon-100 dark:border-maroon-900 dark:bg-maroon-950/40 dark:text-maroon-300 dark:hover:bg-maroon-950/70"
+                        className="chip-stagger rounded-full border border-maroon-200 bg-maroon-50 px-3 py-1.5 text-xs font-medium text-maroon-800 transition-colors hover:bg-maroon-100 dark:border-maroon-900 dark:bg-maroon-950/40 dark:text-maroon-300 dark:hover:bg-maroon-950/70"
                         style={{ animationDelay: `${chipIndex * 0.15}s` }}
                       >
                         {suggestion}
@@ -546,7 +546,7 @@ const lastAssistantIndex = messages.reduce(
                       onClick={clearConversation}
                       aria-label="Delete conversation"
                       title="Delete conversation"
-                      className="flex items-center gap-1 text-[11px] text-maroon-700 underline underline-offset-4 transition-colors hover:text-maroon-800 dark:text-maroon-400 dark:hover:text-maroon-300"
+                      className="flex items-center gap-1 text-xs text-maroon-700 underline underline-offset-4 transition-colors hover:text-maroon-800 dark:text-maroon-400 dark:hover:text-maroon-300"
                     >
                       <Trash2 className="h-3 w-3" />
                       <span>Delete conversation.</span>
@@ -597,7 +597,7 @@ const lastAssistantIndex = messages.reduce(
                 </button>
               </div>
 
-              <p className="mt-1.5 px-1 text-center text-[10px] leading-relaxed text-gray-400 dark:text-gray-500">
+              <p className="mt-1.5 px-1 text-center text-xs leading-relaxed text-gray-400 dark:text-gray-500">
                 Automated replies only. For other concerns, please contact us
                 at{' '}
                 <a

@@ -231,15 +231,9 @@ function formatAnnouncementDate(value) {
   }).format(date);
 }
 
-function SectionTitle({ eyebrow, title, description }) {
+function SectionTitle({ title, description }) {
   return (
     <div className="mb-5">
-      {eyebrow && (
-        <p className="mb-1 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#8b1730] dark:text-rose-300">
-          {eyebrow}
-        </p>
-      )}
-
       <h2 className="text-xl font-extrabold tracking-tight text-slate-950 sm:text-2xl lg:text-[27px]">
         {title}
       </h2>
@@ -258,7 +252,7 @@ function FeatureCard({ feature }) {
 
   const content = (
     <>
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#f9e9ee] dark:bg-rose-950/40 text-[#741126] dark:text-rose-300 sm:h-14 sm:w-14">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-maroon-100 dark:bg-rose-950/40 text-maroon-800 dark:text-rose-300 sm:h-14 sm:w-14">
         <Icon size={25} strokeWidth={1.9} />
       </span>
 
@@ -274,7 +268,7 @@ function FeatureCard({ feature }) {
 
       <ChevronRight
         size={18}
-        className="shrink-0 text-[#741126] dark:text-rose-300 transition-transform group-hover:translate-x-1"
+        className="shrink-0 text-maroon-800 dark:text-rose-300 transition-transform group-hover:translate-x-1"
       />
     </>
   );
@@ -471,7 +465,7 @@ export default function Landing() {
               className="h-11 w-11 shrink-0 rounded-full bg-white object-cover sm:h-12 sm:w-12"
             />
 
-            <span className="block truncate text-base font-black tracking-tight text-[#701126] dark:text-rose-300 sm:text-lg">
+            <span className="block truncate text-base font-black tracking-tight text-maroon-800 dark:text-rose-300 sm:text-lg">
               PUPBC CareLink
             </span>
           </Link>
@@ -484,7 +478,7 @@ export default function Landing() {
               <a
                 key={item.href}
                 href={item.href}
-                className="rounded-xl px-3 py-2 text-[13px] font-semibold text-slate-600 transition-colors hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-[#741126]"
+                className="rounded-xl px-3 py-2 text-[13px] font-semibold text-slate-600 transition-colors hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-maroon-800"
               >
                 {item.label}
               </a>
@@ -494,7 +488,7 @@ export default function Landing() {
           <div className="hidden items-center gap-2 lg:flex">
             <Link
               to="/register"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-100 bg-rose-50 px-5 text-sm font-bold text-[#741126] dark:text-rose-300 transition hover:bg-rose-100 dark:hover:bg-rose-950/60"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-100 bg-rose-50 px-5 text-sm font-bold text-maroon-800 dark:text-rose-300 transition hover:bg-rose-100 dark:hover:bg-rose-950/60"
             >
               <UserRoundPlus size={17} />
               Get Started
@@ -502,7 +496,7 @@ export default function Landing() {
 
             <Link
               to="/login"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#741126] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#4d0d1b]"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-maroon-800 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-maroon-950"
             >
               <LogIn size={17} />
               Login
@@ -521,7 +515,7 @@ export default function Landing() {
             }
             aria-expanded={mobileMenuOpen}
             aria-controls="landing-mobile-menu"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[#741126] dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 lg:hidden"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-maroon-800 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 lg:hidden"
           >
             {mobileMenuOpen ? (
               <X size={23} />
@@ -543,7 +537,7 @@ export default function Landing() {
                   key={item.href}
                   href={item.href}
                   onClick={closeMenu}
-                  className="block rounded-xl px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-[#741126]"
+                  className="block rounded-xl px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-maroon-800"
                 >
                   {item.label}
                 </a>
@@ -553,7 +547,7 @@ export default function Landing() {
                 <Link
                   to="/register"
                   onClick={closeMenu}
-                  className="flex min-h-11 items-center justify-center rounded-xl bg-rose-50 text-sm font-bold text-[#741126] dark:text-rose-300"
+                  className="flex min-h-11 items-center justify-center rounded-xl bg-rose-50 text-sm font-bold text-maroon-800 dark:text-rose-300"
                 >
                   Get Started
                 </Link>
@@ -561,7 +555,7 @@ export default function Landing() {
                 <Link
                   to="/login"
                   onClick={closeMenu}
-                  className="flex min-h-11 items-center justify-center rounded-xl bg-[#741126] text-sm font-bold text-white"
+                  className="flex min-h-11 items-center justify-center rounded-xl bg-maroon-800 text-sm font-bold text-white"
                 >
                   Login
                 </Link>
@@ -580,18 +574,18 @@ export default function Landing() {
       >
       {/* HERO */}
       <section
-        className="relative isolate min-h-[540px] overflow-hidden bg-[#4d0d1b] sm:min-h-[570px] lg:min-h-[500px]"
+        className="relative isolate min-h-[540px] overflow-hidden bg-maroon-950 sm:min-h-[570px] lg:min-h-[500px]"
         aria-labelledby="landing-title"
       >
         <HeroCarousel />
 
-        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#4d0d1b]/98 via-[#611322]/90 to-[#741126]/35 lg:via-[#611322]/78 lg:to-[#4d0d1b]/10" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-maroon-950/98 via-maroon-900/90 to-maroon-800/35 lg:via-maroon-900/78 lg:to-maroon-950/10" />
 
-        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#4d0d1b]/75 via-transparent to-transparent" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-maroon-950/75 via-transparent to-transparent" />
 
         <div className="mx-auto flex min-h-[540px] max-w-[1440px] flex-col justify-center px-5 py-14 sm:min-h-[570px] sm:px-8 lg:min-h-[500px] lg:px-14 lg:py-16 max-lg:pb-20">
           <div className="max-w-[690px]">
-            <p className="text-[10px] font-bold uppercase leading-5 tracking-[0.19em] text-rose-100 sm:text-xs">
+            <p className="text-xs font-bold uppercase leading-5 tracking-[0.19em] text-rose-100 sm:text-xs">
               Polytechnic University of the Philippines
               <span className="hidden sm:inline">
                 {' '}—{' '}
@@ -622,7 +616,7 @@ export default function Landing() {
             <div className="mt-7 flex flex-col gap-3 min-[410px]:flex-row">
               <Link
                 to="/register"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#b92e4e] to-[#87172f] px-6 text-sm font-extrabold text-white shadow-lg shadow-black/15 transition hover:-translate-y-0.5 hover:from-[#c13959]"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-maroon-800 px-6 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-maroon-700"
               >
                 Get Started
                 <ArrowRight size={17} />
@@ -643,10 +637,10 @@ export default function Landing() {
                   <Smartphone size={17} />
                 </span>
                 <span>
-                  <span className="block text-[11px] font-bold">
+                  <span className="block text-xs font-bold">
                     Accessible
                   </span>
-                  <span className="block text-[10px] leading-4 text-rose-100/75">
+                  <span className="block text-xs leading-4 text-rose-100/75">
                     Across devices
                   </span>
                 </span>
@@ -657,10 +651,10 @@ export default function Landing() {
                   <ShieldCheck size={17} />
                 </span>
                 <span>
-                  <span className="block text-[11px] font-bold">
+                  <span className="block text-xs font-bold">
                     Protected
                   </span>
-                  <span className="block text-[10px] leading-4 text-rose-100/75">
+                  <span className="block text-xs leading-4 text-rose-100/75">
                     Account access
                   </span>
                 </span>
@@ -671,10 +665,10 @@ export default function Landing() {
                   <Heart size={17} />
                 </span>
                 <span>
-                  <span className="block text-[11px] font-bold">
+                  <span className="block text-xs font-bold">
                     Student-focused
                   </span>
-                  <span className="block text-[10px] leading-4 text-rose-100/75">
+                  <span className="block text-xs leading-4 text-rose-100/75">
                     Campus healthcare
                   </span>
                 </span>
@@ -715,7 +709,6 @@ export default function Landing() {
             className="scroll-mt-24 md:scroll-mt-4 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7"
           >
             <SectionTitle
-              eyebrow="Get Started"
               title="How CareLink Works"
               description="Four simple steps to access campus clinic services."
             />
@@ -727,16 +720,16 @@ export default function Landing() {
                 return (
                   <div
                     key={step.title}
-                    className="relative rounded-2xl border border-rose-100 bg-gradient-to-b from-white to-[#fff8fa] p-4"
+                    className="relative rounded-2xl border border-rose-100 bg-gradient-to-b from-white to-maroon-50 p-4"
                   >
                     <div className="mb-4 flex items-center justify-between">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#741126] text-xs font-extrabold text-white">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-maroon-800 text-xs font-extrabold text-white">
                         {index + 1}
                       </span>
 
                       <Icon
                         size={21}
-                        className="text-[#8b1730] dark:text-rose-300"
+                        className="text-maroon-700 dark:text-rose-300"
                       />
                     </div>
 
@@ -753,14 +746,14 @@ export default function Landing() {
             </div>
 
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-rose-50 px-4 py-3">
-              <p className="text-xs font-medium text-[#741126] dark:text-rose-300">
+              <p className="text-xs font-medium text-maroon-800 dark:text-rose-300">
                 Your first clinic appointment starts with
                 your CareLink account.
               </p>
 
               <Link
                 to="/register"
-                className="inline-flex items-center gap-1 text-xs font-extrabold text-[#741126] dark:text-rose-300 hover:underline"
+                className="inline-flex items-center gap-1 text-xs font-extrabold text-maroon-800 dark:text-rose-300 hover:underline"
               >
                 Create an account
                 <ArrowRight size={15} />
@@ -769,7 +762,7 @@ export default function Landing() {
           </div>
 
           {/* A HEALTHIER YOU — ACTUAL CLINIC PHOTO */}
-          <div className="relative isolate min-h-[320px] overflow-hidden rounded-3xl border border-slate-200/80 bg-[#4d0d1b] text-white shadow-sm sm:min-h-[360px]">
+          <div className="relative isolate min-h-[320px] overflow-hidden rounded-3xl border border-slate-200/80 bg-maroon-950 text-white shadow-sm sm:min-h-[360px]">
             <img
               src={clinicScene}
               alt="Students waiting and completing forms inside a clinic"
@@ -777,13 +770,13 @@ export default function Landing() {
               className="absolute inset-0 -z-20 h-full w-full object-cover object-center"
             />
 
-            <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#4d0d1b]/95 via-[#741126]/65 to-[#4d0d1b]/5" />
+            <div className="absolute inset-0 -z-10 bg-gradient-to-r from-maroon-950/95 via-maroon-800/65 to-maroon-950/5" />
 
-            <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#4d0d1b]/70 via-transparent to-transparent" />
+            <div className="absolute inset-0 -z-10 bg-gradient-to-t from-maroon-950/70 via-transparent to-transparent" />
 
             <div className="flex h-full min-h-[320px] flex-col justify-between p-5 sm:min-h-[360px] sm:p-7">
               <div className="max-w-[255px]">
-                <span className="inline-flex rounded-lg border border-white/25 bg-[#741126]/85 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wider text-white backdrop-blur-sm">
+                <span className="inline-flex rounded-lg border border-white/25 bg-maroon-800/85 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider text-white backdrop-blur-sm">
                   A Healthier You
                 </span>
 
@@ -812,7 +805,6 @@ export default function Landing() {
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.85fr)]">
           <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7">
             <SectionTitle
-              eyebrow="Student Health Services"
               title="Our Clinic Services"
               description="Choose from the clinic appointment services available to PUP Biñan students."
             />
@@ -827,7 +819,7 @@ export default function Landing() {
                     to="/login"
                     className="group flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/40/40 sm:min-h-[155px]"
                   >
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f9e9ee] dark:bg-rose-950/40 text-[#741126] dark:text-rose-300">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-maroon-100 dark:bg-rose-950/40 text-maroon-800 dark:text-rose-300">
                       <Icon size={21} />
                     </span>
 
@@ -841,7 +833,7 @@ export default function Landing() {
 
                     <ArrowRight
                       size={15}
-                      className="mt-3 text-[#741126] dark:text-rose-300 transition-transform group-hover:translate-x-1"
+                      className="mt-3 text-maroon-800 dark:text-rose-300 transition-transform group-hover:translate-x-1"
                     />
                   </Link>
                 );
@@ -860,16 +852,12 @@ export default function Landing() {
           >
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
-                <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#8b1730] dark:text-rose-300">
-                  Campus Updates
-                </p>
-
-                <h2 className="mt-1 text-xl font-extrabold text-slate-950 sm:text-2xl">
+                <h2 className="text-xl font-extrabold text-slate-950 sm:text-2xl">
                   Latest Announcements
                 </h2>
               </div>
 
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#f9e9ee] dark:bg-rose-950/40 text-[#741126] dark:text-rose-300">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-maroon-100 dark:bg-rose-950/40 text-maroon-800 dark:text-rose-300">
                 <Megaphone size={21} />
               </span>
             </div>
@@ -901,7 +889,7 @@ export default function Landing() {
                     setAnnouncementsLoading(true);
                     loadAnnouncements();
                   }}
-                  className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-[#741126] dark:text-rose-300 hover:underline"
+                  className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-maroon-800 dark:text-rose-300 hover:underline"
                 >
                   <RefreshCw size={15} />
                   Try again
@@ -930,7 +918,7 @@ export default function Landing() {
                     key={announcement.id}
                     className="flex gap-3 py-3 first:pt-0"
                   >
-                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-[#741126] dark:text-rose-300">
+                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-maroon-800 dark:text-rose-300">
                       <Megaphone size={17} />
                     </span>
 
@@ -943,7 +931,7 @@ export default function Landing() {
                         {announcement.content}
                       </p>
 
-                      <p className="mt-1.5 text-[11px] font-medium text-slate-400">
+                      <p className="mt-1.5 text-xs font-medium text-slate-400">
                         {formatAnnouncementDate(
                           announcement.published_at ||
                             announcement.created_at
@@ -956,14 +944,14 @@ export default function Landing() {
             )}
 
             <div className="mt-5 rounded-xl border border-rose-100 bg-rose-50 p-3">
-              <p className="text-xs leading-5 text-[#741126] dark:text-rose-300">
+              <p className="text-xs leading-5 text-maroon-800 dark:text-rose-300">
                 Sign in to receive your personal clinic
                 notifications and appointment updates.
               </p>
 
               <Link
                 to="/login"
-                className="mt-2 inline-flex items-center gap-1 text-xs font-extrabold text-[#741126] dark:text-rose-300 hover:underline"
+                className="mt-2 inline-flex items-center gap-1 text-xs font-extrabold text-maroon-800 dark:text-rose-300 hover:underline"
               >
                 Open Student Portal
                 <ArrowRight size={14} />
@@ -977,7 +965,6 @@ export default function Landing() {
       <section className="mx-auto max-w-[1440px] px-4 pb-10 sm:px-6 lg:px-10">
         <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7">
           <SectionTitle
-            eyebrow="Questions & Answers"
             title="Frequently Asked Questions"
             description="Quick answers about using the CareLink Student Portal."
           />
@@ -1002,7 +989,7 @@ export default function Landing() {
 
                   <ChevronDown
                     size={17}
-                    className={`shrink-0 text-[#741126] dark:text-rose-300 transition-transform ${
+                    className={`shrink-0 text-maroon-800 dark:text-rose-300 transition-transform ${
                       openFaq === index
                         ? 'rotate-180'
                         : ''
@@ -1022,7 +1009,7 @@ export default function Landing() {
       </section>
 
       {/* RESPONSIVE BANNER */}
-      <section className="relative overflow-hidden bg-[#4d0d1b] text-white">
+      <section className="relative overflow-hidden bg-maroon-950 text-white">
         <img
           src={campusPhoto}
           alt=""
@@ -1030,15 +1017,11 @@ export default function Landing() {
           className="absolute inset-0 h-full w-full object-cover opacity-15"
         />
 
-        <div className="absolute inset-0 bg-gradient-to-r from-[#4d0d1b] via-[#741126]/90 to-[#4d0d1b]/85" />
+        <div className="absolute inset-0 bg-gradient-to-r from-maroon-950 via-maroon-800/90 to-maroon-950/85" />
 
         <div className="relative mx-auto grid max-w-[1440px] gap-7 px-5 py-9 sm:px-8 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:px-14">
           <div>
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-rose-200/75">
-              Better access. A healthier campus.
-            </p>
-
-            <h2 className="mt-2 text-2xl font-extrabold sm:text-3xl">
+            <h2 className="text-2xl font-extrabold sm:text-3xl">
               Designed for PUP Biñan Students
             </h2>
 
@@ -1059,7 +1042,7 @@ export default function Landing() {
                 Desktop
               </p>
 
-              <p className="mt-1 text-[11px] text-white/60">
+              <p className="mt-1 text-xs text-white/60">
                 Full experience
               </p>
             </div>
@@ -1074,7 +1057,7 @@ export default function Landing() {
                 Tablet
               </p>
 
-              <p className="mt-1 text-[11px] text-white/60">
+              <p className="mt-1 text-xs text-white/60">
                 On the go
               </p>
             </div>
@@ -1089,7 +1072,7 @@ export default function Landing() {
                 Mobile
               </p>
 
-              <p className="mt-1 text-[11px] text-white/60">
+              <p className="mt-1 text-xs text-white/60">
                 Within reach
               </p>
             </div>
@@ -1111,7 +1094,7 @@ export default function Landing() {
                 className="h-11 w-11 rounded-full object-cover"
               />
 
-              <p className="text-sm font-black text-[#741126] dark:text-rose-300">
+              <p className="text-sm font-black text-maroon-800 dark:text-rose-300">
                 PUPBC CareLink
               </p>
             </div>
@@ -1131,7 +1114,7 @@ export default function Landing() {
                   rel="noopener noreferrer"
                   aria-label={social.label}
                   title={social.label}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-50 text-[#741126] transition hover:-translate-y-0.5 hover:bg-[#741126] hover:text-white dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-800 dark:hover:text-white"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-50 text-maroon-800 transition hover:-translate-y-0.5 hover:bg-maroon-800 hover:text-white dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-800 dark:hover:text-white"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -1161,7 +1144,7 @@ export default function Landing() {
                 <a
                   key={item.href}
                   href={item.href}
-                  className="hover:text-[#741126]"
+                  className="hover:text-maroon-800"
                 >
                   {item.label}
                 </a>
@@ -1177,7 +1160,7 @@ export default function Landing() {
             <p className="mt-3 flex items-start gap-2 text-xs leading-6 text-slate-600">
               <MapPin
                 size={17}
-                className="mt-0.5 shrink-0 text-[#741126] dark:text-rose-300"
+                className="mt-0.5 shrink-0 text-maroon-800 dark:text-rose-300"
               />
 
               <span>
@@ -1198,7 +1181,7 @@ export default function Landing() {
         </div>
 
         <div className="border-t border-slate-100">
-          <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-2 px-5 py-5 text-center text-[11px] text-slate-400 sm:flex-row sm:text-left lg:px-14">
+          <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-2 px-5 py-5 text-center text-xs text-slate-400 sm:flex-row sm:text-left lg:px-14">
             <span>
               © {currentYear} PUPBC CareLink.
               All rights reserved.

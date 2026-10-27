@@ -107,7 +107,7 @@ const NurseLayoutForMobileView = ({
               >
                 {active && activePill}
                 <Icon className="relative z-10 h-5 w-5" />
-                <span className="relative z-10 max-w-full truncate text-[10px] font-semibold leading-none">{item.label}</span>
+                <span className="relative z-10 max-w-full truncate text-xs font-semibold leading-none">{item.label}</span>
               </Link>
             );
           })}
@@ -121,7 +121,7 @@ const NurseLayoutForMobileView = ({
           >
             {moreActive && activePill}
             <LayoutGrid className="relative z-10 h-5 w-5" />
-            <span className="relative z-10 text-[10px] font-semibold leading-none">More</span>
+            <span className="relative z-10 text-xs font-semibold leading-none">More</span>
           </button>
         </div>
       </nav>

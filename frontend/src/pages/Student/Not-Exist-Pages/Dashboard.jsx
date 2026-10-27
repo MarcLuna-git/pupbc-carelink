@@ -332,7 +332,7 @@ const Dashboard = () => {
                   <button key={i} disabled className="flex flex-col items-center space-y-2 p-4 rounded-2xl bg-gray-50 dark:bg-gray-700/30 opacity-50 cursor-not-allowed relative group">
                     <div className={`w-10 h-10 bg-gradient-to-br ${action.color} rounded-2xl flex items-center justify-center`}><action.icon className="w-5 h-5 text-white" /></div>
                     <span className="text-xs font-medium text-gray-400 text-center">{action.label}</span>
-                    <span className="absolute -top-2 -right-2 bg-yellow-400 text-[10px] font-bold text-yellow-900 px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition whitespace-nowrap">{action.disabledMsg}</span>
+                    <span className="absolute -top-2 -right-2 bg-yellow-400 text-xs font-bold text-yellow-900 px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition whitespace-nowrap">{action.disabledMsg}</span>
                   </button>
                 ) : (
                   <Link key={i} to={action.path} className="group flex flex-col items-center space-y-2 p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">

@@ -1,19 +1,14 @@
 .student-appointments { width:100%;min-width:0; }
 .approved-appointments-page { display:grid;gap:12px; }
 .ap-card { min-width:0;border:1px solid var(--sp-border,#eadfe1);border-radius:12px;background:var(--sp-surface,#fff);box-shadow:0 2px 7px #5a0b2004;overflow:hidden; }
-.ap-hero { position:relative;min-height:168px;overflow:hidden;border:1px solid var(--sp-border);border-radius:12px;background:var(--sp-surface); }
+.ap-hero { position:relative;overflow:hidden;border:1px solid var(--sp-border);border-radius:12px;background:var(--sp-surface); }
 /* The loading bar sits above the hero artwork; isolation keeps that z-index
    local to the hero. */
 .ap-hero { isolation:isolate; }
 .ap-hero-loading-bar { z-index:2; }
-.ap-hero-copy { position:relative;z-index:1;padding:19px 24px;max-width:57%; }
-.ap-eyebrow { font-size:10px;color:#96604b;text-transform:uppercase;letter-spacing:1.7px;font-weight:700; }
-.dark .ap-eyebrow { color:#d5a99a; }
-.ap-hero h1 { margin-top:2px;color:var(--sp-accent);font-size:36px;font-weight:750;line-height:1.06;letter-spacing:-1.2px; }
-.ap-hero-description { margin-top:7px;font-size:13px;color:var(--sp-text); }
-.ap-hero-benefits { display:flex;gap:21px;margin-top:17px; }
-.ap-hero-benefits>span { display:flex;align-items:center;gap:8px;font-size:10px;line-height:1.45;color:var(--sp-muted); }
-.ap-hero-benefits svg { flex-shrink:0;width:30px;height:30px;padding:7px;border-radius:7px;background:#f6deda;color:#800000; }
+.ap-hero-copy { position:relative;z-index:1;padding:24px; }
+.ap-hero h1 { color:var(--sp-accent);font-size:36px;font-weight:750;line-height:1.06;letter-spacing:-1.2px; }
+.ap-hero-description { margin-top:8px;max-width:65ch;font-size:14px;line-height:1.5;color:var(--sp-text); }
 .ap-section-heading { display:flex;align-items:center;gap:8px;padding:12px 16px 10px;min-width:0; }
 .ap-section-heading>svg { flex-shrink:0;width:17px;height:17px;color:var(--sp-accent); }
 .ap-section-heading h2 { font-size:15px;font-weight:700;color:var(--sp-accent);line-height:1.3; }
@@ -26,15 +21,15 @@
  * independent. It lives in <body> (portal), outside the shell's --sp-* tokens,
  * so colors are explicit with a .dark variant.
  */
-.ap-toast { position:fixed;right:18px;top:calc(62px + env(safe-area-inset-top) + 12px);z-index:60;display:flex;align-items:flex-start;gap:10px;width:min(360px,calc(100vw - 36px));padding:12px 12px 12px 14px;border:1px solid;border-left-width:4px;border-radius:10px;background:#fff;box-shadow:0 10px 28px #2a0a1426;font-family:Arial,Helvetica,sans-serif;animation:ap-toast-in .22s ease-out; }
+.ap-toast { position:fixed;right:18px;top:calc(62px + env(safe-area-inset-top) + 12px);z-index:60;display:flex;align-items:flex-start;gap:10px;width:min(360px,calc(100vw - 36px));padding:12px 12px 12px 14px;border:1px solid;border-radius:10px;background:#fff;box-shadow:0 10px 28px #2a0a1426;animation:ap-toast-in .22s ease-out; }
 .ap-toast p { flex:1;min-width:0;font-size:13px;line-height:1.45;color:#382a2e;overflow-wrap:anywhere; }
 .ap-toast-icon { flex-shrink:0;width:18px;height:18px;margin-top:1px; }
-.ap-toast.is-success { border-color:#bfe3cf;border-left-color:#2b7650; }
+.ap-toast.is-success { border-color:#bfe3cf; }
 .ap-toast.is-success .ap-toast-icon { color:#2b7650; }
-.ap-toast.is-error { border-color:#f1c6cf;border-left-color:#a13e51; }
+.ap-toast.is-error { border-color:#f1c6cf; }
 .ap-toast.is-error .ap-toast-icon { color:#a13e51; }
 .ap-toast-close { flex-shrink:0;display:flex;align-items:center;justify-content:center;width:24px;height:24px;margin:-2px -2px 0 0;border-radius:6px;color:#6f6166;cursor:pointer; }
-.ap-toast-close:hover { background:#faeeec;color:#800000; }
+.ap-toast-close:hover { background:#faeeec;color:var(--color-maroon-800); }
 .ap-toast-close svg { width:15px;height:15px; }
 .dark .ap-toast { background:#242029;box-shadow:0 10px 28px #00000066; }
 .dark .ap-toast p { color:#f6edf0; }
@@ -55,22 +50,22 @@
 .ap-upcoming-summary.is-clickable:hover { border-color:var(--sp-accent);background:var(--sp-soft);box-shadow:0 4px 14px #2a0a1412; }
 .ap-upcoming-summary.is-clickable:focus-visible { outline:2px solid var(--sp-accent);outline-offset:2px; }
 .ap-date-tile { text-align:center;border:1px solid var(--sp-border);border-radius:9px;background:var(--sp-soft);color:var(--sp-accent);padding:6px 7px; }
-.ap-date-tile span { display:block;font-size:11px;font-weight:700; }
+.ap-date-tile span { display:block;font-size:12px;font-weight:700; }
 .ap-date-tile strong { display:block;font-size:27px;line-height:1.1; }
-.ap-date-tile small { font-size:10px; }
+.ap-date-tile small { font-size:12px; }
 .ap-upcoming-details { display:grid;grid-template-columns:17px minmax(0,1fr);gap:6px 7px; }
 .ap-upcoming-details>svg,.ap-upcoming-place svg { width:16px;height:16px;color:var(--sp-accent); }
-.ap-upcoming-details strong,.ap-upcoming-place strong { display:block;font-size:11px;color:var(--sp-text);font-weight:700; }
-.ap-upcoming-details span { font-size:11px; }
-.ap-upcoming-details small,.ap-upcoming-place small { display:block;font-size:9px;color:var(--sp-muted);margin-top:1px; }
+.ap-upcoming-details strong,.ap-upcoming-place strong { display:block;font-size:12px;color:var(--sp-text);font-weight:700; }
+.ap-upcoming-details span { font-size:12px; }
+.ap-upcoming-details small,.ap-upcoming-place small { display:block;font-size:12px;color:var(--sp-muted);margin-top:1px; }
 .ap-upcoming-place { display:grid;gap:8px; }
 .ap-upcoming-place>div { display:flex;align-items:flex-start;gap:6px; }
 .ap-upcoming-state { padding-left:14px;border-left:1px solid var(--sp-border); }
 /* The status badge lives in the card heading (same spot as the empty card's
    "Not booked"), so this cell holds only the check-in window + queue. */
-.ap-upcoming-state p { font-size:9px;color:var(--sp-muted);line-height:1.5;margin:0; }
-.ap-queue-label { display:block;font-size:10px;margin-top:4px;color:var(--sp-accent);text-transform:capitalize; }
-.ap-status { display:inline-flex;align-items:center;gap:5px;font-size:11px;line-height:1.5;padding:3px 9px;border-radius:7px;background:var(--sp-soft);color:var(--sp-accent);white-space:nowrap;font-weight:600; }
+.ap-upcoming-state p { font-size:12px;color:var(--sp-muted);line-height:1.5;margin:0; }
+.ap-queue-label { display:block;font-size:12px;margin-top:4px;color:var(--sp-accent);text-transform:capitalize; }
+.ap-status { display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:1.5;padding:3px 9px;border-radius:7px;background:var(--sp-soft);color:var(--sp-accent);white-space:nowrap;font-weight:600; }
 .ap-status>span { width:4px;height:4px;border-radius:50%;background:currentColor; }
 .ap-status-approved,.ap-status-completed { background:#e4f3e9;color:#2b7650; }
 .ap-status-pending { background:#fff0d3;color:#896013; }
@@ -80,9 +75,9 @@
 .dark .ap-status-pending { background:#473b25;color:#f0d095; }
 .dark .ap-status-cancelled,.dark .ap-status-rejected,.dark .ap-status-no_show { background:#482c36;color:#e7acbc; }
 .dark .ap-status-expired { background:#3d3540;color:#d2c0c8; }
-.ap-button { display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:8px 12px;background:#800000;color:white;border:1px solid #800000;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer; }
+.ap-button { display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:8px 12px;background:var(--color-maroon-800);color:white;border:1px solid var(--color-maroon-800);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer; }
 .ap-button svg { width:13px;height:13px;flex-shrink:0; }
-.ap-button:hover:not(:disabled) { background:#650015; }
+.ap-button:hover:not(:disabled) { background:var(--color-maroon-900); }
 .ap-button:disabled { cursor:not-allowed;opacity:.55; }
 .ap-button-outline { background:transparent;border-color:#c67c8a;color:var(--sp-accent); }
 .ap-button-outline:hover:not(:disabled) { color:white; }
@@ -120,7 +115,7 @@
 .ap-step-heading { display:flex;align-items:center;min-height:28px;margin-bottom:8px; }
 .ap-step-marker { position:absolute;left:0;top:0;z-index:1;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border:2px solid var(--sp-border);border-radius:50%;background:var(--sp-surface);font-size:12px;font-weight:700;color:var(--sp-muted); }
 .ap-step-marker svg { width:14px;height:14px; }
-.ap-booking-progress li.is-active .ap-step-marker { border-color:#800000;background:#800000;color:white;box-shadow:0 0 0 3px var(--sp-soft); }
+.ap-booking-progress li.is-active .ap-step-marker { border-color:var(--color-maroon-800);background:var(--color-maroon-800);color:white;box-shadow:0 0 0 3px var(--sp-soft); }
 .ap-booking-progress li .ap-step-marker:has(svg) { border-color:var(--sp-accent);background:var(--sp-surface);color:var(--sp-accent); }
 .ap-step-label { color:var(--sp-text);font-size:14px;line-height:28px;font-weight:700; }
 /* Upcoming steps (not current, not yet checked) get a quieter label. */
@@ -128,42 +123,42 @@
 .ap-booking-column { min-width:0;max-width:420px; }
 /* Every step's contents live in their own equally-wide container. */
 .ap-step-body { background:var(--sp-bg);border-radius:10px;padding:12px; }
-.ap-column-caption { font-size:9px;color:var(--sp-muted);min-height:16px;margin-bottom:7px; }
+.ap-column-caption { font-size:12px;color:var(--sp-muted);min-height:16px;margin-bottom:7px; }
 .ap-calendar { background:var(--sp-bg);border-radius:10px;padding:12px; }
 .ap-calendar-month { display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:5px; }
-.ap-calendar-month strong { font-size:11px; }
+.ap-calendar-month strong { font-size:12px; }
 .ap-calendar-month>div { display:flex; }
 .ap-calendar-month button { width:24px;height:25px;display:flex;align-items:center;justify-content:center;border-radius:5px;color:var(--sp-muted); }
 .ap-calendar-month button:disabled { opacity:.3; }
 .ap-calendar-month svg { width:12px;height:12px; }
 .ap-calendar-grid { display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px; }
-.ap-calendar-weekday { font-size:8px;color:var(--sp-muted);text-align:center;line-height:23px; }
+.ap-calendar-weekday { font-size:12px;color:var(--sp-muted);text-align:center;line-height:23px; }
 /* Date states, all drawn from the theme tokens so text stays readable in light
    and dark: hover = soft tint + accent text; selected = solid maroon + white
    text, and hovering it only deepens the maroon (never swaps to the tint). */
-.ap-calendar-grid button { min-width:0;min-height:30px;border-radius:5px;font-size:10px;color:var(--sp-text);border:1px solid transparent;transition:background-color .12s ease,border-color .12s ease,color .12s ease; }
+.ap-calendar-grid button { min-width:0;min-height:30px;border-radius:5px;font-size:12px;color:var(--sp-text);border:1px solid transparent;transition:background-color .12s ease,border-color .12s ease,color .12s ease; }
 .ap-calendar-grid button:hover:not(:disabled):not(.is-selected) { background:var(--sp-soft);border-color:var(--sp-border);color:var(--sp-accent); }
-.ap-calendar-grid button.is-selected { background:#800000;border-color:#800000;color:#fff;font-weight:700; }
-.ap-calendar-grid button.is-selected:hover:not(:disabled) { background:#650015;border-color:#650015; }
+.ap-calendar-grid button.is-selected { background:var(--color-maroon-800);border-color:var(--color-maroon-800);color:#fff;font-weight:700; }
+.ap-calendar-grid button.is-selected:hover:not(:disabled) { background:var(--color-maroon-900);border-color:var(--color-maroon-900); }
 .ap-calendar-grid button.is-today:not(.is-selected) { border-color:#c67c8a;color:var(--sp-accent);font-weight:700; }
 .ap-calendar-grid button:focus-visible { outline:2px solid var(--sp-accent);outline-offset:1px; }
 .ap-calendar-grid button:disabled { opacity:.33;cursor:not-allowed; }
-.ap-calendar-note { margin-top:9px;font-size:8px;color:var(--sp-muted);text-align:center; }
+.ap-calendar-note { margin-top:9px;font-size:12px;color:var(--sp-muted);text-align:center; }
 .ap-time-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:5px; }
-.ap-time-grid button { position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:46px;padding:6px 3px;border:1px dashed var(--sp-border);border-radius:5px;font-size:9px;line-height:1.15;color:var(--sp-text);background:var(--sp-surface);white-space:nowrap; }
+.ap-time-grid button { position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:46px;padding:6px 3px;border:1px dashed var(--sp-border);border-radius:5px;font-size:12px;line-height:1.15;color:var(--sp-text);background:var(--sp-surface);white-space:nowrap; }
 .ap-time-grid button:disabled { opacity:.5;cursor:not-allowed; }
-.ap-time-grid button.is-selected { background:#800000;color:white;border-color:#800000; }
-.ap-time-grid button>span { font-size:7px;color:inherit;line-height:1; }
+.ap-time-grid button.is-selected { background:var(--color-maroon-800);color:white;border-color:var(--color-maroon-800); }
+.ap-time-grid button>span { font-size:12px;color:inherit;line-height:1; }
 .ap-time-grid button>span.ap-slot-past-tag { color:var(--sp-muted);font-weight:600; }
 .ap-time-grid button>span.ap-slot-full-tag { color:#a13e51;font-weight:600; }
 .dark .ap-time-grid button>span.ap-slot-full-tag { color:#e7acbc; }
 .ap-time-grid button.is-past:not(.is-selected) { color:var(--sp-muted); }
 .ap-time-grid button:hover:not(:disabled):not(.is-selected) { background:var(--sp-soft); }
-.ap-column-footnote,.ap-availability-note { font-size:8px;color:var(--sp-muted);margin-top:8px; }
+.ap-column-footnote,.ap-availability-note { font-size:12px;color:var(--sp-muted);margin-top:8px; }
 .ap-availability-note button { text-decoration:underline;color:var(--sp-accent); }
 /* The loading state mirrors the time grid's geometry so the step body keeps the
    same height before and after availability arrives. */
-.ap-slots-loading { position:relative;font-size:11px;color:var(--sp-muted); }
+.ap-slots-loading { position:relative;font-size:12px;color:var(--sp-muted); }
 .ap-slots-loading-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:5px;visibility:hidden; }
 .ap-slots-loading-grid>span { min-height:46px;border:1px dashed var(--sp-border);border-radius:5px; }
 .ap-slots-loading-label { position:absolute;inset:0;display:flex;gap:7px;align-items:center;justify-content:center; }
@@ -172,24 +167,24 @@
 /* Each service is a bordered card; the selected one gets a maroon border. */
 .ap-service-list label { display:flex;align-items:center;gap:8px;padding:8px 10px;min-height:48px;border:1px solid var(--sp-border);border-radius:8px;background:var(--sp-surface);min-width:0;cursor:pointer;transition:border-color .12s ease,background-color .12s ease; }
 .ap-service-list label:hover { border-color:#c67c8a; }
-.ap-service-list label.is-selected { background:var(--sp-soft);border-color:#800000; }
-.ap-service-list input { width:11px;height:11px;flex-shrink:0;accent-color:#800000; }
+.ap-service-list label.is-selected { background:var(--sp-soft);border-color:var(--color-maroon-800); }
+.ap-service-list input { width:11px;height:11px;flex-shrink:0;accent-color:var(--color-maroon-800); }
 .ap-service-list svg { width:13px;height:13px;flex-shrink:0;color:var(--sp-accent); }
-.ap-service-list strong { display:block;font-size:10px;line-height:1.2; }
-.ap-service-list small { display:block;font-size:8px;line-height:1.35;color:var(--sp-muted);margin-top:2px; }
+.ap-service-list strong { display:block;font-size:12px;line-height:1.2; }
+.ap-service-list small { display:block;font-size:12px;line-height:1.35;color:var(--sp-muted);margin-top:2px; }
 /* "Other:" with an underline field to name the service. */
 .ap-service-list .ap-other-service { display:flex;flex:1;align-items:baseline;gap:6px;min-width:0; }
 .ap-other-service strong { flex-shrink:0; }
 .ap-service-list .ap-other-service input { flex:1;width:auto;height:auto;min-width:0;padding:3px 6px;border:0;border-bottom:1px solid var(--sp-muted);border-radius:4px 4px 0 0;background:var(--sp-surface);font-size:12px;color:var(--sp-text); }
-.ap-service-list .ap-other-service input:focus { outline:none;border-bottom-color:#800000; }
+.ap-service-list .ap-other-service input:focus { outline:none;border-bottom-color:var(--color-maroon-800); }
 .ap-summary dl>div { display:flex;align-items:flex-start;gap:8px;padding:16px 0;border-bottom:1px solid var(--sp-border); }
 .ap-summary dl svg { width:15px;height:15px;flex-shrink:0;margin-top:3px;color:var(--sp-accent); }
-.ap-summary dt { font-size:8px;color:var(--sp-muted); }
-.ap-summary dd { margin-top:2px;font-size:11px;font-weight:600;line-height:1.4; }
-.ap-summary-note { display:flex;gap:6px;align-items:flex-start;font-size:8px;color:var(--sp-muted);line-height:1.5;margin:10px 0; }
+.ap-summary dt { font-size:12px;color:var(--sp-muted); }
+.ap-summary dd { margin-top:2px;font-size:12px;font-weight:600;line-height:1.4; }
+.ap-summary-note { display:flex;gap:6px;align-items:flex-start;font-size:12px;color:var(--sp-muted);line-height:1.5;margin:10px 0; }
 .ap-summary-note svg { width:12px;height:12px;flex-shrink:0; }
-.ap-confirm-booking { width:100%;font-size:10px;padding:14px 5px; }
-.ap-text-button { color:var(--sp-accent);font-size:11px;text-decoration:underline; }
+.ap-confirm-booking { width:100%;font-size:12px;padding:14px 5px; }
+.ap-text-button { color:var(--sp-accent);font-size:12px;text-decoration:underline; }
 /*
  * History = card-row list (no table). Each row: date tile · service details
  * · status + actions. Font sizes are deliberately readable (12-13px body),
@@ -203,9 +198,9 @@
 .ap-history-item:hover { background:var(--sp-bg);border-color:#d6d3d1;box-shadow:0 3px 10px #0000000f; }
 .dark .ap-history-item:hover { border-color:#4b4650;box-shadow:0 3px 10px #00000033; }
 .ap-history-item .ap-date-tile { flex-shrink:0;min-width:60px; }
-.ap-history-item .ap-date-tile span { font-size:10px; }
+.ap-history-item .ap-date-tile span { font-size:12px; }
 .ap-history-item .ap-date-tile strong { font-size:22px; }
-.ap-history-item .ap-date-tile small { font-size:10px; }
+.ap-history-item .ap-date-tile small { font-size:12px; }
 .ap-history-info { flex:1;min-width:0; }
 .ap-history-info strong { display:block;font-size:13px;font-weight:700;color:var(--sp-text);line-height:1.3; }
 .ap-history-info p { margin-top:3px;font-size:12px;color:var(--sp-muted);line-height:1.4; }
@@ -235,7 +230,7 @@
 /* List layout: one compact row per appointment under a column header. */
 .ap-history-table { padding:8px 12px 4px; }
 .ap-history-table-head,.ap-history-row { display:grid;grid-template-columns:minmax(120px,1fr) minmax(150px,1.3fr) minmax(130px,1.1fr) 112px minmax(150px,auto);align-items:center;gap:12px;padding:0 12px; }
-.ap-history-table-head { padding-top:8px;padding-bottom:8px;border-radius:8px;background:color-mix(in srgb,var(--sp-bg) 94%,#000);font-size:11px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.4px; }
+.ap-history-table-head { padding-top:8px;padding-bottom:8px;border-radius:8px;background:color-mix(in srgb,var(--sp-bg) 94%,#000);font-size:12px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.4px; }
 .ap-history-row { min-height:54px;padding-top:9px;padding-bottom:9px;border-bottom:1px solid var(--sp-border);font-size:12px;color:var(--sp-text);transition:background-color .15s ease; }
 .ap-history-row:last-child { border-bottom:0; }
 /* Neutral grays, no pink: the column header takes the darker shade of
@@ -244,7 +239,7 @@
 .ap-history-row:hover { background:var(--sp-bg); }
 .ap-history-row>span { min-width:0; }
 .ap-history-row strong { display:block;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-.ap-history-row small { display:block;margin-top:2px;font-size:11px;color:var(--sp-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.ap-history-row small { display:block;margin-top:2px;font-size:12px;color:var(--sp-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
 .ap-history-row-service small { font-style:italic; }
 .ap-history-row-meta { overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
 .ap-history-row .ap-history-actions { justify-content:flex-end; }
@@ -257,27 +252,26 @@
 .ap-history-pagination p { font-size:12px;color:var(--sp-muted); }
 .ap-history-pagination>div { display:flex;align-items:center;gap:6px; }
 .ap-history-pagination button,.ap-history-pagination span { min-width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:1px solid var(--sp-border);border-radius:7px;font-size:12px;font-weight:600; }
-.ap-history-pagination span { background:#800000;color:white;border-color:#800000; }
+.ap-history-pagination span { background:var(--color-maroon-800);color:white;border-color:var(--color-maroon-800); }
 .ap-history-pagination button:disabled { opacity:.35;cursor:not-allowed; }
 .ap-history-pagination svg { width:13px;height:13px; }
 .ap-history-empty { display:flex;align-items:center;justify-content:center;gap:10px;padding:25px;font-size:13px;color:var(--sp-muted); }
 .ap-history-empty svg { width:22px;height:22px; }
-.ap-policy-note { display:flex;align-items:flex-start;gap:7px;font-size:10px;line-height:1.5;color:var(--sp-muted);padding:0 4px; }
+.ap-policy-note { display:flex;align-items:flex-start;gap:7px;font-size:12px;line-height:1.5;color:var(--sp-muted);padding:0 4px; }
 .ap-policy-note svg { width:14px;height:14px;flex-shrink:0;margin-top:1px; }
 @media (max-width:1199px) {
   .ap-calendar-grid button { min-height:33px; }
-  .ap-time-grid button { min-height:52px;font-size:11px; }
+  .ap-time-grid button { min-height:52px;font-size:12px; }
   .ap-slots-loading-grid>span { min-height:52px; }
   .ap-service-list label { min-height:54px; }
   .ap-service-list strong { font-size:12px; }
-  .ap-service-list small { font-size:10px; }
+  .ap-service-list small { font-size:12px; }
   .ap-upcoming-summary { grid-template-columns:55px 1.3fr 1fr 150px;gap:10px; }
   .ap-upcoming-state { grid-column:2/4;border-left:0;padding-left:0;display:flex;gap:12px;align-items:center; }
   .ap-upcoming-state p { margin:0; }
   .ap-upcoming-actions { grid-column:4;grid-row:1/3; }
   .ap-upcoming-state:empty { display:none; }
   .ap-hero h1 { font-size:33px; }
-  .ap-hero-benefits { gap:10px; }
 }
 /*
  * Desktop / laptop: the booking timeline lies down — three equal columns side
@@ -314,14 +308,10 @@
   .approved-appointments-page { gap:12px; }
   /* Full-width toast just under the mobile header. */
   .ap-toast { top:calc(58px + env(safe-area-inset-top) + 10px);left:12px;right:12px;width:auto; }
-  .ap-hero { min-height:202px; }
-  .ap-hero-copy { max-width:100%;padding:19px 17px; }
+  .ap-hero { min-height:0; }
+  .ap-hero-copy { padding:20px 17px; }
   .ap-hero h1 { font-size:29px; }
-  .ap-hero-description { max-width:62%;font-size:12px;line-height:1.5; }
-  .ap-hero-benefits { flex-wrap:wrap;gap:8px;max-width:58%;margin-top:12px; }
-  .ap-hero-benefits>span { font-size:9px; }
-  .ap-hero-benefits>span:last-child { display:none; }
-  .ap-hero-benefits svg { width:24px;height:24px;padding:5px; }
+  .ap-hero-description { font-size:13px;line-height:1.5; }
   .ap-upcoming-content { padding:4px 13px 14px; }
   .ap-upcoming-summary { grid-template-columns:50px minmax(0,1fr);gap:12px; }
   .ap-upcoming-place { grid-column:1/-1;grid-template-columns:1fr 1fr;padding-top:5px; }
@@ -329,7 +319,7 @@
   .ap-upcoming-actions { grid-column:1/-1;grid-row:auto;grid-template-columns:1fr 1fr; }
   .ap-button { min-height:42px;font-size:12px; }
   .ap-upcoming-details strong,.ap-upcoming-place strong { font-size:12px; }
-  .ap-upcoming-details small,.ap-upcoming-place small,.ap-upcoming-state p { font-size:10px; }
+  .ap-upcoming-details small,.ap-upcoming-place small,.ap-upcoming-state p { font-size:12px; }
   .ap-booking-steps { padding:14px 12px; }
   .ap-step-body { padding:10px; }
   .ap-section-heading { padding:12px; }
@@ -341,17 +331,17 @@
   .ap-calendar-month button { width:36px;height:36px; }
   .ap-calendar-grid { gap:3px; }
   .ap-calendar-grid button { min-height:36px;font-size:12px; }
-  .ap-calendar-weekday { font-size:10px; }
-  .ap-calendar-note { font-size:10px; }
-  .ap-column-caption,.ap-column-footnote { font-size:11px; }
+  .ap-calendar-weekday { font-size:12px; }
+  .ap-calendar-note { font-size:12px; }
+  .ap-column-caption,.ap-column-footnote { font-size:12px; }
   .ap-time-grid button { min-height:56px;font-size:12px; }
   .ap-slots-loading-grid>span { min-height:56px; }
-  .ap-time-grid button>span { font-size:9px; }
+  .ap-time-grid button>span { font-size:12px; }
   .ap-service-list label { min-height:60px;padding:10px; }
   .ap-service-list input { width:14px;height:14px; }
   .ap-service-list svg { width:16px;height:16px; }
   .ap-service-list strong { font-size:12px; }
-  .ap-summary dt,.ap-summary-note { font-size:11px; }
+  .ap-summary dt,.ap-summary-note { font-size:12px; }
   .ap-summary dd { font-size:14px; }
   .ap-history-item { flex-wrap:wrap;gap:12px;padding:12px; }
   .ap-history-side { width:100%;flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px; }
@@ -367,5 +357,5 @@
   .ap-history-row { grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:10px 4px; }
   .ap-history-row-service,.ap-history-row-meta { grid-column:1/-1; }
   .ap-history-row .ap-history-actions { grid-column:1/-1;justify-content:flex-start; }
-  .ap-policy-note { font-size:11px; }
+  .ap-policy-note { font-size:12px; }
 }

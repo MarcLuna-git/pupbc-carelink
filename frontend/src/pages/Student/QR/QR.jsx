@@ -100,7 +100,6 @@ const Skeleton = ({ className = '' }) => (
 const QR_HERO = {
   id: 'qr-title',
   title: 'QR Code',
-  art: QrCode,
   description: 'Use your QR code for a faster and easier clinic check-in at the PUP Student Clinic.',
 };
 
@@ -586,7 +585,7 @@ const QR = () => {
                   <CircleCheck className="h-5 w-5 fill-green-600 text-white dark:fill-green-500 dark:text-green-950" />
                   <div className="leading-tight">
                     <p className="text-sm font-semibold text-green-700 dark:text-green-400">{visitCompleted ? 'Visit Completed' : 'Approved'}</p>
-                    <p className="text-[11px] text-green-700/80 dark:text-green-500/80">{visitCompleted ? 'Your clinic visit is finished' : 'Ready for Check-in'}</p>
+                    <p className="text-xs text-green-700/80 dark:text-green-500/80">{visitCompleted ? 'Your clinic visit is finished' : 'Ready for Check-in'}</p>
                   </div>
                 </div>
               )
@@ -692,7 +691,7 @@ const QR = () => {
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
             <div>
               <p className="text-xs font-semibold text-gray-900 dark:text-white">Keep Your QR Private</p>
-              <p className="mt-1 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
+              <p className="mt-1 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
                 This QR identifies your student account at the clinic. Do not share screenshots or printed copies with other people. Medical information is not stored directly inside the QR.
               </p>
             </div>

@@ -141,7 +141,7 @@ const NurseAccountMenu = ({
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold text-gray-900 dark:text-white">Nurse {displayName}</p>
                 <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">{user?.email || 'Nurse account'}</p>
-                <p className="mt-1 inline-flex items-center gap-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400"><span className={`h-2 w-2 rounded-full ${onDuty ? 'bg-green-500' : 'bg-gray-400'}`} />{dutyLabel} · PUP Biñan Campus Clinic</p>
+                <p className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400"><span className={`h-2 w-2 rounded-full ${onDuty ? 'bg-green-500' : 'bg-gray-400'}`} />{dutyLabel} · PUP Biñan Campus Clinic</p>
               </div>
             </div>
           </div>
@@ -151,7 +151,7 @@ const NurseAccountMenu = ({
               <span className={iconBox}><Settings className="h-4 w-4" /></span>
               <span>
                 <span className="block font-semibold">Settings</span>
-                <span className="block text-[11px] text-gray-500 dark:text-gray-400">Manage account preferences</span>
+                <span className="block text-xs text-gray-500 dark:text-gray-400">Manage account preferences</span>
               </span>
             </Link>
 
@@ -159,7 +159,7 @@ const NurseAccountMenu = ({
               <span className={iconBox}><BriefcaseMedical className="h-4 w-4" /></span>
               <span className="min-w-0 flex-1">
                 <span id="nurse-duty-label" className="block font-semibold">Duty status</span>
-                <span className="block text-[11px] text-gray-500 dark:text-gray-400">
+                <span className="block text-xs text-gray-500 dark:text-gray-400">
                   {onDuty ? 'You are on duty' : 'You are off duty'}{dutySaving && ' · Saving…'}
                 </span>
               </span>
@@ -182,7 +182,7 @@ const NurseAccountMenu = ({
               <span className={iconBox}><Palette className="h-4 w-4" /></span>
               <span className="min-w-0 flex-1">
                 <span id="nurse-appearance-label" className="block font-semibold">Appearance</span>
-                <span className="block text-[11px] text-gray-500 dark:text-gray-400">
+                <span className="block text-xs text-gray-500 dark:text-gray-400">
                   {darkMode ? 'Dark mode is on' : 'Light mode is on'}
                 </span>
               </span>
@@ -218,7 +218,7 @@ const NurseAccountMenu = ({
               <LogOut className="h-4 w-4" />
               <span>
                 <span className="block">Sign Out</span>
-                <span className="block text-[11px] font-normal text-red-500/70 dark:text-red-400/70">End your nurse session</span>
+                <span className="block text-xs font-normal text-red-500/70 dark:text-red-400/70">End your nurse session</span>
               </span>
             </button>
           </div>

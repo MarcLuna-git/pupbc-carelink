@@ -229,7 +229,7 @@ const showMessage = (msg, type) => {
     const StatusIcon = (statusConfig[stage] || statusConfig.pending).icon;
     const label = badgeLabel(stage);
     return (
-      <span title={label} aria-label={label} className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border p-1.5 text-[11px] font-semibold sm:px-2.5 sm:py-1 ${statusColors[stage] || statusColors.expired}`}>
+      <span title={label} aria-label={label} className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border p-1.5 text-xs font-semibold sm:px-2.5 sm:py-1 ${statusColors[stage] || statusColors.expired}`}>
         <StatusIcon className="h-3.5 w-3.5" aria-hidden="true" /><span className="hidden sm:inline">{label}</span>
       </span>
     );
@@ -291,7 +291,6 @@ const showMessage = (msg, type) => {
         id="nurse-appointments-title"
         title="Appointments"
         description="Review student bookings, approve or reject requests, and send approved visits to the clinic queue."
-        art={Calendar}
       />
 
       {/* Action results show as a floating toast */}
@@ -337,7 +336,7 @@ const showMessage = (msg, type) => {
                   : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200'
               }`}>
               {f.label}
-              <span className="ml-1.5 text-[10px] opacity-75">({counts[f.key] ?? 0})</span>
+              <span className="ml-1.5 text-xs opacity-75">({counts[f.key] ?? 0})</span>
             </button>
           ))}
         </div>
@@ -518,28 +517,28 @@ const showMessage = (msg, type) => {
                   <div className="flex items-center gap-3">
                     <Stethoscope className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <div>
-                      <p className="text-[10px] text-gray-400 dark:text-gray-400 uppercase tracking-wider">Service</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-400 uppercase tracking-wider">Service</p>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{selectedAppointment.service}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <div>
-                      <p className="text-[10px] text-gray-400 dark:text-gray-400 uppercase tracking-wider">Date</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-400 uppercase tracking-wider">Date</p>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{formatDate(selectedAppointment.appointment_date)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <div>
-                      <p className="text-[10px] text-gray-400 dark:text-gray-400 uppercase tracking-wider">Time</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-400 uppercase tracking-wider">Time</p>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{selectedAppointment.time_slot}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <FileText className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-[10px] text-gray-400 dark:text-gray-400 uppercase tracking-wider">Concern</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-400 uppercase tracking-wider">Concern</p>
                       <p className="text-sm text-gray-700 dark:text-gray-300">{selectedAppointment.concern || 'No concern specified'}</p>
                     </div>
                   </div>

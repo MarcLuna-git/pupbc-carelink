@@ -324,7 +324,7 @@ const HealthProfile = ({ onBack }) => {
   const inputClass = (field) => `w-full border rounded-xl px-4 py-3 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:border-maroon-800 transition ${errors[field] ? 'border-red-300 bg-red-50 dark:bg-red-900/20' : 'border-slate-200 bg-white'}`;
   const labelClass = 'text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1.5';
   const errorClass = 'text-red-500 text-xs mt-0.5';
-  const optionalClass = 'text-[11px] text-gray-600 dark:text-gray-300 ml-1 font-normal italic';
+  const optionalClass = 'text-xs text-gray-600 dark:text-gray-300 ml-1 font-normal italic';
 
   const YesNoButtons = ({ name, value, onChange }) => (
     <div className="flex items-center space-x-3">
@@ -492,8 +492,8 @@ const HealthProfile = ({ onBack }) => {
             <motion.div className="h-2 bg-maroon-800 rounded-full" animate={{ width: `${progress}%` }} transition={{ duration: 0.3 }} />
           </div>
           <div className="flex justify-between mt-2">
-            {steps.map((s, i) => <span key={i} className={`text-[10px] font-medium hidden sm:block ${step > i ? 'text-maroon-800 dark:text-maroon-400' : 'text-gray-300 dark:text-gray-600'}`}>{s}</span>)}
-            <span className="text-[10px] font-medium sm:hidden">{steps[step-1]}</span>
+            {steps.map((s, i) => <span key={i} className={`text-xs font-medium hidden sm:block ${step > i ? 'text-maroon-800 dark:text-maroon-400' : 'text-gray-300 dark:text-gray-600'}`}>{s}</span>)}
+            <span className="text-xs font-medium sm:hidden">{steps[step-1]}</span>
           </div>
         </div>
 

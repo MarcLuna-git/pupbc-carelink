@@ -186,7 +186,7 @@ const StudentAccountMenu = ({ variant = 'sidebar', collapsed = false }) => {
                   {user?.student_id || 'Student Account'}
                 </p>
                 {course && (
-                  <p className="mt-0.5 truncate text-[11px] text-gray-400 dark:text-gray-500">{course}</p>
+                  <p className="mt-0.5 truncate text-xs text-gray-400 dark:text-gray-500">{course}</p>
                 )}
               </div>
             </div>
@@ -204,7 +204,7 @@ const StudentAccountMenu = ({ variant = 'sidebar', collapsed = false }) => {
               <span className={iconBox}><Settings className="h-4 w-4" /></span>
               <span>
                 <span className="block font-semibold">Settings</span>
-                <span className="block text-[11px] text-gray-500 dark:text-gray-400">Manage account preferences</span>
+                <span className="block text-xs text-gray-500 dark:text-gray-400">Manage account preferences</span>
               </span>
             </Link>
 
@@ -213,7 +213,7 @@ const StudentAccountMenu = ({ variant = 'sidebar', collapsed = false }) => {
               <span className={iconBox}><Palette className="h-4 w-4" /></span>
               <span className="min-w-0 flex-1">
                 <span id="student-appearance-label" className="block font-semibold">Appearance</span>
-                <span className="block text-[11px] text-gray-500 dark:text-gray-400">
+                <span className="block text-xs text-gray-500 dark:text-gray-400">
                   {darkMode ? 'Dark mode is on' : 'Light mode is on'}
                 </span>
               </span>
@@ -265,7 +265,7 @@ const StudentAccountMenu = ({ variant = 'sidebar', collapsed = false }) => {
               <LogOut className="h-4 w-4" />
               <span>
                 <span className="block">Sign Out</span>
-                <span className="block text-[11px] font-normal text-red-500/70 dark:text-red-400/70">End your current session</span>
+                <span className="block text-xs font-normal text-red-500/70 dark:text-red-400/70">End your current session</span>
               </span>
             </button>
           </div>

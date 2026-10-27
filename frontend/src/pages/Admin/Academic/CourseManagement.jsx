@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
-import { BookOpen, BookMarked, CalendarDays, Layers, Search, X, Pencil, AlertCircle, ChevronDown, TableProperties } from 'lucide-react';
+import { BookMarked, CalendarDays, Layers, Search, X, Pencil, AlertCircle, ChevronDown, TableProperties } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import NursePageHero from '../../../components/NursePageHero';
@@ -117,7 +117,7 @@ export default function CourseManagement() {
   const headers = tab === 'course' ? ['Course', 'Sections', 'Status', 'Action'] : tab === 'section' ? ['Course', 'Year & section', 'Academic period', 'Status', 'Action'] : ['Academic year', 'Semester', 'Sections', 'Status', 'Action'];
 
   return <div className="mx-auto max-w-[1440px] space-y-5 text-gray-900 dark:text-gray-100">
-    <NursePageHero id="nurse-courses-title" title="Course Management" description="Organize courses, manage sections, and keep academic periods up to date." art={BookOpen} />
+    <NursePageHero id="nurse-courses-title" title="Course Management" description="Organize courses, manage sections, and keep academic periods up to date." />
     <div className="grid gap-3 sm:grid-cols-3" aria-label="Academic record totals">{tabs.map(({ key, label, icon: Icon }) => <div key={key} className="flex min-w-0 items-center gap-4 rounded-lg border border-gray-100 bg-white p-4 sm:p-5 dark:border-gray-700 dark:bg-gray-800"><span className="rounded-xl bg-maroon-50 p-3 text-maroon-800 dark:bg-maroon-950/40 dark:text-maroon-300"><Icon size={22} aria-hidden="true" /></span><span className="min-w-0 flex-1"><span className="block text-xs font-medium text-gray-500 dark:text-gray-400">{label}</span>{loading ? <span role="status" className="mt-2 block h-6 w-10 animate-pulse rounded-md bg-gray-200 dark:bg-gray-600"><span className="sr-only">Loading count</span></span> : <span className="mt-1 block text-2xl font-semibold tabular-nums">{data[key].length.toLocaleString()}</span>}</span></div>)}</div>
     <div role="group" aria-label="Academic records view" className="flex flex-wrap gap-1 rounded-lg border border-gray-100 bg-white p-1.5 dark:border-gray-700 dark:bg-gray-800">{tabs.map(({ key, label, icon: Icon }) => <button key={key} type="button" onClick={() => switchTab(key)} aria-pressed={tab === key} className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors sm:flex-none ${tab === key ? 'bg-maroon-800 text-white' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60 dark:hover:text-gray-200'} ${focus}`}><Icon size={16} aria-hidden="true" /><span>{label}</span></button>)}</div>
     <NurseToast message={message} type="success" onClose={() => setMessage('')} />

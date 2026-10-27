@@ -22,7 +22,6 @@ import {
   Trash2,
   Upload,
   User,
-  UserRound,
   Users,
   X,
 } from 'lucide-react';
@@ -555,8 +554,6 @@ const Overview = () => {
       <StudentToast message={notice.text} type={notice.type} onClose={() => setNotice((current) => ({ ...current, text: '' }))} />
       <StudentPageHero
         id="profile-title"
-        eyebrow={null}
-        art={UserRound}
         title={fullName(heroUser || {}) || 'Profile'}
         description={[course, yearLevel].filter(Boolean).join(' • ') || 'Student'}
         loading={pageLoading}

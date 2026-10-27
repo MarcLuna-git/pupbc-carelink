@@ -2,7 +2,7 @@ import { getToken, getUser, setUser } from '../../../services/session';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Key, Mail, Shield, Eye, EyeOff, Loader2, Save, Moon, Lock, SlidersHorizontal, MessageSquare, ChevronDown, Trash2, Wrench, Clock, Settings as SettingsIcon } from 'lucide-react';
+import { Key, Mail, Shield, Eye, EyeOff, Loader2, Save, Moon, Lock, SlidersHorizontal, MessageSquare, ChevronDown, Trash2, Wrench, Clock } from 'lucide-react';
 import api from '../../../services/api';
 import useStudentWidgetPrefs from '../../../hooks/useStudentWidgetPrefs';
 import { readDarkMode, saveDarkMode } from '../../../hooks/useAccountTheme';
@@ -15,7 +15,6 @@ const SETTINGS_HERO = {
   id: 'settings-title',
   title: 'Settings',
   description: 'Manage your account, security, and portal preferences.',
-  art: SettingsIcon,
 };
 
 /*

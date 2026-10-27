@@ -43,7 +43,7 @@ const StudentSidebar = ({
             CareLink
           </p>
 
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">
+          <p className="mt-0.5 text-xs font-semibold uppercase tracking-[0.18em] text-white/75">
             Student Portal
           </p>
         </div>

@@ -239,12 +239,12 @@ export default function ChatMessage({
               isUser ? 'justify-end' : ''
             }`}
           >
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
               {name}
             </p>
 
             {badge && (
-              <span className="rounded-full bg-maroon-100 px-1.5 py-px text-[8px] font-bold uppercase tracking-wider text-maroon-700 dark:bg-maroon-950/50 dark:text-maroon-300">
+              <span className="rounded-full bg-maroon-100 px-1.5 py-px text-xs font-bold uppercase tracking-wider text-maroon-700 dark:bg-maroon-950/50 dark:text-maroon-300">
                 {badge}
               </span>
             )}
@@ -260,7 +260,7 @@ export default function ChatMessage({
         >
           {showTriage && (
             <div
-              className={`mb-2 flex w-fit items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide ${triageStyle}`}
+              className={`mb-2 flex w-fit items-center gap-1.5 text-xs font-semibold uppercase tracking-wide ${triageStyle}`}
             >
               <span>Symptom</span>
               <span>Category</span>
@@ -282,7 +282,7 @@ export default function ChatMessage({
           </p>
 
           {degraded && (
-            <p className="mt-2 flex items-start gap-1.5 border-t border-gray-300/60 pt-2 text-[11px] text-amber-700 dark:border-gray-700 dark:text-amber-400">
+            <p className="mt-2 flex items-start gap-1.5 border-t border-gray-300/60 pt-2 text-xs text-amber-700 dark:border-gray-700 dark:text-amber-400">
               <AlertCircle className="mt-px h-3 w-3 shrink-0" />
               <span>Automated reply unavailable — this is a generic response.</span>
             </p>
@@ -292,7 +292,7 @@ export default function ChatMessage({
             <div className="mt-3 flex flex-col gap-1.5">
               <Link
                 to={action.to}
-                className="inline-flex w-fit items-center rounded-xl bg-maroon-800 px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-maroon-900"
+                className="inline-flex w-fit items-center rounded-xl bg-maroon-800 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-maroon-900"
               >
                 {action.label}
               </Link>

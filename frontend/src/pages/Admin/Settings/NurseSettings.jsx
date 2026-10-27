@@ -1,7 +1,7 @@
 import { clearSession, getToken, getUser, setUser } from '../../../services/session';
 import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Key, Lock, Save, Loader2, Eye, EyeOff, User, Mail, Bell, Building, CheckCircle, Wrench, Clock, LogOut, Moon, SlidersHorizontal, ChevronDown, CalendarCheck, UserPlus, Settings as SettingsIcon } from 'lucide-react';
+import { Key, Lock, Save, Loader2, Eye, EyeOff, User, Mail, Bell, Building, CheckCircle, Wrench, Clock, LogOut, Moon, SlidersHorizontal, ChevronDown, CalendarCheck, UserPlus } from 'lucide-react';
 import api from '../../../services/api';
 import authService from '../../../services/authService';
 import useNurseSync from '../../../hooks/useNurseSync';
@@ -597,7 +597,6 @@ const NurseSettings = () => {
         id="nurse-settings-title"
         title="Settings"
         description="Manage your account, security, and portal preferences."
-        art={SettingsIcon}
       />
 
       {/* Action results show as a floating toast */}

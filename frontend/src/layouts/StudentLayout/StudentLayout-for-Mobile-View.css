@@ -14,7 +14,7 @@
   .student-header-brand { display:flex;flex:1;min-width:0;align-items:center;gap:8px; }
   .student-header-brand-symbol { width:28px;height:28px;flex-shrink:0;color:var(--sp-accent); }
   .student-header-brand-name { display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px;font-weight:700;letter-spacing:-.4px;line-height:1.15;color:var(--sp-accent); }
-  .student-header-brand-caption { display:block;margin-top:1px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--sp-muted); }
+  .student-header-brand-caption { display:block;margin-top:1px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--sp-muted); }
   .student-header-page { font-size:13px; }
   .student-header-actions { gap:6px; }
   .student-header-icon { width:44px;height:44px; }

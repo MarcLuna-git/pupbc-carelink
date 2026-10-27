@@ -8,14 +8,12 @@ import {
   ClipboardList,
   CalendarDays,
   CalendarClock,
-  ShieldCheck,
-  Users,
   Filter,
   ChevronDown,
   Eye,
   Printer,
   X,
-  } from 'lucide-react';
+} from 'lucide-react';
 import api from '../../../services/api';
 import StudentPageHero from '../../../components/StudentPageHero';
 import { openRecordDocument } from './recordDocuments';
@@ -33,13 +31,7 @@ const CARD = 'rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)]
 const RECORDS_HERO = {
   id: 'records-title',
   title: 'Records',
-  art: FileText,
   description: 'View your consultation records, health documents, and clinic history.',
-  benefits: [
-    { icon: FileText, label: 'Access your clinic records' },
-    { icon: ShieldCheck, label: 'Download and print official documents' },
-    { icon: Users, label: 'Keep track of your health history' },
-  ],
 };
 
 const TABS = [
@@ -143,7 +135,7 @@ const StatusBadge = ({ status }) => (
 
 const TypeTag = ({ record }) =>
   record.recordType === 'emergency' ? (
-    <span className="ml-2 rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-red-700 dark:bg-red-900/20 dark:text-red-400">
+    <span className="ml-2 rounded bg-red-50 px-1.5 py-0.5 text-xs font-semibold uppercase text-red-700 dark:bg-red-900/20 dark:text-red-400">
       Emergency
     </span>
   ) : null;
@@ -195,7 +187,7 @@ const RecordDialog = ({ record, onClose, onDocument }) => {
 
   const field = (label, value) => (
     <div className="rounded-xl bg-gray-50 p-3.5 dark:bg-gray-700/30">
-      <p className="mb-1 text-[11px] uppercase tracking-wider text-gray-400 dark:text-gray-500">{label}</p>
+      <p className="mb-1 text-xs uppercase tracking-wider text-gray-400 dark:text-gray-500">{label}</p>
       <p className="whitespace-pre-wrap break-words text-sm font-medium text-gray-800 dark:text-gray-200">{value || 'Not recorded'}</p>
     </div>
   );
@@ -242,7 +234,7 @@ const RecordDialog = ({ record, onClose, onDocument }) => {
 
         {vitals.length > 0 && (
           <div className="mt-5">
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Vital Signs</p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Vital Signs</p>
             <div className="flex flex-wrap gap-2">
               {vitals.map(([label, value, tone]) => (
                 <span key={label} className={`rounded-xl px-2.5 py-1.5 text-xs font-medium ${tone}`}>
@@ -483,7 +475,7 @@ const HealthRecords = () => {
                 >
                   <Icon className="h-4 w-4" />
                   {label}
-                  <span className={`rounded-full px-1.5 text-[11px] ${active ? 'bg-white/20' : 'bg-gray-100 dark:bg-gray-700'}`}>{count}</span>
+                  <span className={`rounded-full px-1.5 text-xs ${active ? 'bg-white/20' : 'bg-gray-100 dark:bg-gray-700'}`}>{count}</span>
                 </button>
               );
             })}
@@ -512,7 +504,7 @@ const HealthRecords = () => {
                 <Filter className="h-4 w-4" />
                 Filter
                 {activeFilterCount > 0 && (
-                  <span className="rounded-full bg-maroon-800 px-1.5 text-[11px] text-white">{activeFilterCount}</span>
+                  <span className="rounded-full bg-maroon-800 px-1.5 text-xs text-white">{activeFilterCount}</span>
                 )}
                 <ChevronDown className={`h-4 w-4 transition ${filterOpen ? 'rotate-180' : ''}`} />
               </button>

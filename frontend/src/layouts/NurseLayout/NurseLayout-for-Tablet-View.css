@@ -54,7 +54,7 @@
 /* The folded rail keeps the gap between groups but hides their labels. */
 .nurse-sidebar.is-collapsed .nurse-nav-section { color:transparent; }
 /* Unread count becomes a dot on the bell icon in the folded rail. */
-.nurse-sidebar.is-collapsed .nurse-nav-count { position:absolute;top:6px;left:34px;min-width:16px;height:16px;padding:0 4px;font-size:9px;line-height:16px; }
+.nurse-sidebar.is-collapsed .nurse-nav-count { position:absolute;top:6px;left:34px;min-width:16px;height:16px;padding:0 4px;font-size:10px;line-height:16px; }
 .nurse-sidebar.is-collapsed .nurse-account-caption { max-width:0;opacity:0;overflow:hidden; }
 .nurse-sidebar.is-collapsed .nurse-account-button { gap:0;border-color:transparent;background:transparent; }
 

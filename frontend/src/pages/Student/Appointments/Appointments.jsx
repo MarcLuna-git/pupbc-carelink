@@ -1150,7 +1150,7 @@ const Appointments = () => {
                     <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
 
                     <div>
-                      <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                      <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                         Date
                       </p>
 
@@ -1166,7 +1166,7 @@ const Appointments = () => {
                     <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
 
                     <div>
-                      <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                      <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                         Time
                       </p>
 
@@ -1181,7 +1181,7 @@ const Appointments = () => {
                     <FileText className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
 
                     <div>
-                      <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                      <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                         Concern
                       </p>
 

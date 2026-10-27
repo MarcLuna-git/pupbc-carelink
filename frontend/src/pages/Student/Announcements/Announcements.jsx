@@ -238,9 +238,9 @@ const Announcements = () => {
                         </h3>
                         <div className="flex flex-wrap items-center gap-2 mt-2">
                           {newAnnouncements.some((item) => item.id === ann.id) && (
-                            <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase text-red-700 dark:bg-red-900/30 dark:text-red-300">New</span>
+                            <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold uppercase text-red-700 dark:bg-red-900/30 dark:text-red-300">New</span>
                           )}
-                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${config.bg}`}>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${config.bg}`}>
                             {ann.category}
                           </span>
                           <span className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">

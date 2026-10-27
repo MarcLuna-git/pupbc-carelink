@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import HeroArt from '../../../components/HeroArt';
 import RouteLoadingBar from '../../../components/RouteLoadingBar';
-import { AlertCircle, ArrowRight, CalendarDays, Check, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Clock, FileText, HeartPulse, HelpCircle, LayoutGrid, List, Loader2, MapPin, RotateCcw, ShieldCheck, Stethoscope, UserRound, X } from 'lucide-react';
+import { AlertCircle, ArrowRight, CalendarDays, Check, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Clock, FileText, HelpCircle, LayoutGrid, List, Loader2, MapPin, RotateCcw, ShieldCheck, Stethoscope, UserRound, X } from 'lucide-react';
 import { appointmentDate, appointmentTime, clinicDate, formatAppointmentDate, isClinicSunday } from '../../../utils/appointmentDate';
 import { useTimeGuardBypass } from '../../../services/devTools';
 
@@ -19,16 +18,9 @@ const roomName = appointment => (typeof appointment.room === 'string' ? appointm
 
 export function AppointmentHero({ loading = false }) {
   return <section className="ap-hero" aria-labelledby="appointments-title">
-    <HeroArt icon={CalendarDays} />
     <div className="ap-hero-copy">
-      <p className="ap-eyebrow">Student clinic</p>
       <h1 id="appointments-title">Appointments</h1>
       <p className="ap-hero-description">Book and manage your clinic visits with ease.</p>
-      <div className="ap-hero-benefits">
-        <span><CalendarDays /><span>Schedule<br />an appointment</span></span>
-        <span><ShieldCheck /><span>Get quality<br />health services</span></span>
-        <span><HeartPulse /><span>A healthier you<br />starts here</span></span>
-      </div>
     </div>
     {/* Route-loading bar — full-width fill/drain loop, hero only. */}
     {loading && <RouteLoadingBar className="ap-hero-loading-bar" />}

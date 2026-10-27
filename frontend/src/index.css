@@ -11,18 +11,24 @@ input[type="password"]::-ms-clear {
   display: none;
 }
 
-@theme {
-  --color-maroon-50: #fdf2f2;
-  --color-maroon-100: #fde8e8;
-  --color-maroon-200: #fbd5d5;
-  --color-maroon-300: #f8b4b4;
-  --color-maroon-400: #f98080;
-  --color-maroon-500: #f05252;
-  --color-maroon-600: #dc2626;
-  --color-maroon-700: #b91c1c;
+/*
+ * Brand maroon: one ramp anchored on PUP maroon (maroon-800 = #800000), same
+ * hue family throughout. Use these tokens (bg-maroon-800, text-maroon-700, …)
+ * instead of raw hex so every portal, the landing page and the kiosk agree.
+ * 500 and darker pass 4.5:1 as text on white.
+ */
+@theme static {
+  --color-maroon-50: #fff4f3;
+  --color-maroon-100: #fde7e6;
+  --color-maroon-200: #facecd;
+  --color-maroon-300: #f0a8a7;
+  --color-maroon-400: #de7a7b;
+  --color-maroon-500: #c34e54;
+  --color-maroon-600: #a82c38;
+  --color-maroon-700: #921127;
   --color-maroon-800: #800000;
-  --color-maroon-900: #660000;
-  --color-maroon-950: #4d0000;
+  --color-maroon-900: #5f0415;
+  --color-maroon-950: #3d050c;
 }
 
 .recovery-auth-background {
@@ -37,12 +43,6 @@ input[type="password"]::-ms-clear {
   background-position: center;
 }
 
-@keyframes blob {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  25% { transform: translate(20px, -50px) scale(1.1); }
-  50% { transform: translate(-20px, 20px) scale(0.9); }
-  75% { transform: translate(50px, 30px) scale(1.05); }
-}
 
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(20px); }
@@ -60,18 +60,10 @@ input[type="password"]::-ms-clear {
   75% { transform: translateX(5px); }
 }
 
-@keyframes bounceIn {
-  0% { opacity: 0; transform: scale(0.3); }
-  50% { opacity: 1; transform: scale(1.05); }
-  70% { transform: scale(0.9); }
-  100% { transform: scale(1); }
-}
 
-.animate-blob { animation: blob 7s infinite; }
 .animate-fadeInUp { animation: fadeInUp 0.6s ease-out forwards; }
 .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
 .animate-shake { animation: shake 0.3s ease-in-out; }
-.animate-bounce-in { animation: bounceIn 0.5s ease-out; }
 .animation-delay-200 { animation-delay: 0.2s; }
 .animation-delay-400 { animation-delay: 0.4s; }
 .animation-delay-600 { animation-delay: 0.6s; }
@@ -142,7 +134,7 @@ html.dark { color-scheme: dark; }
 .dark .hover\:bg-slate-100:hover:not([class*="dark:hover:bg-"]) { background-color: #374151; }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-blob, .animate-fadeInUp, .animate-fadeIn, .animate-shake, .animate-bounce-in { animation: none; }
+  .animate-fadeInUp, .animate-fadeIn, .animate-shake { animation: none; }
 }
 
 html { color-scheme: light; }
@@ -180,7 +172,7 @@ html.dark { color-scheme: dark; }
 .dark .hover\:bg-slate-100:hover:not([class*="dark:hover:bg-"]) { background-color: #374151; }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-blob, .animate-fadeInUp, .animate-fadeIn, .animate-shake, .animate-bounce-in { animation: none; }
+  .animate-fadeInUp, .animate-fadeIn, .animate-shake { animation: none; }
 }
 
 /* ============================================================
@@ -281,18 +273,6 @@ html.dark { color-scheme: dark; }
   }
 }
 
-/* Student page hero artwork (components/HeroArt.jsx): the tab's line icon
-   on the right; the copy stays on the left. */
-.hero-art { position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none; }
-/* Bigger icon sitting on the hero's bottom edge: its lowest quarter is cut
-   off by the hero (overflow:hidden), so about 3/4 of it shows. */
-.hero-art-icon { position:absolute;right:6%;bottom:-50px;display:flex;color:#111111;opacity:.55; }
-.hero-art-icon svg { width:200px;height:200px; }
-.dark .hero-art-icon { color:#ffffff;opacity:.45; }
-@media (max-width:639px) {
-  .hero-art-icon { right:-10px;bottom:-32px;opacity:.25; }
-  .hero-art-icon svg { width:130px;height:130px; }
-}
 
 /* Hide the chatbot scrollbar but keep scrolling */
 .chatbot-transcript {

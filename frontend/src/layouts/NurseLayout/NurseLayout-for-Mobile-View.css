@@ -7,11 +7,11 @@
   .nurse-shell { --np-sidebar:0px;--np-nav-height:70px;--np-header-height:58px; }
   .nurse-header-inner { padding:0 12px;gap:7px; }
   .nurse-header-brand { display:flex;flex:1;min-width:0;align-items:center;gap:9px; }
-  .nurse-header-brand-symbol { display:flex;width:34px;height:34px;flex-shrink:0;align-items:center;justify-content:center;border-radius:11px;background:linear-gradient(135deg,#800000,#660000);color:#fff; }
+  .nurse-header-brand-symbol { display:flex;width:34px;height:34px;flex-shrink:0;align-items:center;justify-content:center;border-radius:11px;background:linear-gradient(135deg,var(--color-maroon-800),var(--color-maroon-900));color:#fff; }
   .nurse-header-brand-symbol svg { width:18px;height:18px; }
   .dark .nurse-header-brand-symbol { background:#ffffff1a; }
   .nurse-header-brand-name { display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px;font-weight:700;letter-spacing:-.3px;line-height:1.15;color:var(--np-text); }
-  .nurse-header-brand-caption { display:block;margin-top:1px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--np-muted); }
+  .nurse-header-brand-caption { display:block;margin-top:1px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--np-muted); }
   .nurse-header-actions { gap:6px; }
   .nurse-header-icon { width:44px;height:44px; }
   .nurse-main { padding:calc(var(--np-header-height) + 12px) 12px 16px; }

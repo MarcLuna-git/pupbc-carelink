@@ -59,12 +59,11 @@ export default function NurseRecords() {
       id="nurse-records-title"
       title="Clinic History"
       description="View completed consultations and emergency encounters."
-      art={FileText}
     >
       <div className="mt-4 inline-flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-700/50">
         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-maroon-800 shadow-sm dark:bg-gray-800 dark:text-maroon-400"><FileText size={16} aria-hidden="true" /></span>
         <div>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400">{active ? 'Matching records' : 'Total records'}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{active ? 'Matching records' : 'Total records'}</p>
           {loading
             ? <span role="status" className="mt-1 block h-5 w-12 animate-pulse rounded-md bg-gray-200 dark:bg-gray-600"><span className="sr-only">Loading record count</span></span>
             : <p className="text-lg font-bold leading-tight tabular-nums" aria-live="polite">{error ? <span className="text-sm font-semibold text-gray-400">Unavailable</span> : filtered.length.toLocaleString()}</p>}

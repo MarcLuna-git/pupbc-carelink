@@ -1,6 +1,6 @@
 import { getToken } from '../../../services/session';
 import { useState, useEffect, useRef } from 'react';
-import { Megaphone, SquarePen, FilePenLine, Newspaper, ScrollText, Trash2, Edit2, Loader2, X, Send, Search, ChevronDown } from 'lucide-react';
+import { SquarePen, FilePenLine, Newspaper, ScrollText, Trash2, Edit2, Loader2, X, Send, Search, ChevronDown } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import NursePageHero from '../../../components/NursePageHero';
@@ -148,7 +148,6 @@ const NurseAnnouncements = () => {
         id="nurse-announcements-title"
         title="Announcements"
         description="Post clinic and school announcements for students."
-        art={Megaphone}
       />
 
       {/* Action results show as a floating toast */}

@@ -105,7 +105,7 @@ export default function ClinicCalendar() {
         {loadError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{loadError}</p>}
 
         <div className="overflow-hidden rounded-lg border border-gray-100 dark:border-gray-700">
-          <div className="grid grid-cols-7 border-b border-gray-100 bg-gray-50 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-400">
+          <div className="grid grid-cols-7 border-b border-gray-100 bg-gray-50 text-center text-xs font-semibold uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-400">
             {WEEKDAYS.map((day) => <div key={day} className="py-2">{day}</div>)}
           </div>
           <div className="grid grid-cols-7">
@@ -141,9 +141,9 @@ export default function ClinicCalendar() {
                   )}
                   <span className="hidden min-w-0 flex-col gap-0.5 sm:flex" aria-hidden="true">
                     {items.slice(0, 2).map((item) => (
-                      <span key={item.id} className={`truncate rounded px-1.5 py-0.5 text-[10px] font-semibold leading-tight ${item.style.chip}`}>{item.text}</span>
+                      <span key={item.id} className={`truncate rounded px-1.5 py-0.5 text-xs font-semibold leading-tight ${item.style.chip}`}>{item.text}</span>
                     ))}
-                    {items.length > 2 && <span className="px-1 text-[10px] font-semibold text-gray-400">+{items.length - 2} more</span>}
+                    {items.length > 2 && <span className="px-1 text-xs font-semibold text-gray-400">+{items.length - 2} more</span>}
                   </span>
                 </button>
               );
@@ -269,7 +269,7 @@ function DayNotesDialog({ dateKey, holidays, notes, onClose, onSaved, onDeleted 
                         <div className="min-w-0 flex-1">
                           <p className="break-words text-sm font-semibold text-gray-900 dark:text-white">{note.title}</p>
                           {note.details && <p className="mt-0.5 whitespace-pre-line break-words text-xs text-gray-500 dark:text-gray-400">{note.details}</p>}
-                          {note.author && <p className="mt-1 text-[11px] text-gray-400">Added by {note.author.first_name} {note.author.last_name}</p>}
+                          {note.author && <p className="mt-1 text-xs text-gray-400">Added by {note.author.first_name} {note.author.last_name}</p>}
                         </div>
                         {confirmDelete === note.id ? (
                           <div className="flex shrink-0 items-center gap-1">

@@ -229,7 +229,7 @@ const Notifications = () => {
                 : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50'
             }`}>
             {f.label}
-            <span className="ml-1.5 text-[10px] opacity-75">({f.count})</span>
+            <span className="ml-1.5 text-xs opacity-75">({f.count})</span>
           </button>
         ))}
       </div>

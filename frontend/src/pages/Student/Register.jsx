@@ -24,7 +24,7 @@ const INITIAL = {
   email: '', mobile_number: '', course: '', year: '', section: '',
   password: '', password_confirmation: '', agree_terms: false,
 };
-const INPUT = 'min-h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#741126] focus:ring-2 focus:ring-[#741126]/15 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:border-rose-300 dark:focus:ring-rose-300/25 disabled:cursor-not-allowed disabled:opacity-60';
+const INPUT = 'min-h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-maroon-800 focus:ring-2 focus:ring-maroon-800/15 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:border-rose-300 dark:focus:ring-rose-300/25 disabled:cursor-not-allowed disabled:opacity-60';
 const INVALID = 'border-red-400 focus:border-red-500 focus:ring-red-500/15 dark:border-red-400 dark:focus:border-red-400 dark:focus:ring-red-400/25';
 
 function getManilaDate() {
@@ -124,7 +124,7 @@ function Field({ id, label, error, optional, children }) {
 function SectionTitle({ icon: Icon, children }) {
   return (
     <div className="mb-3 flex items-center gap-2 border-b border-slate-100 pb-2.5">
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f9e9ee] dark:bg-rose-950/40 text-[#741126] dark:text-rose-300">
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-maroon-100 dark:bg-rose-950/40 text-maroon-800 dark:text-rose-300">
         <Icon size={17} />
       </span>
       <h3 className="text-sm font-extrabold text-slate-900">{children}</h3>
@@ -372,7 +372,7 @@ export default function Register() {
     <div className="flex min-h-dvh flex-col bg-[#f7f8fa] dark:bg-gray-900 lg:flex-row">
       {/* Same split layout as Login. Actual school + clinic photos merge via CSS.
           Image panel is intentionally hidden on phones, optional on tablets. */}
-      <aside className="relative isolate hidden min-h-screen overflow-hidden bg-[#4d0d1b] text-white lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-1/2 lg:shrink-0 xl:w-[55%]">
+      <aside className="relative isolate hidden min-h-screen overflow-hidden bg-maroon-950 text-white lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-1/2 lg:shrink-0 xl:w-[55%]">
         {/* Upper campus photo */}
         <img
           src={campusPhoto}
@@ -390,8 +390,8 @@ export default function Register() {
           }}
         />
         {/* Maroon overlays unify both real photographs without dotted patterns. */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#4d0d1b]/95 via-[#741126]/73 to-[#4d0d1b]/33" />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#4d0d1b]/80 via-transparent to-[#4d0d1b]/25" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-maroon-950/95 via-maroon-800/73 to-maroon-950/33" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-maroon-950/80 via-transparent to-maroon-950/25" />
 
         <div className="flex h-full w-full flex-col justify-between gap-6 px-7 py-8 xl:px-12 xl:py-10">
           <Link to="/" className="inline-flex items-center gap-3 self-start">
@@ -407,8 +407,7 @@ export default function Register() {
           </Link>
 
           <div className="max-w-[430px]">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-rose-100">Student registration</p>
-            <h1 className="mt-4 font-serif text-4xl font-bold leading-[1.1] drop-shadow-md xl:text-5xl">
+            <h1 className="font-serif text-4xl font-bold leading-[1.1] xl:text-5xl">
               A Healthier<br />Tomorrow<br />Starts Here.
             </h1>
             <div className="mt-5 h-1 w-14 rounded-full bg-rose-200" />
@@ -417,20 +416,20 @@ export default function Register() {
               use QR check-in and view your available health records.
             </p>
             <div className="mt-6 flex flex-wrap gap-2 text-xs font-semibold">
-              <span className="rounded-xl border border-white/25 bg-[#741126]/65 px-3 py-2 backdrop-blur-sm">Secure email verification</span>
-              <span className="rounded-xl border border-white/25 bg-[#741126]/65 px-3 py-2 backdrop-blur-sm">Made for PUP Biñan students</span>
+              <span className="rounded-xl border border-white/25 bg-maroon-800/65 px-3 py-2 backdrop-blur-sm">Secure email verification</span>
+              <span className="rounded-xl border border-white/25 bg-maroon-800/65 px-3 py-2 backdrop-blur-sm">Made for PUP Biñan students</span>
             </div>
           </div>
 
           <div className="flex items-end justify-between gap-3 text-white/90">
             <p className="font-serif text-lg italic leading-6">Same PUP spirit.<br />A healthier you.</p>
-            <p className="text-right text-[11px] leading-5 text-white/75">Polytechnic University of the Philippines<br />Biñan Campus</p>
+            <p className="text-right text-xs leading-5 text-white/75">Polytechnic University of the Philippines<br />Biñan Campus</p>
           </div>
         </div>
       </aside>
 
       {/* Small-screen header instead of the large decorative photo panel. */}
-      <div className="bg-[#4d0d1b] px-5 py-4 text-white lg:hidden">
+      <div className="bg-maroon-950 px-5 py-4 text-white lg:hidden">
         <Link to="/" className="inline-flex items-center gap-3">
           <img src={clinicLogo} alt="PUPBC CareLink" className="h-11 w-11 rounded-full border border-white/30 bg-white object-cover" />
           <span><span className="block text-base font-extrabold">PUPBC CareLink</span>
@@ -442,11 +441,10 @@ export default function Register() {
         <div className="w-full max-w-md">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-[0.15em] text-[#741126] dark:text-rose-300">Student registration</p>
-              <h2 className="mt-1 text-2xl font-black text-slate-950">{otpStep ? 'Verify your email' : 'Create your account'}</h2>
+              <h2 className="text-2xl font-black text-slate-950">{otpStep ? 'Verify your email' : 'Create your account'}</h2>
               <p className="mt-1.5 text-sm leading-6 text-slate-500">{otpStep ? 'One last step before you can sign in.' : 'Fill in your details to get started.'}</p>
             </div>
-            <Link to="/login" aria-label="Back to login" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#741126] dark:text-rose-300 hover:bg-[#f9e9ee] dark:hover:bg-rose-950/40"><ArrowLeft size={18} /></Link>
+            <Link to="/login" aria-label="Back to login" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-maroon-800 dark:text-rose-300 hover:bg-maroon-100 dark:hover:bg-rose-950/40"><ArrowLeft size={18} /></Link>
           </div>
 
           <StudentToast message={message} type={messageType} onClose={() => setMessage('')} />
@@ -628,12 +626,12 @@ export default function Register() {
                     )}
                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                       <div className="flex items-start gap-3">
-                        <input id="agree_terms" name="agree_terms" type="checkbox" checked={form.agree_terms} onChange={change} disabled={loading} className="mt-1 h-4 w-4 shrink-0 accent-[#741126]" />
+                        <input id="agree_terms" name="agree_terms" type="checkbox" checked={form.agree_terms} onChange={change} disabled={loading} className="mt-1 h-4 w-4 shrink-0 accent-maroon-800" />
                         <div className="text-xs leading-6 text-slate-600">
                           <label htmlFor="agree_terms">I agree to the </label>
-                          <button type="button" onClick={() => setLegalModal('terms')} className="font-bold text-[#741126] dark:text-rose-300 hover:underline">Terms of Service</button>
+                          <button type="button" onClick={() => setLegalModal('terms')} className="font-bold text-maroon-800 dark:text-rose-300 hover:underline">Terms of Service</button>
                           {' and '}
-                          <button type="button" onClick={() => setLegalModal('privacy')} className="font-bold text-[#741126] dark:text-rose-300 hover:underline">Privacy Policy</button>.
+                          <button type="button" onClick={() => setLegalModal('privacy')} className="font-bold text-maroon-800 dark:text-rose-300 hover:underline">Privacy Policy</button>.
                         </div>
                       </div>
                       {errors.agree_terms && <p role="alert" className="mt-2 text-xs text-red-600">{errors.agree_terms}</p>}
@@ -643,7 +641,7 @@ export default function Register() {
               </div>
             ) : (
               <div className="py-4 text-center">
-                <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f9e9ee] dark:bg-rose-950/40 text-[#741126] dark:text-rose-300"><Mail size={27} /></span>
+                <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-maroon-100 dark:bg-rose-950/40 text-maroon-800 dark:text-rose-300"><Mail size={27} /></span>
                 <h3 className="mt-4 text-xl font-bold">Check your inbox</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-500">Enter the six-digit code sent to <strong className="break-all text-slate-900">{form.email}</strong>. It expires in 10 minutes.</p>
                 <div className="mx-auto mt-5 max-w-[250px] text-left">
@@ -653,15 +651,15 @@ export default function Register() {
                 </div>
                 <div className="mt-4 text-xs text-slate-500">
                   {cooldown > 0 ? `Resend code in ${cooldown}s` : (
-                    <button type="button" onClick={resendOtp} disabled={resending || loading || verified} className="inline-flex items-center gap-1.5 font-bold text-[#741126] dark:text-rose-300 hover:underline disabled:opacity-50">{resending ? <Loader2 size={15} className="animate-spin" /> : null}{resending ? 'Resending...' : 'Resend verification code'}</button>
+                    <button type="button" onClick={resendOtp} disabled={resending || loading || verified} className="inline-flex items-center gap-1.5 font-bold text-maroon-800 dark:text-rose-300 hover:underline disabled:opacity-50">{resending ? <Loader2 size={15} className="animate-spin" /> : null}{resending ? 'Resending...' : 'Resend verification code'}</button>
                   )}
                 </div>
               </div>
             )}
-            <button type="submit" disabled={loading || resending || verified} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#741126] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#4d0d1b] disabled:cursor-not-allowed disabled:opacity-60">
+            <button type="submit" disabled={loading || resending || verified} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-maroon-800 px-4 py-3 text-sm font-bold text-white transition hover:bg-maroon-950 disabled:cursor-not-allowed disabled:opacity-60">
               {loading ? <><Loader2 size={17} className="animate-spin" />{otpStep ? 'Verifying...' : 'Sending code...'}</> : otpStep ? <><CheckCircle2 size={17} />Verify & Create Account</> : <>Continue to Email Verification <ArrowRight size={17} /></>}
             </button>
-            <p className="mt-4 text-center text-sm text-slate-500">Already have an account? <Link to="/login" className="font-bold text-[#741126] dark:text-rose-300 hover:underline">Log in</Link></p>
+            <p className="mt-4 text-center text-sm text-slate-500">Already have an account? <Link to="/login" className="font-bold text-maroon-800 dark:text-rose-300 hover:underline">Log in</Link></p>
           </form>
           <p className="mt-5 text-center text-xs text-slate-400">PUPBC CareLink · Student Health Portal</p>
         </div>
@@ -671,7 +669,7 @@ export default function Register() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) setLegalModal(null); }}>
           <section role="dialog" aria-modal="true" aria-labelledby="legal-title" className="flex max-h-[85dvh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-              <h2 id="legal-title" className="flex items-center gap-2 text-base font-extrabold text-slate-900"><FileText size={19} className="text-[#741126] dark:text-rose-300" />{legalModal === 'terms' ? 'Terms of Service' : 'Privacy Policy'}</h2>
+              <h2 id="legal-title" className="flex items-center gap-2 text-base font-extrabold text-slate-900"><FileText size={19} className="text-maroon-800 dark:text-rose-300" />{legalModal === 'terms' ? 'Terms of Service' : 'Privacy Policy'}</h2>
               <button type="button" onClick={() => setLegalModal(null)} aria-label="Close" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><X size={19} /></button>
             </div>
             <div className="space-y-4 overflow-y-auto p-5 text-sm leading-6 text-slate-600">
@@ -691,7 +689,7 @@ export default function Register() {
                 </>
               )}
             </div>
-            <div className="border-t border-slate-200 p-4"><button type="button" onClick={() => setLegalModal(null)} className="w-full rounded-xl bg-[#741126] py-2.5 text-sm font-bold text-white hover:bg-[#4d0d1b]">Close</button></div>
+            <div className="border-t border-slate-200 p-4"><button type="button" onClick={() => setLegalModal(null)} className="w-full rounded-xl bg-maroon-800 py-2.5 text-sm font-bold text-white hover:bg-maroon-950">Close</button></div>
           </section>
         </div>
       )}

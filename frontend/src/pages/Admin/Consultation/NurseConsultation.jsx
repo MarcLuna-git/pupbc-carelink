@@ -238,7 +238,6 @@ const NurseConsultation = () => {
         id="nurse-consultation-title"
         title="Queue & Consultation"
         description="Manage the clinic queue, call the next student, and record their consultation."
-        art={Stethoscope}
       />}
 
       {/* Action results show as a floating toast */}
@@ -255,10 +254,10 @@ const NurseConsultation = () => {
         {/* Today at a glance */}
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
-            { label: 'Waiting', value: checkedInStudents.filter(s => ['waiting', 'called'].includes(s.status)).length, icon: Users, tone: 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300' },
-            { label: 'In Consultation', value: checkedInStudents.filter(s => s.status === 'serving').length, icon: Stethoscope, tone: 'bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300' },
-            { label: 'Completed today', value: stats.completed_today, icon: CheckCircle, tone: 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300' },
-            { label: 'Skipped / No Show', value: checkedInStudents.filter(s => s.status === 'skipped').length + stats.no_show_today, icon: UserX, tone: 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300' },
+            { label: 'Waiting', value: checkedInStudents.filter(s => ['waiting', 'called'].includes(s.status)).length, icon: Users, tone: 'bg-maroon-50 text-maroon-700 dark:bg-maroon-900/30 dark:text-maroon-300' },
+            { label: 'In Consultation', value: checkedInStudents.filter(s => s.status === 'serving').length, icon: Stethoscope, tone: 'bg-maroon-50 text-maroon-700 dark:bg-maroon-900/30 dark:text-maroon-300' },
+            { label: 'Completed today', value: stats.completed_today, icon: CheckCircle, tone: 'bg-maroon-50 text-maroon-700 dark:bg-maroon-900/30 dark:text-maroon-300' },
+            { label: 'Skipped / No Show', value: checkedInStudents.filter(s => s.status === 'skipped').length + stats.no_show_today, icon: UserX, tone: 'bg-maroon-50 text-maroon-700 dark:bg-maroon-900/30 dark:text-maroon-300' },
           ].map(({ label, value, icon: Icon, tone }) => (
             <div key={label} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
               <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tone}`}><Icon className="h-5 w-5" aria-hidden="true" /></span>
@@ -319,11 +318,11 @@ const NurseConsultation = () => {
                           <p className="whitespace-nowrap font-semibold text-gray-900 dark:text-white">{s.name}</p>
                           <p className="font-mono text-xs text-gray-400">{s.id}</p>
                         </td>
-                        <td className="px-3 py-3 sm:px-4"><span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${priority.className}`}>{priority.label}</span></td>
+                        <td className="px-3 py-3 sm:px-4"><span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${priority.className}`}>{priority.label}</span></td>
                         <td className="whitespace-nowrap px-3 py-3 text-gray-600 sm:px-4 dark:text-gray-300">{s.time_slot}</td>
                         <td className="whitespace-nowrap px-3 py-3 text-gray-600 sm:px-4 dark:text-gray-300">{['waiting', 'called', 'skipped'].includes(s.status) ? minutesSince(s.check_in_time, now) : '—'}</td>
                         <td className="px-3 py-3 sm:px-4">
-                          <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold ${status.className}`}>
+                          <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold ${status.className}`}>
                             {status.label}{s.status === 'called' && <span className="font-mono tabular-nums">{clockSince(s.called_at, now)}</span>}
                           </span>
                         </td>

@@ -1,7 +1,7 @@
 import { getToken, getUser } from '../../../services/session';
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Calendar, Clock, ClipboardList, Activity, LayoutDashboard, CalendarClock, CalendarCheck, CalendarRange, BellRing, ChevronRight } from 'lucide-react';
+import { Users, Calendar, Clock, ClipboardList, Activity, CalendarClock, CalendarCheck, CalendarRange, BellRing, ChevronRight } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import NursePageHero from '../../../components/NursePageHero';
@@ -182,10 +182,10 @@ const NurseDashboard = () => {
   };
 
   const summaryCards = [
-    { icon: Calendar, title: "Today's Appointments", value: stats.todayAppointments, sub: `${stats.confirmedAppointments} confirmed`, color: 'bg-blue-50 dark:bg-blue-900/20', iconColor: 'text-blue-600 dark:text-blue-400' },
-    { icon: Users, title: 'Total Students', value: stats.totalStudents, sub: 'Registered students', color: 'bg-green-50 dark:bg-green-900/20', iconColor: 'text-green-600 dark:text-green-400' },
-    { icon: Clock, title: 'Pending Approvals', value: stats.pendingApprovals, sub: 'Needs attention', color: 'bg-yellow-50 dark:bg-yellow-900/20', iconColor: 'text-yellow-600 dark:text-yellow-400' },
-    { icon: ClipboardList, title: 'Consultations', value: stats.todayConsultations, sub: `${stats.completedConsultations} completed today`, color: 'bg-purple-50 dark:bg-purple-900/20', iconColor: 'text-purple-600 dark:text-purple-400' },
+    { icon: Calendar, title: "Today's Appointments", value: stats.todayAppointments, sub: `${stats.confirmedAppointments} confirmed`, color: 'bg-maroon-50 dark:bg-maroon-900/30', iconColor: 'text-maroon-700 dark:text-maroon-300' },
+    { icon: Users, title: 'Total Students', value: stats.totalStudents, sub: 'Registered students', color: 'bg-maroon-50 dark:bg-maroon-900/30', iconColor: 'text-maroon-700 dark:text-maroon-300' },
+    { icon: Clock, title: 'Pending Approvals', value: stats.pendingApprovals, sub: 'Needs attention', color: 'bg-maroon-50 dark:bg-maroon-900/30', iconColor: 'text-maroon-700 dark:text-maroon-300' },
+    { icon: ClipboardList, title: 'Consultations', value: stats.todayConsultations, sub: `${stats.completedConsultations} completed today`, color: 'bg-maroon-50 dark:bg-maroon-900/30', iconColor: 'text-maroon-700 dark:text-maroon-300' },
   ];
 
 
@@ -200,7 +200,6 @@ const NurseDashboard = () => {
         eyebrow={`${getGreeting()},`}
         title={`Nurse ${user?.first_name || 'Head'}!`}
         description="PUP Biñan Campus Clinic — here is what is happening in the clinic today."
-        art={LayoutDashboard}
       >
         {error && <p role="alert" className="mt-3 text-xs font-medium text-red-600 dark:text-red-400">{error}</p>}
       </NursePageHero>
@@ -214,7 +213,7 @@ const NurseDashboard = () => {
             <div className="min-w-0">
               <p className="truncate text-xs font-medium text-gray-500 dark:text-gray-400">{card.title}</p>
               <p className="mt-0.5 text-2xl font-semibold tabular-nums text-gray-900 dark:text-white">{card.value}</p>
-              <p className="truncate text-[11px] text-gray-400">{card.sub}</p>
+              <p className="truncate text-xs text-gray-400">{card.sub}</p>
             </div>
           </div>
         ))}
@@ -274,7 +273,7 @@ const NurseDashboard = () => {
                     <li key={visit.id}>
                       <Link to="/nurse/appointments" className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/40">
                         <span className="flex w-11 shrink-0 flex-col items-center rounded-lg bg-maroon-50 py-1 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-300">
-                          <span className="text-[10px] font-bold uppercase leading-tight">{date.toLocaleDateString('en-US', { month: 'short' })}</span>
+                          <span className="text-xs font-bold uppercase leading-tight">{date.toLocaleDateString('en-US', { month: 'short' })}</span>
                           <span className="text-base font-bold leading-tight">{date.getDate()}</span>
                         </span>
                         <div className="min-w-0 flex-1">
@@ -305,7 +304,7 @@ const NurseDashboard = () => {
           <NurseListCard
             aria-label="Unread notifications"
             icon={BellRing}
-            title={<>Notifications{notifCount > 0 && <span className="min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-bold leading-4 text-white">{notifCount}</span>}</>}
+            title={<>Notifications{notifCount > 0 && <span className="min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-xs font-bold leading-4 text-white">{notifCount}</span>}</>}
             description="Latest clinic updates. Unread ones have a dot."
             actions={<Link to="/nurse/notifications" className="inline-flex items-center gap-1 text-sm font-semibold text-maroon-700 hover:text-maroon-900 dark:text-maroon-400">View all <ChevronRight className="h-4 w-4" /></Link>}
           >

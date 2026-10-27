@@ -46,7 +46,7 @@ const Welcome = () => {
         </div>
 
         <button onClick={() => navigate('/student/health-profile')}
-          className="w-full mt-6 py-3.5 bg-gradient-to-r from-maroon-800 to-maroon-900 text-white font-bold rounded-2xl hover:from-maroon-900 hover:to-maroon-950 transition flex items-center justify-center space-x-2 shadow-lg shadow-maroon-800/20">
+          className="w-full mt-6 py-3.5 bg-maroon-800 text-white font-bold rounded-2xl hover:bg-maroon-900 transition flex items-center justify-center space-x-2">
           <span>Start Health Profile</span>
           <ArrowRight className="w-5 h-5" />
         </button>

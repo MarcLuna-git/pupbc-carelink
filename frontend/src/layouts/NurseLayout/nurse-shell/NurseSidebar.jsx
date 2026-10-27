@@ -37,7 +37,7 @@ const NurseSidebar = ({
 
         <div className="min-w-0">
           <p className="truncate text-base font-bold leading-tight text-white">CareLink</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-yellow-300/80">
+          <p className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-yellow-300">
             Nurse Portal
           </p>
         </div>

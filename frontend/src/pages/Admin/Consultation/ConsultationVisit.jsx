@@ -56,7 +56,7 @@ const btn = 'inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-
 const primary = `${btn} bg-maroon-800 text-white hover:bg-maroon-900`;
 const outline = `${btn} border border-maroon-200 bg-white text-maroon-800 hover:bg-maroon-50 dark:border-maroon-800/50 dark:bg-transparent dark:text-maroon-300 dark:hover:bg-maroon-900/20`;
 
-const Counter = ({ value }) => <span className="mt-1 block text-right text-[11px] text-gray-400 tabular-nums">{value.length}/{TEXT_LIMIT}</span>;
+const Counter = ({ value }) => <span className="mt-1 block text-right text-xs text-gray-400 tabular-nums">{value.length}/{TEXT_LIMIT}</span>;
 
 const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
   const [tab, setTab] = useState('form');
@@ -338,7 +338,7 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
               <button key={key} type="button" role="tab" aria-selected={tab === key} onClick={() => setTab(key)}
                 className={`inline-flex flex-1 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition-colors ${tab === key ? 'bg-maroon-800 text-white' : 'text-gray-500 hover:bg-white hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800'}`}>
                 <Icon className="h-4 w-4" aria-hidden="true" />{title}
-                {key === 'dispensing' && prescribed.length > 0 && <span className="rounded-full bg-maroon-100 px-1.5 text-[10px] text-maroon-800">{prescribed.length}</span>}
+                {key === 'dispensing' && prescribed.length > 0 && <span className="rounded-full bg-maroon-100 px-1.5 text-xs text-maroon-800">{prescribed.length}</span>}
               </button>
             ))}
           </div>
@@ -354,7 +354,7 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
                     <div className="grid grid-cols-2 gap-3">
                       {VITALS.map(v => (
                         <label key={v.name} className="block">
-                          <span className="mb-1 block text-[11px] font-medium text-gray-500 dark:text-gray-400">{v.label}</span>
+                          <span className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">{v.label}</span>
                           <span className="flex items-center gap-1.5">
                             <input name={v.name} value={form[v.name]} onChange={change} className={input} placeholder={v.placeholder} inputMode={v.name === 'bp' ? 'text' : 'decimal'} />
                             <span className="w-11 shrink-0 text-xs text-gray-400">{v.unit}</span>
@@ -537,7 +537,7 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
                           {index > 0 && <ArrowRight className="h-3.5 w-3.5 text-gray-300" aria-hidden="true" />}
                           <button type="button" onClick={() => setTab(step.key)} aria-current={current ? 'step' : undefined}
                             className={`inline-flex items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5 ${current ? 'bg-maroon-50 text-maroon-800 dark:bg-maroon-900/30 dark:text-maroon-300' : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700/50'}`}>
-                            <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] ${current ? 'bg-maroon-800 text-white' : done ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}>
+                            <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs ${current ? 'bg-maroon-800 text-white' : done ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}>
                               {done && !current ? <Check className="h-3 w-3" /> : index + 1}
                             </span>
                             {step.label.replace(' & Confirm', '')}
