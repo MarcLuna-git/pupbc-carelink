@@ -31,3 +31,7 @@ desktop.ini
 carelink.env
 reference-for-deploying-in-file-manager-of-cpanel-in-z.com/
 .claude
+# Local audit and performance reports (generated; keep them on disk, not in Git)
+backend/postgres-audit.txt
+docs/bundle-*.json
+docs/performance-*.json
