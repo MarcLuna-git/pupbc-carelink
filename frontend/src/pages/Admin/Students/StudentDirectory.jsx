@@ -8,7 +8,7 @@ export function Avatar({ student }) {
   const [failedPath, setFailedPath] = useState(null);
   const src = mediaUrl(path);
   return <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-maroon-50 text-sm font-semibold text-maroon-800">
-    {src && failedPath !== path ? <img src={src} alt="" className="h-full w-full object-cover" onError={() => setFailedPath(path)} /> : `${student?.first_name?.[0] || ''}${student?.last_name?.[0] || ''}` || '?'}
+    {src && failedPath !== path ? <img src={src} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" onError={() => setFailedPath(path)} /> : `${student?.first_name?.[0] || ''}${student?.last_name?.[0] || ''}` || '?'}
   </span>;
 }
 export function StatusBadge({ status }) {

@@ -7,6 +7,7 @@ import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import NursePageHero from '../../../components/NursePageHero';
 import NurseListCard, { CountChip } from '../../../components/NurseListCard';
 import useNurseSync from '../../../hooks/useNurseSync';
+import useDebouncedValue from '../../../hooks/useDebouncedValue';
 import { formatAppointmentDate } from '../../../utils/appointmentDate';
 import { Pagination } from '../Students/StudentDirectory';
 import { NurseToast } from '../../../components/NurseFeedback';
@@ -61,6 +62,8 @@ const NurseAppointments = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
+  // The list is fetched with this, so typing does not send a request per keystroke.
+  const searchTerm = useDebouncedValue(search, 300);
   const [service, setService] = useState('');
   const [date, setDate] = useState('');
   const [message, setMessage] = useState('');
@@ -83,7 +86,7 @@ const NurseAppointments = () => {
         headers: { Authorization: `Bearer ${token}` },
         params: {
           status: filter !== 'all' ? filter : undefined,
-          search: search || undefined,
+          search: searchTerm || undefined,
           service: service || undefined,
           date: date || undefined,
           page,
@@ -104,7 +107,7 @@ const NurseAppointments = () => {
     } finally {
       if (request === requestId.current) { setLoading(false); }
     }
-  }, [filter, search, service, date, page]);
+  }, [filter, searchTerm, service, date, page]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -113,7 +116,7 @@ const NurseAppointments = () => {
     return () => controller.abort();
   }, [filter, fetchAppointments]);
 
-  useNurseSync(['appointments', 'students'], fetchAppointments, JSON.stringify([filter, search, service, date, page]));
+  useNurseSync(['appointments', 'students'], fetchAppointments, JSON.stringify([filter, searchTerm, service, date, page]));
 
   const handleApprove = async (id) => {
     const loadingId = ++actionLoadingRef.current;

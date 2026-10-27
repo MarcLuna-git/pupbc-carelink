@@ -8,7 +8,7 @@ import {
 import authService from '../../services/authService';
 import { formatPersonName } from '../../utils/studentUser';
 import COURSES from '../../data/registration-academics.json';
-import clinicLogo from '../../assets/clinic logo.jpg';
+import clinicLogo from '../../assets/clinic-logo.webp';
 import campusPhoto from '../../assets/pup-binan-hero.jpg';
 import clinicPhoto from '../../assets/clinic-waiting-area.jpg';
 import { StudentNoticeModal, StudentToast } from '../../components/StudentFeedback';

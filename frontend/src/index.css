@@ -32,7 +32,7 @@ input[type="password"]::-ms-clear {
       color-mix(in srgb, var(--color-maroon-900) 58%, transparent),
       color-mix(in srgb, var(--color-maroon-800) 45%, transparent),
       color-mix(in srgb, var(--color-maroon-950) 62%, transparent)),
-    url('./assets/pupbg.jpg');
+    url('./assets/pupbg.webp');
   background-size: cover;
   background-position: center;
 }

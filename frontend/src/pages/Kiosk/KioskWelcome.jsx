@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Users, Stethoscope, Sparkles, ChevronRight, Activity } from 'lucide-react';
-import clinicLogo from '../../assets/clinic logo.jpg';
+import clinicLogo from '../../assets/clinic-logo.webp';
 import KioskLayout from '../../layouts/KioskLayout';
 
 const KioskWelcome = ({ onStart }) => {

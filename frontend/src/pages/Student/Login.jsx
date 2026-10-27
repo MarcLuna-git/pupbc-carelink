@@ -16,7 +16,7 @@ import {
   LockKeyhole,
 } from 'lucide-react';
 
-import clinicLogo from '../../assets/clinic logo.jpg';
+import clinicLogo from '../../assets/clinic-logo.webp';
 import campusPhoto from '../../assets/pup-binan-hero.jpg';
 import { forgetStudentLogin, getRememberedStudentLogin, rememberStudentLogin } from '../../services/studentRememberLogin';
 import { StudentNoticeModal } from '../../components/StudentFeedback';

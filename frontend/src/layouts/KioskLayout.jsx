@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import pupbg from '../assets/pupbg.jpg';
+import pupbg from '../assets/pupbg.webp';
 
 const KioskLayout = ({ children }) => (
   <div className="relative min-h-screen w-full overflow-hidden bg-black">

@@ -14,15 +14,21 @@ import {
   CameraOff,
   ImageUp,
 } from 'lucide-react';
-import { Html5Qrcode } from 'html5-qrcode';
-import jsQR from 'jsqr';
 import api from '../../services/api';
 import KioskLayout from '../../layouts/KioskLayout';
 
+/* Ang mga QR decoder ay hiwalay na chunk; ikinakarga lang kapag camera o
+   larawan ang gamit, hindi kapag manual na Student ID ang pinili. */
+const loadHtml5Qrcode = () =>
+  import('html5-qrcode').then((module) => module.Html5Qrcode);
+const loadJsQR = () => import('jsqr').then((module) => module.default);
+
 /* Mas maaasahan ang jsQR sa pag-decode ng nakapasang larawan kaysa sa
    scanFile() ng html5-qrcode, lalo na sa maliliit na quiet zone. */
-const decodeQrFromFile = (file) =>
-  new Promise((resolve, reject) => {
+const decodeQrFromFile = async (file) => {
+  const jsQR = await loadJsQR();
+
+  return new Promise((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file);
     const image = new Image();
 
@@ -64,6 +70,7 @@ const decodeQrFromFile = (file) =>
 
     image.src = objectUrl;
   });
+};
 
 const KioskScan = ({
   onStudentFound,
@@ -143,8 +150,12 @@ const KioskScan = ({
     try {
       await stopQrScanner();
 
-      // Hintayin munang ma-render ang scanner container.
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      // Ikarga ang decoder habang naghihintay ng scanner container.
+      const [Html5Qrcode] = await Promise.all([
+        loadHtml5Qrcode(),
+        // Hintayin munang ma-render ang scanner container.
+        new Promise((resolve) => setTimeout(resolve, 300)),
+      ]);
 
       const element = document.getElementById(qrRegionId);
 
@@ -326,7 +337,10 @@ const KioskScan = ({
     try {
       await stopQrScanner();
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      const [Html5Qrcode] = await Promise.all([
+        loadHtml5Qrcode(),
+        new Promise((resolve) => setTimeout(resolve, 100)),
+      ]);
 
       const element = document.getElementById(qrRegionId);
 

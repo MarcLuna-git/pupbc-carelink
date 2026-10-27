@@ -28,10 +28,10 @@ import {
 } from 'lucide-react';
 
 import api from '../../services/api';
-import clinicLogo from '../../assets/clinic logo.jpg';
+import clinicLogo from '../../assets/clinic-logo.webp';
 import campusPhoto from '../../assets/pup-binan-hero.jpg';
 import clinicScene from '../../assets/clinic-waiting-area.jpg';
-import pupStatue from '../../assets/pupstatue.jpg';
+import pupStatue from '../../assets/pupstatue.webp';
 
 const HERO_SLIDES = [
   {
