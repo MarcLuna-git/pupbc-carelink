@@ -596,18 +596,20 @@ class AppointmentController extends Controller
                         $appointment->id
                     );
 
+                // A called patient is already in the nurse's queue flow: cancelling
+                // would leave a "called" check-in behind and block every later call.
                 if (
                     (clone $checkins)
-                        ->where(
+                        ->whereIn(
                             'status',
-                            'serving'
+                            ['called', 'serving']
                         )
                         ->exists()
                 ) {
                     return response()->json([
                         'success' => false,
                         'message' =>
-                            'An ongoing consultation cannot be cancelled.',
+                            'A called or ongoing consultation cannot be cancelled.',
                     ], 409);
                 }
 

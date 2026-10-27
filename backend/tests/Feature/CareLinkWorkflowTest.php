@@ -13,6 +13,14 @@ use App\Services\AuthService;
 class CareLinkWorkflowTest extends TestCase
 {
     use DatabaseTransactions;
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Check-in is open from 15 minutes before to 30 minutes after the 4:30 PM slot
+        // used below, so pin the clock inside that window or these tests only pass
+        // when run between 4:15 and 5:00 PM Manila. Laravel resets it in tearDown.
+        \Carbon\Carbon::setTestNow(\Carbon\Carbon::now('Asia/Manila')->setTime(16, 30));
+    }
     private function person($role = 'student')
     {
         return User::create(['student_id' => 'TEST-' . Str::random(10), 'first_name' => 'Test', 'last_name' => 'Patient', 'email' => Str::uuid() . '@example.test', 'password' => Hash::make('TestPassword123!'), 'birthday' => '2002-05-15', 'role' => $role, 'status' => null]);
@@ -183,8 +191,16 @@ class CareLinkWorkflowTest extends TestCase
     }
     public function test_call_next_requires_consultation_completion()
     {
-        [$student,$appointment,$checkin]=$this->visit(); $this->visit();
-        $this->actingAs($this->person('nurse'),'api')->postJson('/api/nurse/queue/call-next')->assertOk();
+        [$student,$appointment,$checkin]=$this->visit();
+        // The clock is frozen, so give the first patient an earlier arrival to make the call order certain.
+        $checkin->update(['check_in_time'=>now()->subMinutes(2)]);
+        $this->visit();
+        $this->actingAs($this->person('nurse'),'api')->postJson('/api/nurse/queue/call-next')->assertOk()
+            ->assertJsonPath('data.id',$checkin->id);
+        // Calling now only marks the patient "called"; a second call is blocked until they are handled.
+        $this->postJson('/api/nurse/queue/call-next')->assertStatus(409);
+        $this->assertSame(1,AppointmentCheckin::where('status','called')->count());
+        $this->postJson('/api/nurse/queue/'.$checkin->id.'/arrived')->assertOk();
         $this->postJson('/api/nurse/queue/call-next')->assertStatus(409);
         $this->assertSame(1,AppointmentCheckin::where('status','serving')->count());
         $this->assertSame(0,AppointmentCheckin::where('status','completed')->count());
@@ -242,9 +258,14 @@ class CareLinkWorkflowTest extends TestCase
         [$student,$appointment,$checkin]=$this->visit();
         $this->actingAs($student,'api')->patchJson('/api/student/appointments/'.$appointment->id.'/cancel')->assertOk();
         $this->assertSame('no_show',$checkin->fresh()->status);
-        [$student2,$appointment2]=$this->visit();
-        $this->actingAs($this->person('nurse'),'api')->postJson('/api/nurse/queue/call-next')->assertOk();
+        [$student2,$appointment2,$checkin2]=$this->visit();
+        $nurse=$this->person('nurse');
+        $this->actingAs($nurse,'api')->postJson('/api/nurse/queue/call-next')->assertOk();
+        // Called but not yet arrived: cancelling would strand the "called" check-in and block the queue.
         $this->actingAs($student2,'api')->patchJson('/api/student/appointments/'.$appointment2->id.'/cancel')->assertStatus(409);
+        $this->actingAs($nurse,'api')->postJson('/api/nurse/queue/'.$checkin2->id.'/arrived')->assertOk();
+        $this->actingAs($student2,'api')->patchJson('/api/student/appointments/'.$appointment2->id.'/cancel')->assertStatus(409);
+        $this->assertSame('serving',$checkin2->fresh()->status);
     }
 
     public function test_nurse_can_cancel_pending_or_rejected_with_reason_and_notifies_student()
