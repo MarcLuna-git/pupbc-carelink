@@ -147,6 +147,12 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
+    headers:
+      # Build files in /assets are content-hashed, so a changed file gets a new
+      # name; browsers can keep the old ones for a year without revalidating.
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
     envVars:
       - key: NODE_VERSION # Vite 8 needs Node 20.19+ / 22.12+
         value: "22"
