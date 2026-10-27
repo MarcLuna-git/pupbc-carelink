@@ -44,11 +44,11 @@ const KioskOptions = ({ onScanQR, onEnterID, onBack }) => {
               onClick={onBack}
               className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 transition"
             >
-              <ArrowLeft className="w-5 h-5 text-white/60" />
+              <ArrowLeft className="w-5 h-5 text-white/70" />
             </motion.button>
             <div>
               <h1 className="text-3xl md:text-4xl font-bold text-white">How would you like to check in?</h1>
-              <p className="text-white/40 text-sm md:text-base mt-1">Choose one option below to continue</p>
+              <p className="text-white/70 text-sm md:text-base mt-1">Choose one option below to continue</p>
             </div>
           </div>
         </motion.div>
@@ -79,7 +79,7 @@ const KioskOptions = ({ onScanQR, onEnterID, onBack }) => {
                 
                 <h3 className="text-lg md:text-xl font-bold text-white mb-2">{option.title}</h3>
                 
-                <p className="text-white/35 text-sm leading-relaxed flex-1">{option.desc}</p>
+                <p className="text-white/70 text-sm leading-relaxed flex-1">{option.desc}</p>
                 
                 <span className={`inline-block mt-4 text-xs font-semibold ${option.iconColor} ${option.iconBg} px-3 py-1 rounded-full`}>
                   {option.badge}
@@ -98,7 +98,7 @@ const KioskOptions = ({ onScanQR, onEnterID, onBack }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="text-white/15 text-xs mt-8"
+          className="text-white/70 text-xs mt-8"
         >
           Kiosk check-in is available only for eligible appointments scheduled for today.
         </motion.p>

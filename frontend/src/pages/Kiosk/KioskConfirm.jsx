@@ -64,11 +64,11 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
   };
 
   return <KioskLayout><form onSubmit={submit} className="w-full max-w-lg mx-auto space-y-4 text-white">
-    <button type="button" onClick={onBack} className="p-3 bg-white/5 rounded-2xl"><ArrowLeft className="w-5 h-5 text-white/60" /></button>
+    <button type="button" onClick={onBack} className="p-3 bg-white/5 rounded-2xl"><ArrowLeft className="w-5 h-5 text-white/70" /></button>
     <h1 className="text-2xl font-bold">Confirm Today&apos;s Appointment</h1>
     <div className="rounded-2xl border border-green-400/20 bg-green-500/5 p-4">
       <p className="font-semibold">{user.first_name} {user.last_name}</p>
-      <p className="text-sm text-white/60">{appointment?.appointment_date} · {appointment?.time_slot}</p>
+      <p className="text-sm text-white/70">{appointment?.appointment_date} · {appointment?.time_slot}</p>
       <p className="text-sm text-green-300 mt-2">{appointment?.service}</p>
       {checkinOpensAt && checkinDeadlineAt && (
         <div className="mt-3 grid grid-cols-2 gap-3 text-xs">

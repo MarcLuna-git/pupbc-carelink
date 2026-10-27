@@ -87,7 +87,7 @@ const KioskSettings = () => {
       >
         <div className="text-center">
           <h1 className="text-3xl font-bold text-white md:text-4xl">Kiosk Settings</h1>
-          <p className="mt-2 text-sm text-white/50">For clinic staff only.</p>
+          <p className="mt-2 text-sm text-white/70">For clinic staff only.</p>
         </div>
 
         <section className="rounded-3xl border border-white/10 bg-white/10 p-6 text-white backdrop-blur-md md:p-8">
@@ -95,7 +95,7 @@ const KioskSettings = () => {
             <Wrench className="h-5 w-5 text-yellow-300" />
             Developer Tools
           </h2>
-          <p className="mb-6 text-xs text-white/50">Testing tools for the clinic flow. Applies to this kiosk.</p>
+          <p className="mb-6 text-xs text-white/70">Testing tools for the clinic flow. Applies to this kiosk.</p>
 
           {!authorized ? (
             <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-4 text-sm text-white/70">
@@ -103,7 +103,7 @@ const KioskSettings = () => {
               <p>This device is not authorized yet. Go to the kiosk home to authorize it first.</p>
             </div>
           ) : loading ? (
-            <div className="flex items-center gap-3 text-sm text-white/60" role="status">
+            <div className="flex items-center gap-3 text-sm text-white/70" role="status">
               <Loader2 className="h-5 w-5 animate-spin" /> Loading settings…
             </div>
           ) : !available ? (
@@ -115,7 +115,7 @@ const KioskSettings = () => {
                   <Clock className="mt-0.5 h-5 w-5 shrink-0 text-yellow-300" />
                   <div className="min-w-0">
                     <p className="font-semibold">Remove time Guard</p>
-                    <p className="mt-0.5 text-xs text-white/50">
+                    <p className="mt-0.5 text-xs text-white/70">
                       {timeGuardOff
                         ? 'On: check-in is open all day for approved appointments today.'
                         : 'Off: check-in opens 15 minutes before and closes 30 minutes after the slot.'}
@@ -143,7 +143,7 @@ const KioskSettings = () => {
                 <form onSubmit={confirm} className="space-y-3 rounded-2xl border border-yellow-300/30 bg-yellow-300/10 p-4">
                   <p className="text-xs font-semibold text-yellow-200">Enter the developer password to remove the time guard.</p>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+                    <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/70" />
                     <input
                       type="password"
                       autoComplete="off"
@@ -153,7 +153,7 @@ const KioskSettings = () => {
                       placeholder="Developer password"
                       aria-label="Developer password"
                       required
-                      className="w-full rounded-xl border border-white/15 bg-black/20 py-3 pl-11 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-yellow-300"
+                      className="w-full rounded-xl border border-white/15 bg-black/20 py-3 pl-11 pr-4 text-sm text-white placeholder:text-white/70 focus:outline-none focus:ring-2 focus:ring-yellow-300"
                     />
                   </div>
                   <div className="flex flex-wrap gap-2">

@@ -63,7 +63,7 @@ const KioskTerms = ({ onAgree, onDecline, onBack }) => {
             <Shield className="w-8 h-8 text-yellow-400" />
           </motion.div>
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Terms & Privacy</h1>
-          <p className="text-white/40 text-base">Please review our policies before proceeding</p>
+          <p className="text-white/70 text-base">Please review our policies before proceeding</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
@@ -78,7 +78,7 @@ const KioskTerms = ({ onAgree, onDecline, onBack }) => {
                 <policy.icon className="w-5 h-5 mt-0.5 flex-shrink-0" />
                 <div>
                   <h3 className="font-semibold text-white text-sm mb-1">{policy.title}</h3>
-                  <p className="text-white/50 text-xs leading-relaxed">{policy.text}</p>
+                  <p className="text-white/70 text-xs leading-relaxed">{policy.text}</p>
                 </div>
               </div>
             </motion.div>
@@ -128,7 +128,7 @@ const KioskTerms = ({ onAgree, onDecline, onBack }) => {
             className={`flex-[2] py-4 font-bold rounded-2xl flex items-center justify-center gap-2 transition-all duration-300 text-base ${
               accepted 
                 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-maroon-900 shadow-xl shadow-yellow-400/20' 
-                : 'bg-white/5 text-white/20 cursor-not-allowed'
+                : 'bg-white/5 text-white/70 cursor-not-allowed'
             }`}>
             Agree & Continue
             <ArrowRight className="w-5 h-5" />

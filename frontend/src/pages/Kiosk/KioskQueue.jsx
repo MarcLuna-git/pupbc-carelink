@@ -45,7 +45,7 @@ const KioskQueue = ({ checkin, onDone }) => {
         </motion.div>
 
         <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Checked In!</h1>
-        <p className="text-white/40 mb-8">Please wait for your number to be called</p>
+        <p className="text-white/70 mb-8">Please wait for your number to be called</p>
 
         <motion.div
           initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
@@ -54,7 +54,7 @@ const KioskQueue = ({ checkin, onDone }) => {
             isPriority ? 'bg-red-500/5 border-red-500/30' : 'bg-yellow-400/5 border-yellow-400/30'
           }`}>
           <div className={`absolute inset-0 opacity-10 ${isPriority ? 'bg-red-500' : 'bg-yellow-400'}`} />
-          <p className="text-white/30 text-sm mb-2 relative z-10">Your Number</p>
+          <p className="text-white/70 text-sm mb-2 relative z-10">Your Number</p>
           <p className={`text-7xl md:text-9xl font-black tracking-wider relative z-10 ${isPriority ? 'text-red-400' : 'text-yellow-300'}`}>
             {checkin.queue_number}
           </p>
@@ -67,18 +67,18 @@ const KioskQueue = ({ checkin, onDone }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
           <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-white/10">
-            <User className="w-5 h-5 text-yellow-400/60 mx-auto mb-1" />
-            <p className="text-white/40 text-xs">Patient</p>
+            <User className="w-5 h-5 text-yellow-300 mx-auto mb-1" />
+            <p className="text-white/70 text-xs">Patient</p>
             <p className="text-white text-sm font-semibold truncate">Your clinic visit</p>
           </div>
           <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-white/10">
-            <Users className="w-5 h-5 text-yellow-400/60 mx-auto mb-1" />
-            <p className="text-white/40 text-xs">Ahead</p>
+            <Users className="w-5 h-5 text-yellow-300 mx-auto mb-1" />
+            <p className="text-white/70 text-xs">Ahead</p>
             <p className="text-white text-sm font-semibold">{aheadCount} patient{aheadCount !== 1 ? 's' : ''}</p>
           </div>
           <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-white/10">
-            <Clock className="w-5 h-5 text-yellow-400/60 mx-auto mb-1" />
-            <p className="text-white/40 text-xs">Est. Wait</p>
+            <Clock className="w-5 h-5 text-yellow-300 mx-auto mb-1" />
+            <p className="text-white/70 text-xs">Est. Wait</p>
             <p className="text-white text-sm font-semibold">~{waitTime} min</p>
           </div>
         </div>
@@ -90,7 +90,7 @@ const KioskQueue = ({ checkin, onDone }) => {
           </div>
         )}
 
-        <p className="text-white/15 text-xs mb-4">
+        <p className="text-white/70 text-xs mb-4">
           Screen resets in {countdown}s
         </p>
 

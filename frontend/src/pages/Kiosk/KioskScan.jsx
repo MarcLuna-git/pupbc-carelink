@@ -621,7 +621,7 @@ const KioskScan = ({
               Student Found!
             </h2>
 
-            <p className="text-white/40">
+            <p className="text-white/70">
               Redirecting...
             </p>
           </motion.div>
@@ -659,7 +659,7 @@ const KioskScan = ({
                   transition
                 "
               >
-                <ArrowLeft className="w-5 h-5 text-white/60" />
+                <ArrowLeft className="w-5 h-5 text-white/70" />
               </motion.button>
 
               <div>
@@ -667,7 +667,7 @@ const KioskScan = ({
                   Check In
                 </h1>
 
-                <p className="text-white/40 text-sm">
+                <p className="text-white/70 text-sm">
                   Verify your identity
                 </p>
               </div>
@@ -703,7 +703,7 @@ const KioskScan = ({
                   ${
                     methodTab === 'qr'
                       ? 'bg-yellow-400 text-maroon-900 shadow-lg'
-                      : 'text-white/40 hover:text-white/60'
+                      : 'text-white/70 hover:text-white/70'
                   }
                 `}
               >
@@ -732,7 +732,7 @@ const KioskScan = ({
                   ${
                     methodTab === 'manual'
                       ? 'bg-yellow-400 text-maroon-900 shadow-lg'
-                      : 'text-white/40 hover:text-white/60'
+                      : 'text-white/70 hover:text-white/70'
                   }
                 `}
               >
@@ -758,7 +758,7 @@ const KioskScan = ({
                     <CameraOff
                       className="
                         w-14 h-14
-                        text-white/20
+                        text-white/70
                         mx-auto mb-4
                       "
                     />
@@ -767,7 +767,7 @@ const KioskScan = ({
                       Camera Unavailable
                     </h3>
 
-                    <p className="text-white/50 text-sm mb-6">
+                    <p className="text-white/70 text-sm mb-6">
                       {error}
                     </p>
 
@@ -1020,7 +1020,7 @@ const KioskScan = ({
                         px-4 py-2
                         bg-white/5
                         border border-white/10
-                        text-white/60
+                        text-white/70
                         rounded-xl
                         text-xs
                         font-semibold
@@ -1059,7 +1059,7 @@ const KioskScan = ({
                       items-center
                       justify-center
                       gap-3
-                      text-white/50
+                      text-white/70
                       text-sm
                     "
                   >
@@ -1069,7 +1069,7 @@ const KioskScan = ({
                   </div>
                 )}
 
-                <p className="text-white/20 text-xs text-center">
+                <p className="text-white/70 text-xs text-center">
                   {cameraReady
                     ? 'Point the camera at your CareLink QR code'
                     : 'Take a clear photo of your QR code or enter your Student ID'}
@@ -1090,7 +1090,7 @@ const KioskScan = ({
                 <div className="mb-4">
                   <label
                     className="
-                      text-white/50
+                      text-white/70
                       text-sm
                       font-medium
                       block
@@ -1108,7 +1108,7 @@ const KioskScan = ({
                         top-1/2
                         -translate-y-1/2
                         w-6 h-6
-                        text-white/20
+                        text-white/70
                       "
                     />
 
