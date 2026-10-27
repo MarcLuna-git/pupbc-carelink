@@ -124,7 +124,8 @@ class AppointmentIntegrationTest extends TestCase
         Mail::assertSent(StudentAppointmentStatusMail::class, 2); // pending + approved
         $this->eventMail($student, $appointment, 'pending');
         $this->eventMail($student, $appointment, 'approved');
-        $this->assertSame(0, Notification::where('user_id', $nurse->id)->count());
+        // The nurse hears about the new booking, but never gets the student's status events.
+        $this->assertSame(['appointment_booked'], Notification::where('user_id', $nurse->id)->pluck('type')->all());
 
         $this->actingAs($student->fresh(), 'api')->getJson('/api/student/upcoming-appointments')
             ->assertOk()->assertJsonPath('data.0.appointment_date', $date);
@@ -138,6 +139,9 @@ class AppointmentIntegrationTest extends TestCase
         $this->getJson('/api/student/qr')->assertJsonPath('data.available', true)
             ->assertJsonPath('data.appointment.appointment_date', $date);
         $this->getJson('/api/student/dashboard-stats')->assertJsonPath('data.upcoming_appointments', 1);
+        // Kiosk check-in only opens 15 minutes before the 8:00 AM slot. 7:50 AM Manila is
+        // inside that window yet still the previous day in UTC, so the date check stays meaningful.
+        Carbon::setTestNow(Carbon::parse($date . ' 07:50:00', 'Asia/Manila'));
         $this->postJson('/api/kiosk/lookup', ['student_id' => $student->student_id, 'method' => 'manual'])
             ->assertOk()->assertJsonPath('data.appointment.appointment_date', $date);
         $this->actingAs($nurse, 'api')->getJson('/api/nurse/dashboard/appointments-today')
@@ -150,11 +154,18 @@ class AppointmentIntegrationTest extends TestCase
         $other = $this->person();
         $nurse = $this->person('nurse');
         $appointment = $this->book($student);
+        // In this Laravel build a later nested rollback (the 422 below) discards the
+        // after-commit callbacks of a nested transaction that already finished, which
+        // would drop the booking mail. Commit the booking first, then keep testing
+        // inside a fresh outer transaction.
+        DB::commit();
+        Mail::assertSent(StudentAppointmentStatusMail::class, 1);
+        DB::beginTransaction();
         $this->actingAs($nurse, 'api');
         $url = '/api/nurse/appointments/' . $appointment->id . '/reject';
         $this->patchJson($url, [])->assertUnprocessable();
         $this->patchJson($url, ['reason' => 'Please select another schedule'])->assertOk();
-        Mail::assertNothingSent();
+        Mail::assertSent(StudentAppointmentStatusMail::class, 1); // still only the booking mail
         DB::commit();
         $this->patchJson($url, ['reason' => 'Repeated'])->assertUnprocessable();
         Mail::assertSent(StudentAppointmentStatusMail::class, 2);
@@ -250,6 +261,11 @@ class AppointmentIntegrationTest extends TestCase
         $student = $this->person();
         $nurse = $this->person('nurse');
         $appointment = $this->book($student);
+        // Commit the booking first: the rejected archive below rolls back a nested
+        // transaction, which in this Laravel build would also discard the booking mail.
+        DB::commit();
+        Mail::assertSent(StudentAppointmentStatusMail::class, 1);
+        DB::beginTransaction();
         $this->actingAs($nurse, 'api')->patchJson('/api/nurse/students/' . $student->id . '/archive',
             ['reason' => 'No longer enrolled'])->assertUnprocessable()
             ->assertJsonPath('message', 'Student cannot be archived with an upcoming appointment.');
@@ -258,7 +274,7 @@ class AppointmentIntegrationTest extends TestCase
         $this->assertNull($student->fresh()->archive_reason);
         $this->assertSame('pending', $appointment->fresh()->status);
         $this->assertSame(1, Notification::where('user_id', $student->id)->count()); // original booking only
-        Mail::assertNothingSent();
+        Mail::assertSent(StudentAppointmentStatusMail::class, 1); // the archive attempt sent nothing new
         DB::commit();
         Mail::assertSent(StudentAppointmentStatusMail::class, 1); // original booking only
         $this->eventMail($student, $appointment, 'pending');

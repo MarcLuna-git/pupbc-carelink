@@ -19,6 +19,14 @@ class StudentModuleTest extends TestCase
 {
     use DatabaseTransactions;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Appointments here use the 4:30 PM slot, whose check-in window is 4:15 to 5:00 PM
+        // Manila. Pin the clock inside it so the suite does not depend on when it runs.
+        Carbon::setTestNow(Carbon::now('Asia/Manila')->setTime(16, 30));
+    }
+
     private function student(array $attributes = []): User
     {
         return User::create(array_merge([

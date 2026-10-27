@@ -30,7 +30,7 @@ class StudentAttachmentTest extends TestCase
         $student = $this->user('student');
         $nurse = $this->user('nurse');
 
-        $id = $this->actingAs($nurse, 'api')
+        $created = $this->actingAs($nurse, 'api')
             ->post("/api/nurse/students/{$student->id}/attachments", [
                 'file' => UploadedFile::fake()->image('chest-xray.png'),
                 'category' => 'xray',
@@ -38,12 +38,14 @@ class StudentAttachmentTest extends TestCase
             ], ['Accept' => 'application/json'])
             ->assertCreated()
             ->assertJsonPath('data.category', 'xray')
-            ->assertJsonPath('data.original_name', 'chest-xray.png')
-            ->assertJsonMissingPath('data.contents')
-            ->json('data.id');
+            ->assertJsonPath('data.original_name', 'chest-xray.png');
+        // assertJsonMissingPath does not exist in this Laravel 8 build; check the keys directly.
+        $this->assertArrayNotHasKey('contents', $created->json('data'));
+        $id = $created->json('data.id');
 
-        $this->getJson("/api/nurse/students/{$student->id}/attachments")
-            ->assertOk()->assertJsonCount(1, 'data')->assertJsonMissingPath('data.0.path');
+        $listed = $this->getJson("/api/nurse/students/{$student->id}/attachments")
+            ->assertOk()->assertJsonCount(1, 'data');
+        $this->assertArrayNotHasKey('path', $listed->json('data.0'));
 
         $file = "/api/nurse/students/{$student->id}/attachments/{$id}/file";
         $this->get($file)->assertOk()->assertHeader('Content-Type', 'image/png');

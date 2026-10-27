@@ -23,7 +23,7 @@ class RenderReleaseFixesTest extends TestCase
         return Appointment::create(['user_id' => $student->id, 'service' => 'General Checkup', 'appointment_date' => $date, 'time_slot' => '8:00 AM', 'status' => 'pending']);
     }
 
-    public function test_first_api_request_of_the_day_expires_stale_pending_appointments_once()
+    public function test_clinic_requests_expire_stale_pending_appointments_but_health_probes_do_not()
     {
         Mail::fake();
         Cache::flush();
@@ -31,15 +31,20 @@ class RenderReleaseFixesTest extends TestCase
         $stale = $this->pendingAppointment($student, today('Asia/Manila')->subDays(2)->toDateString());
         $upcoming = $this->pendingAppointment($student, today('Asia/Manila')->addDay()->toDateString());
 
+        // Health probes (and auth/announcement reads) skip expiry on purpose.
         $this->getJson('/api/health')->assertOk();
+        $this->assertSame('pending', $stale->fresh()->status);
 
+        // Any clinic request runs the expiry; future appointments are untouched.
+        $this->actingAs($student, 'api')->getJson('/api/student/profile');
         $this->assertSame('expired', $stale->fresh()->status);
         $this->assertSame('pending', $upcoming->fresh()->status);
 
-        // Runs once per day: a stale row created afterwards waits for tomorrow.
+        // Not once-per-day any more: every slot has its own deadline, so the next
+        // clinic request also expires a stale row created afterwards.
         $later = $this->pendingAppointment($student, today('Asia/Manila')->subDay()->toDateString());
-        $this->getJson('/api/health')->assertOk();
-        $this->assertSame('pending', $later->fresh()->status);
+        $this->getJson('/api/student/profile');
+        $this->assertSame('expired', $later->fresh()->status);
     }
 
     public function test_expired_pending_registration_can_be_resubmitted_with_corrected_details()

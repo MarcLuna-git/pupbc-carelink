@@ -197,14 +197,48 @@ class StudentAppointmentNotificationTest extends TestCase
         Mail::assertNothingSent();
     }
 
+    /**
+     * Swap the cache for the real manager, except forget('nurse_dashboard_stats') runs
+     * $onForget. A strict Mockery mock cannot be used for booking: it also reads the
+     * dev-tools time guard from the cache, which the mock does not forward.
+     */
+    private function hookDashboardCacheForget(callable $onForget): \stdClass
+    {
+        $probe = new \stdClass();
+        $probe->calls = 0;
+        $cache = new class($this->app, $probe, $onForget) extends \Illuminate\Cache\CacheManager {
+            private $probe;
+            private $onForget;
+
+            public function __construct($app, $probe, $onForget)
+            {
+                parent::__construct($app);
+                $this->probe = $probe;
+                $this->onForget = $onForget;
+            }
+
+            public function forget($key)
+            {
+                if ($key !== 'nurse_dashboard_stats') {
+                    return $this->store()->forget($key);
+                }
+                $this->probe->calls++;
+                return ($this->onForget)($this->probe->calls);
+            }
+        };
+        Cache::swap($cache);
+
+        return $probe;
+    }
+
     public function test_failed_submission_transaction_discards_notification_and_email_callback(): void
     {
         $student = $this->student();
-        $cache = \Mockery::mock(Cache::getFacadeRoot());
-        $cache->shouldReceive('forget')->with('nurse_dashboard_stats')->once()
-            ->andThrow(new \RuntimeException('Simulated failure after notification registration'));
-        Cache::swap($cache);
+        $probe = $this->hookDashboardCacheForget(function () {
+            throw new \RuntimeException('Simulated failure after notification registration');
+        });
         $this->actingAs($student, 'api')->postJson('/api/student/appointments', $this->booking())->assertStatus(500);
+        $this->assertSame(1, $probe->calls);
         DB::commit();
         $this->assertSame(0, Appointment::where('user_id', $student->id)->count());
         $this->assertSame(0, Notification::where('user_id', $student->id)->count());
@@ -257,19 +291,15 @@ class StudentAppointmentNotificationTest extends TestCase
     {
         $student = $this->student();
         DB::commit();
-        $attempts = 0;
-        $cache = \Mockery::mock(Cache::getFacadeRoot());
-        $cache->shouldReceive('forget')->with('nurse_dashboard_stats')->twice()
-            ->andReturnUsing(function () use (&$attempts) {
-                if (++$attempts === 1) {
-                    throw new \PDOException('Simulated serialization failure', 40001);
-                }
-                return true;
-            });
-        Cache::swap($cache);
+        $probe = $this->hookDashboardCacheForget(function (int $attempt) {
+            if ($attempt === 1) {
+                throw new \PDOException('Simulated serialization failure', 40001);
+            }
+            return true;
+        });
         $response = $this->actingAs($student, 'api')->postJson('/api/student/appointments', $this->booking())->assertCreated();
         $appointment = Appointment::findOrFail($response->json('data.id'));
-        $this->assertSame(2, $attempts);
+        $this->assertSame(2, $probe->calls);
         $this->assertSame(1, Appointment::where('user_id', $student->id)->count());
         $this->assertNotice($student, $appointment, 'pending');
         $this->assertMail($student, $appointment, 'pending');
