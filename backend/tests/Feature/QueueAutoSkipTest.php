@@ -126,6 +126,17 @@ class QueueAutoSkipTest extends TestCase
         $this->act($checkin, 'arrived')->assertOk()->assertJsonPath('data.status', 'serving');
     }
 
+    public function test_manual_skip_and_mark_returned_endpoints_no_longer_exist(): void
+    {
+        $this->actingAs($this->person('nurse'), 'api');
+        [, , $checkin] = $this->visit();
+
+        // 404 or 405 (the path matches another route's URL); either way no action runs.
+        $this->assertContains($this->act($checkin, 'skip')->getStatusCode(), [404, 405]);
+        $this->assertContains($this->act($checkin, 'returned')->getStatusCode(), [404, 405]);
+        $this->assertSame('waiting', $checkin->fresh()->status);
+    }
+
     public function test_recalling_a_called_student_restarts_the_timer(): void
     {
         $this->actingAs($this->person('nurse'), 'api');

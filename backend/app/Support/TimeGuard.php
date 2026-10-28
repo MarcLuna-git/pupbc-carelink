@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Cache;
  * "Remove time Guard" switches from each portal's Developer Tools. Each portal
  * keeps its own rules:
  *   - Student (per account): booking past dates/time slots and Sundays.
- *   - Nurse (clinic-wide): automatic expiry, skipped → no-show, Mark Returned
- *     after the deadline, past reschedule/follow-up/medicine expiry dates.
+ *   - Nurse (clinic-wide): automatic 1-minute skip, skipped → no-show, Recall
+ *     of a skipped visit after the deadline, past reschedule/follow-up/medicine expiry dates.
  *   - Kiosk (kiosk-wide): the check-in window (open all day).
  */
 class TimeGuard

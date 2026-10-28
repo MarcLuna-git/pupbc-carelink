@@ -129,7 +129,7 @@ class KioskController extends Controller
         $next = DB::transaction(function () {
             ClinicQueue::lock();
             // Kasama ang older unfinished visits hanggang ma-save ang consultation.
-            abort_if(AppointmentCheckin::where('is_walk_in', false)->whereIn('status', ['serving', 'called'])->exists(), 409, 'Confirm arrival or skip the called patient, and complete the serving visit before calling another.');
+            abort_if(AppointmentCheckin::where('is_walk_in', false)->whereIn('status', ['serving', 'called'])->exists(), 409, 'Finish the called or serving patient before calling another.');
             $next = ClinicQueue::ordered()->where('status', 'waiting')->first();
             if ($next) {
                 $next->update([
@@ -162,7 +162,7 @@ class KioskController extends Controller
             ClinicQueue::lock();
             $checkin = AppointmentCheckin::findOrFail($id);
             abort_unless($checkin->status === 'waiting', 409, 'This patient is not in waiting status.');
-            abort_if(AppointmentCheckin::where('is_walk_in', false)->whereIn('status', ['serving', 'called'])->exists(), 409, 'Confirm arrival or skip the called patient, and complete the serving visit before calling another.');
+            abort_if(AppointmentCheckin::where('is_walk_in', false)->whereIn('status', ['serving', 'called'])->exists(), 409, 'Finish the called or serving patient before calling another.');
             $checkin->update([
                 'status' => 'serving',
                 'served_at' => now(),
@@ -213,38 +213,7 @@ class KioskController extends Controller
     public function markNoShow(Request $request, $id)
     {
         // Reject obsolete timer-driven clients instead of bypassing nurse Skip.
-        abort(409, 'Automatic no-show is no longer supported. Refresh the queue and use Skip or Mark Returned.');
-    }
-    public function skipPatient(Request $request, $id)
-    {
-        $checkin = DB::transaction(function () use ($id, $request) {
-            ClinicQueue::lock();
-            $checkin = AppointmentCheckin::lockForUpdate()->findOrFail($id);
-            abort_unless($checkin->status === 'called' && !$checkin->is_walk_in, 409, 'Only called patients can be skipped.');
-            abort_if($checkin->consultation()->exists(), 409, 'This visit already has a consultation.');
-            NurseVisitClaim::acquire($request, $id);
-            $checkin->update(['status' => 'skipped', 'skipped_at' => now(), 'skipped_by' => auth()->id()]);
-            DB::table('nurse_visit_claims')->where('checkin_id', $id)->delete();
-            // An overdue CALLED entry is protected until this explicit nurse action.
-            app(\App\Services\SkippedQueueExpiry::class)->run();
-            return $checkin->fresh();
-        }, 3);
-        return response()->json(['success' => true, 'data' => $checkin, 'message' =>
-            $checkin->status === 'no_show' ? 'Skipped patient marked no-show because the original deadline has passed.' : 'Patient skipped. Mark returned when they arrive.']);
-    }
-    public function markReturned(Request $request, $id)
-    {
-        $checkin = DB::transaction(function () use ($id) {
-            ClinicQueue::lock();
-            $checkin = AppointmentCheckin::lockForUpdate()->findOrFail($id);
-            abort_unless($checkin->status === 'skipped' && !$checkin->is_walk_in, 409, 'Only skipped patients can be marked returned.');
-            $appointment = Appointment::findOrFail($checkin->appointment_id);
-            abort_unless(TimeGuard::nursePortalBypassed() || now('Asia/Manila')->lt(app(AppointmentExpiry::class)->getCheckinDeadline($appointment)),
-                409, 'The original check-in deadline has passed. This skipped visit is no longer eligible.');
-            $checkin->update(['status' => 'waiting', 'returned_at' => now(), 'returned_by' => auth()->id()]);
-            return $checkin;
-        }, 3);
-        return response()->json(['success' => true, 'data' => $checkin, 'message' => 'Patient marked returned and eligible for Call Next.']);
+        abort(409, 'Automatic no-show is no longer supported. Refresh the queue; a called patient who does not arrive within a minute is skipped automatically.');
     }
     public function claimVisit(Request $request, $id)
     {

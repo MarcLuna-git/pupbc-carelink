@@ -118,15 +118,15 @@ class CheckinAuditMigrationTest extends TestCase
         $this->actingAs($nurse, 'api');
         $this->postJson('/api/nurse/queue/' . $id . '/recall', ['called_by' => $other->id])->assertOk();
         $this->assertSame($nurse->id, AppointmentCheckin::findOrFail($id)->called_by);
-        $this->withHeader('If-Match', AppointmentCheckin::findOrFail($id)->sync_version)
-            ->postJson('/api/nurse/queue/' . $id . '/skip', ['skipped_by' => $other->id, 'skipped_at' => '2000-01-01'])->assertOk();
+        // A skipped visit that is recalled records the authenticated nurse, never a client-sent id.
+        DB::table('appointment_checkins')->where('id', $id)->update(['status' => 'skipped']);
         $checkin = AppointmentCheckin::findOrFail($id);
-        $this->assertSame($nurse->id, $checkin->skipped_by);
-        $this->assertSame('skipped', $checkin->status);
-        $this->assertSame('2026-10-12 08:00:00', $checkin->skipped_at->timezone('Asia/Manila')->format('Y-m-d H:i:s'));
         $this->withHeader('If-Match', $checkin->sync_version)
-            ->postJson('/api/nurse/queue/' . $id . '/returned', ['returned_by' => $other->id])->assertOk();
-        $this->assertSame($nurse->id, $checkin->fresh()->returned_by);
+            ->postJson('/api/nurse/queue/' . $id . '/recall', ['returned_by' => $other->id, 'called_by' => $other->id])->assertOk();
+        $checkin = AppointmentCheckin::findOrFail($id);
+        $this->assertSame('called', $checkin->status);
+        $this->assertSame($nurse->id, $checkin->returned_by);
+        $this->assertSame($nurse->id, $checkin->called_by);
     }
 
     public function test_postgresql_migration_compiles_additive_schema_only()

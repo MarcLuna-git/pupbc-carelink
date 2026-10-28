@@ -69,8 +69,8 @@ class NurseOperation
     private function checkVersion(Request $request): void
     {
         if ($request->is('api/nurse/queue/*') && $request->isMethod('POST') &&
-            in_array($request->segment(5), ['skip', 'returned', 'arrived', 'recall'], true)) {
-            if (in_array($request->segment(5), ['skip', 'returned'], true) || $request->header('If-Match')) {
+            in_array($request->segment(5), ['arrived', 'recall'], true)) {
+            if ($request->header('If-Match')) {
                 $checkin = \App\Models\AppointmentCheckin::lockForUpdate()->findOrFail($request->route('id'));
                 $this->assertVersion($request, $checkin->sync_version);
             }

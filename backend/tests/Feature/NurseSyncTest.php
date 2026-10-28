@@ -568,7 +568,6 @@ public function test_duplicate_call_next_visit_claim_and_consultation_save()
 
         $this->actingAs($nurse, 'api');
 
-        // Call next - must call patient first before skipping.
         $this->withHeader('Idempotency-Key', (string) \Illuminate\Support\Str::uuid())
             ->postJson('/api/nurse/queue/call-next')
             ->assertOk();
@@ -576,26 +575,15 @@ public function test_duplicate_call_next_visit_claim_and_consultation_save()
         $checkin->refresh();
         $this->assertSame('called', $checkin->status);
 
-        // Reusing Call Next's operation key for Skip remains a conflict.
-        $this->postJson('/api/nurse/queue/' . $checkin->id . '/skip')
-            ->assertStatus(409)
-            ->assertJsonPath('message', 'This operation key was already used for different data.');
-        $this->assertSame('called', $checkin->fresh()->status);
-        $this->withHeader('Idempotency-Key', (string) Str::uuid())
-            ->withHeader('If-Match', $checkin->fresh()->sync_version)
-            ->postJson('/api/nurse/queue/' . $checkin->id . '/skip')
-            ->assertOk()
-            ->assertJsonPath('data.status', 'skipped');
+        // The nurse has no Skip button: the server skips the call after one minute.
+        Carbon::setTestNow(Carbon::parse('2026-10-12 08:01:01', 'Asia/Manila'));
+        $this->getJson('/api/nurse/queue/checkins')->assertOk()->assertJsonPath('data.0.status', 'skipped');
 
         $checkin->refresh();
         $this->assertSame('skipped', $checkin->status);
         $this->assertNotNull($checkin->skipped_at);
-        $this->assertSame($nurse->id, $checkin->skipped_by);
+        $this->assertNull($checkin->skipped_by);
         $this->assertNull($checkin->no_show_at);
-        $this->postJson('/api/nurse/queue/' . $checkin->id . '/skip')->assertOk();
-        $this->queueMutation($checkin, 'skip')->assertStatus(409)
-            ->assertJsonPath('message', 'Only called patients can be skipped.');
-        $this->getJson('/api/nurse/queue/checkins')->assertOk()->assertJsonPath('data.0.status', 'skipped');
         $this->withHeader('Idempotency-Key', (string) Str::uuid())
             ->postJson('/api/nurse/queue/call-next')->assertOk()->assertJsonPath('data', null);
 
@@ -686,29 +674,27 @@ public function test_duplicate_call_next_visit_claim_and_consultation_save()
         return $checkin;
     }
 
-    public function test_skip_and_return_preserve_identity_priority_and_call_next_eligibility()
+    public function test_auto_skip_and_recall_preserve_identity_priority_and_call_next_eligibility()
     {
         Carbon::setTestNow(Carbon::parse('2026-10-12 08:00:00', 'Asia/Manila'));
         $this->actingAs($this->person(), 'api');
         $high = $this->queueVisit('called', 'HIGH');
+        $high->update(['called_at' => now()]);
         $original = $high->only(['id', 'appointment_id', 'checked_in_at', 'check_in_time', 'queue_number']);
-        $this->queueMutation($high, 'skip')->assertOk()->assertJsonPath('data.status', 'skipped');
+        Carbon::setTestNow(Carbon::parse('2026-10-12 08:01:01', 'Asia/Manila'));
+        $this->getJson('/api/nurse/sync')->assertOk();
+        $this->assertSame('skipped', $high->fresh()->status);
         $low = $this->queueVisit();
         $this->withHeader('Idempotency-Key', (string) Str::uuid())->postJson('/api/nurse/queue/call-next')
             ->assertOk()->assertJsonPath('data.id', $low->id);
         $this->queueMutation($low, 'arrived')->assertOk();
-        $this->queueMutation($high, 'returned')->assertOk()->assertJsonPath('data.status', 'waiting');
+        // Somebody else is being served, so the skipped student cannot be recalled yet.
+        $this->queueMutation($high, 'recall')->assertStatus(409);
+        $low->update(['status' => 'completed']);
+        $this->queueMutation($high, 'recall')->assertOk()->assertJsonPath('data.status', 'called');
         $this->assertEquals($original, $high->fresh()->only(array_keys($original)));
         $this->assertNotNull($high->fresh()->returned_at);
-        // Complete the serving visit before advancing the queue.
-        $low->update(['status' => 'completed']);
-        $this->queueVisit('waiting', 'MEDIUM');
-        Carbon::setTestNow(Carbon::parse('2026-10-12 08:45:00', 'Asia/Manila'));
-        $this->getJson('/api/nurse/sync')->assertOk();
-        $this->assertSame('waiting', $high->fresh()->status);
-        $this->withHeader('Idempotency-Key', (string) Str::uuid())->postJson('/api/nurse/queue/call-next')
-            ->assertOk()->assertJsonPath('data.id', $high->id);
-        $this->assertSame(3, \App\Models\AppointmentCheckin::count());
+        $this->assertSame(2, \App\Models\AppointmentCheckin::count());
         $this->assertSame('HIGH', $high->fresh()->triage->priority);
     }
 
@@ -719,12 +705,10 @@ public function test_duplicate_call_next_visit_claim_and_consultation_save()
         $waiting = $this->queueVisit();
         $serving = $this->queueVisit('serving');
         $completed = $this->queueVisit('completed');
-        $returned = $this->queueVisit('called');
-        $this->queueMutation($returned, 'skip')->assertOk();
-        $this->queueMutation($returned, 'returned')->assertOk();
-        $returned->refresh();
-        $absent = $this->queueVisit('called');
-        $this->queueMutation($absent, 'skip')->assertOk();
+        $returned = $this->queueVisit();
+        $returned->update(['returned_at' => now(), 'returned_by' => auth()->id()]);
+        $absent = $this->queueVisit('skipped');
+        $absent->update(['skipped_at' => now()]);
         $notifications = \App\Models\Notification::count();
         Carbon::setTestNow(Carbon::parse('2026-10-13 09:00:00', 'Asia/Manila'));
         $this->artisan('queue:expire-skipped')->expectsOutput('Marked 1 skipped visit(s) no-show.')->assertExitCode(0);
@@ -737,28 +721,17 @@ public function test_duplicate_call_next_visit_claim_and_consultation_save()
         $this->assertSame($notifications, \App\Models\Notification::count());
     }
 
-    public function test_late_return_is_rejected_and_reconciliation_survives_the_conflict()
+    public function test_late_recall_is_rejected_and_reconciliation_survives_the_conflict()
     {
         Carbon::setTestNow(Carbon::parse('2026-10-12 08:29:59', 'Asia/Manila'));
         $this->actingAs($this->person(), 'api');
-        $checkin = $this->queueVisit('called');
-        $this->queueMutation($checkin, 'skip')->assertOk();
+        $checkin = $this->queueVisit('skipped');
+        $checkin->update(['skipped_at' => now()]);
         $version = $checkin->fresh()->sync_version;
         Carbon::setTestNow(Carbon::parse('2026-10-12 08:30:00', 'Asia/Manila'));
-        $this->queueMutation($checkin, 'returned', $version)->assertStatus(409);
+        $this->queueMutation($checkin, 'recall', $version)->assertStatus(409);
         $this->assertSame('no_show', $checkin->fresh()->status);
         $this->assertTrue($checkin->fresh()->appointment->no_show);
-    }
-
-    public function test_explicit_skip_after_deadline_can_mark_absent_patient_no_show()
-    {
-        Carbon::setTestNow(Carbon::parse('2026-10-12 08:45:00', 'Asia/Manila'));
-        $this->actingAs($this->person(), 'api');
-        $checkin = $this->queueVisit('called');
-        $this->getJson('/api/nurse/sync')->assertOk();
-        $this->assertSame('called', $checkin->fresh()->status);
-        $this->queueMutation($checkin, 'skip')->assertOk()->assertJsonPath('data.status', 'no_show');
-        $this->assertNotNull($checkin->fresh()->skipped_at);
     }
 
     public function test_two_devices_stale_actions_and_retries_cannot_overwrite_queue_transitions()
@@ -766,57 +739,47 @@ public function test_duplicate_call_next_visit_claim_and_consultation_save()
         Carbon::setTestNow(Carbon::parse('2026-10-12 08:00:00', 'Asia/Manila'));
         $this->actingAs($this->person(), 'api')->withToken('device-a');
         $checkin = $this->queueVisit('called');
+        $checkin->update(['called_at' => now()]);
         $calledVersion = $checkin->fresh()->sync_version;
         $key = (string) Str::uuid();
         $before = \App\Services\NurseSync::revisions()['queue'];
-        $this->queueMutation($checkin, 'skip', $calledVersion, $key)->assertOk();
-        $this->queueMutation($checkin, 'skip', $calledVersion, $key)->assertOk();
+        // A retry of the same Recall (same operation key) is replayed, not applied twice.
+        Carbon::setTestNow(Carbon::parse('2026-10-12 08:00:30', 'Asia/Manila'));
+        $this->queueMutation($checkin, 'recall', $calledVersion, $key)->assertOk();
+        $this->queueMutation($checkin, 'recall', $calledVersion, $key)->assertOk();
         $this->assertGreaterThan($before, \App\Services\NurseSync::revisions()['queue']);
+        // The other device still holds the pre-Recall version, so its action is refused.
         $this->withToken('device-b');
         $this->queueMutation($checkin, 'arrived', $calledVersion)->assertStatus(409);
-        $skippedVersion = $checkin->fresh()->sync_version;
-        $this->queueMutation($checkin, 'returned', $skippedVersion)->assertOk();
+        $this->queueMutation($checkin, 'arrived')->assertOk()->assertJsonPath('data.status', 'serving');
         $this->withToken('device-a');
-        $this->queueMutation($checkin, 'returned', $skippedVersion)->assertStatus(409);
-        $this->queueMutation($checkin, 'skip', $calledVersion)->assertStatus(409);
-        $this->assertSame('waiting', $checkin->fresh()->status);
+        $this->queueMutation($checkin, 'arrived', $calledVersion)->assertStatus(409);
+        $this->assertSame('serving', $checkin->fresh()->status);
         $this->assertSame(1, \App\Models\AppointmentCheckin::count());
     }
 
-    public function test_skip_respects_other_device_visit_claim_and_requires_a_version()
-    {
-        Carbon::setTestNow(Carbon::parse('2026-10-12 08:00:00', 'Asia/Manila'));
-        $this->actingAs($this->person(), 'api')->withToken('device-a');
-        $checkin = $this->queueVisit('called');
-        $this->postJson('/api/nurse/queue/' . $checkin->id . '/claim')->assertOk();
-        $this->withToken('device-b');
-        $this->postJson('/api/nurse/queue/' . $checkin->id . '/skip')->assertStatus(428);
-        $this->queueMutation($checkin, 'skip')->assertStatus(409);
-        $this->assertSame('called', $checkin->fresh()->status);
-    }
-
-    public function test_reconciliation_does_not_overwrite_a_return_committed_after_candidate_selection()
+    public function test_reconciliation_does_not_overwrite_a_recall_committed_after_candidate_selection()
     {
         Carbon::setTestNow(Carbon::parse('2026-10-12 08:29:59', 'Asia/Manila'));
         $this->actingAs($this->person(), 'api')->withToken('device-a');
-        $checkin = $this->queueVisit('called');
-        $this->queueMutation($checkin, 'skip')->assertOk();
+        $checkin = $this->queueVisit('skipped');
+        $checkin->update(['skipped_at' => now()]);
         $returned = false;
         Carbon::setTestNow(Carbon::parse('2026-10-12 08:30:00', 'Asia/Manila'));
         DB::listen(function ($query) use ($checkin, &$returned) {
             if ($returned || strpos($query->sql, '"status" = ?') === false ||
                 !in_array('skipped', $query->bindings, true) || strpos($query->sql, 'select *') !== 0) return;
-            // Simulate another device's return commit before the reconciler
+            // Simulate another device's Recall commit before the reconciler
             // obtains the clinic mutex. This is a deterministic interleaving.
             $returned = true;
             Carbon::setTestNow(Carbon::parse('2026-10-12 08:29:59', 'Asia/Manila'));
             $this->withToken('device-b');
-            $this->queueMutation($checkin, 'returned')->assertOk();
+            $this->queueMutation($checkin, 'recall')->assertOk();
             Carbon::setTestNow(Carbon::parse('2026-10-12 08:30:00', 'Asia/Manila'));
         });
         $this->assertSame(0, app(\App\Services\SkippedQueueExpiry::class)->run());
         $this->assertTrue($returned);
-        $this->assertSame('waiting', $checkin->fresh()->status);
+        $this->assertSame('called', $checkin->fresh()->status);
         $this->assertFalse($checkin->fresh()->appointment->no_show);
     }
 
@@ -824,8 +787,8 @@ public function test_duplicate_call_next_visit_claim_and_consultation_save()
     {
         Carbon::setTestNow(Carbon::parse('2026-10-12 08:00:00', 'Asia/Manila'));
         $this->actingAs($this->person(), 'api');
-        $checkin = $this->queueVisit('called');
-        $this->queueMutation($checkin, 'skip')->assertOk();
+        $checkin = $this->queueVisit('skipped');
+        $checkin->update(['skipped_at' => now()]);
         $before = $checkin->fresh()->getRawOriginal();
         $migration = require database_path('migrations/2026_10_12_000001_add_skipped_queue_audit_fields.php');
         $migration->up();

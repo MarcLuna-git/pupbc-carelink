@@ -49,5 +49,5 @@ form shows the same messages before submitting; the API returns 422 with
 ## Database
 
 No migration. The audit fields from `2026_10_12_000001_add_skipped_queue_audit_fields.php`
-are reused. The `/skip` and `/returned` endpoints still exist (version checked with
-`If-Match`) but the nurse UI no longer uses them.
+are reused. The manual `/skip` and `/returned` endpoints were removed: skipping is
+automatic and returning is Recall.

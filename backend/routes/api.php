@@ -827,8 +827,6 @@ Route::middleware([
                     '/queue/{id}/no-show',
                     [KioskController::class, 'markNoShow']
                 );
-                Route::post('/queue/{id}/skip', [KioskController::class, 'skipPatient']);
-                Route::post('/queue/{id}/returned', [KioskController::class, 'markReturned']);
 
                 Route::get(
                     '/queue/checkins',
