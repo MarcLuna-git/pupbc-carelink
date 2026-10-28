@@ -46,7 +46,7 @@ class CareLinkWorkflowTest extends TestCase
     }
     private function payload($student, $appointment, $checkin)
     {
-        return ['user_id' => $student->id, 'appointment_id' => $appointment->id, 'appointment_checkin_id' => $checkin->id, 'chief_complaint' => 'Headache', 'vital_signs' => ['bp' => '120/80', 'temp' => '36.5'], 'follow_up_required' => true, 'follow_up_date' => \Carbon\Carbon::tomorrow()->toDateString()];
+        return ['user_id' => $student->id, 'appointment_id' => $appointment->id, 'appointment_checkin_id' => $checkin->id, 'chief_complaint' => 'Headache', 'history_present_illness' => 'Since this morning', 'nursing_assessment' => 'Alert and oriented', 'nursing_interventions' => 'Advised rest', 'vital_signs' => ['bp' => '120/80', 'temp' => '36.5'], 'follow_up_required' => true, 'follow_up_date' => \Carbon\Carbon::tomorrow()->toDateString()];
     }
     public function test_student_and_nurse_role_denial()
     {

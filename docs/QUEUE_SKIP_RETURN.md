@@ -1,70 +1,53 @@
-# Consultation Queue: Skip and Mark Returned
+# Consultation Queue: Call, Arrived, Auto-Skip and Recall
 
-The five-minute called-patient countdown has been removed. Calling, confirming
-arrival, recalling, skipping, and marking returned are nurse-controlled actions.
+A called student has **one minute** to show up. The nurse sees two buttons on the
+called row, **Arrived** and **Recall**. There is no manual Skip.
 
 ## State rules
 
 | Action | Required state | Result |
 |---|---|---|
-| Call Next | waiting, no other called/serving patient | called |
-| Patient Arrived | called | serving |
-| Skip | called, no completed consultation/other-device editing claim | skipped |
-| Mark Returned | skipped, before the original appointment deadline | waiting |
+| Call Next | waiting, no other called/serving patient | called (1-minute timer starts) |
+| Arrived | called | serving; the consultation form opens straight away |
+| Timer runs out | called for 60 s or more, no consultation started | skipped (automatic) |
+| Recall (called) | called | announced again, timer restarts |
+| Recall (skipped) | skipped, nobody else called/serving, before the appointment deadline | called (timer restarts) |
 | Server reconciliation | still skipped at/after original appointment + 30 minutes | no_show |
 
-There is no minimum wait before Skip. A skipped patient remains in the queue and
-Call Next ignores them until Mark Returned. Return changes the existing row:
-appointment/check-in IDs, queue number, check-in time, and medical priority remain
-unchanged. Original priority ordering applies when the patient becomes eligible.
+A skipped student stays in the queue for as long as their appointment schedule lasts.
+Call Next ignores skipped rows; **Recall** brings the student back when they return.
+Recall changes the existing row: appointment/check-in IDs, queue number, check-in time
+and medical priority stay the same. A late Recall (after the deadline) is rejected with
+a clear 409 message; a no-show needs a new booking.
 
 Only **currently skipped** entries become no-shows at the appointment deadline.
-Waiting (including returned), called, serving, and completed visits are not changed
-by this reconciliation. A patient first called near the deadline stays called
-until the nurse confirms arrival or explicitly skips. Explicit Skip after the
-deadline can immediately produce no_show; the deadline alone never does so for
-a called patient. A late Mark Returned is rejected; a no-show requires a separate
-new clinical decision/booking rather than silently resurrecting the old visit.
+Waiting, called, serving and completed visits are not changed by that reconciliation.
 
-The old `/queue/{id}/no-show` action now returns 409 with a refresh instruction,
-so a stale five-minute frontend timer cannot mark a called patient no-show.
+## Where the timer is enforced
 
-## Server state and multi-device safety
+`SkippedQueueExpiry::CALL_TIMEOUT_SECONDS = 60`. `SkippedQueueExpiry::run()` first skips
+called rows older than the timeout (re-checked under the queue lock, claims released,
+`skipped_at` set, `skipped_by` null because it was automatic), then marks no-shows.
+It runs before every nurse queue/sync/consultation request and on kiosk queue reads.
 
-- Added nullable `skipped_at`, `skipped_by`, `returned_at`, and `returned_by`
-  audit fields via `2026_10_12_000001_add_skipped_queue_audit_fields.php`.
-  Its forward migration reuses existing fields and its rollback retains audit data.
-  Existing queue status is a string; no enum or appointment constraint is changed.
-- Timestamps and actor IDs come from the server/authenticated nurse, never client
-  fields. Automatic no-show stores server `no_show_at` and a null `no_show_by`;
-  `skipped_by` records the nurse's explicit action.
-- Skip and Mark Returned require `If-Match` from the check-in's `sync_version`.
-  Missing versions return 428; stale versions return 409. Updated arrival/recall
-  requests also submit versions; earlier clients keep their existing state checks.
-- The existing clinic mutex serializes writes. Idempotency-key replay remains
-  before version validation, and other-device editing claims are respected.
-- Reconciliation rechecks state under the same mutex. It commits before a nurse
-  action transaction, so a rejected stale action cannot undo a due no-show.
-- Check-in/appointment saves update the existing shared NurseSync revisions.
-  Relevant screens refresh via the existing coordinator; no new event system.
-- This workflow creates no notifications and does not delete visit history.
+The nurse screen only *displays* the countdown. It uses the server's clock
+(`server_time` in the check-in list response) so a wrong device clock cannot make the
+countdown run long, clamps the display to the 1-minute range, and re-reads the queue
+while a called row is overdue so the row flips to skipped without a manual refresh.
 
-## Render Free and processing
+The `php artisan queue:expire-skipped` command runs the same service. Render Free has
+no scheduler runner, so rows are also reconciled on the next relevant request.
 
-`SkippedQueueExpiry::run()` executes before authenticated nurse queue, sync, and
-consultation requests, and on kiosk queue reads. It catches up older skipped rows
-as well as today's entries. No frontend countdown is needed for enforcement.
+## Required consultation fields
 
-The focused command `php artisan queue:expire-skipped` runs the same service.
-Laravel schedules it every minute with overlap prevention, but the current Render
-Free Docker service has **no scheduler runner** and may sleep. With no traffic and
-no external runner, rows are reconciled on the next relevant request; deadline
-validation still blocks a late return. A trusted approved runner or paid Render
-Cron Job can execute this command each minute independently of any browser.
-No external scheduler has been configured by this change.
+`history_present_illness`, `nursing_assessment` and `nursing_interventions` (plus the
+existing chief complaint) are required on create, and cannot be blanked on update. The
+form shows the same messages before submitting; the API returns 422 with
+"Enter the history / present illness.", "Enter the nursing assessment." and
+"Enter the nursing interventions." Vital signs and treatment/plan stay optional.
 
-Before deploying, apply the additive audit migration to an isolated staging
-database and deploy the matching backend/frontend together. Test real parallel
-Skip/Arrived/Returned/Call Next requests on PostgreSQL and two browser sessions.
-Local SQLite tests cover deterministic two-device interleavings, not actual
-PostgreSQL lock contention. No production or staging migrations ran in this task.
+## Database
+
+No migration. The audit fields from `2026_10_12_000001_add_skipped_queue_audit_fields.php`
+are reused. The `/skip` and `/returned` endpoints still exist (version checked with
+`If-Match`) but the nurse UI no longer uses them.

@@ -182,7 +182,7 @@ class ClinicEnhancementsTest extends TestCase
 
         [$patient, $appointment, $checkin] = $this->visit();
         $this->postJson('/api/nurse/queue/call-next')->assertOk();
-        $data = ['user_id' => $patient->id, 'appointment_id' => $appointment->id, 'appointment_checkin_id' => $checkin->id, 'chief_complaint' => 'Headache'];
+        $data = ['user_id' => $patient->id, 'appointment_id' => $appointment->id, 'appointment_checkin_id' => $checkin->id, 'chief_complaint' => 'Headache', 'history_present_illness' => 'Since this morning', 'nursing_assessment' => 'Alert and oriented', 'nursing_interventions' => 'Advised rest'];
 
         // Only a nurse account can be named.
         $this->postJson('/api/nurse/consultations', array_merge($data, ['attending_nurse_id' => $student->id]))->assertUnprocessable();
@@ -194,7 +194,7 @@ class ClinicEnhancementsTest extends TestCase
         // Left blank, the signed-in nurse is the attending nurse (previous behaviour).
         [$patient2, $appointment2, $checkin2] = $this->visit();
         $this->postJson('/api/nurse/queue/call-next')->assertOk();
-        $created2 = $this->postJson('/api/nurse/consultations', ['user_id' => $patient2->id, 'appointment_id' => $appointment2->id, 'appointment_checkin_id' => $checkin2->id, 'chief_complaint' => 'Cough'])->assertCreated();
+        $created2 = $this->postJson('/api/nurse/consultations', ['user_id' => $patient2->id, 'appointment_id' => $appointment2->id, 'appointment_checkin_id' => $checkin2->id, 'chief_complaint' => 'Cough', 'history_present_illness' => 'Since this morning', 'nursing_assessment' => 'Alert and oriented', 'nursing_interventions' => 'Advised rest'])->assertCreated();
         $this->assertSame($nurse->id, Consultation::findOrFail($created2->json('data.id'))->nurse_id);
     }
 

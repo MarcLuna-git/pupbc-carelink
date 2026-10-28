@@ -172,11 +172,35 @@ class KioskController extends Controller
         }, 3);
         return response()->json(['success' => true, 'data' => $checkin, 'message' => 'Patient now in consultation.']);
     }
+    /*
+     * Recall has two uses. A called patient is announced again and the one-minute arrival
+     * timer restarts. A skipped patient (did not arrive in time) who came back is called again,
+     * as long as nobody else is called or being served and their appointment deadline has not passed.
+     */
     public function recallPatient(Request $request, $id)
     {
         $checkin = DB::transaction(function () use ($id) {
             ClinicQueue::lock();
-            $checkin = AppointmentCheckin::findOrFail($id);
+            $checkin = AppointmentCheckin::lockForUpdate()->findOrFail($id);
+            abort_if($checkin->is_walk_in, 409, 'Walk-in visits cannot be recalled.');
+
+            if ($checkin->status === 'skipped') {
+                abort_if(
+                    AppointmentCheckin::where('is_walk_in', false)->whereIn('status', ['serving', 'called'])->where('id', '!=', $checkin->id)->exists(),
+                    409,
+                    'Finish the patient who is called or being served before recalling a skipped patient.'
+                );
+                abort_if($checkin->consultation()->exists(), 409, 'This visit already has a consultation.');
+                $appointment = Appointment::findOrFail($checkin->appointment_id);
+                abort_unless(TimeGuard::nursePortalBypassed() || now('Asia/Manila')->lt(app(AppointmentExpiry::class)->getCheckinDeadline($appointment)),
+                    409, 'The original check-in deadline has passed. This skipped visit is no longer eligible.');
+                $checkin->update([
+                    'status' => 'called', 'called_at' => now(), 'called_by' => auth()->id(),
+                    'returned_at' => now(), 'returned_by' => auth()->id(),
+                ]);
+                return $checkin;
+            }
+
             abort_unless($checkin->status === 'called', 409, 'This patient is not in called status.');
             $checkin->update([
                 'called_at' => now(),

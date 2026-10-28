@@ -21,7 +21,7 @@ class CheckinController extends Controller
         return response()->json(['success' => true, 'data' => ClinicQueue::ordered()->get(), 'stats' => [
             'completed_today' => (clone $today)->where('status', 'completed')->count(),
             'no_show_today' => (clone $today)->where('status', 'no_show')->count(),
-        ]]);
+        ], 'server_time' => now()->toIso8601String(), 'call_timeout_seconds' => \App\Services\SkippedQueueExpiry::CALL_TIMEOUT_SECONDS]);
     }
     public function getAppointment($reference)
     {

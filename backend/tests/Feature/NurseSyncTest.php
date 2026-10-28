@@ -72,6 +72,13 @@ class NurseSyncTest extends TestCase
         (new \CreateNurseSyncTables)->up();
         Schema::create('clinic_queue_locks', function (Blueprint $table) { $table->integer('id')->primary(); });
         DB::table('clinic_queue_locks')->insert(['id' => 1]);
+        // The consultation form's narrative sections (migration 2026_10_23_000001, a named-class migration this loader cannot require).
+        Schema::table('consultations', function (Blueprint $table) {
+            $table->text('history_present_illness')->nullable();
+            $table->text('nursing_assessment')->nullable();
+            $table->text('nursing_interventions')->nullable();
+            $table->text('treatment_plan')->nullable();
+        });
         Schema::table('appointments', function (Blueprint $table) {
             $table->boolean('no_show')->default(false);
             $table->timestamp('checked_in_at')->nullable();
@@ -217,7 +224,7 @@ public function test_duplicate_call_next_visit_claim_and_consultation_save()
         $this->withHeader('Idempotency-Key', 'first-claim-operation')->postJson($claim)->assertOk();
         $this->withToken('second-device')->withHeader('Idempotency-Key', 'second-claim-operation')->postJson($claim)->assertStatus(409);
         $payload = ['user_id' => $student->id, 'appointment_id' => $appointment->id,
-            'appointment_checkin_id' => $checkin->id, 'chief_complaint' => 'Headache', 'vital_signs' => ['bp' => '120/80']];
+            'appointment_checkin_id' => $checkin->id, 'chief_complaint' => 'Headache', 'history_present_illness' => 'Since this morning', 'nursing_assessment' => 'Alert and oriented', 'nursing_interventions' => 'Advised rest', 'vital_signs' => ['bp' => '120/80']];
         $this->withHeader('Idempotency-Key', 'second-save-operation')->postJson('/api/nurse/consultations', $payload)->assertStatus(409);
         $this->withToken('first-device')->withHeader('Idempotency-Key', 'first-save-operation')
             ->postJson('/api/nurse/consultations', $payload)->assertCreated();
@@ -606,7 +613,7 @@ public function test_duplicate_call_next_visit_claim_and_consultation_save()
         $this->assertSame(1, \App\Models\AppointmentCheckin::count());
     }
 
-    public function test_called_near_deadline_remains_called_without_a_mandatory_timer()
+    public function test_called_near_deadline_can_still_arrive_within_the_minute()
     {
         Carbon::setTestNow(Carbon::parse('2026-10-12 08:29:59', 'Asia/Manila'));
         $nurse = $this->person();
@@ -627,7 +634,8 @@ public function test_duplicate_call_next_visit_claim_and_consultation_save()
             ->postJson('/api/nurse/queue/call-next')
             ->assertOk();
 
-        Carbon::setTestNow(Carbon::parse('2026-10-12 09:00:00', 'Asia/Manila'));
+        // 31 seconds later the original 8:30 deadline has passed, but the one-minute call timer has not.
+        Carbon::setTestNow(Carbon::parse('2026-10-12 08:30:30', 'Asia/Manila'));
         $this->getJson('/api/nurse/sync')->assertOk();
         $checkin->refresh();
         $this->assertSame('called', $checkin->status);
@@ -635,6 +643,29 @@ public function test_duplicate_call_next_visit_claim_and_consultation_save()
             ->postJson('/api/nurse/queue/' . $checkin->id . '/no-show')->assertStatus(409);
         $this->assertSame('called', $checkin->fresh()->status);
         $this->queueMutation($checkin, 'arrived')->assertOk()->assertJsonPath('data.status', 'serving');
+    }
+
+    public function test_a_called_student_who_never_arrives_is_skipped_and_is_a_no_show_after_the_deadline()
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-12 08:29:59', 'Asia/Manila'));
+        $nurse = $this->person();
+        $student = $this->person('student');
+        $appointment = \App\Models\Appointment::create([
+            'user_id' => $student->id, 'service' => 'Checkup',
+            'appointment_date' => today()->toDateString(), 'time_slot' => '8:00 AM', 'status' => 'approved'
+        ]);
+        $checkin = \App\Models\AppointmentCheckin::create([
+            'appointment_id' => $appointment->id, 'user_id' => $student->id,
+            'checked_in_at' => now(), 'check_in_time' => now(), 'status' => 'waiting', 'queue_number' => 'R-001'
+        ]);
+        $this->actingAs($nurse, 'api');
+        $this->postJson('/api/nurse/queue/call-next')->assertOk();
+
+        // Past the minute and past the deadline: skipped automatically, then reconciled as a no-show.
+        Carbon::setTestNow(Carbon::parse('2026-10-12 09:00:00', 'Asia/Manila'));
+        $this->getJson('/api/nurse/sync')->assertOk();
+        $this->assertSame('no_show', $checkin->fresh()->status);
+        $this->assertNotNull($checkin->fresh()->skipped_at);
     }
 
     private function queueMutation($checkin, string $action, ?string $version = null, ?string $key = null, array $payload = [])

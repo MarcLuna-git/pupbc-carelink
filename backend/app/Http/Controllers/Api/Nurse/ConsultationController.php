@@ -53,9 +53,10 @@ class ConsultationController extends Controller
             'vital_signs' => 'nullable|array:bp,hr,rr,temp,o2_sat',
             'vital_signs.*' => 'nullable|string|max:50',
             'general_remarks' => 'nullable|string|max:5000',
-            'history_present_illness' => 'nullable|string|max:2000',
-            'nursing_assessment' => 'nullable|string|max:2000',
-            'nursing_interventions' => 'nullable|string|max:2000',
+            // Required parts of the clinic's consultation form (the rest stays optional).
+            'history_present_illness' => 'required|string|max:2000',
+            'nursing_assessment' => 'required|string|max:2000',
+            'nursing_interventions' => 'required|string|max:2000',
             'treatment_plan' => 'nullable|string|max:2000',
             // The nurse who attended the patient; defaults to the signed-in nurse.
             'attending_nurse_id' => 'nullable|uuid|exists:users,id',
@@ -63,6 +64,11 @@ class ConsultationController extends Controller
             'medical_certificate_ref' => 'nullable|string|max:191',
             'follow_up_required' => 'sometimes|boolean',
             'follow_up_date' => 'nullable|required_if:follow_up_required,true|date' . (TimeGuard::nursePortalBypassed() ? '' : '|after_or_equal:today'),
+        ], [
+            'chief_complaint.required' => 'Enter the chief complaint.',
+            'history_present_illness.required' => 'Enter the history / present illness.',
+            'nursing_assessment.required' => 'Enter the nursing assessment.',
+            'nursing_interventions.required' => 'Enter the nursing interventions.',
         ]);
         $attendingNurseId = $data['attending_nurse_id'] ?? null;
         unset($data['attending_nurse_id']);
@@ -113,8 +119,8 @@ class ConsultationController extends Controller
         $consultation->update($request->validate([
             'chief_complaint' => 'sometimes|required|string|max:2000', 'vital_signs' => 'nullable|array:bp,hr,rr,temp,o2_sat', 'vital_signs.*' => 'nullable|string|max:50',
             'general_remarks' => 'nullable|string|max:5000', 'medical_certificate' => 'sometimes|boolean', 'medical_certificate_ref' => 'nullable|string|max:191',
-            'history_present_illness' => 'nullable|string|max:2000', 'nursing_assessment' => 'nullable|string|max:2000',
-            'nursing_interventions' => 'nullable|string|max:2000', 'treatment_plan' => 'nullable|string|max:2000',
+            'history_present_illness' => 'sometimes|required|string|max:2000', 'nursing_assessment' => 'sometimes|required|string|max:2000',
+            'nursing_interventions' => 'sometimes|required|string|max:2000', 'treatment_plan' => 'nullable|string|max:2000',
             'follow_up_required' => 'sometimes|boolean', 'follow_up_date' => 'nullable|date',
         ]));
         return response()->json(['success' => true, 'data' => $consultation->fresh(), 'message' => 'Consultation updated']);
