@@ -26,8 +26,8 @@
   <div class="field"><span class="label">{{^is_emergency}}Chief Complaint:{{/is_emergency}}{{#is_emergency}}Reason:{{/is_emergency}}</span><span class="value">{{complaint}}</span></div>
   <div class="field short"><span class="label">Service:</span><span class="value">{{service}}</span></div>
 </div>
-<div class="field"><span class="label">Present Illness:</span><span class="value">{{history}}</span></div>
-<div class="field"><span class="label">Symptoms:</span><span class="value">{{symptoms}}</span></div>
+<div class="field"><span class="label">{{^is_emergency}}History / Present Illness:{{/is_emergency}}{{#is_emergency}}Present Illness:{{/is_emergency}}</span><span class="value">{{history}}</span></div>
+{{#is_emergency}}<div class="field"><span class="label">Symptoms:</span><span class="value">{{symptoms}}</span></div>{{/is_emergency}}
 <div class="field"><span class="label">{{^is_emergency}}Diagnosis:{{/is_emergency}}{{#is_emergency}}Assessment:{{/is_emergency}}</span><span class="value">{{diagnosis}}</span></div>
 
 <h2>Vital Signs:</h2>
@@ -47,9 +47,9 @@
 <div class="block"><span class="label">Nursing Assessment:</span><div class="value">{{assessment}}</div></div>
 <div class="block"><span class="label">Nursing Interventions:</span><div class="value">{{interventions}}</div></div>
 <div class="field"><span class="label">Treatment / Plan:</span><span class="value">{{treatment}}</span></div>
-<div class="field"><span class="label">Medicines Dispensed:</span><span class="value">{{medicines}}</span></div>
-{{#is_emergency}}<div class="field"><span class="label">Intervention:</span><span class="value">{{intervention}}</span></div>{{/is_emergency}}
-<div class="field"><span class="label">Disposition:</span><span class="value">{{disposition}}</span></div>
+<div class="field"><span class="label">Medicines:</span><span class="value">{{medicines}}</span></div>
+{{#is_emergency}}<div class="field"><span class="label">Intervention:</span><span class="value">{{intervention}}</span></div>
+<div class="field"><span class="label">Disposition:</span><span class="value">{{disposition}}</span></div>{{/is_emergency}}
 <div class="row">
   <div class="field"><span class="label">Follow-up:</span><span class="value">{{follow_up}}</span></div>
   <div class="field"><span class="label">Medical Certificate:</span><span class="value">{{medical_certificate}}</span></div>

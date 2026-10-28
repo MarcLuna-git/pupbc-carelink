@@ -1,7 +1,7 @@
 import { getToken } from '../../../services/session';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { Loader2, ClipboardList, CheckCircle, RotateCcw, SkipForward, Stethoscope, ListOrdered, BellRing, UserRound, ClipboardPenLine, Users, UserX, Star, LogIn } from 'lucide-react';
+import { ClipboardList, CheckCircle, RotateCcw, Stethoscope, ListOrdered, BellRing, UserRound, ClipboardPenLine, Users, UserX, Star, LogIn } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import NursePageHero from '../../../components/NursePageHero';
@@ -26,19 +26,20 @@ const QUEUE_STATUS = {
   no_show: { label: 'No Show', className: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/30' },
 };
 
-// "5 mins" since check-in; "00:42" (mm:ss) since a student was called.
+// "5 mins" since check-in; "0:42" (m:ss) left before a called student is skipped.
 const minutesSince = (value, now) => {
   const start = value ? new Date(value).getTime() : NaN;
   if (Number.isNaN(start)) return '—';
   const minutes = Math.max(0, Math.floor((now - start) / 60000));
   return minutes < 60 ? `${minutes} min${minutes === 1 ? '' : 's'}` : `${Math.floor(minutes / 60)} hr ${minutes % 60} min`;
 };
-const clockSince = (value, now) => {
-  const start = value ? new Date(value).getTime() : NaN;
-  if (Number.isNaN(start)) return '00:00';
-  const seconds = Math.max(0, Math.floor((now - start) / 1000));
-  return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+// Seconds a called student still has, counted on the server's clock (`now` is already corrected for it).
+const secondsLeft = (calledAt, now, timeout) => {
+  const start = calledAt ? new Date(calledAt).getTime() : NaN;
+  if (Number.isNaN(start)) return timeout;
+  return Math.min(timeout, Math.max(0, timeout - Math.floor((now - start) / 1000)));
 };
+const clockLeft = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 
 const NurseConsultation = () => {
   const [step, setStep] = useState(1);
@@ -52,9 +53,13 @@ const NurseConsultation = () => {
   const [checkedInStudents, setCheckedInStudents] = useState([]);
   const [stats, setStats] = useState({ completed_today: 0, no_show_today: 0 });
   const [now, setNow] = useState(() => Date.now());
+  // The server decides when a called student is skipped; the countdown follows its clock, not this computer's.
+  const [clockOffset, setClockOffset] = useState(0);
+  const [callTimeout, setCallTimeout] = useState(60);
   const queueRequest = useRef(0);
   // Set once the open visit is saved, so the sync loop stops re-claiming a finished visit.
   const [visitSaved, setVisitSaved] = useState(false);
+  const visitSavedRef = useRef(false);
 
   const queueAction = async (student, action) => {
     setLoading(true); setMessage('');
@@ -74,6 +79,31 @@ const NurseConsultation = () => {
       } else {
         setMessageType('error');
         setMessage(err.response?.data?.message || 'Failed to update the queue.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Arrived confirms the student and goes straight into their consultation form.
+  const handleArrived = async (student) => {
+    if (loading) return;
+    setLoading(true); setMessage('');
+    try {
+      const { data } = await api.post(`/nurse/queue/${student.checkin_id}/arrived`, {}, { headers: { 'If-Match': student.sync_version } });
+      if (!data.success) return;
+      await fetchCheckedInStudents(true).catch(() => {});
+      await api.post(`/nurse/queue/${student.checkin_id}/claim`);
+      setSelectedStudent({ ...student, status: 'serving' });
+      setVisitSaved(false); visitSavedRef.current = false;
+      setStep(2);
+    } catch (err) {
+      if (err.response?.status === 409) {
+        setConflict(err.response.data?.message || 'This queue entry was changed. The student may already have been skipped; use Recall if they are here.');
+        await fetchCheckedInStudents(true).catch(() => {});
+      } else {
+        setMessageType('error');
+        setMessage(err.response?.data?.message || 'Failed to confirm arrival.');
       }
     } finally {
       setLoading(false);
@@ -113,6 +143,15 @@ const NurseConsultation = () => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
+  const serverNow = now + clockOffset;
+  const hasOverdueCall = checkedInStudents.some(s => s.status === 'called' && secondsLeft(s.called_at, serverNow, callTimeout) === 0);
+  useEffect(() => {
+    if (step !== 1 || !hasOverdueCall) return undefined;
+    // The server skips the student on its next queue request; look until the row changes.
+    const timer = setInterval(() => { fetchCheckedInStudents(true).catch(() => {}); }, 2000);
+    fetchCheckedInStudents(true).catch(() => {});
+    return () => clearInterval(timer);
+  }, [step, hasOverdueCall]);
   useEffect(() => {
     if (step !== 2 || !selectedStudent || visitSaved) return;
     const id = selectedStudent.checkin_id;
@@ -123,7 +162,8 @@ const NurseConsultation = () => {
     if (step === 2 && selectedStudent && !visitSaved) {
       try { await api.post(`/nurse/queue/${selectedStudent.checkin_id}/claim`); }
       catch (err) {
-        if (err.response?.status === 409) setConflict(err.response.data.message);
+        // Refused because the visit was just saved: nothing to warn about.
+        if (err.response?.status === 409 && !visitSavedRef.current) setConflict(err.response.data.message);
         throw err;
       }
     }
@@ -176,6 +216,8 @@ const NurseConsultation = () => {
         }));
         setCheckedInStudents(formatted);
         if (response.data.stats) setStats(response.data.stats);
+        if (response.data.server_time) setClockOffset(new Date(response.data.server_time).getTime() - Date.now());
+        if (response.data.call_timeout_seconds) setCallTimeout(response.data.call_timeout_seconds);
       }
     } catch (err) {
       console.log('Checkins error:', err);
@@ -209,9 +251,8 @@ const NurseConsultation = () => {
   const queueActions = s => {
     if (s.status === 'called') return (
       <div className="flex gap-1.5">
-        <button type="button" onClick={() => queueAction(s, 'arrived')} disabled={loading} className={`${btn} bg-green-600 text-white hover:bg-green-700`}><CheckCircle className="h-3.5 w-3.5" /> Arrived</button>
-        <button type="button" onClick={() => queueAction(s, 'recall')} disabled={loading} className={outline}><RotateCcw className="h-3.5 w-3.5" /> Recall</button>
-        <button type="button" onClick={() => queueAction(s, 'skip')} disabled={loading} className={`${btn} border border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800/40 dark:text-red-400 dark:hover:bg-red-900/20`}><SkipForward className="h-3.5 w-3.5" /> Skip</button>
+        <button type="button" onClick={() => handleArrived(s)} disabled={loading} className={`${btn} bg-green-700 text-white hover:bg-green-800`}><CheckCircle className="h-3.5 w-3.5" /> Arrived</button>
+        <button type="button" onClick={() => queueAction(s, 'recall')} disabled={loading} title="Call this student again and restart the one-minute timer" className={outline}><RotateCcw className="h-3.5 w-3.5" /> Recall</button>
       </div>
     );
     if (s.status === 'serving') return (
@@ -221,7 +262,9 @@ const NurseConsultation = () => {
       </div>
     );
     if (s.status === 'skipped') return (
-      <button type="button" onClick={() => queueAction(s, 'returned')} disabled={loading} className={`${btn} border border-green-300 text-green-700 hover:bg-green-50 dark:border-green-800/40 dark:text-green-400 dark:hover:bg-green-900/20`}><RotateCcw className="h-3.5 w-3.5" /> Mark Returned</button>
+      <button type="button" onClick={() => queueAction(s, 'recall')} disabled={loading || someoneCalled}
+        title={someoneCalled ? 'Finish the student who is called or being served first' : 'The student is back: call them again'}
+        className={outline}><RotateCcw className="h-3.5 w-3.5" /> Recall</button>
     );
     if (s.status === 'waiting' && s.checkin_id === nextInLine?.checkin_id) return (
       <button type="button" onClick={callNext} disabled={loading || someoneCalled} title={someoneCalled ? 'Finish the student who is called or being served first' : undefined} className={primary}><BellRing className="h-3.5 w-3.5" /> Call Next</button>
@@ -273,15 +316,7 @@ const NurseConsultation = () => {
           aria-label="Clinic queue"
           icon={ListOrdered}
           title={<>Queue list<CountChip>{checkedInStudents.length}</CountChip></>}
-          description={`${new Date(now).toLocaleDateString('en-US', { timeZone: 'Asia/Manila', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} · Priority students are called first. Call the next student, confirm arrival, then open the visit.`}
-          actions={
-            <button type="button" onClick={callNext} disabled={loading || someoneCalled || !nextInLine}
-              title={someoneCalled ? 'Finish the student who is called or being served first' : !nextInLine ? 'No one is waiting' : undefined}
-              className="inline-flex items-center gap-2 rounded-lg bg-maroon-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900 disabled:opacity-50">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellRing className="h-4 w-4" />}
-              Call Next
-            </button>
-          }
+          description={`${new Date(now).toLocaleDateString('en-US', { timeZone: 'Asia/Manila', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} · Priority students are called first. A called student has 1 minute to arrive, otherwise they are skipped and can be recalled.`}
         >
           {checkedInStudents.length === 0 ? (
             <div className="py-14 text-center">
@@ -323,10 +358,13 @@ const NurseConsultation = () => {
                           {s.triage?.pain_level != null && <p className="mt-1 whitespace-nowrap text-xs text-gray-600 dark:text-gray-300">Pain {s.triage.pain_level}/10</p>}
                         </td>
                         <td className="whitespace-nowrap px-3 py-3 text-gray-600 sm:px-4 dark:text-gray-300">{s.time_slot}</td>
-                        <td className="whitespace-nowrap px-3 py-3 text-gray-600 sm:px-4 dark:text-gray-300">{['waiting', 'called', 'skipped'].includes(s.status) ? minutesSince(s.check_in_time, now) : '—'}</td>
+                        <td className="whitespace-nowrap px-3 py-3 text-gray-600 sm:px-4 dark:text-gray-300">{s.status === 'waiting' ? minutesSince(s.check_in_time, serverNow) : '—'}</td>
                         <td className="px-3 py-3 sm:px-4">
                           <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold ${status.className}`}>
-                            {status.label}{s.status === 'called' && <span className="font-mono tabular-nums">{clockSince(s.called_at, now)}</span>}
+                            {status.label}{s.status === 'called' && (() => {
+                              const left = secondsLeft(s.called_at, serverNow, callTimeout);
+                              return <span className="font-mono tabular-nums" aria-label={left === 0 ? 'Time is up' : `${left} seconds left`}>{left === 0 ? 'Time is up' : clockLeft(left)}</span>;
+                            })()}
                           </span>
                         </td>
                         <td className="px-3 py-3 sm:px-4" onClick={e => e.stopPropagation()}>{queueActions(s)}</td>
@@ -345,7 +383,7 @@ const NurseConsultation = () => {
           key={selectedStudent.checkin_id}
           visit={selectedStudent}
           onBack={() => { setStep(1); setSelectedStudent(null); fetchCheckedInStudents(true).catch(() => {}); }}
-          onSaved={() => { setVisitSaved(true); fetchCheckedInStudents(true).catch(() => {}); }}
+          onSaved={() => { visitSavedRef.current = true; setVisitSaved(true); fetchCheckedInStudents(true).catch(() => {}); }}
           onConflict={setConflict}
           notify={(text, type) => { setMessageType(type); setMessage(text); }}
         />

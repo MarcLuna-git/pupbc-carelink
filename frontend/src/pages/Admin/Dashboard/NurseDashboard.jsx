@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Users, Calendar, Clock, ClipboardList, Activity, CalendarClock, CalendarCheck, CalendarRange, BellRing, ChevronRight } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
-import NursePageHero from '../../../components/NursePageHero';
+import { nurseGreeting } from '../../../utils/nurseGreeting';
 import NurseListCard, { CountChip } from '../../../components/NurseListCard';
 import ClinicCalendar from './ClinicCalendar';
 import { fetchNurseNotifications } from '../../../services/nurseNotifications';
@@ -174,13 +174,6 @@ const NurseDashboard = () => {
     return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
   };
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 18) return 'Good Afternoon';
-    return 'Good Evening';
-  };
-
   const summaryCards = [
     { icon: Calendar, title: "Today's Appointments", value: stats.todayAppointments, sub: `${stats.confirmedAppointments} confirmed`, color: 'bg-maroon-50 dark:bg-maroon-900/30', iconColor: 'text-maroon-700 dark:text-maroon-300' },
     { icon: Users, title: 'Total Students', value: stats.totalStudents, sub: 'Registered students', color: 'bg-maroon-50 dark:bg-maroon-900/30', iconColor: 'text-maroon-700 dark:text-maroon-300' },
@@ -195,14 +188,9 @@ const NurseDashboard = () => {
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-5">
-      <NursePageHero
-        id="nurse-dashboard-title"
-        eyebrow={`${getGreeting()},`}
-        title={`Nurse ${user?.first_name || 'Head'}!`}
-        description="PUP Biñan Campus Clinic — here is what is happening in the clinic today."
-      >
-        {error && <p role="alert" className="mt-3 text-xs font-medium text-red-600 dark:text-red-400">{error}</p>}
-      </NursePageHero>
+      {/* On tablet and desktop the greeting is in the header; the mobile header shows the brand, so it is here. */}
+      <h1 className="text-lg font-bold text-maroon-800 dark:text-maroon-300 md:sr-only">{nurseGreeting(user)}</h1>
+      {error && <p role="alert" className="text-sm font-medium text-red-700 dark:text-red-400">{error}</p>}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Clinic totals">
         {summaryCards.map((card) => (

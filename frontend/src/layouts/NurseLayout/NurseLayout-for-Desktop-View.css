@@ -75,6 +75,10 @@
 .nurse-header { position:fixed;top:0;left:var(--np-sidebar);right:0;z-index:30;background:color-mix(in srgb,var(--np-surface) 80%,transparent);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid var(--np-border); }
 .nurse-header-inner { height:var(--np-header-height);display:flex;align-items:center;gap:16px;padding:0 24px; }
 .nurse-header-brand { display:none; }
+.nurse-header-greeting { min-width:0;line-height:1.25; }
+.nurse-header-greeting-title { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:18px;font-weight:700;color:var(--color-maroon-800); }
+.dark .nurse-header-greeting-title { color:var(--color-maroon-300); }
+.nurse-header-greeting-note { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--np-muted); }
 .nurse-header-actions { display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto; }
 .nurse-header-icon { position:relative;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid var(--np-outline);border-radius:12px;color:var(--np-icon);cursor:pointer;transition:background-color .15s ease,color .15s ease; }
 .nurse-header-icon:hover, .nurse-header-icon.is-open { background:var(--np-soft);color:var(--np-icon-hover); }

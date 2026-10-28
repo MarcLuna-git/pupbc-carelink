@@ -169,19 +169,20 @@ export const DOCUMENTS = {
   consultation: { label: 'Consultation Form', file: 'Consultation-Form', template: 'consultation-form.html', data: consultationData, empty: '' },
 };
 
-// `student` (from studentDetails) lets the nurse portal print for the student being seen;
-// the student portal loads the signed-in student's own profile.
-export const openRecordDocument = (kind, record, mode = 'preview', student = null) => {
+/*
+ * The finished page (layout + document template, filled in) as an HTML string. It is what Print
+ * writes into the print window and what the consultation review shows in its preview frame, so
+ * what the nurse reviews is exactly what prints. `student` (from studentDetails) is for the nurse
+ * portal; without it the student portal loads the signed-in student's own profile.
+ */
+export const buildRecordDocument = async (kind, record, student = null) => {
   const doc = DOCUMENTS[kind];
-  // Opened right away (inside the click) so the browser does not block it; the template fills it in after.
-  const printWindow = doc && window.open('', '_blank');
-  if (!printWindow) return false;
-  printWindow.document.write('<p style="font-family: Arial, sans-serif; color: #6b7280;">Preparing document…</p>');
-
+  if (!doc) throw new Error('Unknown document');
   const reference = record.medicalCertificateRef || record.id;
-  const pageData = (info) => ({
+  const [layout, body, info] = await Promise.all([loadTemplate('layout.html'), loadTemplate(doc.template), student || loadOwnDetails()]);
+  const data = {
     clinic_name: CLINIC_NAME,
-    // Full URL: the pop-up is about:blank, so relative image paths would not resolve.
+    // Full URL: the print window is about:blank and the preview frame is srcdoc, so relative image paths would not resolve.
     template_dir: new URL(TEMPLATE_DIR, window.location.origin).href,
     issued_date: formatDay(new Date()),
     reference,
@@ -198,12 +199,21 @@ export const openRecordDocument = (kind, record, mode = 'preview', student = nul
     staff_name: record.staff,
     staff_role: record.staffRole,
     ...doc.data(record),
-  });
+  };
+  return fillTemplate(layout, { ...data, content: fillTemplate(body, data, doc.empty ?? NOT_RECORDED) });
+};
 
-  Promise.all([loadTemplate('layout.html'), loadTemplate(doc.template), student || loadOwnDetails()])
-    .then(([layout, body, info]) => {
-      const data = pageData(info);
-      const page = fillTemplate(layout, { ...data, content: fillTemplate(body, data, doc.empty ?? NOT_RECORDED) });
+// `student` (from studentDetails) lets the nurse portal print for the student being seen;
+// the student portal loads the signed-in student's own profile.
+export const openRecordDocument = (kind, record, mode = 'preview', student = null) => {
+  const doc = DOCUMENTS[kind];
+  // Opened right away (inside the click) so the browser does not block it; the template fills it in after.
+  const printWindow = doc && window.open('', '_blank');
+  if (!printWindow) return false;
+  printWindow.document.write('<p style="font-family: Arial, sans-serif; color: #6b7280;">Preparing document…</p>');
+
+  buildRecordDocument(kind, record, student)
+    .then((page) => {
       printWindow.document.open();
       printWindow.document.write(page);
       printWindow.document.close();

@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, CheckCircle, XCircle, Search, User, Loader2, X, FileText, Stethoscope, ListChecks, Inbox, List, Table2, Users, Phone, Eye, CheckCircle2, LogIn } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
-import NursePageHero from '../../../components/NursePageHero';
 import NurseListCard, { CountChip } from '../../../components/NurseListCard';
 import useNurseSync from '../../../hooks/useNurseSync';
 import useDebouncedValue from '../../../hooks/useDebouncedValue';
@@ -287,22 +286,14 @@ const showMessage = (msg, type) => {
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-5 pb-6">
-      <NursePageHero
-        id="nurse-appointments-title"
-        title="Appointments"
-        description="Review student bookings, approve or reject requests, and send approved visits to the clinic queue."
-      />
-
       {/* Action results show as a floating toast */}
       <NurseToast message={message} type={messageType} onClose={() => setMessage('')} />
 
-      {/* Search and filters card, right under the hero: heading, then a nested panel with search on row 1 and filters on row 2. */}
-      <section aria-labelledby="appointment-filters-title" className="rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
-        <h2 id="appointment-filters-title" className="font-bold text-gray-900 dark:text-white">Search and filters</h2>
-        <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Find a student's booking, or narrow the requests by service and appointment date.</p>
-        <div className="mt-4 space-y-3 rounded-lg border border-gray-100 p-3 dark:border-gray-700 sm:p-4">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+      {/* Search and filters: one row, search first, then the service, the date and Clear filters. */}
+      <section aria-label="Search and filters" className="rounded-lg border border-gray-100 bg-white p-3 dark:border-gray-700 dark:bg-gray-800 sm:p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
             <input
               aria-label="Search appointments"
               className={`${fieldClass} pl-10 pr-4`}
@@ -311,14 +302,14 @@ const showMessage = (msg, type) => {
               placeholder="Search student name or student number..."
             />
           </div>
-          <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
-            <select aria-label="Filter by service" className={`${fieldClass} px-3`} value={service} onChange={(e) => { setService(e.target.value); setPage(1); }}>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:flex lg:shrink-0">
+            <select aria-label="Filter by service" className={`${fieldClass} px-3 lg:w-52`} value={service} onChange={(e) => { setService(e.target.value); setPage(1); }}>
               <option value="">All services</option>
               {SERVICES.map(name => <option key={name} value={name}>{name}</option>)}
             </select>
-            <input type="date" aria-label="Filter by appointment date" className={`${fieldClass} px-3`} value={date} onChange={(e) => { setDate(e.target.value); setPage(1); }} />
+            <input type="date" aria-label="Filter by appointment date" className={`${fieldClass} px-3 lg:w-44`} value={date} onChange={(e) => { setDate(e.target.value); setPage(1); }} />
             <button type="button" onClick={() => { setSearch(''); setService(''); setDate(''); setPage(1); }} disabled={!search && !service && !date}
-              className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
+              className="cursor-pointer whitespace-nowrap rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">
               Clear filters
             </button>
           </div>
