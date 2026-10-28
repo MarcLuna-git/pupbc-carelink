@@ -318,7 +318,10 @@ const NurseConsultation = () => {
                           <p className="whitespace-nowrap font-semibold text-gray-900 dark:text-white">{s.name}</p>
                           <p className="font-mono text-xs text-gray-400">{s.id}</p>
                         </td>
-                        <td className="px-3 py-3 sm:px-4"><span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${priority.className}`}>{priority.label}</span></td>
+                        <td className="px-3 py-3 sm:px-4">
+                          <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${priority.className}`}>{priority.label}</span>
+                          {s.triage?.pain_level != null && <p className="mt-1 whitespace-nowrap text-xs text-gray-600 dark:text-gray-300">Pain {s.triage.pain_level}/10</p>}
+                        </td>
                         <td className="whitespace-nowrap px-3 py-3 text-gray-600 sm:px-4 dark:text-gray-300">{s.time_slot}</td>
                         <td className="whitespace-nowrap px-3 py-3 text-gray-600 sm:px-4 dark:text-gray-300">{['waiting', 'called', 'skipped'].includes(s.status) ? minutesSince(s.check_in_time, now) : '—'}</td>
                         <td className="px-3 py-3 sm:px-4">

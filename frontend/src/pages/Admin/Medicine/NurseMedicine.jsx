@@ -9,6 +9,10 @@ import useNurseSync from '../../../hooks/useNurseSync';
 import { useNurseTimeGuardBypass } from '../../../services/devTools';
 import { NurseToast } from '../../../components/NurseFeedback';
 
+const EMPTY_BATCH = { lot_number: '', expiry_date: '', received_at: '', supplier: '', reference: '' };
+
+const formatDate = (value) => new Date(`${String(value).slice(0, 10)}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+
 const isWholeNumberInput = (value) => /^\d*$/.test(value);
 const isPositiveWholeNumberInput = (value) => value === '' || /^[1-9]\d*$/.test(value);
 
@@ -35,9 +39,10 @@ const NurseMedicine = () => {
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteMedicine, setDeleteMedicine] = useState(null);
-  const [showBatchModal, setShowBatchModal] = useState(false);
-  const [batchMedicine, setBatchMedicine] = useState(null);
-  const [batchForm, setBatchForm] = useState({ lot_number: '', quantity: '1', expiry_date: '', received_at: '', supplier: '', reference: '' });
+  // One "Add stock" dialog: with `stockByBatch` the stock is received as a batch (lot number, expiry date),
+  // so the clinic can use the earliest-expiring stock first; otherwise only the quantity is added.
+  const [stockByBatch, setStockByBatch] = useState(false);
+  const [batchForm, setBatchForm] = useState(EMPTY_BATCH);
   const [showMovementModal, setShowMovementModal] = useState(false);
   const [movementMedicine, setMovementMedicine] = useState(null);
   const [movementForm, setMovementForm] = useState({ movement_type: 'dispensed', quantity: '1', batch_id: '', reason: '', student_id: '' });
@@ -166,54 +171,44 @@ const NurseMedicine = () => {
   const openStockModal = (medicine) => {
     setStockMedicine(medicine);
     setStockQuantity('1');
+    setStockByBatch(false);
+    setBatchForm(EMPTY_BATCH);
     setShowStockModal(true);
   };
 
   const handleStockUpdate = async () => {
     if (!stockMedicine) return;
     if (!Number.isInteger(Number(stockQuantity)) || Number(stockQuantity) < 1) return;
+    if (stockByBatch && !batchForm.lot_number.trim()) return;
     setFormLoading(true);
 
     try {
       const token = getToken('nurse');
-      const endpoint = `/nurse/medicines/${stockMedicine.id}/add-stock`;
+      const headers = { Authorization: `Bearer ${token}` };
+      let response;
 
-      const response = await api.post(endpoint, { quantity: stockQuantity }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      if (stockByBatch) {
+        response = await api.post(`/nurse/medicines/${stockMedicine.id}/batches`, { ...batchForm, quantity: stockQuantity }, { headers });
+        setMessage(`Added ${stockQuantity} ${stockMedicine.unit} as batch ${batchForm.lot_number.trim()}.`);
+      } else {
+        response = await api.post(`/nurse/medicines/${stockMedicine.id}/add-stock`, { quantity: stockQuantity }, { headers });
+        setMessage(response.data.message);
+      }
 
       if (response.data.success) {
         setMessageType('success');
-        setMessage(response.data.message);
         setShowStockModal(false);
         fetchMedicines();
         setTimeout(() => setMessage(''), 3000);
       }
     } catch (err) {
       setMessageType('error');
-      setMessage(err.response?.data?.message || 'Failed to update stock.');
+      const errors = err.response?.data?.errors;
+      setMessage((errors && Object.values(errors).flat()[0]) || err.response?.data?.message || 'Failed to update stock.');
       setTimeout(() => setMessage(''), 4000);
     } finally {
       setFormLoading(false);
     }
-  };
-
-  const openBatchModal = (medicine) => {
-    setBatchMedicine(medicine);
-    setBatchForm({ lot_number: '', quantity: '1', expiry_date: '', received_at: '', supplier: '', reference: '' });
-    setShowBatchModal(true);
-  };
-
-  const handleBatchReceive = async () => {
-    if (!batchMedicine) return;
-    if (!Number.isInteger(Number(batchForm.quantity)) || Number(batchForm.quantity) < 1) return;
-    setFormLoading(true);
-    try {
-      await api.post(`/nurse/medicines/${batchMedicine.id}/batches`, batchForm);
-      setMessageType('success'); setMessage('Batch received successfully.'); setShowBatchModal(false); fetchMedicines();
-    } catch (err) {
-      setMessageType('error'); setMessage(err.response?.data?.message || 'Failed to receive batch.');
-    } finally { setFormLoading(false); }
   };
 
   const openMovementHistory = async (medicine) => {
@@ -248,8 +243,11 @@ const NurseMedicine = () => {
     setFormLoading(true);
     setMovementError('');
     try {
-      await api.post(`/nurse/medicines/${movementMedicine.id}/movements`, movementForm, { headers: { 'If-Match': movementMedicine.sync_version } });
-      setMessageType('success'); setMessage('Stock movement recorded.'); setShowMovementModal(false); fetchMedicines();
+      const response = await api.post(`/nurse/medicines/${movementMedicine.id}/movements`, movementForm, { headers: { 'If-Match': movementMedicine.sync_version } });
+      // Stock goes out first-expiry, first-out; say which batches were used.
+      const used = (response.data.allocations || []).filter((item) => item.lot_number)
+        .map((item) => `${item.lot_number} ×${item.quantity}`).join(', ');
+      setMessageType('success'); setMessage(used ? `Stock movement recorded. Taken from ${used}.` : 'Stock movement recorded.'); setShowMovementModal(false); fetchMedicines();
     } catch (err) {
       setMovementError(err.response?.data?.message || 'Failed to record movement.');
     } finally { setFormLoading(false); setTimeout(() => setMessage(''), 4000); }
@@ -452,7 +450,7 @@ const NurseMedicine = () => {
         aria-label="Medicine inventory"
         icon={Boxes}
         title={<>Inventory<CountChip>{medicines.length}</CountChip></>}
-        description="Stock levels and expiry for every medicine, with stock actions on each card."
+        description="Stock levels and expiry for every medicine, with stock actions on each row."
         toolbar={
           <div className="flex flex-col gap-2 sm:flex-row">
             <form onSubmit={handleSearch} className="relative flex-1">
@@ -485,108 +483,115 @@ const NurseMedicine = () => {
               <p className="mt-1 text-sm text-gray-400">{search || filter !== 'all' ? 'Try a different search or filter.' : 'Use the form above to register the first medicine.'}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {medicines.map((med) => {
-                const status = getStatusBadge(med);
-                return (
-                  <article key={med.id}
-                    className={`flex flex-col rounded-lg border p-4 transition-colors ${
-                      editingMedicine?.id === med.id
-                        ? 'border-maroon-200 bg-maroon-50/50 dark:border-maroon-900/40 dark:bg-maroon-900/10'
-                        : 'border-gray-100 bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700/40'
-                    }`}>
-                    <div className="mb-3 flex items-start justify-between gap-3">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-maroon-50 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-400">
-                          <Tablets className="h-4 w-4" />
+            <div className="overflow-hidden rounded-lg border border-gray-100 dark:border-gray-700">
+              <div aria-hidden="true" className="hidden grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1fr)_17rem] items-center gap-4 border-b border-gray-100 bg-gray-50 px-4 py-2.5 text-xs font-semibold text-gray-600 dark:border-gray-700 dark:bg-gray-800/60 dark:text-gray-300 md:grid">
+                <span>Medicine</span>
+                <span>Stock</span>
+                <span>Next expiry</span>
+                <span>Status</span>
+                <span className="text-right">Actions</span>
+              </div>
+              <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+                {medicines.map((med) => {
+                  const status = getStatusBadge(med);
+                  return (
+                    <li key={med.id}
+                      className={`grid grid-cols-2 gap-x-4 gap-y-3 px-4 py-3 transition-colors md:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1fr)_17rem] md:items-center ${
+                        editingMedicine?.id === med.id
+                          ? 'bg-maroon-50/60 dark:bg-maroon-900/10'
+                          : 'bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700/40'
+                      }`}>
+                      <div className="col-span-2 flex min-w-0 items-center gap-3 md:col-span-1">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-maroon-50 text-maroon-800 dark:bg-maroon-900/30 dark:text-maroon-300">
+                          <Tablets className="h-4 w-4" aria-hidden="true" />
                         </span>
                         <div className="min-w-0">
                           <h3 className="truncate text-sm font-semibold text-gray-900 dark:text-white">{med.name}</h3>
-                          {med.generic_name && <p className="truncate text-xs text-gray-400">{med.generic_name}</p>}
+                          {(med.generic_name || med.dosage) && (
+                            <p className="truncate text-xs text-gray-500 dark:text-gray-400">{[med.generic_name, med.dosage].filter(Boolean).join(' · ')}</p>
+                          )}
                         </div>
                       </div>
-                      <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${status.color}`}>
-                        <status.icon className="h-3 w-3" />{status.text}
-                      </span>
-                    </div>
 
-                    <dl className="mb-4 space-y-1.5 text-sm">
-                      <div className="flex justify-between gap-2">
-                        <dt className="text-gray-400">Stock</dt>
-                        <dd className={`font-semibold ${med.is_low_stock ? 'text-orange-600' : 'text-gray-700 dark:text-gray-200'}`}>{med.quantity} {med.unit}</dd>
+                      <div className="text-sm">
+                        <span className="block text-xs text-gray-500 md:hidden">Stock</span>
+                        <span className={`font-semibold ${med.is_low_stock ? 'text-orange-700 dark:text-orange-300' : 'text-gray-800 dark:text-gray-100'}`}>{med.quantity} {med.unit}</span>
                       </div>
-                      {med.dosage && (
-                        <div className="flex justify-between gap-2">
-                          <dt className="text-gray-400">Dosage</dt>
-                          <dd className="text-gray-600 dark:text-gray-300">{med.dosage}</dd>
-                        </div>
-                      )}
-                      {med.expiry_date && (
-                        <div className="flex justify-between gap-2">
-                          <dt className="text-gray-400">Expiry</dt>
-                          <dd className={med.is_expired ? 'font-semibold text-red-600' : 'text-gray-600 dark:text-gray-300'}>{new Date(med.expiry_date).toLocaleDateString()}</dd>
-                        </div>
-                      )}
-                    </dl>
 
-                    <div className="mt-auto flex items-center gap-1 border-t border-gray-100 pt-3 dark:border-gray-700">
-                      <button onClick={() => openStockModal(med)}
-                        className="mr-auto inline-flex items-center gap-1 rounded-lg bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30">
-                        <PackagePlus className="h-3.5 w-3.5" /><span>Add stock</span>
-                      </button>
-                      <button onClick={() => openBatchModal(med)} title="Receive batch" aria-label="Receive batch" className="rounded-lg p-1.5 text-gray-400 transition hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20"><Package className="h-4 w-4" /></button>
-                      <button onClick={() => openMovementModal(med)} title="Record stock movement" aria-label="Record stock movement" className="rounded-lg p-1.5 text-gray-400 transition hover:bg-maroon-50 hover:text-maroon-600 dark:hover:bg-maroon-900/20"><ClipboardList className="h-4 w-4" /></button>
-                      <button onClick={() => openMovementHistory(med)} title="View stock movement history" aria-label="View stock movement history" className="rounded-lg p-1.5 text-gray-400 transition hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20"><History className="h-4 w-4" /></button>
-                      <button onClick={() => openEditModal(med)} title="Edit medicine" aria-label="Edit medicine" className="rounded-lg p-1.5 text-gray-400 transition hover:bg-maroon-50 hover:text-maroon-600 dark:hover:bg-maroon-900/20"><Edit2 className="h-4 w-4" /></button>
-                      <button onClick={() => { setDeleteMedicine(med); setShowDeleteConfirm(true); }} title="Delete medicine" aria-label="Delete medicine" className="rounded-lg p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"><Trash2 className="h-4 w-4" /></button>
-                    </div>
-                  </article>
-                );
-              })}
+                      <div className="text-sm">
+                        <span className="block text-xs text-gray-500 md:hidden">Next expiry</span>
+                        {med.next_expiry ? (
+                          <span className={med.is_expired ? 'font-semibold text-red-700 dark:text-red-300' : 'text-gray-700 dark:text-gray-200'}>{formatDate(med.next_expiry)}</span>
+                        ) : (
+                          <span className="text-gray-500 dark:text-gray-400">No expiry set</span>
+                        )}
+                        {med.batch_count > 0 && <span className="block text-xs text-gray-500 dark:text-gray-400">{med.batch_count} {med.batch_count === 1 ? 'batch' : 'batches'} in stock</span>}
+                      </div>
+
+                      <div>
+                        <span className="block text-xs text-gray-500 md:hidden">Status</span>
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${status.color}`}>
+                          <status.icon className="h-3 w-3" aria-hidden="true" />{status.text}
+                        </span>
+                      </div>
+
+                      <div className="col-span-2 flex items-center justify-end gap-1 md:col-span-1">
+                        <button onClick={() => openStockModal(med)}
+                          className="mr-auto inline-flex cursor-pointer items-center gap-1 rounded-lg bg-maroon-50 px-3 py-2 text-xs font-semibold text-maroon-800 transition hover:bg-maroon-100 dark:bg-maroon-900/30 dark:text-maroon-300 dark:hover:bg-maroon-900/50 md:mr-0">
+                          <PackagePlus className="h-3.5 w-3.5" aria-hidden="true" /><span>Add stock</span>
+                        </button>
+                        <button onClick={() => openMovementModal(med)} title="Record stock movement" aria-label="Record stock movement" className="cursor-pointer rounded-lg p-2 text-gray-500 transition hover:bg-maroon-50 hover:text-maroon-800 dark:text-gray-400 dark:hover:bg-maroon-900/30 dark:hover:text-maroon-300"><ClipboardList className="h-4 w-4" /></button>
+                        <button onClick={() => openMovementHistory(med)} title="View stock movement history" aria-label="View stock movement history" className="cursor-pointer rounded-lg p-2 text-gray-500 transition hover:bg-maroon-50 hover:text-maroon-800 dark:text-gray-400 dark:hover:bg-maroon-900/30 dark:hover:text-maroon-300"><History className="h-4 w-4" /></button>
+                        <button onClick={() => openEditModal(med)} title="Edit medicine" aria-label="Edit medicine" className="cursor-pointer rounded-lg p-2 text-gray-500 transition hover:bg-maroon-50 hover:text-maroon-800 dark:text-gray-400 dark:hover:bg-maroon-900/30 dark:hover:text-maroon-300"><Edit2 className="h-4 w-4" /></button>
+                        <button onClick={() => { setDeleteMedicine(med); setShowDeleteConfirm(true); }} title="Delete medicine" aria-label="Delete medicine" className="cursor-pointer rounded-lg p-2 text-gray-500 transition hover:bg-red-50 hover:text-red-700 dark:text-gray-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"><Trash2 className="h-4 w-4" /></button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
           )}
         </div>
       </NurseListCard>
 
       {showStockModal && stockMedicine && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 w-full max-w-sm">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              Add Stock
-            </h2>
-            <p className="text-sm text-gray-500 mb-4">{stockMedicine.name} (Current: {stockMedicine.quantity} {stockMedicine.unit})</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="add-stock-title">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 dark:bg-gray-800">
+            <h2 id="add-stock-title" className="mb-1 text-xl font-bold text-gray-900 dark:text-white">Add Stock</h2>
+            <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">{stockMedicine.name} (Current: {stockMedicine.quantity} {stockMedicine.unit})</p>
             <div className="space-y-4">
-              <div>
-                <label className={labelClass}>Quantity</label>
+              <label className="block">
+                <span className={labelClass}>Quantity *</span>
                 <input className={inputClass} type="number" min="1" step="1" inputMode="numeric" value={stockQuantity} onChange={(e) => { if (isWholeNumberInput(e.target.value)) setStockQuantity(e.target.value); }} />
-              </div>
+              </label>
+
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-600">
+                <input type="checkbox" className="mt-1 h-4 w-4 cursor-pointer accent-maroon-800" checked={stockByBatch} onChange={(e) => setStockByBatch(e.target.checked)} />
+                <span>
+                  <span className="block text-sm font-semibold text-gray-900 dark:text-white">Track this stock by batch</span>
+                  <span className="block text-xs text-gray-600 dark:text-gray-300">Record the lot number and expiry date. Stock that expires first is used first.</span>
+                </span>
+              </label>
+
+              {stockByBatch && (
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="col-span-2"><span className={labelClass}>Lot/batch number *</span><input className={inputClass} value={batchForm.lot_number} onChange={(e) => setBatchForm({ ...batchForm, lot_number: e.target.value })} required /></label>
+                  <label><span className={labelClass}>Expiry date</span><input className={inputClass} type="date" min={timeGuardOff ? undefined : minimumExpiryDate} value={batchForm.expiry_date} onChange={(e) => setBatchForm({ ...batchForm, expiry_date: e.target.value })} /></label>
+                  <label><span className={labelClass}>Received date</span><input className={inputClass} type="date" value={batchForm.received_at} onChange={(e) => setBatchForm({ ...batchForm, received_at: e.target.value })} /></label>
+                  <label><span className={labelClass}>Supplier (optional)</span><input className={inputClass} value={batchForm.supplier} onChange={(e) => setBatchForm({ ...batchForm, supplier: e.target.value })} /></label>
+                  <label><span className={labelClass}>Reference (optional)</span><input className={inputClass} value={batchForm.reference} onChange={(e) => setBatchForm({ ...batchForm, reference: e.target.value })} /></label>
+                </div>
+              )}
+
               <div className="flex gap-3">
-                <button onClick={() => setShowStockModal(false)} className="flex-1 py-3 bg-gray-200 dark:bg-gray-700 rounded-2xl font-semibold">Cancel</button>
-                <button onClick={handleStockUpdate} disabled={formLoading || !Number.isInteger(Number(stockQuantity)) || Number(stockQuantity) < 1}
-                  className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-2xl font-semibold flex items-center justify-center disabled:opacity-50">
-                  {formLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                  <span className="ml-2">Add {stockQuantity} {stockMedicine.unit}</span>
+                <button onClick={() => setShowStockModal(false)} className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-3 font-semibold text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">Cancel</button>
+                <button onClick={handleStockUpdate} disabled={formLoading || !Number.isInteger(Number(stockQuantity)) || Number(stockQuantity) < 1 || (stockByBatch && !batchForm.lot_number.trim())}
+                  className="flex flex-1 cursor-pointer items-center justify-center rounded-xl bg-maroon-800 py-3 font-semibold text-white hover:bg-maroon-900 disabled:cursor-not-allowed disabled:opacity-50">
+                  {formLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                  <span className="ml-2">Add {stockQuantity || 0} {stockMedicine.unit}</span>
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {showBatchModal && batchMedicine && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Receive Medicine Batch</h2>
-            <p className="text-sm text-gray-500 mb-4">{batchMedicine.name}</p>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="col-span-2"><span className={labelClass}>Lot/batch number *</span><input className={inputClass} value={batchForm.lot_number} onChange={e => setBatchForm({ ...batchForm, lot_number: e.target.value })} required /></label>
-              <label><span className={labelClass}>Quantity *</span><input className={inputClass} type="number" min="1" step="1" inputMode="numeric" value={batchForm.quantity} onChange={e => { if (isWholeNumberInput(e.target.value)) setBatchForm({ ...batchForm, quantity: e.target.value }); }} required /></label>
-              <label><span className={labelClass}>Expiry Date</span><input className={inputClass} type="date" min={timeGuardOff ? undefined : minimumExpiryDate} value={batchForm.expiry_date} onChange={e => setBatchForm({ ...batchForm, expiry_date: e.target.value })} /></label>
-              <label><span className={labelClass}>Received Date</span><input className={inputClass} type="date" value={batchForm.received_at} onChange={e => setBatchForm({ ...batchForm, received_at: e.target.value })} /></label>
-              <input className={inputClass} placeholder="Supplier (optional)" value={batchForm.supplier} onChange={e => setBatchForm({ ...batchForm, supplier: e.target.value })} />
-              <input className={`${inputClass} col-span-2`} placeholder="Reference (optional)" value={batchForm.reference} onChange={e => setBatchForm({ ...batchForm, reference: e.target.value })} />
-            </div>
-            <div className="flex gap-3 mt-5"><button onClick={() => setShowBatchModal(false)} className="flex-1 py-3 bg-gray-200 dark:bg-gray-700 rounded-2xl font-semibold">Cancel</button><button onClick={handleBatchReceive} disabled={formLoading || !batchForm.lot_number.trim()} className="flex-1 py-3 bg-green-600 text-white rounded-2xl font-semibold disabled:opacity-50">{formLoading ? 'Saving...' : 'Receive Batch'}</button></div>
           </div>
         </div>
       )}

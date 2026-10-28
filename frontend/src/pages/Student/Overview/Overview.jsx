@@ -616,6 +616,18 @@ const Overview = () => {
         )}
       </StudentPageHero>
 
+      {/* Privacy notice: everything on this page is personal and health information. */}
+      <div role="note" className={`${CARD} flex items-start gap-3 p-4 lg:px-6`}>
+        <Lock className="mt-0.5 h-5 w-5 shrink-0 text-maroon-800 dark:text-maroon-300" aria-hidden="true" />
+        <div className="min-w-0 text-sm">
+          <p className="font-semibold text-gray-900 dark:text-white">Your information is confidential</p>
+          <p className="mt-0.5 text-gray-700 dark:text-gray-300">
+            Your profile and health information can only be seen by you and authorized PUP Biñan clinic staff, and are handled
+            under the Data Privacy Act of 2012 (RA 10173). Do not share your password or QR code with anyone.
+          </p>
+        </div>
+      </div>
+
       {/* Profile completion — its own card under the hero. */}
       {ready ? (
         <div className={`${CARD} flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between lg:px-6`}>
@@ -680,7 +692,12 @@ const Overview = () => {
           <div className="flex min-w-0 flex-1 items-start gap-2.5">
             <ClipboardList className="mt-0.5 h-6 w-6 shrink-0 text-maroon-800 dark:text-maroon-300" />
             <div className="min-w-0">
-              <h2 className="text-lg font-bold text-maroon-800 dark:text-maroon-300">My Health Information</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-lg font-bold text-maroon-800 dark:text-maroon-300">My Health Information</h2>
+                <span className="inline-flex items-center gap-1 rounded-full bg-maroon-50 px-2.5 py-0.5 text-xs font-semibold text-maroon-800 dark:bg-maroon-900/30 dark:text-maroon-300">
+                  <Lock className="h-3 w-3" aria-hidden="true" />Confidential
+                </span>
+              </div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Keep your information up to date for better and safer care.</p>
             </div>
           </div>

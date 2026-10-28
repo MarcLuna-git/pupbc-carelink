@@ -13,10 +13,15 @@ const FLAGS = [
   ['sudden_weakness_confusion', 'Sudden severe weakness or confusion'],
 ];
 
+// 0-10 pain scale shown at check-in. The band name helps patients who are unsure of a number.
+const PAIN_LEVELS = Array.from({ length: 11 }, (_, level) => level);
+const painBand = (level) => (level === 0 ? 'No pain' : level <= 3 ? 'Mild pain' : level <= 6 ? 'Moderate pain' : 'Severe pain');
+
 const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
   const { user, appointment, has_active_checkin, active_checkin } = data;
   const [chiefComplaint, setChiefComplaint] = useState(appointment?.concern || '');
   const [severity, setSeverity] = useState('mild');
+  const [painLevel, setPainLevel] = useState(null);
   const [redFlags, setRedFlags] = useState([]);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
@@ -47,6 +52,7 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
   const submit = async (event) => {
     event.preventDefault();
     if (!chiefComplaint.trim()) { setError('Please describe your reason for visit.'); return; }
+    if (painLevel === null) { setError('Please rate your pain from 0 to 10. Choose 0 if you have no pain.'); return; }
     setLoading(true); setError('');
     try {
       const response = await api.post('/kiosk/checkin', {
@@ -54,6 +60,7 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
         student_id: user.student_id,
         chief_complaint: chiefComplaint.trim(),
         severity,
+        pain_level: painLevel,
         red_flags: redFlags.length ? redFlags : ['none'],
         notes: notes.trim() || undefined,
       });
@@ -86,6 +93,26 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
     <label className="block text-sm text-white/70">Chief complaint or reason *
       <textarea required rows="3" value={chiefComplaint} onChange={(e) => setChiefComplaint(e.target.value)} className="mt-2 w-full rounded-xl bg-white/5 border border-white/10 p-3 text-white" />
     </label>
+    <fieldset>
+      <legend className="mb-1 text-sm text-white/70">Rate your pain *</legend>
+      <p className="mb-3 text-sm text-white/70">0 means no pain, 10 means the worst pain you can imagine.</p>
+      <div role="radiogroup" aria-label="Pain from 0 to 10" className="grid grid-cols-6 gap-2 sm:grid-cols-11">
+        {PAIN_LEVELS.map((level) => (
+          <button
+            key={level}
+            type="button"
+            role="radio"
+            aria-checked={painLevel === level}
+            onClick={() => { setPainLevel(level); setError(''); }}
+            className={'min-h-12 cursor-pointer rounded-xl border text-lg font-bold transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ' + (painLevel === level ? 'border-yellow-400 bg-yellow-400 text-maroon-950' : 'border-white/30 bg-white/5 text-white hover:bg-white/15')}
+          >
+            {level}
+          </button>
+        ))}
+      </div>
+      <div className="mt-2 flex justify-between text-xs text-white/70" aria-hidden="true"><span>No pain</span><span>Worst pain</span></div>
+      <p className="mt-2 min-h-5 text-sm font-semibold text-yellow-300" aria-live="polite">{painLevel === null ? '' : painLevel + ' / 10 · ' + painBand(painLevel)}</p>
+    </fieldset>
     <label className="block text-sm text-white/70">Severity
       <select value={severity} onChange={(e) => setSeverity(e.target.value)} className="mt-2 w-full rounded-xl bg-slate-900 border border-white/10 p-3 text-white">
         <option value="mild">Mild</option><option value="moderate">Moderate</option><option value="severe">Severe</option><option value="critical">Critical</option>

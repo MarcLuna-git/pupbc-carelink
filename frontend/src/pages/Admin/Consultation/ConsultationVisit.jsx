@@ -87,6 +87,10 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
   const [item, setItem] = useState(EMPTY_ITEM);
   const [stock, setStock] = useState({});
   const [dispenseResults, setDispenseResults] = useState([]);
+  // The nurse who attended the patient (defaults to the signed-in nurse); named on the printed documents.
+  const signedInNurse = getUser('nurse') || {};
+  const [nurses, setNurses] = useState([]);
+  const [attendingId, setAttendingId] = useState(signedInNurse.id || '');
 
   // Student details for the header card (age, sex, contact).
   useEffect(() => {
@@ -94,6 +98,12 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
     api.get(`/nurse/students/${visit.user_id}`).then(({ data }) => { if (active) setStudent(data.data); }).catch(() => {});
     return () => { active = false; };
   }, [visit.user_id]);
+
+  useEffect(() => {
+    let active = true;
+    api.get('/nurse/nurses').then(({ data }) => { if (active) setNurses(data.data || []); }).catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   // Medicine search for the Dispensing tab.
   useEffect(() => {
@@ -184,6 +194,7 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
         user_id: visit.user_id,
         appointment_id: visit.appointment_id || null,
         appointment_checkin_id: visit.checkin_id || null,
+        attending_nurse_id: attendingId || null,
         chief_complaint: form.chief_complaint,
         history_present_illness: form.history_present_illness || null,
         vital_signs: { bp: form.bp || null, hr: form.hr || null, rr: form.rr || null, temp: form.temp || null, o2_sat: form.o2_sat || null },
@@ -214,8 +225,11 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
   const initials = visit.name.split(' ').filter(Boolean).map(part => part[0]).slice(0, 2).join('').toUpperCase();
   const appointment = visit.appointment_details || {};
 
+  const attendingNurse = nurses.find(n => n.id === attendingId);
+  const nurseName = n => `Nurse ${[n?.first_name, n?.last_name].filter(Boolean).join(' ')}`.trim();
+
   const printRecord = kind => {
-    const nurse = getUser('nurse') || {};
+    const nurse = attendingNurse || signedInNurse;
     const record = {
       id: saved?.id || visit.checkin_id,
       date: saved?.created_at || new Date().toISOString(),
@@ -235,7 +249,7 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
       medicalCertificateRef: form.medical_certificate_ref,
       appointment: { service: visit.appointment },
       staff: `Nurse ${[nurse.first_name, nurse.last_name].filter(Boolean).join(' ')}`.trim(),
-      staffRole: 'School Nurse',
+      staffRole: 'Clinic Nurse',
     };
     const health = student?.health_profile;
     const details = studentDetails(student, profile, health && { name: health.emergency_name, relationship: health.emergency_relationship, phone: health.emergency_phone });
@@ -305,7 +319,7 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
             <div className="flex items-start gap-2"><CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-400">Date & Time</dt><dd className="text-gray-900 dark:text-white">{appointment.appointment_date ? formatAppointmentDate(appointment.appointment_date, { weekday: 'short' }) : 'Today'} · {appointment.time_slot || '—'}</dd></div></div>
             <div className="flex items-start gap-2"><MessageSquareText className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-400">Reason for Visit</dt><dd className="text-gray-900 dark:text-white">{visit.complaint || appointment.concern || 'Not specified'}</dd></div></div>
             <div className="flex items-start gap-2"><ClipboardList className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-400">Appointment Type · Queue</dt><dd className="text-gray-900 dark:text-white">{visit.appointment} · {visit.queue_number}</dd></div></div>
-            <div className="flex items-start gap-2"><Activity className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-400">Kiosk Triage</dt><dd className="text-gray-900 dark:text-white">{visit.priority}{visit.triage?.severity && ` · ${capitalize(visit.triage.severity)}`}{visit.triage?.red_flags?.length ? ` · Red flags: ${visit.triage.red_flags.join(', ').replaceAll('_', ' ')}` : ''}</dd></div></div>
+            <div className="flex items-start gap-2"><Activity className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-400">Kiosk Triage</dt><dd className="text-gray-900 dark:text-white">{visit.priority}{visit.triage?.severity && ` · ${capitalize(visit.triage.severity)}`}{visit.triage?.pain_level != null && ` · Pain ${visit.triage.pain_level}/10`}{visit.triage?.red_flags?.length ? ` · Red flags: ${visit.triage.red_flags.join(', ').replaceAll('_', ' ')}` : ''}</dd></div></div>
           </dl>
         </section>
       </div>
@@ -347,6 +361,15 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
             {tab === 'form' && (
               <div className="grid gap-5 lg:grid-cols-2">
                 <div className="space-y-4">
+                  {nurses.length > 0 && (
+                    <div>
+                      <label htmlFor="visit-attending-nurse" className={label}>Attending nurse</label>
+                      <select id="visit-attending-nurse" value={attendingId} onChange={e => setAttendingId(e.target.value)} className={input}>
+                        {nurses.map(n => <option key={n.id} value={n.id}>{nurseName(n)}</option>)}
+                      </select>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Named as the nurse on this visit and on the printed consultation form and certificate.</p>
+                    </div>
+                  )}
                   {textArea('chief_complaint', 'Chief Complaint', 'Main concern, e.g. headache and dizziness for 2 days', true)}
                   {textArea('history_present_illness', 'History / Present Illness', 'Onset, duration, related symptoms…')}
                   <fieldset>
@@ -570,6 +593,7 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
                   <section className={reviewCard} aria-label="Consultation details">
                     <h4 className={reviewTitle}>Consultation Details</h4>
                     <dl className="space-y-3">
+                      {reviewField('Attending nurse', attendingNurse ? nurseName(attendingNurse) : nurseName(signedInNurse))}
                       {reviewField('Chief Complaint', form.chief_complaint)}
                       {reviewField('History / Present Illness', form.history_present_illness)}
                       {reviewField('Treatment / Plan', form.treatment_plan)}
