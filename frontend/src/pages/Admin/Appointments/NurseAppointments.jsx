@@ -1,7 +1,7 @@
 import { getToken } from '../../../services/session';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Clock, CheckCircle, XCircle, Search, User, Loader2, X, FileText, Stethoscope, ListChecks, Inbox, List, Table2, Users, Phone, Eye, CheckCircle2, LogIn } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, XCircle, Search, User, X, FileText, Stethoscope, ListChecks, Inbox, List, Table2 } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import NurseListCard, { CountChip } from '../../../components/NurseListCard';
@@ -22,34 +22,30 @@ const STATUS_TABS = [
   { key: 'all', label: 'All' },
   { key: 'pending', label: 'Pending' },
   { key: 'approved', label: 'Approved' },
-  { key: 'waiting', label: 'Waiting' },
-  { key: 'in_consultation', label: 'In consultation' },
-  { key: 'completed', label: 'Completed' },
+  { key: 'rejected', label: 'Declined' },
   { key: 'cancelled', label: 'Cancelled' },
+  { key: 'expired', label: 'Expired' },
 ];
 
-// An approved appointment's stage follows its kiosk check-in: in the queue, or being served.
-const QUEUE_STAGES = { waiting: 'waiting', called: 'waiting', skipped: 'waiting', serving: 'in_consultation' };
+// This page shows the state of the booking request only. Where the visit is in the queue
+// (waiting, called, in consultation, completed) is on the Consultation page.
 const stageOf = app => {
+  // A finished visit was an approved request.
+  if (app.status === 'completed') return 'approved';
   // Approved, but the student never made it to the clinic: the slot is over, so it reads as expired.
   if (app.status === 'approved' && app.no_show) return 'expired';
-  const checkin = app.latest_checkin;
-  return app.status === 'approved' && checkin && !checkin.is_walk_in ? QUEUE_STAGES[checkin.status] || app.status : app.status;
+  return app.status;
 };
-const stageLabel = stage => stage.replace('_', ' ');
 
 // Status badge text per stage.
 const STAGE_LABELS = {
-  pending: 'Pending Approval',
-  approved: 'Approved / For Check-in',
-  waiting: 'Waiting Queue',
-  in_consultation: 'In Consultation',
-  completed: 'Completed',
+  pending: 'Pending',
+  approved: 'Approved',
+  rejected: 'Declined',
   cancelled: 'Cancelled',
-  rejected: 'Rejected',
   expired: 'Expired',
 };
-const badgeLabel = stage => STAGE_LABELS[stage] || stageLabel(stage);
+const badgeLabel = stage => STAGE_LABELS[stage] || stage;
 
 // List (cards) or table view, remembered per browser.
 const VIEW_KEY = 'nurse-appointments-view';
@@ -147,7 +143,7 @@ const NurseAppointments = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (loadingId !== actionLoadingRef.current) return;
-      showMessage('Appointment rejected.', 'success');
+      showMessage('Appointment declined.', 'success');
       setRejectModal(null);
       setRejectReason('');
       setSelectedAppointment(null);
@@ -176,8 +172,7 @@ const NurseAppointments = () => {
     }
   };
 
-  const handleComplete = () => { window.location.assign('/nurse/consultation'); };
-const showMessage = (msg, type) => {
+  const showMessage = (msg, type) => {
     setMessage(msg);
     setMessageType(type);
     setTimeout(() => setMessage(''), 3000);
@@ -206,9 +201,6 @@ const showMessage = (msg, type) => {
   const statusColors = {
     pending: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/30',
     approved: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/30',
-    waiting: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/30',
-    in_consultation: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800/30',
-    completed: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/30',
     cancelled: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/30',
     rejected: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/30',
     expired: 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-700/40 dark:text-gray-300 dark:border-gray-700',
@@ -217,9 +209,6 @@ const showMessage = (msg, type) => {
   const statusConfig = {
     pending: { icon: Clock },
     approved: { icon: CheckCircle },
-    waiting: { icon: Users },
-    in_consultation: { icon: Stethoscope },
-    completed: { icon: CheckCircle2 },
     cancelled: { icon: XCircle },
     rejected: { icon: XCircle },
     expired: { icon: XCircle },
@@ -239,11 +228,7 @@ const showMessage = (msg, type) => {
 
   const btnBase = 'inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg p-2 text-xs font-semibold transition disabled:opacity-50 sm:px-3 sm:py-1.5';
   const primaryBtn = `${btnBase} bg-maroon-800 text-white hover:bg-maroon-900`;
-  const outlineBtn = `${btnBase} border border-maroon-200 bg-white text-maroon-800 hover:bg-maroon-50 dark:border-maroon-800/50 dark:bg-transparent dark:text-maroon-300 dark:hover:bg-maroon-900/20`;
   const declineBtn = `${btnBase} bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30`;
-  const approvedBtn = `${btnBase} bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30`;
-  const serveBtn = `${btnBase} bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-900/40 dark:text-blue-400 dark:hover:bg-blue-900`;
-  const declinedBtn = `${btnBase} bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-900/20 dark:text-gray-300 dark:hover:bg-gray-900/30`;
   const actionBtn = (className, Icon, label, onClick, disabled = false) => (
     <button type="button" onClick={onClick} disabled={disabled} className={className} title={label} aria-label={label}>
       <Icon className="h-3.5 w-3.5" aria-hidden="true" /><span className="hidden sm:inline">{label}</span>
@@ -251,32 +236,15 @@ const showMessage = (msg, type) => {
   );
 
   /*
-   * One set of actions per stage, shared by the list cards and the table rows:
-   * Only a pending request can be approved or declined. Waiting / In Consultation / Approved: Approved
-   * (view-only, the visit is already approved). Completed: Completed. Rejected / Expired: Declined (view-only).
-   * View Details is available through the row for every status.
+   * Shared by the list cards and the table rows. Only a pending request has buttons (Approve / Decline);
+   * every other row just shows its status. The row itself opens the details.
    */
   const rowActions = app => {
-    const stage = stageOf(app);
-    const details = actionBtn(outlineBtn, Eye, 'View Details', () => setSelectedAppointment(app));
-    let main;
-    if (app.status === 'pending') {
-      main = <>
-        {actionBtn(primaryBtn, CheckCircle, 'Approve', () => handleApprove(app.id))}
-        {actionBtn(declineBtn, X, 'Decline', () => setRejectModal(app.id))}
-      </>;
-    } else if (app.status === 'completed') {
-      main = actionBtn(primaryBtn, CheckCircle2, 'Completed', () => setSelectedAppointment(app));
-    } else if (stage === 'expired' || app.status === 'rejected') {
-      main = actionBtn(declinedBtn, XCircle, 'Declined', () => setSelectedAppointment(app));
-    } else if (app.status === 'approved') {
-      main = actionBtn(approvedBtn, CheckCircle2, 'Approved', () => setSelectedAppointment(app));
-    } else {
-      main = details;
-    }
+    if (app.status !== 'pending') return null;
     return (
       <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-        {main}
+        {actionBtn(primaryBtn, CheckCircle, 'Approve', () => handleApprove(app.id))}
+        {actionBtn(declineBtn, X, 'Decline', () => setRejectModal(app.id))}
       </div>
     );
   };
@@ -342,7 +310,7 @@ const showMessage = (msg, type) => {
         aria-busy={loading}
         icon={ListChecks}
         title={<>Appointment requests<CountChip>{loading ? '…' : meta.total}</CountChip></>}
-        description="Newest bookings first. Open one to review it, or approve and reject pending requests right here."
+        description="Newest bookings first. Open one to review it, or approve and decline pending requests right here."
         actions={
           <div role="group" aria-label="Choose how to view appointments" className="flex rounded-lg bg-gray-100 p-1 dark:bg-gray-700/60">
             {[{ key: 'list', label: 'List', icon: List }, { key: 'table', label: 'Table', icon: Table2 }].map(({ key, label, icon: Icon }) => (
@@ -363,7 +331,7 @@ const showMessage = (msg, type) => {
             <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-50 dark:bg-gray-700/50"><Inbox className="h-8 w-8 text-gray-300 dark:text-gray-500" /></span>
             <p className="text-gray-500 dark:text-gray-400 font-medium">No appointments found</p>
             <p className="text-sm text-gray-400 dark:text-gray-400 mt-1">
-              {filter !== 'all' ? `No ${stageLabel(filter)} appointments.` : 'All clear!'}
+              {filter !== 'all' ? `No ${badgeLabel(filter).toLowerCase()} appointments.` : 'All clear!'}
             </p>
           </div>
         ) : (
@@ -501,7 +469,7 @@ const showMessage = (msg, type) => {
                       <Clock className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
                       <div>
                         <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-400">⏳ Pending Review</p>
-                        <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">This appointment needs your approval or rejection.</p>
+                        <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">This appointment needs you to approve or decline it.</p>
                       </div>
                     </div>
                   </div>
@@ -550,30 +518,10 @@ const showMessage = (msg, type) => {
                       <button
                         onClick={() => { setRejectModal(selectedAppointment.id); }}
                         className="w-full py-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold rounded-2xl hover:bg-red-100 dark:hover:bg-red-900/30 transition text-sm border border-red-200 dark:border-red-800/20">
-                        Reject Appointment
+                        Decline Appointment
                       </button>
                     </>
-                  ) : selectedAppointment.status === 'completed' ? (
-                    <button
-                      onClick={() => setSelectedAppointment(null)}
-                      className="w-full py-3 bg-maroon-800 text-white font-semibold rounded-2xl hover:bg-maroon-900 transition flex items-center justify-center gap-1.5 text-sm disabled:opacity-50">
-                      {<CheckCircle2 className="w-4 h-4" />}
-                      Completed
-                    </button>
-                  ) : selectedAppointment.status === 'approved' && stageOf(selectedAppointment) !== 'expired' ? (
-                    <button
-                      onClick={() => setSelectedAppointment(null)}
-                      className="w-full py-3 bg-green-100 text-green-700 font-semibold rounded-2xl hover:bg-green-200 transition flex items-center justify-center gap-1.5 text-sm disabled:opacity-50">
-                      {<CheckCircle2 className="w-4 h-4" />}
-                      Approved
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setSelectedAppointment(null)}
-                      className="w-full py-3 bg-gray-100 text-gray-600 font-semibold rounded-2xl hover:bg-gray-200 transition flex items-center justify-center gap-1.5 text-sm">
-                      Declined
-                    </button>
-                  )}
+                  ) : null}
                   <button onClick={() => setSelectedAppointment(null)}
                     className="w-full py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm">
                     Close
@@ -601,7 +549,7 @@ const showMessage = (msg, type) => {
               <div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-xl flex items-center justify-center mx-auto mb-4">
                 <XCircle className="w-6 h-6 text-red-500" />
               </div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white text-center">Reject Appointment</h3>
+              <h3 className="text-base font-bold text-gray-900 dark:text-white text-center">Decline Appointment</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-1">Please provide a reason for rejection.</p>
 
               <textarea
@@ -622,7 +570,7 @@ const showMessage = (msg, type) => {
                   disabled={!rejectReason.trim()}
                   className="flex-1 py-3 bg-red-500 text-white font-semibold rounded-2xl hover:bg-red-600 transition text-sm disabled:opacity-50 flex items-center justify-center gap-1.5">
                   {<XCircle className="w-4 h-4" />}
-                  Reject
+                  Decline
                 </button>
               </div>
             </motion.div>

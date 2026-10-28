@@ -14,7 +14,7 @@ export const nurseGreeting = (user, date = new Date()) =>
 // A page is added here as its own title card is removed.
 export const NURSE_HEADER_NOTES = {
   '/nurse/dashboard': 'PUP Biñan Campus Clinic — here is what is happening in the clinic today.',
-  '/nurse/appointments': 'Review booking requests, approve or decline them, and follow each visit from check-in to consultation.',
+  '/nurse/appointments': 'Review booking requests and approve or decline them. Check-ins and consultations are on the Consultation page.',
 };
 
 export const NURSE_HEADER_TITLES = {

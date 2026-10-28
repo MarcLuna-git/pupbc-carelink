@@ -16,7 +16,7 @@ class AppointmentController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Appointment::with(['user:id,student_id,first_name,last_name', 'user.studentProfile', 'latestCheckin'])
+        $query = Appointment::with(['user:id,student_id,first_name,last_name', 'user.studentProfile'])
             ->when($request->date, fn($q) => $q->whereDate('appointment_date', $request->date))
             ->when($request->service, fn($q) => $q->where('service', $request->service))
             ->when($request->search, function($q) use ($request) {
@@ -29,7 +29,7 @@ class AppointmentController extends Controller
 
         // Status tab counts follow the search and filters, but not the selected tab.
         $counts = ['all' => (clone $query)->setEagerLoads([])->count()];
-        foreach (array_keys(self::STAGES) as $stage) {
+        foreach (self::STAGES as $stage) {
             $counts[$stage] = $this->whereStage((clone $query)->setEagerLoads([]), $stage)->count();
         }
 
@@ -45,30 +45,23 @@ class AppointmentController extends Controller
     }
 
     /*
-     * Appointments-page tabs. Approved, Waiting and In consultation are all
-     * approved appointments, split by the kiosk check-in's queue status:
-     * not checked in yet, in the queue (waiting / called / skipped), or
-     * being served by the nurse.
+     * Appointments-page tabs: the state of the booking request only. Where the visit is in the
+     * queue (waiting, called, in consultation, completed) lives on the Consultation page.
+     *   approved  = approved, plus visits that were completed (the request was approved)
+     *   expired   = expired, plus approved bookings the student never attended (no_show)
      */
-    private const STAGES = [
-        'pending' => null,
-        'approved' => null,
-        'waiting' => ['waiting', 'called', 'skipped'],
-        'in_consultation' => ['serving'],
-        'completed' => null,
-        'cancelled' => null,
-    ];
+    private const STAGES = ['pending', 'approved', 'rejected', 'cancelled', 'expired'];
 
     private function whereStage($query, string $stage)
     {
-        $kioskCheckin = fn($q) => $q->where('is_walk_in', false);
+        $attended = fn($q) => $q->where('no_show', false)->orWhereNull('no_show');
 
         if ($stage === 'approved') {
-            return $query->where('status', 'approved')->whereDoesntHave('checkins', $kioskCheckin);
+            return $query->whereIn('status', ['approved', 'completed'])->where($attended);
         }
-        if (! empty(self::STAGES[$stage])) {
-            return $query->where('status', 'approved')
-                ->whereHas('checkins', fn($q) => $kioskCheckin($q)->whereIn('status', self::STAGES[$stage]));
+        if ($stage === 'expired') {
+            return $query->where(fn($q) => $q->where('status', 'expired')
+                ->orWhere(fn($q) => $q->where('status', 'approved')->where('no_show', true)));
         }
 
         return $query->where('status', $stage);
