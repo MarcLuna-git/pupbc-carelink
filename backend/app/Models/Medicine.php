@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class Medicine extends Model
@@ -57,15 +58,49 @@ class Medicine extends Model
         return $query->whereColumn('quantity', '<=', 'minimum_stock');
     }
 
+    /*
+     * Expiry rule used everywhere (badge, filters, notifications): when the
+     * medicine has batches that still hold stock and carry an expiry date, the
+     * earliest of those dates is what matters (first-expiry, first-out);
+     * otherwise the medicine's own expiry date applies.
+     */
+    private function whereEffectiveExpiry($query, string $operator, string $date)
+    {
+        $stocked = fn ($batches) => $batches
+            ->where('medicine_batches.quantity', '>', 0)
+            ->whereNotNull('medicine_batches.expiry_date');
+
+        return $query->where(function ($query) use ($stocked, $operator, $date) {
+            $query->whereHas('batches', fn ($batches) => $stocked($batches)
+                    ->whereDate('medicine_batches.expiry_date', $operator, $date))
+                ->orWhere(function ($query) use ($stocked, $operator, $date) {
+                    $query->whereDoesntHave('batches', fn ($batches) => $stocked($batches))
+                        ->whereNotNull('medicines.expiry_date')
+                        ->whereDate('medicines.expiry_date', $operator, $date);
+                });
+        });
+    }
+
     public function scopeExpiringSoon($query)
     {
-        return $query->whereNotNull('expiry_date')
-            ->where('expiry_date', '<=', now()->addMonths(3));
+        return $this->whereEffectiveExpiry($query, '<=', now()->addMonths(3)->toDateString());
     }
 
     public function scopeExpired($query)
     {
-        return $query->whereNotNull('expiry_date')
-            ->whereDate('expiry_date', '<', today());
+        return $this->whereEffectiveExpiry($query, '<', today()->toDateString());
+    }
+
+    /** Earliest expiry that matters for this medicine (see the rule above). */
+    public function nearestExpiry(): ?Carbon
+    {
+        $batchExpiry = $this->batches()
+            ->where('quantity', '>', 0)
+            ->whereNotNull('expiry_date')
+            ->min('expiry_date');
+
+        $date = $batchExpiry ?: $this->expiry_date;
+
+        return $date ? Carbon::parse($date) : null;
     }
 }

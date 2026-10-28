@@ -18,13 +18,16 @@ class NotifyExpiringMedicines extends Command
         $today = today('Asia/Manila');
         $expiryLimit = $today->copy()->addMonths(3);
         $nurses = User::where('role', 'nurse')->get(['id']);
-        $medicines = Medicine::whereNotNull('expiry_date')
-            ->whereDate('expiry_date', '>=', $today)
-            ->whereDate('expiry_date', '<=', $expiryLimit)
-            ->get(['id', 'name', 'expiry_date']);
+        // Medicine::nearestExpiry is the first-expiry rule: stocked batches before the medicine's own date.
+        $medicines = Medicine::expiringSoon()->get(['id', 'name', 'expiry_date']);
         $created = 0;
 
         foreach ($medicines as $medicine) {
+            $expiry = $medicine->nearestExpiry();
+            if (!$expiry || $expiry->lt($today) || $expiry->gt($expiryLimit)) {
+                continue;
+            }
+
             foreach ($nurses as $nurse) {
                 $alreadyNotified = Notification::where('user_id', $nurse->id)
                     ->where('type', 'medicine_expiring_soon')
@@ -39,10 +42,10 @@ class NotifyExpiringMedicines extends Command
                     'user_id' => $nurse->id,
                     'type' => 'medicine_expiring_soon',
                     'title' => 'Medicine Expiring Soon',
-                    'message' => $medicine->name . ' expires on ' . $medicine->expiry_date->format('M j, Y') . '.',
+                    'message' => $medicine->name . ' expires on ' . $expiry->format('M j, Y') . '.',
                     'data' => [
                         'medicine_id' => $medicine->id,
-                        'expiry_date' => $medicine->expiry_date->toDateString(),
+                        'expiry_date' => $expiry->toDateString(),
                     ],
                 ]);
                 $created++;

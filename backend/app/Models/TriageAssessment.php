@@ -9,8 +9,8 @@ class TriageAssessment extends Model
 {
     public $incrementing = false;
     protected $keyType = 'string';
-    protected $fillable = ['appointment_checkin_id', 'chief_complaint', 'severity', 'red_flags', 'priority', 'notes'];
-    protected $casts = ['red_flags' => 'array'];
+    protected $fillable = ['appointment_checkin_id', 'chief_complaint', 'severity', 'pain_level', 'red_flags', 'priority', 'notes'];
+    protected $casts = ['red_flags' => 'array', 'pain_level' => 'integer'];
 
     protected static function boot()
     {

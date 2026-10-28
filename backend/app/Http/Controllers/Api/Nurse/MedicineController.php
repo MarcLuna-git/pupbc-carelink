@@ -10,6 +10,7 @@ use App\Models\MedicineBatch;
 use App\Models\MedicineStockMovement;
 use App\Models\Notification;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -46,12 +47,24 @@ class MedicineController extends Controller
 
         $medicines = $query->orderBy('name')->paginate(20);
 
-        $medicines->getCollection()->transform(function ($medicine) {
+        // One query for the whole page: earliest expiry among batches that still hold stock.
+        $batchInfo = MedicineBatch::whereIn('medicine_id', $medicines->getCollection()->pluck('id'))
+            ->where('quantity', '>', 0)
+            ->selectRaw('medicine_id, MIN(expiry_date) as next_expiry, COUNT(*) as batch_count')
+            ->groupBy('medicine_id')
+            ->get()->keyBy('medicine_id');
+
+        $medicines->getCollection()->transform(function ($medicine) use ($batchInfo) {
+            $info = $batchInfo->get($medicine->id);
+            // First-expiry rule (see Medicine::nearestExpiry): a stocked batch's date beats the medicine's own.
+            $expiry = $info && $info->next_expiry ? Carbon::parse($info->next_expiry) : $medicine->expiry_date;
+            $medicine->next_expiry = $expiry ? $expiry->toDateString() : null;
+            $medicine->batch_count = $info ? (int) $info->batch_count : 0;
             $medicine->is_low_stock = $medicine->quantity <= $medicine->minimum_stock;
-            $medicine->is_expired = $medicine->expiry_date && $medicine->expiry_date->isBefore(today());
-            $medicine->is_expiring_soon = $medicine->expiry_date
+            $medicine->is_expired = $expiry && $expiry->isBefore(today());
+            $medicine->is_expiring_soon = $expiry
                 && !$medicine->is_expired
-                && $medicine->expiry_date->lessThanOrEqualTo(now()->addMonths(3));
+                && $expiry->lessThanOrEqualTo(now()->addMonths(3));
             $medicine->status = $medicine->is_expired ? 'expired' : ($medicine->is_low_stock ? 'low_stock' : ($medicine->is_expiring_soon ? 'expiring_soon' : 'ok'));
             return $medicine;
         });
@@ -156,18 +169,91 @@ class MedicineController extends Controller
                     ->first();
                 abort_unless($student, 422, 'Student ID does not match a student account.');
             }
-            $batch = null;
+            abort_if($medicine->quantity < $data['quantity'], 422, 'Insufficient medicine stock.');
+
             if (!empty($data['batch_id'])) {
+                // The nurse picked a specific batch (for example to write off an expired lot).
                 $batch = MedicineBatch::where('medicine_id', $medicine->id)->lockForUpdate()->findOrFail($data['batch_id']);
                 abort_if($batch->quantity < $data['quantity'], 422, 'Insufficient batch stock.');
+                abort_if(
+                    $data['movement_type'] === 'dispensed' && $batch->expiry_date && $batch->expiry_date->isBefore(today()),
+                    422,
+                    'This batch has expired and cannot be dispensed.'
+                );
                 $batch->decrement('quantity', $data['quantity']);
+                $this->recordMovement($medicine, $batch, $data['movement_type'], $data['quantity'], $data['reason'], $student);
+                $allocations = [$this->allocation($batch, $data['quantity'])];
+            } else {
+                $allocations = $this->releaseFirstExpiryFirst($medicine, $data, $student);
             }
-            abort_if($medicine->quantity < $data['quantity'], 422, 'Insufficient medicine stock.');
+
             $medicine->decrement('quantity', $data['quantity']);
-            $this->recordMovement($medicine, $batch, $data['movement_type'], $data['quantity'], $data['reason'], $student);
             $this->notifyIfLowStock($medicine->fresh());
-            return response()->json(['success' => true, 'data' => $medicine->fresh()]);
+            return response()->json(['success' => true, 'data' => $medicine->fresh(), 'allocations' => $allocations]);
         }, 3);
+    }
+
+    /*
+     * Stock going out without a chosen batch is taken first-expiry, first-out:
+     * batches with the earliest expiry date go first, batches without a date
+     * after them, and stock that was never entered as a batch last. Expired
+     * batches are never dispensed to a patient (they can still be written off).
+     * One movement is recorded per batch used, so batch balances stay true.
+     */
+    private function releaseFirstExpiryFirst(Medicine $medicine, array $data, ?User $student): array
+    {
+        $quantity = (int) $data['quantity'];
+        $dispensing = $data['movement_type'] === 'dispensed';
+
+        $allBatches = MedicineBatch::where('medicine_id', $medicine->id)->lockForUpdate()->get();
+        $usable = $allBatches
+            ->filter(fn ($batch) => $batch->quantity > 0)
+            ->filter(fn ($batch) => !$dispensing || !$batch->expiry_date || !$batch->expiry_date->isBefore(today()))
+            ->sortBy(fn ($batch) => [
+                $batch->expiry_date ? 0 : 1,
+                $batch->expiry_date ? $batch->expiry_date->toDateString() : '',
+                $batch->received_at ? $batch->received_at->toDateString() : '',
+                (string) $batch->created_at,
+            ])
+            ->values();
+
+        $unbatched = max(0, $medicine->quantity - (int) $allBatches->sum('quantity'));
+
+        abort_if(
+            $dispensing && $quantity > (int) $usable->sum('quantity') + $unbatched,
+            422,
+            'Not enough unexpired stock. Expired stock cannot be dispensed; record it as expired instead.'
+        );
+
+        $allocations = [];
+        $remaining = $quantity;
+        foreach ($usable as $batch) {
+            if ($remaining === 0) {
+                break;
+            }
+            $take = min($remaining, $batch->quantity);
+            $batch->decrement('quantity', $take);
+            $this->recordMovement($medicine, $batch, $data['movement_type'], $take, $data['reason'], $student);
+            $allocations[] = $this->allocation($batch, $take);
+            $remaining -= $take;
+        }
+
+        if ($remaining > 0) {
+            $this->recordMovement($medicine, null, $data['movement_type'], $remaining, $data['reason'], $student);
+            $allocations[] = ['batch_id' => null, 'lot_number' => null, 'expiry_date' => null, 'quantity' => $remaining];
+        }
+
+        return $allocations;
+    }
+
+    private function allocation(MedicineBatch $batch, int $quantity): array
+    {
+        return [
+            'batch_id' => $batch->id,
+            'lot_number' => $batch->lot_number,
+            'expiry_date' => $batch->expiry_date ? $batch->expiry_date->toDateString() : null,
+            'quantity' => $quantity,
+        ];
     }
 
     private function recordMovement(Medicine $medicine, $batch, $type, $quantity, $reason = null, ?User $student = null)
@@ -262,7 +348,7 @@ class MedicineController extends Controller
         $medicine = DB::transaction(function () use ($request, $id) {
             $medicine = Medicine::lockForUpdate()->findOrFail($id);
             $medicine->increment('quantity', $request->quantity);
-            $this->recordMovement($medicine, null, 'stock_in', $request->quantity, 'Legacy stock receipt');
+            $this->recordMovement($medicine, null, 'stock_in', $request->quantity, 'Stock added (no batch)');
             return $medicine->fresh();
         }, 3);
 

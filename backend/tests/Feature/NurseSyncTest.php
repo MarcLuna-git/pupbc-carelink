@@ -36,6 +36,7 @@ class NurseSyncTest extends TestCase
             '2026_07_05_104955_create_appointment_checkins_table.php',
             '2026_07_04_181119_create_consultations_table.php',
             '2026_09_07_000001_add_visit_triage_and_emergency_encounters.php',
+            '2026_10_28_000001_add_pain_level_to_triage_assessments_table.php',
             '2026_07_05_110006_create_audit_logs_table.php',
             '2026_07_09_071005_create_medicines_table.php',
             '2026_07_05_105927_create_notifications_table.php',

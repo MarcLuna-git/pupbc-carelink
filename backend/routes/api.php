@@ -257,10 +257,16 @@ Route::middleware([
                         $today = today('Asia/Manila');
                         $expiryLimit = $today->copy()->addMonths(3);
 
-                        $expiringMedicines = \App\Models\Medicine::whereNotNull('expiry_date')
-                            ->whereDate('expiry_date', '>=', $today->toDateString())
-                            ->whereDate('expiry_date', '<=', $expiryLimit->toDateString())
-                            ->get(['id', 'name', 'expiry_date']);
+                        // Stocked batches count before the medicine's own date (first-expiry rule).
+                        $expiringMedicines = \App\Models\Medicine::expiringSoon()
+                            ->get(['id', 'name', 'expiry_date'])
+                            ->map(function ($medicine) {
+                                $medicine->nearest_expiry = $medicine->nearestExpiry();
+                                return $medicine;
+                            })
+                            ->filter(fn ($medicine) => $medicine->nearest_expiry
+                                && $medicine->nearest_expiry->greaterThanOrEqualTo($today->copy()->startOfDay())
+                                && $medicine->nearest_expiry->lessThanOrEqualTo($expiryLimit->copy()->endOfDay()));
 
                         // Read existing alerts once instead of querying for every medicine.
                         // Include dismissed alerts so polling does not recreate them.
@@ -276,9 +282,9 @@ Route::middleware([
                                 continue;
                             }
 
-                            // The query excludes null dates; Medicine casts this to Carbon.
+                            // The filter above excludes medicines without an expiry date.
                             /** @var \Illuminate\Support\Carbon $expiryDate */
-                            $expiryDate = $medicine->expiry_date;
+                            $expiryDate = $medicine->nearest_expiry;
 
                             \App\Models\Notification::create([
                                 'user_id' => $user->id,
@@ -1012,6 +1018,8 @@ Route::middleware([
                 | Nurse Consultations
                 |--------------------------------------------------------------------------
                 */
+
+                Route::get('/nurses', [NurseConsultationController::class, 'nurses']);
 
                 Route::get(
                     '/consultations',

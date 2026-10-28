@@ -44,6 +44,11 @@ class AppServiceProvider extends ServiceProvider
             }
         );
 
+        // Nurses also get an email copy of their actionable portal notifications.
+        \App\Models\Notification::created(function ($notification) {
+            app(\App\Services\NurseEmailNotifier::class)->afterCreate($notification);
+        });
+
         // Iwas sa MySQL/MariaDB index-length error.
         Schema::defaultStringLength(191);
     }

@@ -44,6 +44,8 @@ class KioskController extends Controller
         $request->validate([
             'chief_complaint' => 'required|string|max:500',
             'severity' => 'required|in:mild,moderate,severe,critical',
+            // 0 = no pain, 10 = worst pain. Optional so older kiosk screens keep working.
+            'pain_level' => 'nullable|integer|between:0,10',
             'red_flags' => 'nullable|array',
             'red_flags.*' => 'string|in:difficulty_breathing,severe_chest_pain,heavy_uncontrolled_bleeding,fainting,severe_allergic_reaction,seizure,sudden_weakness_confusion,none',
             'notes' => 'nullable|string|max:1000',
@@ -66,7 +68,7 @@ class KioskController extends Controller
                 'chief_complaint' => $request->chief_complaint, 'checkin_status' => 'confirmed',
                 'checked_in_at' => now(), 'check_in_time' => now(), 'status' => 'waiting',
             ]);
-            $checkin->triage()->create(['chief_complaint' => $request->chief_complaint, 'severity' => $request->severity, 'red_flags' => $flags, 'priority' => $priority, 'notes' => $request->notes]);
+            $checkin->triage()->create(['chief_complaint' => $request->chief_complaint, 'severity' => $request->severity, 'pain_level' => $request->pain_level, 'red_flags' => $flags, 'priority' => $priority, 'notes' => $request->notes]);
             $appointment->forceFill(['checked_in_at' => now(), 'queue_number' => $number, 'queue_type' => $type])->save();
             $created = true;
             return $checkin;

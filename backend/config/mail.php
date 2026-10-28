@@ -9,6 +9,9 @@ return [
     'test_mode' => env('EMAIL_TEST_MODE', false),
     'test_recipient' => env('EMAIL_TEST_RECIPIENT', 'delivered@resend.dev'),
 
+    // Email nurses a copy of new bookings, student cancellations and medicine stock/expiry alerts.
+    'nurse_notifications' => env('NURSE_EMAIL_NOTIFICATIONS', true),
+
 
     'mailers' => [
         'smtp' => [

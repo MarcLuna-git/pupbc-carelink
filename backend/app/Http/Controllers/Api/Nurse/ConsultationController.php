@@ -32,6 +32,17 @@ class ConsultationController extends Controller
         return response()->json(['success' => true, 'data' => $query->paginate(20)]);
     }
 
+    // Nurse accounts that can be named as the attending nurse on a consultation.
+    public function nurses()
+    {
+        $nurses = \App\Models\User::where('role', 'nurse')
+            ->where(fn ($query) => $query->whereNull('status')->orWhere('status', '!=', 'archived'))
+            ->orderBy('last_name')->orderBy('first_name')
+            ->get(['id', 'first_name', 'last_name']);
+
+        return response()->json(['success' => true, 'data' => $nurses]);
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -46,12 +57,21 @@ class ConsultationController extends Controller
             'nursing_assessment' => 'nullable|string|max:2000',
             'nursing_interventions' => 'nullable|string|max:2000',
             'treatment_plan' => 'nullable|string|max:2000',
+            // The nurse who attended the patient; defaults to the signed-in nurse.
+            'attending_nurse_id' => 'nullable|uuid|exists:users,id',
             'medical_certificate' => 'sometimes|boolean',
             'medical_certificate_ref' => 'nullable|string|max:191',
             'follow_up_required' => 'sometimes|boolean',
             'follow_up_date' => 'nullable|required_if:follow_up_required,true|date' . (TimeGuard::nursePortalBypassed() ? '' : '|after_or_equal:today'),
         ]);
-        $consultation = DB::transaction(function () use ($data, $request) {
+        $attendingNurseId = $data['attending_nurse_id'] ?? null;
+        unset($data['attending_nurse_id']);
+        abort_if(
+            $attendingNurseId && !\App\Models\User::where('role', 'nurse')->whereKey($attendingNurseId)->exists(),
+            422,
+            'The attending nurse must be a nurse account.'
+        );
+        $consultation = DB::transaction(function () use ($data, $request, $attendingNurseId) {
             \App\Services\ClinicQueue::lock();
             $student = \App\Models\User::where('role', 'student')->findOrFail($data['user_id']);
             $appointment = Appointment::findOrFail($data['appointment_id']);
@@ -60,7 +80,7 @@ class ConsultationController extends Controller
             abort_if(Consultation::where('appointment_checkin_id', $checkin->id)->exists(), 409, 'This visit already has a consultation.');
             \App\Services\NurseVisitClaim::acquire($request, $checkin->id);
             abort_unless($appointment->status === 'approved' && in_array($checkin->status, ['called', 'serving']), 422, 'Call this patient before recording the consultation.');
-            $consultation = Consultation::create(array_merge($data, ['nurse_id' => auth()->id(), 'status' => 'completed']));
+            $consultation = Consultation::create(array_merge($data, ['nurse_id' => $attendingNurseId ?: auth()->id(), 'status' => 'completed']));
             $appointment->update(['status' => 'completed']);
             $checkin->update(['status' => 'completed']);
             DB::table('nurse_visit_claims')->where('checkin_id', $checkin->id)->delete();
