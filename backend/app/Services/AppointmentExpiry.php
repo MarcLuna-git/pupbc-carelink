@@ -27,6 +27,48 @@ class AppointmentExpiry
         // 2. Expire approved appointments that missed their check-in window
         $count += $this->expireApprovedAppointments();
 
+        // 3. Close visits that checked in on an earlier day and were never seen.
+        // Not part of the count: the appointment itself stays approved (a successful check-in is never undone).
+        $this->closeStaleQueueVisits();
+
+        return $count;
+    }
+
+    /*
+     * The nurse queue only lists today's check-ins, so a student who checked in on an earlier
+     * day and was never called or seen can no longer be served. Close that visit instead of
+     * leaving it "waiting" forever: the check-in becomes a no-show and the appointment is flagged
+     * no_show, the same way a skipped student who never returned is handled. The appointment's
+     * status stays approved, and the nurse Appointments page shows the pair as Expired.
+     */
+    protected function closeStaleQueueVisits(): int
+    {
+        $count = 0;
+
+        AppointmentCheckin::whereIn('status', ['waiting', 'called'])->where('is_walk_in', false)
+            ->where('created_at', '<', today())
+            ->orderBy('id')
+            ->chunkById(100, function ($checkins) use (&$count) {
+                foreach ($checkins as $candidate) {
+                    DB::transaction(function () use ($candidate, &$count) {
+                        ClinicQueue::lock();
+                        $checkin = AppointmentCheckin::whereKey($candidate->id)->lockForUpdate()->first();
+                        if (!$checkin || !in_array($checkin->status, ['waiting', 'called'], true) || $checkin->consultation()->exists()) {
+                            return;
+                        }
+
+                        $checkin->update(['status' => 'no_show', 'no_show_at' => now(), 'no_show_by' => null]);
+                        DB::table('nurse_visit_claims')->where('checkin_id', $checkin->id)->delete();
+
+                        $appointment = Appointment::whereKey($checkin->appointment_id)->lockForUpdate()->first();
+                        if ($appointment && $appointment->status === 'approved') {
+                            $appointment->forceFill(['no_show' => true])->save();
+                        }
+                        $count++;
+                    });
+                }
+            });
+
         return $count;
     }
 

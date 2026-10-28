@@ -7,6 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Types for the cast attributes, so editors do not read the `date:Y-m-d` cast as a class name.
+ *
+ * @property \Illuminate\Support\Carbon $appointment_date
+ * @property \Illuminate\Support\Carbon|null $approved_at
+ * @property \Illuminate\Support\Carbon|null $cancelled_at
+ * @property bool $no_show
+ */
 class Appointment extends Model
 {
     use \App\Models\Concerns\HasSyncVersion;

@@ -8,6 +8,7 @@ import NurseListCard, { CountChip } from '../../../components/NurseListCard';
 import useNurseSync from '../../../hooks/useNurseSync';
 import useDebouncedValue from '../../../hooks/useDebouncedValue';
 import { formatAppointmentDate } from '../../../utils/appointmentDate';
+import { NURSE_HEADER_NOTES } from '../../../utils/nurseGreeting';
 import { Pagination } from '../Students/StudentDirectory';
 import { NurseToast } from '../../../components/NurseFeedback';
 
@@ -30,6 +31,8 @@ const STATUS_TABS = [
 // An approved appointment's stage follows its kiosk check-in: in the queue, or being served.
 const QUEUE_STAGES = { waiting: 'waiting', called: 'waiting', skipped: 'waiting', serving: 'in_consultation' };
 const stageOf = app => {
+  // Approved, but the student never made it to the clinic: the slot is over, so it reads as expired.
+  if (app.status === 'approved' && app.no_show) return 'expired';
   const checkin = app.latest_checkin;
   return app.status === 'approved' && checkin && !checkin.is_walk_in ? QUEUE_STAGES[checkin.status] || app.status : app.status;
 };
@@ -249,13 +252,12 @@ const showMessage = (msg, type) => {
 
   /*
    * One set of actions per stage, shared by the list cards and the table rows:
-   * Pending / Waiting / In Consultation / Completed / Cancelled: Approve / Decline.
-   * Approved: Approved (view-only). Rejected / Expired: Declined (view-only).
-   * View Details available via modal for all statuses.
+   * Only a pending request can be approved or declined. Waiting / In Consultation / Approved: Approved
+   * (view-only, the visit is already approved). Completed: Completed. Rejected / Expired: Declined (view-only).
+   * View Details is available through the row for every status.
    */
   const rowActions = app => {
     const stage = stageOf(app);
-    const checkin = app.latest_checkin;
     const details = actionBtn(outlineBtn, Eye, 'View Details', () => setSelectedAppointment(app));
     let main;
     if (app.status === 'pending') {
@@ -263,17 +265,12 @@ const showMessage = (msg, type) => {
         {actionBtn(primaryBtn, CheckCircle, 'Approve', () => handleApprove(app.id))}
         {actionBtn(declineBtn, X, 'Decline', () => setRejectModal(app.id))}
       </>;
-    } else if (stage === 'waiting') {
-      main = <>
-        {actionBtn(primaryBtn, CheckCircle, 'Approve', () => handleApprove(app.id))}
-        {actionBtn(declineBtn, X, 'Decline', () => setRejectModal(app.id))}
-      </>;
     } else if (app.status === 'completed') {
       main = actionBtn(primaryBtn, CheckCircle2, 'Completed', () => setSelectedAppointment(app));
+    } else if (stage === 'expired' || app.status === 'rejected') {
+      main = actionBtn(declinedBtn, XCircle, 'Declined', () => setSelectedAppointment(app));
     } else if (app.status === 'approved') {
       main = actionBtn(approvedBtn, CheckCircle2, 'Approved', () => setSelectedAppointment(app));
-    } else if (app.status === 'rejected' || app.status === 'expired') {
-      main = actionBtn(declinedBtn, XCircle, 'Declined', () => setSelectedAppointment(app));
     } else {
       main = details;
     }
@@ -288,6 +285,12 @@ const showMessage = (msg, type) => {
     <div className="mx-auto max-w-[1440px] space-y-5 pb-6">
       {/* Action results show as a floating toast */}
       <NurseToast message={message} type={messageType} onClose={() => setMessage('')} />
+
+      {/* On tablet and desktop the title and purpose are in the header bar; the mobile header shows the brand, so they are here. */}
+      <div className="md:sr-only">
+        <h1 className="text-lg font-bold text-maroon-800 dark:text-maroon-300">Appointments</h1>
+        <p className="text-sm text-gray-600 dark:text-gray-300">{NURSE_HEADER_NOTES['/nurse/appointments']}</p>
+      </div>
 
       {/* Search and filters: one row, search first, then the service, the date and Clear filters. */}
       <section aria-label="Search and filters" className="rounded-lg border border-gray-100 bg-white p-3 dark:border-gray-700 dark:bg-gray-800 sm:p-4">
@@ -550,20 +553,6 @@ const showMessage = (msg, type) => {
                         Reject Appointment
                       </button>
                     </>
-                  ) : stageOf(selectedAppointment) === 'waiting' ? (
-                    <>
-                      <button
-                        onClick={() => handleApprove(selectedAppointment.id)}
-                        className="w-full py-3 bg-green-500 text-white font-semibold rounded-2xl hover:bg-green-600 transition flex items-center justify-center gap-1.5 text-sm disabled:opacity-50">
-                        {<CheckCircle className="w-4 h-4" />}
-                        Approve Appointment
-                      </button>
-                      <button
-                        onClick={() => { setRejectModal(selectedAppointment.id); }}
-                        className="w-full py-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold rounded-2xl hover:bg-red-100 dark:hover:bg-red-900/30 transition text-sm border border-red-200 dark:border-red-800/20">
-                        Reject Appointment
-                      </button>
-                    </>
                   ) : selectedAppointment.status === 'completed' ? (
                     <button
                       onClick={() => setSelectedAppointment(null)}
@@ -571,7 +560,7 @@ const showMessage = (msg, type) => {
                       {<CheckCircle2 className="w-4 h-4" />}
                       Completed
                     </button>
-                  ) : selectedAppointment.status === 'approved' ? (
+                  ) : selectedAppointment.status === 'approved' && stageOf(selectedAppointment) !== 'expired' ? (
                     <button
                       onClick={() => setSelectedAppointment(null)}
                       className="w-full py-3 bg-green-100 text-green-700 font-semibold rounded-2xl hover:bg-green-200 transition flex items-center justify-center gap-1.5 text-sm disabled:opacity-50">

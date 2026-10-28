@@ -26,7 +26,7 @@ const NurseLayoutForTabletView = ({
   darkMode,
   toggleDarkMode,
   accountMenuProps,
-  headerGreeting = null,
+  header = null,
 }) => {
   // Folded rail on tablet widths, full sidebar on desktop; crossing the
   // breakpoint re-applies its default, the toggle changes it otherwise.
@@ -56,10 +56,10 @@ const NurseLayoutForTabletView = ({
       <div className="nurse-shell-body" data-route-scroll>
         <header className="nurse-header">
           <div className="nurse-header-inner">
-            {headerGreeting && (
+            {header && (
               <div className="nurse-header-greeting">
-                <p className="nurse-header-greeting-title">{headerGreeting}</p>
-                <p className="nurse-header-greeting-note">PUP Biñan Campus Clinic — here is what is happening in the clinic today.</p>
+                <p className="nurse-header-greeting-title">{header.title}</p>
+                <p className="nurse-header-greeting-note">{header.note}</p>
               </div>
             )}
             <div className="nurse-header-actions">

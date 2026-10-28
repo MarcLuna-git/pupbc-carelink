@@ -11,7 +11,7 @@ import { fetchNurseNotifications } from '../../services/nurseNotifications';
 import { fetchNurseDevTools } from '../../services/devTools';
 import NursePageSkeleton from '../../components/NursePageSkeleton';
 import { NURSE_NAV_ITEMS, isNurseNavActive } from './nurse-shell/nurseNavigation';
-import { nurseGreeting } from '../../utils/nurseGreeting';
+import { nurseHeaderFor } from '../../utils/nurseGreeting';
 
 /*
  * Base styles first, then the two shells (each imports its own stylesheet),
@@ -183,8 +183,8 @@ const NurseLayoutForDesktopView = ({ children }) => {
     darkMode,
     toggleDarkMode,
     accountMenuProps,
-    // The dashboard has no title card; its greeting sits in the header instead.
-    headerGreeting: location.pathname === '/nurse/dashboard' ? nurseGreeting(user) : null,
+    // Pages without a title card (dashboard, appointments) show their title and purpose in the header.
+    header: nurseHeaderFor(location.pathname, user),
   };
 
   const pageSlot = (

@@ -137,6 +137,39 @@ class QueueAutoSkipTest extends TestCase
         $this->assertSame('waiting', $checkin->fresh()->status);
     }
 
+    public function test_a_queued_visit_cannot_be_approved_or_rejected_again(): void
+    {
+        $this->actingAs($this->person('nurse'), 'api');
+        [, $appointment] = $this->visit();
+
+        $this->patchJson('/api/nurse/appointments/' . $appointment->id . '/approve')->assertUnprocessable();
+        $this->patchJson('/api/nurse/appointments/' . $appointment->id . '/reject', ['reason' => 'No'])->assertUnprocessable();
+        $this->assertSame('approved', $appointment->fresh()->status);
+    }
+
+    public function test_a_visit_still_waiting_after_its_day_is_closed_and_flagged_no_show(): void
+    {
+        $this->actingAs($this->person('nurse'), 'api');
+        [, $appointment, $checkin] = $this->visit();
+
+        // Later the same day nothing changes: the student is still in today's queue.
+        $this->elapse(60 * 60);
+        app(\App\Services\AppointmentExpiry::class)->run();
+        $this->assertSame('waiting', $checkin->fresh()->status);
+
+        // The next day the visit can no longer be served, so it is closed.
+        $this->elapse(24 * 60 * 60);
+        app(\App\Services\AppointmentExpiry::class)->run();
+
+        $this->assertSame('no_show', $checkin->fresh()->status);
+        $this->assertNotNull($checkin->fresh()->no_show_at);
+        // A successful check-in is never undone: the appointment stays approved, flagged no_show.
+        $this->assertSame('approved', $appointment->fresh()->status);
+        $this->assertTrue((bool) $appointment->fresh()->no_show);
+        $row = collect($this->getJson('/api/nurse/appointments')->assertOk()->json('data.data'))->firstWhere('id', $appointment->id);
+        $this->assertTrue($row['no_show']);
+    }
+
     public function test_recalling_a_called_student_restarts_the_timer(): void
     {
         $this->actingAs($this->person('nurse'), 'api');
