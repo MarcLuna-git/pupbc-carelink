@@ -12,6 +12,7 @@ use App\Models\Notification;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -25,6 +26,7 @@ class MedicineController extends Controller
             $query->where(function ($q) use ($request) {
                 $q->where('name', DatabaseSearch::like($q), "%{$request->search}%")
                   ->orWhere('generic_name', DatabaseSearch::like($q), "%{$request->search}%")
+                  ->orWhere('manufacturer', DatabaseSearch::like($q), "%{$request->search}%")
                   ->orWhere('category', DatabaseSearch::like($q), "%{$request->search}%");
             });
         }
@@ -45,7 +47,13 @@ class MedicineController extends Controller
             $query->expired();
         }
 
-        $medicines = $query->orderBy('name')->paginate(20);
+        // The Stock Status filter: the same five states the status badge shows (see `status` below).
+        if ($request->status) {
+            $this->whereStatus($query, (string) $request->status);
+        }
+
+        $perPage = min(max((int) $request->input('per_page', 20), 1), 100);
+        $medicines = $query->orderBy('name')->paginate($perPage);
 
         // One query for the whole page: earliest expiry among batches that still hold stock.
         $batchInfo = MedicineBatch::whereIn('medicine_id', $medicines->getCollection()->pluck('id'))
@@ -61,11 +69,16 @@ class MedicineController extends Controller
             $medicine->next_expiry = $expiry ? $expiry->toDateString() : null;
             $medicine->batch_count = $info ? (int) $info->batch_count : 0;
             $medicine->is_low_stock = $medicine->quantity <= $medicine->minimum_stock;
+            $medicine->is_out_of_stock = $medicine->quantity <= 0;
             $medicine->is_expired = $expiry && $expiry->isBefore(today());
             $medicine->is_expiring_soon = $expiry
                 && !$medicine->is_expired
                 && $expiry->lessThanOrEqualTo(now()->addMonths(3));
-            $medicine->status = $medicine->is_expired ? 'expired' : ($medicine->is_low_stock ? 'low_stock' : ($medicine->is_expiring_soon ? 'expiring_soon' : 'ok'));
+            // One state per medicine, strongest first: expired, out of stock, low stock, expiring soon, then OK.
+            $medicine->status = $medicine->is_expired ? 'expired'
+                : ($medicine->is_out_of_stock ? 'out_of_stock'
+                : ($medicine->is_low_stock ? 'low_stock'
+                : ($medicine->is_expiring_soon ? 'expiring_soon' : 'ok')));
             return $medicine;
         });
 
@@ -75,26 +88,66 @@ class MedicineController extends Controller
         ]);
     }
 
+    /*
+     * The Stock Status filter. Each state excludes the stronger ones above it, so the list matches
+     * the badge shown on every row: a medicine that is expired is only "expired", not also "low stock".
+     */
+    private function whereStatus($query, string $status): void
+    {
+        $notExpired = fn ($q) => $q->whereNotIn('medicines.id', Medicine::query()->expired()->select('medicines.id'));
+        $wellStocked = fn ($q) => $q->whereColumn('medicines.quantity', '>', 'medicines.minimum_stock');
+
+        switch ($status) {
+            case 'expired':
+                $query->expired();
+                break;
+            case 'out_of_stock':
+                $query->where('medicines.quantity', '<=', 0);
+                $notExpired($query);
+                break;
+            case 'low_stock':
+                $query->where('medicines.quantity', '>', 0)->whereColumn('medicines.quantity', '<=', 'medicines.minimum_stock');
+                $notExpired($query);
+                break;
+            case 'expiring_soon':
+                $wellStocked($query);
+                $notExpired($query);
+                $query->expiringSoon();
+                break;
+            case 'in_stock':
+                $wellStocked($query);
+                $notExpired($query);
+                $query->whereNotIn('medicines.id', Medicine::query()->expiringSoon()->select('medicines.id'));
+                break;
+        }
+    }
+
     public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
             'generic_name' => 'nullable|string|max:255',
+            'manufacturer' => 'nullable|string|max:150',
             'category' => 'nullable|string|max:100',
             'quantity' => 'required|integer|min:1',
             'minimum_stock' => 'nullable|integer|min:0',
             'unit' => 'nullable|string|max:50',
             'dosage' => 'nullable|string|max:100',
             'expiry_date' => TimeGuard::nursePortalBypassed() ? 'nullable|date' : 'nullable|date|after_or_equal:today',
-            'description' => 'nullable|string',
+            'description' => 'nullable|string|max:200',
         ]);
 
         $this->ensureUniqueName($request->name);
 
-        $medicine = Medicine::create([
-            ...$request->all(),
-            'added_by' => auth()->id(),
-        ]);
+        // The starting stock is the first line of the stock history (0 → quantity), so the history is complete.
+        $medicine = DB::transaction(function () use ($request) {
+            $medicine = Medicine::create([
+                ...$request->all(),
+                'added_by' => auth()->id(),
+            ]);
+            $this->recordMovement($medicine, null, 'stock_in', (int) $medicine->quantity, 'Initial stock');
+            return $medicine;
+        }, 3);
 
         return response()->json([
             'success' => true,
@@ -117,10 +170,56 @@ class MedicineController extends Controller
             ->orderBy('expiry_date')->get()]);
     }
 
+    /*
+     * The stock history of one medicine, newest first. Every line carries the signed change and the
+     * stock before and after it. They are worked out from the current stock, walking back through the
+     * movements (every change to a medicine's stock is a movement), so they always add up to what is on
+     * the shelf now. The balances are computed over the whole history; the filters below only choose
+     * which lines to show.
+     *   from, to  – dates (inclusive, Asia/Manila)
+     *   type      – stock_in, dispensed, wasted, expired or adjustment
+     *   per_page  – lines per page (default 50, at most 100); all=1 returns every line, for export
+     */
     public function movements(Request $request, $id)
     {
-        Medicine::findOrFail($id);
-        return response()->json(['success' => true, 'data' => MedicineStockMovement::with(['batch', 'performer:id,first_name,last_name', 'student:id,student_id,first_name,last_name'])->where('medicine_id', $id)->latest()->paginate(50)]);
+        $medicine = Medicine::findOrFail($id);
+        $request->validate([
+            'from' => 'nullable|date',
+            'to' => 'nullable|date',
+            'type' => 'nullable|string|in:stock_in,dispensed,wasted,expired,adjustment',
+            'per_page' => 'nullable|integer|min:1|max:100',
+            'page' => 'nullable|integer|min:1',
+        ]);
+
+        $running = (int) $medicine->quantity;
+        $rows = MedicineStockMovement::with(['batch', 'performer:id,first_name,last_name', 'student:id,student_id,first_name,last_name'])
+            ->where('medicine_id', $id)
+            ->orderByDesc('created_at')->orderByDesc('id')
+            ->get()
+            ->map(function ($movement) use (&$running) {
+                $change = $movement->movement_type === 'stock_in' ? (int) $movement->quantity : -(int) $movement->quantity;
+                $movement->quantity_change = $change;
+                $movement->stock_after = $running;
+                $movement->stock_before = $running - $change;
+                $running = $movement->stock_before;
+                return $movement;
+            });
+
+        $day = fn ($movement) => $movement->created_at->copy()->timezone('Asia/Manila')->toDateString();
+        $from = $request->filled('from') ? Carbon::parse($request->from)->toDateString() : null;
+        $to = $request->filled('to') ? Carbon::parse($request->to)->toDateString() : null;
+        $rows = $rows
+            ->when($request->filled('type'), fn ($list) => $list->where('movement_type', $request->type))
+            ->when($from, fn ($list) => $list->filter(fn ($movement) => $day($movement) >= $from))
+            ->when($to, fn ($list) => $list->filter(fn ($movement) => $day($movement) <= $to))
+            ->values();
+
+        $everything = $request->boolean('all');
+        $perPage = $everything ? max(1, min($rows->count(), 5000)) : (int) $request->input('per_page', 50);
+        $page = $everything ? 1 : max(1, (int) $request->input('page', 1));
+        $paginator = new LengthAwarePaginator($rows->forPage($page, $perPage)->values(), $rows->count(), $perPage, $page, ['path' => $request->url()]);
+
+        return response()->json(['success' => true, 'data' => $paginator]);
     }
 
     public function receiveBatch(Request $request, $id)
@@ -305,12 +404,13 @@ class MedicineController extends Controller
         $data = $request->validate([
             'name' => 'sometimes|string|max:255',
             'generic_name' => 'nullable|string|max:255',
+            'manufacturer' => 'nullable|string|max:150',
             'category' => 'nullable|string|max:100',
             'minimum_stock' => 'nullable|integer|min:0',
             'unit' => 'nullable|string|max:50',
             'dosage' => 'nullable|string|max:100',
             'expiry_date' => TimeGuard::nursePortalBypassed() ? 'nullable|date' : 'nullable|date|after_or_equal:today',
-            'description' => 'nullable|string',
+            'description' => 'nullable|string|max:200',
         ]);
 
         if (isset($data['name'])) {
@@ -343,12 +443,14 @@ class MedicineController extends Controller
     {
         $request->validate([
             'quantity' => 'required|integer|min:1',
+            // Shown as the Reference / Reason of the restock line in the stock history (e.g. a delivery number).
+            'reason' => 'nullable|string|max:500',
         ]);
 
         $medicine = DB::transaction(function () use ($request, $id) {
             $medicine = Medicine::lockForUpdate()->findOrFail($id);
             $medicine->increment('quantity', $request->quantity);
-            $this->recordMovement($medicine, null, 'stock_in', $request->quantity, 'Stock added (no batch)');
+            $this->recordMovement($medicine, null, 'stock_in', $request->quantity, trim((string) $request->reason) ?: 'Stock added (no batch)');
             return $medicine->fresh();
         }, 3);
 

@@ -7,6 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
+/**
+ * Types for the cast attributes, so editors do not read the `date:Y-m-d` cast as a class name.
+ *
+ * @property \Illuminate\Support\Carbon|null $expiry_date
+ * @property \Illuminate\Support\Carbon|null $received_at
+ */
 class MedicineBatch extends Model
 {
     use HasFactory, SoftDeletes;

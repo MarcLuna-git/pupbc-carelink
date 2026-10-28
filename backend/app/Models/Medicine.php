@@ -8,6 +8,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
+/**
+ * Types for the cast attributes, so editors do not read the `date:Y-m-d` cast as a class name.
+ *
+ * @property \Illuminate\Support\Carbon|null $expiry_date
+ */
 class Medicine extends Model
 {
     use \App\Models\Concerns\HasSyncVersion;
@@ -27,7 +32,7 @@ class Medicine extends Model
     }
 
     protected $fillable = [
-        'name', 'generic_name', 'category', 'quantity',
+        'name', 'generic_name', 'manufacturer', 'category', 'quantity',
         'minimum_stock', 'unit', 'dosage', 'expiry_date',
         'description', 'added_by',
     ];
