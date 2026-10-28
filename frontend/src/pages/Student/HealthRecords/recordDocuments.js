@@ -163,7 +163,56 @@ const consultationData = (record) => {
   };
 };
 
+/*
+ * Student Health Profile (nurse portal): who the student is and what the health profile says.
+ * `record.profile` is the personal extras (birthday, sex, email); `record.health` is the health profile.
+ * Only what was filled in is listed, so the printout is not full of "Not provided".
+ */
+const PROFILE_GROUPS = [
+  ['Medical history', [['medical_history', 'Medical conditions'], ['allergy_details', 'Allergies'], ['other_medical_history', 'Other medical history'], ['medications', 'Current medications'], ['family_history', 'Family history']]],
+  ['Hospitalization, surgery & COVID-19', [['hospitalized', 'Hospitalized before'], ['hospitalization_date', 'Hospitalization date'], ['hospitalization_diagnosis', 'Hospitalization diagnosis'], ['surgery', 'Had surgery'], ['surgery_date', 'Surgery date'], ['surgery_diagnosis', 'Surgery diagnosis'], ['had_covid', 'Had COVID-19'], ['covid_date', 'COVID-19 date'], ['covid_diagnosis', 'COVID-19 notes']]],
+  ['Lifestyle & accessibility', [['occupation', 'Occupation'], ['marital_status', 'Marital status'], ['tobacco_use', 'Tobacco use'], ['tobacco_amount', 'Tobacco amount'], ['tobacco_duration', 'Tobacco duration'], ['alcohol_use', 'Alcohol use'], ['other_substance_use', 'Other substance use'], ['has_disability', 'Has a disability'], ['disability_details', 'Disability details']]],
+  // A third value `true` means "quiet": a No / 0 is left out, so the section does not print at all when it does not apply.
+  ['Reproductive history', [['last_menstrual_period', 'Last menstrual period'], ['has_children', 'Has children', true], ['number_of_children', 'Number of children', true], ['age_first_pregnancy', 'Age at first pregnancy', true], ['gravidity', 'Gravidity', true], ['term', 'Term', true], ['premature', 'Premature', true], ['abortion', 'Abortion', true], ['living_children', 'Living children', true]]],
+  ['Consent', [['consent_signature', 'Signed by'], ['consent_date', 'Date signed']]],
+];
+
+const profileValue = (key, value, quiet = false) => {
+  if (value === null || value === undefined || value === '') return null;
+  if (quiet && (value === false || value === 0 || value === '0')) return null;
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (Array.isArray(value)) {
+    const items = value.map((item) => (typeof item === 'object' ? JSON.stringify(item) : String(item).trim())).filter(Boolean);
+    return items.length ? items.join(', ') : null;
+  }
+  const text = String(value).trim();
+  if (!text) return null;
+  const isDate = /(_date|_period)$/.test(key) && !Number.isNaN(new Date(text).getTime());
+  return isDate ? formatDay(text) : text;
+};
+
+const healthSections = (health) => {
+  if (!health) return '<p class="statement">Health profile not yet submitted.</p>';
+  const sections = PROFILE_GROUPS.map(([title, fields]) => {
+    const rows = fields
+      .map(([key, label, quiet]) => [label, profileValue(key, health[key], quiet)])
+      .filter(([, value]) => value !== null)
+      .map(([label, value]) => `<div class="field"><span class="label">${escapeHtml(label)}:</span><span class="value">${escapeHtml(value)}</span></div>`);
+    return rows.length ? `<h2>${escapeHtml(title)}</h2>${rows.join('')}` : '';
+  }).join('');
+  return sections || '<p class="statement">The health profile has no answers recorded yet.</p>';
+};
+
+const profileData = (record) => ({
+  document_title: 'Student Health Profile',
+  student_birthday: record.profile?.birthday ? formatDay(record.profile.birthday) : '',
+  student_sex: String(record.profile?.sex || '').replace(/^./, (c) => c.toUpperCase()),
+  student_email: record.profile?.email || '',
+  health_sections: healthSections(record.health),
+});
+
 export const DOCUMENTS = {
+  profile: { label: 'Student Profile', file: 'Student-Profile', template: 'student-profile.html', data: profileData, empty: '' },
   // Both documents print every row; fields with no value are left blank instead of "Not recorded".
   certificate: { label: 'Medical Certificate', file: 'Medical-Certificate', template: 'medical-certificate.html', data: certificateData, empty: '' },
   consultation: { label: 'Consultation Form', file: 'Consultation-Form', template: 'consultation-form.html', data: consultationData, empty: '' },

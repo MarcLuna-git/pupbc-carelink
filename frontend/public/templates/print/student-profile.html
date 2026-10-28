@@ -1,0 +1,37 @@
+<!-- Student Health Profile, printed from the nurse portal (Students > a student > Print profile). Printed inside layout.html.
+     Placeholders are listed in README.md. The personal details are always printed (a blank keeps its line); the health
+     sections come from the student's health profile and only list what was filled in. -->
+<h1>{{document_title}}</h1>
+
+<div class="row">
+  <div class="field"><span class="label">Name:</span><span class="value">{{student_name}}</span></div>
+  <div class="field short"><span class="label">Student ID:</span><span class="value">{{student_id}}</span></div>
+</div>
+<div class="row">
+  <div class="field"><span class="label">Course &amp; Year:</span><span class="value">{{student_program}}</span></div>
+  <div class="field short"><span class="label">Age:</span><span class="value">{{student_age}}</span></div>
+</div>
+<div class="row">
+  <div class="field"><span class="label">Birthday:</span><span class="value">{{student_birthday}}</span></div>
+  <div class="field short"><span class="label">Sex:</span><span class="value">{{student_sex}}</span></div>
+</div>
+<div class="row">
+  <div class="field"><span class="label">Email:</span><span class="value">{{student_email}}</span></div>
+  <div class="field short"><span class="label">Contact #:</span><span class="value">{{student_contact}}</span></div>
+</div>
+<div class="field"><span class="label">Address:</span><span class="value">{{student_address}}</span></div>
+<div class="field"><span class="label">Contact person in case of emergency:</span><span class="value">{{emergency_name}}</span></div>
+<div class="field"><span class="label">Emergency contact #:</span><span class="value">{{emergency_contact}}</span></div>
+
+{{{health_sections}}}
+
+<div class="sign"><div><strong>{{staff_name}}</strong><small>{{staff_role}}</small><small class="lic">Lic. No. <span class="fill"></span></small></div></div>
+
+<div class="privacy">
+  <strong>Data Privacy Notice</strong>
+  We respect and value your rights as a data subject under the Data Privacy Act (DPA). PUP Biñan Campus is committed to
+  protecting the personal data you provide in accordance with the requirements of the DPA and its IRR. In this regard,
+  PUP implements reasonable and appropriate security measures to maintain the confidentiality, integrity and
+  availability of your personal data.
+</div>
+<p class="note">System-generated copy from the {{clinic_name}} records, printed {{issued_date}}. Confidential: for clinic use only.</p>

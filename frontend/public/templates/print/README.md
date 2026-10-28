@@ -8,6 +8,7 @@ These files are the printouts made by **Print / Preview** in the nurse Consultat
 | `pup-logo.png` | The logo in the letterhead. Replace it with an image of the same name to change it. |
 | `consultation-form.html` | The Consultation Form (also used for emergency encounter records). |
 | `medical-certificate.html` | The Medical Certificate. |
+| `student-profile.html` | The Student Health Profile, printed from the nurse Students page (a student's record > Print profile). |
 
 To use your own design, replace the HTML and keep the placeholders you need. Images can go in this folder and be linked as `{{template_dir}}your-image.png` (the print window needs the full address, which `template_dir` gives).
 
@@ -27,6 +28,10 @@ Both documents always print every row and leave a field with no value blank. In 
 ### `medical-certificate.html`
 
 `visit_date`, `complaint`, `findings` (the impression), `recommendation` (other remarks: follow-up advice, empty when none), `certificate_ref` (Control No.), `rest_days` (always empty for now; written by hand), `clinic_address`, `clinic_email`
+
+### `student-profile.html`
+
+`document_title`, `student_birthday`, `student_sex`, `student_email`, and `{{{health_sections}}}` (three braces: ready-made HTML for the health profile, one heading per group, listing only the answers that were filled in).
 
 ### `consultation-form.html`
 

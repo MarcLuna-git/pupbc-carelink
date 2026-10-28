@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Extra record files for a student (x-ray photos, lab results, documents),
@@ -20,6 +21,10 @@ class StudentAttachmentController extends Controller
 {
     private const DISK = 'local';
     private const MAX_KB = 10240;
+    // Every file is also stored as base64 in the database, so a photo is kept small. The nurse
+    // screen shrinks photos to fit before uploading; this is the limit the server enforces.
+    private const IMAGE_MAX_KB = 200;
+    private const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     private const MIMES = 'jpg,jpeg,png,webp,gif,pdf,doc,docx,xls,xlsx,txt';
     // Shown in the browser; anything else is downloaded so it never runs as a page.
     private const INLINE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
@@ -47,6 +52,11 @@ class StudentAttachmentController extends Controller
         ]);
 
         $file = $data['file'];
+        if (in_array($file->getMimeType(), self::IMAGE_TYPES, true) && $file->getSize() > self::IMAGE_MAX_KB * 1024) {
+            throw ValidationException::withMessages([
+                'file' => 'Photos must be ' . self::IMAGE_MAX_KB . ' KB or smaller. Reduce the photo and try again.',
+            ]);
+        }
         $path = $file->store('student-attachments/' . $student->id, self::DISK);
 
         $attachment = StudentAttachment::create([

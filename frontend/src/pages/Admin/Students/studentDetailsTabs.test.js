@@ -22,8 +22,15 @@ test('student record popup: five tabs, no separate Consultations tab, history sp
 
     const html = render('Overview');
     const tabs = [...html.matchAll(/role="tab"[^>]*>([^<]+)</g)].map(match => match[1]);
-    assert.deepEqual(tabs, ['Overview', 'Health', 'Appointments', 'Clinic History', 'Emergencies']);
+    assert.deepEqual(tabs, ['Overview', 'Health', 'Appointments', 'Clinic History', 'Emergencies', 'Documents']);
     assert.doesNotMatch(html, /Consultations/);
+    // The student's profile can be printed from the popup.
+    assert.match(html, /Print profile/);
+
+    // Documents (x-rays, lab results, prescriptions) live in the record now, not in a separate Files popup.
+    const documents = render('Documents');
+    assert.match(documents, /Add a document/);
+    assert.match(documents, /reduced to 200 KB automatically/);
 
     // A fixed-height popup: header, tabs and footer do not scroll, only the body does.
     assert.match(html, /h-\[min\(46rem,calc\(100dvh-2rem\)\)\]/);

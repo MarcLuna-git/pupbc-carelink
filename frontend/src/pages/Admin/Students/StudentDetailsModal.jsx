@@ -1,6 +1,9 @@
-import { useEffect, useRef } from 'react';
-import { X, Plus } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { X, Plus, Printer } from 'lucide-react';
 import ClinicRecordList from '../../../components/ClinicRecordList';
+import StudentDocuments from './StudentDocuments';
+import { getUser } from '../../../services/session';
+import { openRecordDocument, studentDetails } from '../../Student/HealthRecords/recordDocuments';
 import { Avatar, StatusBadge } from './StudentDirectory';
 import { academic, fullName, focus, inputStyle, primary, secondary } from './directoryOptions';
 
@@ -44,14 +47,19 @@ function DetailGrid({ data }) {
   return <dl className="grid gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">{Object.entries(data).map(([key, value]) => <div key={key} className="min-w-0"><dt className="mb-1 text-xs capitalize text-gray-500 dark:text-gray-400">{label(key)}</dt><dd className="whitespace-pre-wrap break-words text-sm"><Value value={value} /></dd></div>)}</dl>;
 }
 function Group({ title, children }) { return <section className="space-y-4"><h3 className="border-b border-gray-100 pb-3 text-sm font-semibold dark:border-gray-700">{title}</h3>{children}</section>; }
-function Overview({ student }) {
+// One emergency contact: the health profile's when it has one, otherwise the older guardian fields.
+function emergencyContactOf(student) {
   const profile = student.student_profile || {};
   const health = student.health_profile;
   const useHealth = ['emergency_name', 'emergency_relationship', 'emergency_phone'].some(field => String(health?.[field] ?? '').trim());
   const contact = useHealth
     ? { full_name: health.emergency_name, relationship: health.emergency_relationship, phone_number: health.emergency_phone }
     : { full_name: profile.guardian_name, relationship: profile.guardian_relationship, phone_number: profile.guardian_contact };
-  const displayedContact = Object.fromEntries(Object.entries(contact).map(([field, value]) => [field, String(value ?? '').trim() ? value : null]));
+  return Object.fromEntries(Object.entries(contact).map(([field, value]) => [field, String(value ?? '').trim() ? value : null]));
+}
+function Overview({ student }) {
+  const profile = student.student_profile || {};
+  const displayedContact = emergencyContactOf(student);
   return <div className="space-y-8"><Group title="Personal information"><DetailGrid data={{ first_name: student.first_name, middle_name: student.middle_name, last_name: student.last_name, student_id: student.student_id, course: academic(student, 'course'), year_level: academic(student, 'year'), section: academic(student, 'section'), birthday: (profile.birthday || student.birthday)?.slice(0, 10), gender: profile.gender || student.gender, mobile_number: profile.mobile_number || student.mobile_number, email: student.email, address: profile.address }} /></Group><Group title="Emergency contact"><DetailGrid data={displayedContact} /></Group></div>;
 }
 const healthGroups = [
@@ -69,8 +77,31 @@ function Health({ profile }) {
   return <div className="space-y-8">{healthGroups.map(([title, fields]) => <Group key={title} title={title}><DetailGrid data={Object.fromEntries(fields.map(key => [key, profile[key]]))} /></Group>)}{Object.keys(extra).length > 0 && <Group title="Additional information"><DetailGrid data={extra} /></Group>}</div>;
 }
 // Consultations and emergencies both live in Clinic History; Emergencies is the same list narrowed to emergency encounters.
-const tabs = ['Overview', 'Health', 'Appointments', 'Clinic History', 'Emergencies'];
+const tabs = ['Overview', 'Health', 'Appointments', 'Clinic History', 'Emergencies', 'Documents'];
+
+// The Student Health Profile, printed with the clinic's own template (public/templates/print/student-profile.html).
+function printProfile(student) {
+  const profile = student.student_profile || {};
+  const contact = emergencyContactOf(student);
+  const birthday = (profile.birthday || student.birthday)?.slice(0, 10);
+  const details = studentDetails(student, {
+    ...profile, birthday, address: profile.address,
+    course: academic(student, 'course'), year: academic(student, 'year'), section: academic(student, 'section'),
+    mobile_number: profile.mobile_number || student.mobile_number,
+  }, { name: contact.full_name, relationship: contact.relationship, phone: contact.phone_number });
+  const nurse = getUser('nurse') || {};
+  const record = {
+    id: student.student_id,
+    staff: `Nurse ${[nurse.first_name, nurse.last_name].filter(Boolean).join(' ')}`.trim(),
+    staffRole: 'Clinic Nurse',
+    profile: { birthday, sex: profile.gender || student.gender, email: student.email },
+    health: student.health_profile,
+  };
+  return openRecordDocument('profile', record, 'print', details);
+}
+
 export function StudentDetailsModal({ student, loading, error, appointments, history, tab, onTab, onClose, onEmergency, emergencyOpen, archiveOpen, onArchive, onRestore, statusSaving }) {
+  const [printNote, setPrintNote] = useState('');
   return <Modal contained wide title="Student record" onClose={onClose} topmost={!emergencyOpen && !archiveOpen}>
     <header className="shrink-0 border-b border-gray-200 px-5 py-4 sm:px-6 dark:border-gray-700"><div className="flex items-start gap-3">{student && <Avatar student={student} />}<div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-x-3 gap-y-1"><h2 className="text-xl font-semibold">{student ? fullName(student) : 'Loading student record…'}</h2>{student && <StatusBadge status={student.status} />}</div>{student && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{[student.student_id, academic(student, 'course'), academic(student, 'year'), academic(student, 'section') && `Section ${academic(student, 'section')}`].filter(Boolean).join(' · ')}</p>}</div><button onClick={onClose} aria-label="Close student record" className={`rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 ${focus}`}><X size={20} /></button></div></header>
     {error && <p role="alert" className="m-5 shrink-0 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
@@ -80,8 +111,9 @@ export function StudentDetailsModal({ student, loading, error, appointments, his
         {tab === 'Overview' && <Overview student={student} />}
         {tab === 'Health' && <Health profile={student.health_profile} />}
         {tab === 'Appointments' && (appointments.length ? <div className="space-y-4">{appointments.map(visit => <article key={visit.id} className="rounded-xl border border-gray-200 p-4 dark:border-gray-700"><div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-semibold">{visit.service || 'Appointment'}</h3><StatusBadge status={visit.status} /></div><DetailGrid data={{ appointment_date: visit.appointment_date?.slice(0, 10), time_slot: visit.time_slot, concern: visit.concern }} /></article>)}</div> : <p className="py-8 text-center text-sm text-gray-500">No appointments.</p>)}
+        {tab === 'Documents' && <StudentDocuments key={student.id} student={student} />}
         {['Clinic History', 'Emergencies'].includes(tab) && <ClinicRecordList key={tab} records={history.filter(record => tab === 'Clinic History' || record.record_type === 'emergency')} emptyText={tab === 'Emergencies' ? 'No emergency encounters recorded.' : 'No completed consultations or emergency encounters yet.'} />}
-      </div><footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-200 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/30"><p className="text-xs text-gray-500">Clinic records and encounter history</p><div className="flex flex-wrap justify-end gap-2"><button onClick={onEmergency} className={primary}><Plus size={16} />Add Emergency Encounter</button>{student.status === 'archived' ? <button onClick={onRestore} disabled={statusSaving} className={secondary}>{statusSaving ? 'Restoring…' : 'Restore Student'}</button> : <button onClick={onArchive} disabled={statusSaving} className={secondary}>{statusSaving ? 'Archiving…' : 'Archive Student'}</button>}</div></footer>
+      </div><footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-200 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/30"><p role={printNote ? 'alert' : undefined} className={`text-xs ${printNote ? 'text-red-700 dark:text-red-300' : 'text-gray-500'}`}>{printNote || 'Clinic records and encounter history'}</p><div className="flex flex-wrap justify-end gap-2"><button type="button" onClick={() => setPrintNote(printProfile(student) ? '' : 'Allow pop-ups to print the profile.')} className={secondary}><Printer size={16} aria-hidden="true" />Print profile</button><button onClick={onEmergency} className={primary}><Plus size={16} />Add Emergency Encounter</button>{student.status === 'archived' ? <button onClick={onRestore} disabled={statusSaving} className={secondary}>{statusSaving ? 'Restoring…' : 'Restore Student'}</button> : <button onClick={onArchive} disabled={statusSaving} className={secondary}>{statusSaving ? 'Archiving…' : 'Archive Student'}</button>}</div></footer>
     </>}
   </Modal>;
 }
