@@ -19,7 +19,8 @@ class FacultyDispensing extends Model
         parent::boot();
         static::creating(function ($model) {
             if (!$model->getKey()) {
-                $model->{$model->getKeyName()} = (string) Str::uuid();
+                // Time-ordered, so two dispensings in the same second still list in the order they happened.
+                $model->{$model->getKeyName()} = (string) Str::orderedUuid();
             }
         });
     }
