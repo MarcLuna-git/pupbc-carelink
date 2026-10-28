@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Eye, X } from 'lucide-react';
 import { Avatar } from '../Students/StudentDirectory';
 import { focus, fullName, secondary } from '../Students/directoryOptions';
-import { DataFields } from '../../../components/ClinicHistoryList';
+import { ClinicRecordSheet } from '../../../components/ClinicRecordList';
 import { recordAcademic, yearLabel, yearValue } from '../../../utils/clinicRecordFilters';
 
 const recordType = record => record.record_type === 'emergency' ? 'Emergency' : 'Consultation';
@@ -34,7 +34,7 @@ export function RecordDetailsModal({ record, onClose }) {
   }, []);
   return <dialog ref={ref} aria-labelledby="clinic-record-title" onCancel={event => { event.preventDefault(); onClose(); }} className="m-auto max-h-[85dvh] w-[calc(100%-1.5rem)] max-w-3xl overflow-y-auto rounded-2xl border border-gray-200 bg-white p-0 text-gray-900 shadow-xl backdrop:bg-gray-950/60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
     <header className="flex items-start gap-3 border-b border-gray-200 p-5 dark:border-gray-700"><div className="min-w-0 flex-1"><p className="text-xs text-gray-500 dark:text-gray-400">{recordType(record)} · {date(record)}</p><h2 id="clinic-record-title" className="mt-1 break-words text-xl font-semibold">{fullName(record.student || {}) || 'Clinic record'}</h2><p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{record.student?.student_id}</p></div><button type="button" aria-label="Close record details" onClick={onClose} className={`rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700 ${focus}`}><X size={20} /></button></header>
-    <div className="p-5"><DataFields data={Object.fromEntries(Object.entries(record).filter(([key]) => !['student', 'record_type', 'occurred_at', 'incident_datetime'].includes(key)))} /></div>
+    <div className="p-5"><ClinicRecordSheet record={record} /></div>
     <footer className="flex justify-end border-t border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/30"><button type="button" onClick={onClose} className={secondary}>Close</button></footer>
   </dialog>;
 }

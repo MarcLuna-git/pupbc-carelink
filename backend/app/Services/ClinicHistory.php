@@ -22,7 +22,14 @@ class ClinicHistory
                     'checkin' => $item->checkin ? $item->checkin->only(['id', 'queue_number', 'status', 'check_in_time']) : null,
                     'triage' => $item->checkin && $item->checkin->triage ? $item->checkin->triage->only($studentView ? ['chief_complaint', 'severity', 'priority'] : ['chief_complaint', 'severity', 'priority', 'red_flags', 'notes']) : null,
                 ];
-                if (!$studentView) $record['student'] = $item->user ? $this->studentData($item->user) : null;
+                if (!$studentView) {
+                    // The nurse's own clinical notes: shown to nurses, never to the student.
+                    $record['history_present_illness'] = $item->history_present_illness;
+                    $record['nursing_assessment'] = $item->nursing_assessment;
+                    $record['nursing_interventions'] = $item->nursing_interventions;
+                    $record['treatment_plan'] = $item->treatment_plan;
+                    $record['student'] = $item->user ? $this->studentData($item->user) : null;
+                }
                 return $record;
             });
         $emergencies = EmergencyEncounter::with(['nurse:id,first_name,last_name', 'student:id,student_id,first_name,last_name,course,year,section', 'student.profile:id,user_id,course,year,section'])->when($id, function ($q) use ($id) { $q->where('user_id', $id); })->get()->map(function ($item) use ($studentView) {

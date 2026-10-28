@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { X, Plus } from 'lucide-react';
-import ClinicHistoryList from '../../../components/ClinicHistoryList';
+import ClinicRecordList from '../../../components/ClinicRecordList';
 import { Avatar, StatusBadge } from './StudentDirectory';
 import { academic, fullName, focus, inputStyle, primary, secondary } from './directoryOptions';
 
@@ -80,7 +80,7 @@ export function StudentDetailsModal({ student, loading, error, appointments, his
         {tab === 'Overview' && <Overview student={student} />}
         {tab === 'Health' && <Health profile={student.health_profile} />}
         {tab === 'Appointments' && (appointments.length ? <div className="space-y-4">{appointments.map(visit => <article key={visit.id} className="rounded-xl border border-gray-200 p-4 dark:border-gray-700"><div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-semibold">{visit.service || 'Appointment'}</h3><StatusBadge status={visit.status} /></div><DetailGrid data={{ appointment_date: visit.appointment_date?.slice(0, 10), time_slot: visit.time_slot, concern: visit.concern }} /></article>)}</div> : <p className="py-8 text-center text-sm text-gray-500">No appointments.</p>)}
-        {['Clinic History', 'Emergencies'].includes(tab) && <ClinicHistoryList records={history.filter(record => tab === 'Clinic History' || record.record_type === 'emergency')} />}
+        {['Clinic History', 'Emergencies'].includes(tab) && <ClinicRecordList key={tab} records={history.filter(record => tab === 'Clinic History' || record.record_type === 'emergency')} emptyText={tab === 'Emergencies' ? 'No emergency encounters recorded.' : 'No completed consultations or emergency encounters yet.'} />}
       </div><footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-200 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/30"><p className="text-xs text-gray-500">Clinic records and encounter history</p><div className="flex flex-wrap justify-end gap-2"><button onClick={onEmergency} className={primary}><Plus size={16} />Add Emergency Encounter</button>{student.status === 'archived' ? <button onClick={onRestore} disabled={statusSaving} className={secondary}>{statusSaving ? 'Restoring…' : 'Restore Student'}</button> : <button onClick={onArchive} disabled={statusSaving} className={secondary}>{statusSaving ? 'Archiving…' : 'Archive Student'}</button>}</div></footer>
     </>}
   </Modal>;

@@ -222,7 +222,14 @@ class CareLinkWorkflowTest extends TestCase
         $this->assertSame('completed',$appointment->fresh()->status);
         $history=$this->getJson('/api/nurse/students/'.$student->id.'/clinic-history')->assertOk();
         $history->assertJsonPath('data.0.checkin.id',$checkin->id)->assertJsonPath('data.0.appointment.id',$appointment->id)->assertJsonPath('data.0.triage.priority','LOW');
+        // The nurse sees the clinical notes they entered; the student's own history does not carry them.
+        $history->assertJsonPath('data.0.history_present_illness','Since this morning')
+            ->assertJsonPath('data.0.nursing_assessment','Alert and oriented')
+            ->assertJsonPath('data.0.nursing_interventions','Advised rest')
+            ->assertJsonPath('data.0.vital_signs.bp','120/80');
         $this->actingAs($student,'api')->getJson('/api/student/clinic-history')->assertJsonCount(1,'data');
+        $studentRecord=$this->getJson('/api/student/clinic-history')->json('data.0');
+        foreach(['history_present_illness','nursing_assessment','nursing_interventions','treatment_plan'] as $note) $this->assertArrayNotHasKey($note,$studentRecord);
     }
     public function test_emergency_nurse_only_correct_student_and_incident_chronology()
     {
