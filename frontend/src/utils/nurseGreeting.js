@@ -18,6 +18,7 @@ export const NURSE_PAGE_HEADERS = {
   '/nurse/consultation': { title: 'Queue & Consultation', note: 'Manage the clinic queue, call the next student, and record their consultation.' },
   '/nurse/records': { title: 'Records', note: 'Completed consultations and emergency encounters of every student. To see one student’s full record, open Students.' },
   '/nurse/students': { title: 'Students', note: 'Registered students. Open one to see their profile, health record, appointments and clinic history.' },
+  '/nurse/faculty': { title: 'Faculty', note: 'Keep a directory of faculty, and record the medicines the clinic dispenses to them.' },
   '/nurse/medicines': { title: 'Medicine Inventory', note: 'Manage clinic medicines and supplies.' },
   '/nurse/academic': { title: 'Course Management', note: 'Organize courses, manage sections, and keep academic periods up to date.' },
   '/nurse/announcements': { title: 'Announcements', note: 'Post clinic and school announcements for students.' },

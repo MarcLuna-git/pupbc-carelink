@@ -95,6 +95,7 @@ class NurseOperation
         }
         $models = [
             'medicines' => \App\Models\Medicine::class,
+            'faculty' => \App\Models\FacultyMember::class,
             'consultations' => \App\Models\Consultation::class,
             'announcements' => \App\Models\Announcement::class,
             'calendar-notes' => \App\Models\CalendarNote::class,

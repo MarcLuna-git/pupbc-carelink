@@ -54,8 +54,9 @@ export const personName = person => (person ? [person.first_name, person.last_na
 // Reference / Reason: what the nurse wrote, plus who received it and which lot it came from.
 export function reasonText(movement) {
   const student = movement.student ? `Student: ${personName(movement.student)} (${movement.student.student_id})` : '';
+  const faculty = movement.faculty?.full_name ? `Faculty: ${movement.faculty.full_name}` : '';
   const lot = movement.batch?.lot_number ? `Lot ${movement.batch.lot_number}` : '';
-  return [movement.reason, student, lot].filter(Boolean).join(' · ');
+  return [movement.reason, student, faculty, lot].filter(Boolean).join(' · ');
 }
 
 export const signed = value => (value > 0 ? `+${value}` : String(value));

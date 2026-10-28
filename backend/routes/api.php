@@ -1130,6 +1130,19 @@ Route::middleware([
 
                 /*
                 |--------------------------------------------------------------------------
+                | Faculty: directory and the medicines dispensed to faculty
+                |--------------------------------------------------------------------------
+                */
+                Route::get('/faculty', [\App\Http\Controllers\Api\Nurse\FacultyController::class, 'index']);
+                Route::post('/faculty', [\App\Http\Controllers\Api\Nurse\FacultyController::class, 'store']);
+                Route::get('/faculty/{id}', [\App\Http\Controllers\Api\Nurse\FacultyController::class, 'show']);
+                Route::put('/faculty/{id}', [\App\Http\Controllers\Api\Nurse\FacultyController::class, 'update']);
+                Route::delete('/faculty/{id}', [\App\Http\Controllers\Api\Nurse\FacultyController::class, 'destroy']);
+                Route::post('/faculty/{id}/dispense', [\App\Http\Controllers\Api\Nurse\FacultyController::class, 'dispense']);
+                Route::get('/faculty-dispensings', [\App\Http\Controllers\Api\Nurse\FacultyController::class, 'dispensings']);
+
+                /*
+                |--------------------------------------------------------------------------
                 | Nurse Dashboard Calendar Notes
                 |--------------------------------------------------------------------------
                 */

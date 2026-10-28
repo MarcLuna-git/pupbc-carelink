@@ -53,6 +53,7 @@ class MedicineController extends Controller
         }
 
         $perPage = min(max((int) $request->input('per_page', 20), 1), 100);
+        /** @var LengthAwarePaginator $medicines */
         $medicines = $query->orderBy('name')->paginate($perPage);
 
         // One query for the whole page: earliest expiry among batches that still hold stock.
@@ -192,7 +193,7 @@ class MedicineController extends Controller
         ]);
 
         $running = (int) $medicine->quantity;
-        $rows = MedicineStockMovement::with(['batch', 'performer:id,first_name,last_name', 'student:id,student_id,first_name,last_name'])
+        $rows = MedicineStockMovement::with(['batch', 'performer:id,first_name,last_name', 'student:id,student_id,first_name,last_name', 'faculty:id,full_name,course'])
             ->where('medicine_id', $id)
             ->orderByDesc('created_at')->orderByDesc('id')
             ->get()
@@ -266,7 +267,7 @@ class MedicineController extends Controller
                 $student = User::where('student_id', $data['student_id'])
                     ->where('role', 'student')
                     ->first();
-                abort_unless($student, 422, 'Student ID does not match a student account.');
+                abort_unless($student !== null, 422, 'Student ID does not match a student account.');
             }
             abort_if($medicine->quantity < $data['quantity'], 422, 'Insufficient medicine stock.');
 
@@ -332,13 +333,13 @@ class MedicineController extends Controller
             }
             $take = min($remaining, $batch->quantity);
             $batch->decrement('quantity', $take);
-            $this->recordMovement($medicine, $batch, $data['movement_type'], $take, $data['reason'], $student);
+            $this->recordMovement($medicine, $batch, $data['movement_type'], $take, $data['reason'], $student, $data['faculty_member_id'] ?? null);
             $allocations[] = $this->allocation($batch, $take);
             $remaining -= $take;
         }
 
         if ($remaining > 0) {
-            $this->recordMovement($medicine, null, $data['movement_type'], $remaining, $data['reason'], $student);
+            $this->recordMovement($medicine, null, $data['movement_type'], $remaining, $data['reason'], $student, $data['faculty_member_id'] ?? null);
             $allocations[] = ['batch_id' => null, 'lot_number' => null, 'expiry_date' => null, 'quantity' => $remaining];
         }
 
@@ -355,9 +356,9 @@ class MedicineController extends Controller
         ];
     }
 
-    private function recordMovement(Medicine $medicine, $batch, $type, $quantity, $reason = null, ?User $student = null)
+    private function recordMovement(Medicine $medicine, $batch, $type, $quantity, $reason = null, ?User $student = null, ?string $facultyId = null)
     {
-        return MedicineStockMovement::create([
+        $line = [
             'medicine_id' => $medicine->id,
             'medicine_batch_id' => $batch ? $batch->id : null,
             'movement_type' => $type,
@@ -365,7 +366,31 @@ class MedicineController extends Controller
             'reason' => $reason,
             'performed_by' => auth()->id(),
             'student_user_id' => $student ? $student->id : null,
-        ]);
+        ];
+        // Only set when the stock went to a faculty member, so every other movement is written exactly as before.
+        if ($facultyId) {
+            $line['faculty_member_id'] = $facultyId;
+        }
+        return MedicineStockMovement::create($line);
+    }
+
+    /*
+     * Give stock to a faculty member: the same first-expiry, first-out release and the same movements as
+     * dispensing to a student, with the faculty member recorded on each movement. Used by the Faculty page.
+     * Returns the medicine as it is after the release, and which batches the stock came from.
+     */
+    public function dispenseToFaculty(string $medicineId, int $quantity, string $reason, string $facultyId): array
+    {
+        return DB::transaction(function () use ($medicineId, $quantity, $reason, $facultyId) {
+            $medicine = Medicine::lockForUpdate()->findOrFail($medicineId);
+            abort_if($medicine->quantity < $quantity, 422, "Only {$medicine->quantity} {$medicine->unit} in stock.");
+            $allocations = $this->releaseFirstExpiryFirst($medicine, [
+                'movement_type' => 'dispensed', 'quantity' => $quantity, 'reason' => $reason, 'faculty_member_id' => $facultyId,
+            ], null);
+            $medicine->decrement('quantity', $quantity);
+            $this->notifyIfLowStock($medicine->fresh());
+            return [$medicine->fresh(), $allocations];
+        }, 3);
     }
 
     private function notifyIfLowStock(Medicine $medicine)

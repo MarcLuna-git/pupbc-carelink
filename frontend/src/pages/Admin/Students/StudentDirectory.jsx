@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Eye, Search, SlidersHorizontal, Users, X, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { mediaUrl } from '../../../utils/mediaUrl';
+import { pageWindow } from '../../../utils/pageWindow';
 import { academic, appliedDirectoryFilters, directoryCourses, directoryDefaultFilters, directoryStatusOptions, years, directorySectionsForYear, fullName, focus, inputStyle, secondary } from './directoryOptions';
 
 export function Avatar({ student }) {
@@ -45,9 +46,16 @@ export function StudentDirectory({ students, loading, filtered, onClear, onView 
     <div className="divide-y divide-gray-100 lg:hidden dark:divide-gray-700">{students.map(student => <article key={student.id} className="p-4"><div className="flex items-start gap-3"><Avatar student={student} /><div className="min-w-0 flex-1"><h2 className="font-semibold">{fullName(student)}</h2><p className="mt-1 text-xs text-gray-500">{student.student_id || '—'}</p></div><StatusBadge status={student.status} /></div><div className="mt-3 flex items-end justify-between gap-2"><div className="text-sm"><p>{academic(student, 'course') || 'Course not provided'}</p><p className="mt-1 text-xs text-gray-500">{academic(student, 'year') || 'Year not provided'} · {academic(student, 'section') ? `Section ${academic(student, 'section')}` : 'Section not provided'}</p></div>{actions(student)}</div></article>)}</div>
   </>;
 }
-export function Pagination({ meta, page, onPage, loading, entity = 'students', hideShowingText = false }) {
+// `numbered` shows the page numbers (1 2 3) between the arrows, instead of only the current page.
+export function Pagination({ meta, page, onPage, loading, entity = 'students', hideShowingText = false, numbered = false }) {
   const last = meta.last_page || 1;
   // Arrows around the current page number only, so the bar stays the same width however many pages there are.
   const arrow = `flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:bg-transparent dark:text-gray-300 dark:hover:bg-gray-700 ${focus}`;
-  return <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-gray-200 px-4 py-3 dark:border-gray-700">{!hideShowingText && <p className="text-sm text-gray-500" aria-live="polite">{loading ? `Loading ${entity}…` : `Showing ${meta.from || 0}–${meta.to || 0} of ${meta.total || 0} ${entity}`}</p>}<nav aria-label={`${entity} pages`} className={hideShowingText ? 'ml-auto flex items-center gap-2' : 'flex items-center gap-2'}><button className={arrow} disabled={loading || page <= 1} onClick={() => onPage(page - 1)} aria-label="Previous page"><ChevronLeft size={16} /></button><span className="flex h-9 min-w-9 items-center justify-center rounded-lg bg-maroon-800 px-2 text-sm font-semibold text-white tabular-nums" aria-current="page" aria-label={`Page ${page} of ${last}`} title={`Page ${page} of ${last}`}>{page}</span><button className={arrow} disabled={loading || page >= last} onClick={() => onPage(page + 1)} aria-label="Next page"><ChevronRight size={16} /></button></nav></footer>;
+  return <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-gray-200 px-4 py-3 dark:border-gray-700">{!hideShowingText && <p className="text-sm text-gray-500" aria-live="polite">{loading ? `Loading ${entity}…` : `Showing ${meta.from || 0}–${meta.to || 0} of ${meta.total || 0} ${entity}`}</p>}<nav aria-label={`${entity} pages`} className={hideShowingText ? 'ml-auto flex items-center gap-2' : 'flex items-center gap-2'}><button className={arrow} disabled={loading || page <= 1} onClick={() => onPage(page - 1)} aria-label="Previous page"><ChevronLeft size={16} /></button>{numbered
+    ? pageWindow(page, last).map((number, index) => number === null
+      ? <span key={`gap-${index}`} className="px-1 text-gray-400" aria-hidden="true">…</span>
+      : number === page
+        ? <span key={number} className="flex h-9 min-w-9 items-center justify-center rounded-lg bg-maroon-800 px-2 text-sm font-semibold text-white tabular-nums" aria-current="page" aria-label={`Page ${page} of ${last}`}>{number}</span>
+        : <button key={number} className={`${arrow} min-w-9 px-2 text-sm tabular-nums`} disabled={loading} onClick={() => onPage(number)} aria-label={`Go to page ${number}`}>{number}</button>)
+    : <span className="flex h-9 min-w-9 items-center justify-center rounded-lg bg-maroon-800 px-2 text-sm font-semibold text-white tabular-nums" aria-current="page" aria-label={`Page ${page} of ${last}`} title={`Page ${page} of ${last}`}>{page}</span>}<button className={arrow} disabled={loading || page >= last} onClick={() => onPage(page + 1)} aria-label="Next page"><ChevronRight size={16} /></button></nav></footer>;
 }

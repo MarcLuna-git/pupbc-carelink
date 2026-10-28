@@ -2,6 +2,7 @@ import {
   BookOpen,
   Calendar,
   FileText,
+  GraduationCap,
   LayoutDashboard,
   Megaphone,
   Pill,
@@ -18,7 +19,7 @@ import {
  * `group` sorts the sidebar into labelled sections (one-word labels).
  * Management holds the clinic visit flow in order: appointments, then the
  * QR check-in queue and consultation, and the visit records. Records holds
- * the registers the clinic keeps: students, medicines and courses.
+ * the registers the clinic keeps: students, faculty, medicines and courses.
  * Dashboard has no group and sits on top.
  */
 export const NURSE_NAV_GROUPS = [
@@ -33,6 +34,7 @@ export const NURSE_NAV_ITEMS = [
   { path: '/nurse/consultation', icon: Stethoscope, label: 'Consultation', dock: true, group: 'management' },
   { path: '/nurse/records', icon: FileText, label: 'Records', group: 'management' },
   { path: '/nurse/students', icon: Users, label: 'Students', dock: true, group: 'records' },
+  { path: '/nurse/faculty', icon: GraduationCap, label: 'Faculty', group: 'records' },
   { path: '/nurse/medicines', icon: Pill, label: 'Medicines', group: 'records' },
   { path: '/nurse/academic', icon: BookOpen, label: 'Courses', group: 'records' },
   { path: '/nurse/announcements', icon: Megaphone, label: 'Announcements', group: 'admin' },
