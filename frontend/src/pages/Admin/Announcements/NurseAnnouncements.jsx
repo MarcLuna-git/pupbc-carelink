@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { SquarePen, FilePenLine, Newspaper, ScrollText, Trash2, Edit2, Loader2, X, Send, Search, ChevronDown } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
-import NursePageHero from '../../../components/NursePageHero';
+import NursePageTitle from '../../../components/NursePageTitle';
 import NurseListCard, { CountChip } from '../../../components/NurseListCard';
 import useNurseSync from '../../../hooks/useNurseSync';
 import { NurseToast } from '../../../components/NurseFeedback';
@@ -144,11 +144,7 @@ const NurseAnnouncements = () => {
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-5">
-      <NursePageHero
-        id="nurse-announcements-title"
-        title="Announcements"
-        description="Post clinic and school announcements for students."
-      />
+      <NursePageTitle path="/nurse/announcements" />
 
       {/* Action results show as a floating toast */}
       <NurseToast message={message} type={messageType} onClose={() => setMessage('')} />

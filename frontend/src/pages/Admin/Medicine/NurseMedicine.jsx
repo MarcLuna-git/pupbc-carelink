@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Search, Plus, Edit2, Trash2, Loader2, AlertTriangle, Clock, Package, Filter, ChevronDown, ClipboardList, X, History, Save, FilePenLine, BriefcaseMedical, Boxes, Tablets, PackagePlus } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
-import NursePageHero from '../../../components/NursePageHero';
+import NursePageTitle from '../../../components/NursePageTitle';
 import NurseListCard, { CountChip } from '../../../components/NurseListCard';
 import useNurseSync from '../../../hooks/useNurseSync';
 import { useNurseTimeGuardBypass } from '../../../services/devTools';
@@ -311,11 +311,7 @@ const NurseMedicine = () => {
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-5">
-      <NursePageHero
-        id="nurse-medicines-title"
-        title="Medicine Inventory"
-        description="Manage clinic medicines and supplies."
-      />
+      <NursePageTitle path="/nurse/medicines" />
 
       {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-center text-sm font-medium text-red-700 dark:bg-red-900/20 dark:text-red-400">{error}</p>}
 

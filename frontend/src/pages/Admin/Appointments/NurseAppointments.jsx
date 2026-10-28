@@ -8,7 +8,7 @@ import NurseListCard, { CountChip } from '../../../components/NurseListCard';
 import useNurseSync from '../../../hooks/useNurseSync';
 import useDebouncedValue from '../../../hooks/useDebouncedValue';
 import { formatAppointmentDate } from '../../../utils/appointmentDate';
-import { NURSE_HEADER_NOTES } from '../../../utils/nurseGreeting';
+import NursePageTitle from '../../../components/NursePageTitle';
 import { Pagination } from '../Students/StudentDirectory';
 import { NurseToast } from '../../../components/NurseFeedback';
 
@@ -254,12 +254,7 @@ const NurseAppointments = () => {
       {/* Action results show as a floating toast */}
       <NurseToast message={message} type={messageType} onClose={() => setMessage('')} />
 
-      {/* On tablet and desktop the title and purpose are in the header bar; the mobile header shows the brand, so they are here. */}
-      <div className="md:sr-only">
-        <h1 className="text-lg font-bold text-maroon-800 dark:text-maroon-300">Appointments</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-300">{NURSE_HEADER_NOTES['/nurse/appointments']}</p>
-      </div>
-
+      <NursePageTitle path="/nurse/appointments" />
       {/* Search and filters: one row, search first, then the service, the date and Clear filters. */}
       <section aria-label="Search and filters" className="rounded-lg border border-gray-100 bg-white p-3 dark:border-gray-700 dark:bg-gray-800 sm:p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">

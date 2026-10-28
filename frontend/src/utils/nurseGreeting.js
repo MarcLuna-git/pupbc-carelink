@@ -10,20 +10,23 @@ export const greetingFor = (date = new Date()) => {
 export const nurseGreeting = (user, date = new Date()) =>
   `${greetingFor(date)}, Nurse ${user?.first_name || 'Head'}!`;
 
-// Pages whose title and purpose sit in the top header bar instead of a title card.
-// A page is added here as its own title card is removed.
-export const NURSE_HEADER_NOTES = {
-  '/nurse/dashboard': 'PUP Biñan Campus Clinic — here is what is happening in the clinic today.',
-  '/nurse/appointments': 'Review booking requests and approve or decline them. Check-ins and consultations are on the Consultation page.',
+// What each nurse page is for. The title and this line sit in the top header bar, so the pages
+// have no title card of their own. The dashboard's title is the greeting instead of a fixed name.
+export const NURSE_PAGE_HEADERS = {
+  '/nurse/dashboard': { title: null, note: 'PUP Biñan Campus Clinic — here is what is happening in the clinic today.' },
+  '/nurse/appointments': { title: 'Appointments', note: 'Review booking requests and approve or decline them. Check-ins and consultations are on the Consultation page.' },
+  '/nurse/consultation': { title: 'Queue & Consultation', note: 'Manage the clinic queue, call the next student, and record their consultation.' },
+  '/nurse/records': { title: 'Records', note: 'Completed consultations and emergency encounters of every student. To see one student’s full record, open Students.' },
+  '/nurse/students': { title: 'Students', note: 'Registered students. Open one to see their profile, health record, appointments and clinic history.' },
+  '/nurse/medicines': { title: 'Medicine Inventory', note: 'Manage clinic medicines and supplies.' },
+  '/nurse/academic': { title: 'Course Management', note: 'Organize courses, manage sections, and keep academic periods up to date.' },
+  '/nurse/announcements': { title: 'Announcements', note: 'Post clinic and school announcements for students.' },
+  '/nurse/settings': { title: 'Settings', note: 'Manage your account, security, and portal preferences.' },
 };
 
-export const NURSE_HEADER_TITLES = {
-  '/nurse/appointments': 'Appointments',
-};
-
-// { title, note } for the header bar, or null when the page keeps its own title card.
+// { title, note } for the header bar, or null for a page that is not listed.
 export const nurseHeaderFor = (pathname, user, date = new Date()) => {
-  const note = NURSE_HEADER_NOTES[pathname];
-  if (!note) return null;
-  return { title: pathname === '/nurse/dashboard' ? nurseGreeting(user, date) : NURSE_HEADER_TITLES[pathname], note };
+  const page = NURSE_PAGE_HEADERS[pathname];
+  if (!page) return null;
+  return { title: page.title || nurseGreeting(user, date), note: page.note };
 };

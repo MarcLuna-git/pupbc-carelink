@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ClipboardList, CheckCircle, RotateCcw, Stethoscope, ListOrdered, BellRing, UserRound, ClipboardPenLine, Users, UserX, Star, LogIn } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
-import NursePageHero from '../../../components/NursePageHero';
+import NursePageTitle from '../../../components/NursePageTitle';
 import NurseListCard, { CountChip } from '../../../components/NurseListCard';
 import useNurseSync from '../../../hooks/useNurseSync';
 import { NurseNoticeModal, NurseToast } from '../../../components/NurseFeedback';
@@ -277,11 +277,7 @@ const NurseConsultation = () => {
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-5">
-      {step === 1 && <NursePageHero
-        id="nurse-consultation-title"
-        title="Queue & Consultation"
-        description="Manage the clinic queue, call the next student, and record their consultation."
-      />}
+      {step === 1 && <NursePageTitle path="/nurse/consultation" />}
 
       {/* Action results show as a floating toast */}
       <NurseToast message={message} type={messageType} onClose={() => setMessage('')} />

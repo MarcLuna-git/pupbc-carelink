@@ -6,7 +6,7 @@ import api from '../../../services/api';
 import authService from '../../../services/authService';
 import useNurseSync from '../../../hooks/useNurseSync';
 import { readDarkMode, saveDarkMode } from '../../../hooks/useAccountTheme';
-import NursePageHero from '../../../components/NursePageHero';
+import NursePageTitle from '../../../components/NursePageTitle';
 import { fetchNurseDevTools, updateNurseTimeGuardBypass, useNurseTimeGuardBypass } from '../../../services/devTools';
 import { NurseToast } from '../../../components/NurseFeedback';
 
@@ -593,11 +593,7 @@ const NurseSettings = () => {
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-5">
-      <NursePageHero
-        id="nurse-settings-title"
-        title="Settings"
-        description="Manage your account, security, and portal preferences."
-      />
+      <NursePageTitle path="/nurse/settings" />
 
       {/* Action results show as a floating toast */}
       <NurseToast message={message} type={messageType} onClose={() => setMessage('')} />

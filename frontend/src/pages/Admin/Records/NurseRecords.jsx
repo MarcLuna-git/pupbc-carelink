@@ -5,8 +5,8 @@ import RecordDirectory, { RecordDetailsModal } from './RecordDirectory';
 import useNurseSync from '../../../hooks/useNurseSync';
 import { StudentFilters } from '../Students/StudentDirectory';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
-import NursePageHero from '../../../components/NursePageHero';
-import NurseListCard from '../../../components/NurseListCard';
+import NursePageTitle from '../../../components/NursePageTitle';
+import NurseListCard, { CountChip } from '../../../components/NurseListCard';
 import academics from '../../../data/registration-academics.json';
 import { secondary } from '../Students/directoryOptions';
 import { emptyRecordFilters, filterClinicRecords, recordAcademic, yearLabel, yearValue } from '../../../utils/clinicRecordFilters';
@@ -55,28 +55,14 @@ export default function NurseRecords() {
   const clearFilters = () => { setFilters(emptyRecordFilters); };
   const visibleRecords = filtered;
   return <div className="mx-auto max-w-[1440px] space-y-5 text-gray-900 dark:text-gray-100">
-    <NursePageHero
-      id="nurse-records-title"
-      title="Clinic History"
-      description="View completed consultations and emergency encounters."
-    >
-      <div className="mt-4 inline-flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-700/50">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-maroon-800 shadow-sm dark:bg-gray-800 dark:text-maroon-400"><FileText size={16} aria-hidden="true" /></span>
-        <div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">{active ? 'Matching records' : 'Total records'}</p>
-          {loading
-            ? <span role="status" className="mt-1 block h-5 w-12 animate-pulse rounded-md bg-gray-200 dark:bg-gray-600"><span className="sr-only">Loading record count</span></span>
-            : <p className="text-lg font-bold leading-tight tabular-nums" aria-live="polite">{error ? <span className="text-sm font-semibold text-gray-400">Unavailable</span> : filtered.length.toLocaleString()}</p>}
-        </div>
-      </div>
-    </NursePageHero>
+    <NursePageTitle path="/nurse/records" />
 
     <NurseListCard
       aria-label="Clinic history directory"
       aria-busy={loading}
       icon={ClipboardList}
-      title="Clinic records"
-      description="Completed consultations and emergency encounters, newest first."
+      title={<>Clinic records<CountChip>{loading ? '…' : error ? '—' : filtered.length.toLocaleString()}</CountChip></>}
+      description={`${active ? 'Records matching your filters, newest' : 'Completed consultations and emergency encounters, newest'} first.`}
       toolbar={<StudentFilters embedded filters={filters} onChange={changeFilter} onClear={clearFilters} filterDefinitions={definitions} label="Clinic record filters" searchLabel="Search clinic records" searchPlaceholder="Search student, ID, or complaint" />}
     >
       {error ? <div role="alert" className="space-y-3 p-8 text-center"><p className="text-sm text-red-600 dark:text-red-300">{error}</p><button type="button" className={secondary} onClick={() => setRefresh(current => current + 1)}>Try again</button></div> : <>
