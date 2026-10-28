@@ -129,7 +129,7 @@ class KioskController extends Controller
         $next = DB::transaction(function () {
             ClinicQueue::lock();
             // Kasama ang older unfinished visits hanggang ma-save ang consultation.
-            abort_if(AppointmentCheckin::where('is_walk_in', false)->whereIn('status', ['serving', 'called'])->exists(), 409, 'Finish the called or serving patient before calling another.');
+            abort_if(ClinicQueue::busy()->exists(), 409, 'Finish the called or serving patient before calling another.');
             $next = ClinicQueue::ordered()->where('status', 'waiting')->first();
             if ($next) {
                 $next->update([
@@ -162,7 +162,7 @@ class KioskController extends Controller
             ClinicQueue::lock();
             $checkin = AppointmentCheckin::findOrFail($id);
             abort_unless($checkin->status === 'waiting', 409, 'This patient is not in waiting status.');
-            abort_if(AppointmentCheckin::where('is_walk_in', false)->whereIn('status', ['serving', 'called'])->exists(), 409, 'Finish the called or serving patient before calling another.');
+            abort_if(ClinicQueue::busy()->exists(), 409, 'Finish the called or serving patient before calling another.');
             $checkin->update([
                 'status' => 'serving',
                 'served_at' => now(),
@@ -186,7 +186,7 @@ class KioskController extends Controller
 
             if ($checkin->status === 'skipped') {
                 abort_if(
-                    AppointmentCheckin::where('is_walk_in', false)->whereIn('status', ['serving', 'called'])->where('id', '!=', $checkin->id)->exists(),
+                    ClinicQueue::busy()->where('id', '!=', $checkin->id)->exists(),
                     409,
                     'Finish the patient who is called or being served before recalling a skipped patient.'
                 );

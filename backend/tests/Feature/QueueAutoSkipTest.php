@@ -137,6 +137,23 @@ class QueueAutoSkipTest extends TestCase
         $this->assertSame('waiting', $checkin->fresh()->status);
     }
 
+    public function test_a_visit_left_serving_on_an_earlier_day_does_not_block_call_next(): void
+    {
+        $this->actingAs($this->person('nurse'), 'api');
+        [, , $old] = $this->visit();
+        \Illuminate\Support\Facades\DB::table('appointment_checkins')->where('id', $old->id)
+            ->update(['status' => 'serving', 'created_at' => now()->subDay(), 'updated_at' => now()->subDay()]);
+        [, , $today] = $this->visit();
+
+        $this->withHeader('Idempotency-Key', (string) Str::uuid())->postJson('/api/nurse/queue/call-next')
+            ->assertOk()->assertJsonPath('data.id', $today->id);
+
+        // Today's called student still holds the desk: nobody else can be called meanwhile.
+        [, , $another] = $this->visit();
+        $this->withHeader('Idempotency-Key', (string) Str::uuid())->postJson('/api/nurse/queue/call-next')->assertStatus(409);
+        $this->assertSame('waiting', $another->fresh()->status);
+    }
+
     public function test_a_queued_visit_cannot_be_approved_or_rejected_again(): void
     {
         $this->actingAs($this->person('nurse'), 'api');

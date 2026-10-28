@@ -27,6 +27,18 @@ class ClinicQueue
             ->orderBy('check_in_time')->orderBy('appointment_checkins.created_at')->orderBy('appointment_checkins.id');
     }
 
+    /*
+     * Visits holding the desk right now: called or being served, checked in today. Only today's
+     * count, like the queue list itself, so a visit left open on an earlier day cannot freeze Call Next.
+     */
+    public static function busy()
+    {
+        return AppointmentCheckin::where('is_walk_in', false)
+            ->where('created_at', '>=', today())
+            ->where('created_at', '<', today()->addDay())
+            ->whereIn('status', ['serving', 'called']);
+    }
+
     public static function allocate(string $type): string
     {
         $day = today()->toDateString();
