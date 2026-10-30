@@ -20,9 +20,9 @@ services:
         # Format: base64:xxxx (tingnan ang docs/RENDER_DEPLOYMENT.md).
         sync: false # secret: set in the Render dashboard
       - key: APP_URL
-        value: https://pupbc-carelink-api.onrender.com
+        value: https://pupbccarelink.org
       - key: FRONTEND_URL
-        value: https://pupbc-carelink.onrender.com
+        value: https://www.pupbccarelink.org
       - key: LOG_CHANNEL
         value: stderr
 
@@ -89,7 +89,7 @@ services:
         value: local
 
       - key: SANCTUM_STATEFUL_DOMAINS
-        value: pupbc-carelink.onrender.com
+        value: pupbccarelink.org,www.pupbccarelink.org
 
       - key: SEED_NURSE_PASSWORD
         sync: false # secret: set in the Render dashboard
@@ -164,4 +164,4 @@ services:
         value: "PUPBC CareLink"
 
 # for z.com = value: https://pupbccarelink.org/api
-# for render = value: https://pupbc-carelink-api.onrender.com/api
+# for render = value: https://pupbccarelink.org/api
