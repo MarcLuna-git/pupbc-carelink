@@ -405,6 +405,14 @@ class ChatbotHardeningTest extends TestCase
 
         $this->resetHttpFakes();
         Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response([
+                'error' => ['message' => 'API key not valid. Please pass a valid API key.'],
+            ], 401),
+        ]);
+        $this->assertSame('auth', $client->generate('prompt', [])['reason']);
+
+        $this->resetHttpFakes();
+        Http::fake([
             'generativelanguage.googleapis.com/*' => Http::response(['error' => 'boom'], 503),
         ]);
         $this->assertSame('server_error', $client->generate('prompt', [])['reason']);

@@ -112,18 +112,20 @@ services:
       - key: AUTH_RATE_LIMIT
         value: "10"
 
-      # Clinic assistant (AI chatbot). Get a free key at https://aistudio.google.com
-      - key: GEMINI_API_KEY
+      # Clinic assistant (AI chatbot) - Ollama provider. Get API key at https://ollama.com
+      - key: OLLAMA_API_KEY
         sync: false # secret: set in the Render dashboard
-      - key: GEMINI_MODEL
-        value: "gemini-3.5-flash-lite"
-      - key: GEMINI_FALLBACK_MODELS
-        value: "gemini-3.1-flash-lite,gemma-4-26b-a4b-it,gemma-4-31b-it"
-      - key: GEMINI_RATE_LIMIT_COOLDOWN
+      - key: OLLAMA_BASE_URL
+        value: "https://ollama.com/v1"
+      - key: OLLAMA_MODEL
+        value: "gemma4:31b"
+      - key: OLLAMA_FALLBACK_MODELS
+        value: "gemma4:31b"
+      - key: OLLAMA_RATE_LIMIT_COOLDOWN
         value: "60"
-      - key: GEMINI_TIMEOUT
-        value: "25"
-      - key: GEMINI_MAX_OUTPUT_TOKENS
+      - key: OLLAMA_TIMEOUT
+        value: "30"
+      - key: OLLAMA_MAX_OUTPUT_TOKENS
         value: "1024"
       - key: CHATBOT_ENABLED
         value: "true"

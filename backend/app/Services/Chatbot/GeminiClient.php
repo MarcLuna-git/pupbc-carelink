@@ -24,7 +24,7 @@ use Throwable;
  */
 class GeminiClient
 {
-    private const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent';
+    private const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
 
     private const FAILURE_COUNT_KEY = 'chatbot:gemini:failures';
 
@@ -90,6 +90,17 @@ class GeminiClient
                 return $result;
             }
 
+            // A rejected credential is a configuration problem, not a provider
+            // outage: retrying another model or tripping the breaker cannot fix
+            // it, so surface it immediately and leave the breaker alone.
+            if ($result['reason'] === 'auth') {
+                Log::error('Chatbot Gemini credentials were rejected', [
+                    'error' => $result['error'],
+                ]);
+
+                return $result;
+            }
+
             if (in_array($result['reason'], self::FAILOVER_REASONS, true)) {
                 $lastFailure = $result;
 
@@ -128,27 +139,26 @@ class GeminiClient
      */
     private function attempt(string $key, string $model, string $systemPrompt, array $messages, bool $json, int $timeout): array
     {
-        $generationConfig = [
+        $openAIMessages = $this->toOpenAIMessages($systemPrompt, $messages);
+
+        $payload = [
+            'model' => $model,
+            'messages' => $openAIMessages,
             'temperature' => 0.3,
-            'maxOutputTokens' => (int) config('services.gemini.max_output_tokens', 1024),
+            'max_tokens' => (int) config('services.gemini.max_output_tokens', 1024),
         ];
 
         if ($json) {
-            $generationConfig['responseMimeType'] = 'application/json';
+            $payload['response_format'] = ['type' => 'json_object'];
         }
 
         try {
             $response = Http::timeout($timeout)
-                ->withHeaders(['x-goog-api-key' => $key])
-                ->post(
-                    sprintf(self::ENDPOINT, $model),
-                    [
-                        'systemInstruction' => ['parts' => [['text' => $systemPrompt]]],
-                        'contents' => $this->toContents($messages),
-                        'generationConfig' => $generationConfig,
-                        'safetySettings' => (array) config('services.gemini.safety_settings', []),
-                    ]
-                );
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $key,
+                    'Content-Type' => 'application/json',
+                ])
+                ->post(self::ENDPOINT, $payload);
         } catch (ConnectionException $e) {
             return $this->failure('timeout', 'Gemini request timed out: ' . $e->getMessage());
         } catch (Throwable $e) {
@@ -156,6 +166,16 @@ class GeminiClient
         }
 
         $status = $response->status();
+
+        if ($status === 401 || $status === 403) {
+            $message = $response->json('error.message');
+
+            return $this->failure(
+                'auth',
+                'Gemini rejected the API key (HTTP ' . $status . '): '
+                    . (is_string($message) && $message !== '' ? $message : 'authentication failed.')
+            );
+        }
 
         if ($status === 429) {
             return $this->failure('rate_limit', 'Gemini rate limited the request (HTTP 429).');
@@ -175,17 +195,10 @@ class GeminiClient
 
         $payload = $response->json();
 
-        // The prompt was rejected before any candidate was produced.
-        $blockReason = $payload['promptFeedback']['blockReason'] ?? null;
+        $finishReason = $payload['choices'][0]['finish_reason'] ?? null;
+        $text = $this->extractOpenAIText($payload);
 
-        if (is_string($blockReason) && $blockReason !== '') {
-            return $this->failure('blocked', 'Gemini blocked the prompt: ' . $blockReason);
-        }
-
-        $finishReason = $payload['candidates'][0]['finishReason'] ?? null;
-        $text = $this->extractText($payload);
-
-        if (is_string($finishReason) && in_array($finishReason, self::BLOCKING_FINISH_REASONS, true)) {
+        if (is_string($finishReason) && in_array($finishReason, ['content_filter'], true)) {
             return $this->failure('safety', 'Gemini stopped the response: ' . $finishReason);
         }
 
@@ -193,13 +206,11 @@ class GeminiClient
             return $this->failure('empty', 'Gemini returned an empty response.');
         }
 
-        // A truncated answer is still useful, so it counts as a success. The
-        // caller can surface the partial text rather than a generic error.
         return [
             'ok' => true,
             'text' => $text,
             'error' => null,
-            'reason' => $finishReason === 'MAX_TOKENS' ? 'truncated' : null,
+            'reason' => $finishReason === 'length' ? 'truncated' : null,
         ];
     }
 
@@ -299,14 +310,16 @@ class GeminiClient
     }
 
     /**
-     * Map our internal message shape onto Gemini's `contents` payload.
+     * Map our internal message shape onto OpenAI-compatible `messages` payload.
      *
      * @param  array<int, array{role: string, text: string}>  $messages
-     * @return array<int, array{role: string, parts: array<int, array{text: string}>}>
+     * @return array<int, array{role: string, content: string}>
      */
-    private function toContents(array $messages): array
+    private function toOpenAIMessages(string $systemPrompt, array $messages): array
     {
-        $contents = [];
+        $openAIMessages = [
+            ['role' => 'system', 'content' => $systemPrompt],
+        ];
 
         foreach ($messages as $message) {
             $text = trim((string) ($message['text'] ?? ''));
@@ -315,48 +328,25 @@ class GeminiClient
                 continue;
             }
 
-            $contents[] = [
-                // Gemini only accepts "user" and "model".
-                'role' => ($message['role'] ?? 'user') === 'assistant' ? 'model' : 'user',
-                'parts' => [
-                    ['text' => $text],
-                ],
+            $openAIMessages[] = [
+                'role' => ($message['role'] ?? 'user') === 'assistant' ? 'assistant' : 'user',
+                'content' => $text,
             ];
         }
 
-        return $contents;
+        return $openAIMessages;
     }
 
     /**
-     * Pull the answer text out of a generateContent response.
-     *
-     * Thinking models (Gemma 4, Gemini thinking variants) return their
-     * reasoning as a part flagged `thought: true` before the real answer, so
-     * those parts are skipped rather than concatenated into the reply.
+     * Pull the answer text out of an OpenAI-compatible chat/completions response.
      *
      * @param  array<string, mixed>|null  $payload
      */
-    private function extractText(?array $payload): string
+    private function extractOpenAIText(?array $payload): string
     {
-        $parts = $payload['candidates'][0]['content']['parts'] ?? [];
+        $content = $payload['choices'][0]['message']['content'] ?? '';
 
-        if (!is_array($parts)) {
-            return '';
-        }
-
-        $text = '';
-
-        foreach ($parts as $part) {
-            if (($part['thought'] ?? false) === true) {
-                continue;
-            }
-
-            if (isset($part['text']) && is_string($part['text'])) {
-                $text .= $part['text'];
-            }
-        }
-
-        return trim($text);
+        return is_string($content) ? trim($content) : '';
     }
 
     /**

@@ -16,13 +16,13 @@ namespace App\Services\Chatbot;
  */
 class ClinicAssistant
 {
-    private GeminiClient $client;
+    private OllamaClient $client;
 
     private StudentContext $context;
 
     private SymptomTriage $triage;
 
-    public function __construct(GeminiClient $client, StudentContext $context, SymptomTriage $triage)
+    public function __construct(OllamaClient $client, StudentContext $context, SymptomTriage $triage)
     {
         $this->client = $client;
         $this->context = $context;

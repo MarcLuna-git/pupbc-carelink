@@ -21,7 +21,7 @@ class ChatbotTest extends TestCase
 
         // Simulate a configured key so the client reaches the (faked) HTTP layer.
         config([
-            'services.gemini.key' => 'test-gemini-key',
+            'services.ollama.key' => 'test-ollama-key',
             'chatbot.enabled' => true,
         ]);
     }
@@ -52,12 +52,12 @@ class ChatbotTest extends TestCase
         ]);
     }
 
-    private function fakeGeminiSuccess(string $text = 'The clinic is open from 8:00 AM to 5:00 PM.'): void
+    private function fakeOllamaSuccess(string $text = 'The clinic is open from 8:00 AM to 5:00 PM.'): void
     {
         Http::fake([
-            'generativelanguage.googleapis.com/*' => Http::response([
-                'candidates' => [
-                    ['content' => ['parts' => [['text' => $text]]]],
+            'ollama.com/v1/*' => Http::response([
+                'choices' => [
+                    ['message' => ['content' => $text], 'finish_reason' => 'stop'],
                 ],
             ]),
         ]);
