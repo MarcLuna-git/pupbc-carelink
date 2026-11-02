@@ -84,6 +84,8 @@ class ConsultationController extends Controller
             $checkin = \App\Models\AppointmentCheckin::findOrFail($data['appointment_checkin_id']);
             abort_unless($appointment->user_id === $student->id && $checkin->user_id === $student->id && $checkin->appointment_id === $appointment->id && !$checkin->is_walk_in, 422, 'Student, appointment and check-in must belong to the same visit.');
             abort_if(Consultation::where('appointment_checkin_id', $checkin->id)->exists(), 409, 'This visit already has a consultation.');
+            // The visit's "Save progress" draft is done once the consultation is on record.
+            DB::table('consultation_drafts')->where('checkin_id', $checkin->id)->delete();
             \App\Services\NurseVisitClaim::acquire($request, $checkin->id);
             abort_unless($appointment->status === 'approved' && in_array($checkin->status, ['called', 'serving']), 422, 'Call this patient before recording the consultation.');
             $consultation = Consultation::create(array_merge($data, ['nurse_id' => $attendingNurseId ?: auth()->id(), 'status' => 'completed']));

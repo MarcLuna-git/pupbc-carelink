@@ -1,5 +1,6 @@
 import api from '../../services/api';
-import { lazy, Suspense, useState } from 'react';
+import { fetchKioskDevTools } from '../../services/devTools';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import KioskWelcome from './KioskWelcome';
 import KioskTerms from './KioskTerms';
 import KioskOptions from './KioskOptions';
@@ -17,6 +18,8 @@ const KioskPage = () => {
     try { await api.get('/kiosk/queue'); setAuthorized(true); setDeviceToken(''); }
     catch { sessionStorage.removeItem('carelink.kiosk.token'); setDeviceError('Device authorization failed. Ask the clinic to verify this device.'); }
   };
+  // Developer Tools → Remove time Guard: turned back off when the kiosk browser was closed and reopened.
+  useEffect(() => { if (authorized) fetchKioskDevTools().catch(() => {}); }, [authorized]);
   const [step, setStep] = useState('welcome');
   const [studentData, setStudentData] = useState(null);
   const [checkinData, setCheckinData] = useState(null);

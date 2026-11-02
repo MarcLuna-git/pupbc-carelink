@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ArrowLeft, Stethoscope, ClipboardPenLine, CalendarClock, MessageSquareText, ClipboardList, UserRound, Phone, Mail,
+  ArrowLeft, Stethoscope, ClipboardPenLine, CalendarClock, MessageSquareText, ClipboardList, UserRound, Phone, Mail, GraduationCap, CalendarRange, Users, CircleUserRound, IdCard,
   Heart, FileBadge, FileText, Pill, Search, Save, Loader2, CheckCircle, ArrowRight, Printer, Eye, Activity, Plus, Trash2, XCircle, AlertTriangle, Check,
 } from 'lucide-react';
 import api from '../../../services/api';
@@ -32,10 +32,10 @@ const REQUIRED_FIELDS = {
 const missingRequired = form => Object.fromEntries(Object.entries(REQUIRED_FIELDS).filter(([name]) => !String(form[name] || '').trim()));
 
 const TABS = [
-  { key: 'form', label: 'Consultation Form', icon: ClipboardPenLine },
-  { key: 'certificate', label: 'Medical Certificate', icon: FileBadge },
-  { key: 'dispensing', label: 'Medicines', icon: Pill },
-  { key: 'review', label: 'Review & Confirm', icon: Eye },
+  { key: 'form', label: 'Consult Form', icon: ClipboardPenLine },
+  { key: 'dispensing', label: 'Prescribe Medicine', icon: Pill },
+  { key: 'certificate', label: 'Release Medical Certificate', icon: FileBadge },
+  { key: 'review', label: 'Review and Confirm', icon: Eye },
 ];
 const MEDICINE_MODES = [
   { key: 'none', title: 'No medicine', note: 'Consultation only. No medicine is given.', icon: Stethoscope },
@@ -52,6 +52,8 @@ const VITALS = [
   { name: 'hr', label: 'Pulse Rate', unit: 'bpm', placeholder: '72' },
 ];
 const TEXT_LIMIT = 500;
+// "Save progress" keeps the unfinished form on the server (any nurse device can continue it);
+// a copy in this browser opens the form instantly and covers a save made while offline.
 const draftKey = checkinId => `consultation-draft-${checkinId}`;
 const readDraft = checkinId => {
   try { return JSON.parse(localStorage.getItem(draftKey(checkinId)) || 'null') || {}; } catch { return {}; }
@@ -66,6 +68,7 @@ const ageFrom = birthday => {
   return age;
 };
 const capitalize = value => (value ? value.charAt(0).toUpperCase() + value.slice(1) : '');
+
 
 const input = 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white';
 const inputError = 'border-red-500 focus:border-red-500 focus:ring-red-500/20 dark:border-red-400';
@@ -114,11 +117,40 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
   const [preview, setPreview] = useState(null);
   const [previewHeight, setPreviewHeight] = useState(1100);
   const previewFrame = useRef(null);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [draftInfo, setDraftInfo] = useState(null);
+  // Typing before the server's draft arrives keeps what was typed.
+  const edited = useRef(false);
+  // Auto-save waits for the server's draft, so an empty form never overwrites it.
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const skipAutoSave = useRef(true);
+  const pendingDraft = useRef(null);
+
+  const applyDraft = d => {
+    skipAutoSave.current = true;
+    // The server stores blank fields as null; the form's inputs need their empty defaults.
+    if (d.form) setForm({ ...EMPTY_FORM, ...Object.fromEntries(Object.entries(d.form).filter(([, value]) => value !== null)) });
+    if (d.mode) setMode(d.mode);
+    if (d.prescribed) setPrescribed(d.prescribed);
+    if (d.rx) setRx(d.rx);
+    if (d.dispenseNotes !== undefined) setDispenseNotes(d.dispenseNotes || '');
+    if (d.attendingId) setAttendingId(d.attendingId);
+  };
+
+  useEffect(() => {
+    let active = true;
+    api.get(`/nurse/consultation-drafts/${visit.checkin_id}`).then(({ data }) => {
+      if (!active || !data.data) return;
+      setDraftInfo(data.data);
+      if (!edited.current) applyDraft(data.data.data || {});
+    }).catch(() => {}).finally(() => { if (active) setDraftLoaded(true); });
+    return () => { active = false; };
+  }, [visit.checkin_id]);
 
   const errors = useMemo(() => missingRequired(form), [form]);
   const fieldError = name => ((showErrors || touched[name]) ? (errors[name] || serverErrors[name]) : undefined);
 
-  // Student details for the header card (age, sex, contact).
+  // Student details for the Patient Details card and the printed form and certificate.
   useEffect(() => {
     let active = true;
     api.get(`/nurse/students/${visit.user_id}`).then(({ data }) => { if (active) setStudent(data.data); }).catch(() => {});
@@ -160,17 +192,47 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
 
   const change = e => {
     const { name, value, type, checked } = e.target;
+    edited.current = true;
     setForm(current => ({ ...current, [name]: type === 'checkbox' ? checked : value }));
     if (serverErrors[name]) setServerErrors(current => ({ ...current, [name]: undefined }));
   };
 
-  const saveDraft = () => {
+  // Auto-save: every change is kept on this device at once and on the server a moment
+  // later (and right away when the nurse leaves the page), so leaving never loses the form.
+  useEffect(() => {
+    if (saved || saving) { pendingDraft.current = null; return undefined; }
+    if (!draftLoaded) return undefined;
+    // The first run only shows what was loaded; edits typed before that still count.
+    if (skipAutoSave.current) { skipAutoSave.current = false; if (!edited.current) return undefined; }
+    const data = { form, mode, prescribed, rx, dispenseNotes, attendingId };
+    try { localStorage.setItem(draftKey(visit.checkin_id), JSON.stringify(data)); } catch { /* the server copy still counts */ }
+    pendingDraft.current = data;
+    const timer = setTimeout(() => {
+      pendingDraft.current = null;
+      api.put(`/nurse/consultation-drafts/${visit.checkin_id}`, { data })
+        .then(({ data: res }) => setDraftInfo(res.data)).catch(() => {});
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [draftLoaded, saved, saving, form, mode, prescribed, rx, dispenseNotes, attendingId, visit.checkin_id]);
+
+  // Leaving the page before the timer fires: send what is still waiting.
+  useEffect(() => () => {
+    if (pendingDraft.current) api.put(`/nurse/consultation-drafts/${visit.checkin_id}`, { data: pendingDraft.current }).catch(() => {});
+  }, [visit.checkin_id]);
+
+  const saveDraft = async () => {
+    if (savingDraft) return;
+    const data = { form, mode, prescribed, rx, dispenseNotes, attendingId };
+    pendingDraft.current = null;
+    try { localStorage.setItem(draftKey(visit.checkin_id), JSON.stringify(data)); } catch { /* the server copy still counts */ }
+    setSavingDraft(true);
     try {
-      localStorage.setItem(draftKey(visit.checkin_id), JSON.stringify({ form, mode, prescribed, rx, dispenseNotes }));
-      notify('Draft saved on this device.', 'success');
-    } catch {
-      notify('Unable to save the draft on this device.', 'error');
-    }
+      const { data: res } = await api.put(`/nurse/consultation-drafts/${visit.checkin_id}`, { data });
+      setDraftInfo(res.data);
+      notify('Draft saved. Continue this visit on any device; it is not in the records until you confirm.', 'success');
+    } catch (err) {
+      notify(err.response?.data?.message || 'Could not reach the server. Progress is kept on this device only for now.', 'error');
+    } finally { setSavingDraft(false); }
   };
 
   const focusSoon = name => setTimeout(() => document.getElementById(`visit-${name}`)?.focus(), 50);
@@ -290,9 +352,11 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
 
   const profile = student?.student_profile || {};
   const age = ageFrom(profile.birthday || student?.birthday);
-  const program = [profile.course, profile.year && `${profile.year} Year`, profile.section && `Section ${profile.section}`].filter(Boolean).join(' · ');
-  const initials = visit.name.split(' ').filter(Boolean).map(part => part[0]).slice(0, 2).join('').toUpperCase();
   const appointment = visit.appointment_details || {};
+  // Year may already read "4th Year"; only add the word when it is a bare "4th".
+  const yearLevel = profile.year ? (/year/i.test(profile.year) ? profile.year : `${profile.year} Year`) : '';
+  // One line for the printed consultation form and certificate.
+  const program = [profile.course, yearLevel, profile.section && `Section ${profile.section}`].filter(Boolean).join(' · ');
 
   const attendingNurse = nurses.find(n => n.id === attendingId);
   const nurseName = n => `Nurse ${[n?.first_name, n?.last_name].filter(Boolean).join(' ')}`.trim();
@@ -395,18 +459,18 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
 
       {/* Student and appointment */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <section aria-label="Student" className={card}>
-          <div className="flex items-start gap-3">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-maroon-50 text-base font-bold text-maroon-800 dark:bg-maroon-900/30 dark:text-maroon-300">{initials}</span>
-            <div className="min-w-0">
-              <h2 className="truncate text-lg font-bold text-gray-900 dark:text-white">{visit.name}</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400"><span className="font-mono">{visit.id}</span>{program && ` · ${program}`}</p>
-            </div>
-          </div>
-          <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-            <div className="flex items-center gap-2"><UserRound className="h-4 w-4 shrink-0 text-gray-400" /><div><dt className="text-xs text-gray-500 dark:text-gray-400">Age · Sex</dt><dd className="text-gray-900 dark:text-white">{age ?? '—'} · {capitalize(profile.gender || student?.gender) || '—'}</dd></div></div>
-            <div className="flex items-center gap-2"><Phone className="h-4 w-4 shrink-0 text-gray-400" /><div className="min-w-0"><dt className="text-xs text-gray-500 dark:text-gray-400">Mobile</dt><dd className="truncate text-gray-900 dark:text-white">{profile.mobile_number || '—'}</dd></div></div>
-            <div className="col-span-2 flex items-center gap-2"><Mail className="h-4 w-4 shrink-0 text-gray-400" /><div className="min-w-0"><dt className="text-xs text-gray-500 dark:text-gray-400">Email</dt><dd className="truncate text-gray-900 dark:text-white">{student?.email || '—'}</dd></div></div>
+        {/* Laid out like Appointment Details: a titled card of labelled fields. */}
+        <section aria-label="Patient details" className={card}>
+          <h2 className="font-bold text-gray-900 dark:text-white">Patient Details</h2>
+          <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+            <div className="flex items-start gap-2"><CircleUserRound className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div className="min-w-0"><dt className="text-xs text-gray-500 dark:text-gray-400">Name</dt><dd className="font-semibold text-gray-900 dark:text-white">{visit.name}</dd></div></div>
+            <div className="flex items-start gap-2"><IdCard className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div className="min-w-0"><dt className="text-xs text-gray-500 dark:text-gray-400">Student ID</dt><dd className="font-mono text-gray-900 dark:text-white">{visit.id}</dd></div></div>
+            <div className="flex items-start gap-2 sm:col-span-2"><GraduationCap className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div className="min-w-0"><dt className="text-xs text-gray-500 dark:text-gray-400">Program</dt><dd className="text-gray-900 dark:text-white">{profile.course || '—'}</dd></div></div>
+            <div className="flex items-start gap-2"><CalendarRange className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-500 dark:text-gray-400">Year Level</dt><dd className="text-gray-900 dark:text-white">{yearLevel || '—'}</dd></div></div>
+            <div className="flex items-start gap-2"><Users className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-500 dark:text-gray-400">Section</dt><dd className="text-gray-900 dark:text-white">{profile.section || '—'}</dd></div></div>
+            <div className="flex items-start gap-2"><UserRound className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-500 dark:text-gray-400">Age · Sex</dt><dd className="text-gray-900 dark:text-white">{age ?? '—'} · {capitalize(profile.gender || student?.gender) || '—'}</dd></div></div>
+            <div className="flex items-start gap-2"><Phone className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div className="min-w-0"><dt className="text-xs text-gray-500 dark:text-gray-400">Mobile</dt><dd className="truncate text-gray-900 dark:text-white">{profile.mobile_number || '—'}</dd></div></div>
+            <div className="flex items-start gap-2 sm:col-span-2"><Mail className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div className="min-w-0"><dt className="text-xs text-gray-500 dark:text-gray-400">Email</dt><dd className="truncate text-gray-900 dark:text-white">{student?.email || '—'}</dd></div></div>
           </dl>
         </section>
 
@@ -444,17 +508,37 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
         </section>
       ) : (
         <section aria-label="Consultation" className="overflow-hidden rounded-lg border border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
-          <div role="tablist" aria-label="Consultation steps" className="flex gap-1 overflow-x-auto border-b border-gray-100 bg-gray-50 p-1.5 dark:border-gray-700 dark:bg-gray-900/40">
-            {TABS.map(({ key, label: title, icon: Icon }, index) => (
-              <button key={key} type="button" role="tab" aria-selected={tab === key} onClick={() => goTo(key)}
-                className={`inline-flex flex-1 shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition-colors ${tab === key ? 'bg-maroon-800 text-white' : 'text-gray-600 hover:bg-white hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800'}`}>
-                <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs ${tab === key ? 'bg-white/20' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200'}`}>{index + 1}</span>
-                <Icon className="h-4 w-4" aria-hidden="true" />{title}
-              </button>
-            ))}
-          </div>
+          {/* Step process: numbered circles joined by a line; finished steps show a check. */}
+          <nav aria-label="Consultation steps" className="overflow-x-auto border-b border-gray-100 px-4 py-4 dark:border-gray-700 lg:px-6">
+            <ol className="flex min-w-max items-center">
+              {TABS.map(({ key, label: title }, index) => {
+                const done = index < tabIndex;
+                const current = index === tabIndex;
+                return (
+                  <li key={key} className={`flex items-center ${index < TABS.length - 1 ? 'flex-1' : ''}`}>
+                    <button type="button" onClick={() => goTo(key)} aria-current={current ? 'step' : undefined}
+                      className="group flex shrink-0 cursor-pointer items-center gap-2 rounded-full pr-1 text-sm font-semibold">
+                      {/* Plain progress: passed steps keep their number in a maroon outline, no success check. */}
+                      <span className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs transition-colors ${
+                        current ? 'border-maroon-800 bg-maroon-800 text-white'
+                          : done ? 'border-maroon-800 bg-white text-maroon-800 dark:border-maroon-300 dark:bg-gray-800 dark:text-maroon-300'
+                            : 'border-gray-300 bg-white text-gray-500 group-hover:border-maroon-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}>
+                        {index + 1}
+                      </span>
+                      <span className={current ? 'text-maroon-800 dark:text-maroon-300' : done ? 'text-gray-900 dark:text-white' : 'text-gray-500 group-hover:text-gray-800 dark:text-gray-400'}>
+                        {title}
+                      </span>
+                    </button>
+                    {index < TABS.length - 1 && (
+                      <span className={`mx-3 h-0.5 min-w-6 flex-1 rounded-full ${done ? 'bg-maroon-800 dark:bg-maroon-300' : 'bg-gray-200 dark:bg-gray-700'}`} aria-hidden="true" />
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
 
-          <div className="p-4 lg:p-6" role="tabpanel">
+          <div className="p-4 lg:p-6">
             {tab === 'form' && (
               <div>
                 <p className="mb-4 text-xs text-gray-600 dark:text-gray-300"><span className="text-red-600 dark:text-red-400">*</span> Required. The other fields can be left blank when they do not apply.</p>
@@ -515,7 +599,7 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
               <div className="mx-auto max-w-xl space-y-4">
                 <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
                   <span>
-                    <span className="block text-sm font-semibold text-gray-900 dark:text-white">Issue a medical certificate</span>
+                    <span className="block text-sm font-semibold text-gray-900 dark:text-white">Issue a medical certificate <span className="font-normal text-gray-500 dark:text-gray-400">(optional)</span></span>
                     <span className="block text-xs text-gray-600 dark:text-gray-300">Only when the student needs one. It uses the complaint and assessment from the consultation form and can be printed after saving.</span>
                   </span>
                   <input type="checkbox" name="medical_certificate" checked={form.medical_certificate} onChange={change} className="h-5 w-5 cursor-pointer accent-maroon-800" />
@@ -711,7 +795,7 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
                             <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs ${current ? 'bg-maroon-800 text-white' : done ? 'bg-green-700 text-white' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200'}`}>
                               {done && !current ? <Check className="h-3 w-3" /> : index + 1}
                             </span>
-                            {step.label.replace(' & Confirm', '')}
+                            {step.label.replace(' and Confirm', '')}
                           </button>
                         </li>
                       );
@@ -741,7 +825,7 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
                   <p className="flex items-center gap-1.5 text-xs font-semibold text-red-700 dark:text-red-400"><AlertTriangle className="h-3.5 w-3.5" /> Some medicines are low on stock. Adjust them in the Medicines step before saving.</p>
                 )}
                 {missingCount > 0 && (
-                  <p role="alert" className="flex items-center gap-1.5 text-sm font-semibold text-red-700 dark:text-red-400"><AlertTriangle className="h-4 w-4" /> {missingCount} required {missingCount === 1 ? 'field is' : 'fields are'} still empty. Go back to the Consultation Form step.</p>
+                  <p role="alert" className="flex items-center gap-1.5 text-sm font-semibold text-red-700 dark:text-red-400"><AlertTriangle className="h-4 w-4" /> {missingCount} required {missingCount === 1 ? 'field is' : 'fields are'} still empty. Go back to the Consult Form step.</p>
                 )}
                 <p className="text-xs text-gray-600 dark:text-gray-300">Saved consultations are read-only. {mode === 'dispense' ? 'Medicines to dispense are deducted from stock when you confirm.' : mode === 'prescription' ? 'The prescription is saved with the notes; nothing is deducted from stock.' : ''}</p>
               </div>
@@ -749,8 +833,17 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
           </div>
 
           <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-gray-100 px-4 py-4 dark:border-gray-700 lg:px-6">
-            <button type="button" onClick={saveDraft} className={outline}><Save className="h-4 w-4" /> Save Draft</button>
-            {tab !== 'review' && <button type="button" onClick={() => goTo('review')} className={outline}><Eye className="h-4 w-4" /> Review</button>}
+            {/* Temporary: saved on the server until the consultation is confirmed, not in the patient's records. */}
+            {draftInfo?.saved_at && (
+              <span className="mr-auto text-xs text-gray-500 dark:text-gray-400">
+                Draft saved {new Date(draftInfo.saved_at).toLocaleString('en-US', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}{draftInfo.saved_by ? ` by ${draftInfo.saved_by}` : ''}
+              </span>
+            )}
+            <button type="button" onClick={saveDraft} disabled={savingDraft} className={outline}
+              title="Saves what you typed so far. Continue later on any device; it is not in the patient's records until you confirm the consultation.">
+              {savingDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save progress as draft
+            </button>
+            {tab !== 'review' && <button type="button" onClick={() => goTo('review')} className={outline}><Eye className="h-4 w-4" /> Preview</button>}
             {nextTab && (
               <button type="button" onClick={() => goTo(nextTab.key)} className={primary}>Next: {nextTab.label} <ArrowRight className="h-4 w-4" /></button>
             )}

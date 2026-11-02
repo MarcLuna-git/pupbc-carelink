@@ -18,6 +18,8 @@ use App\Http\Controllers\Api\Nurse\DevToolsController as NurseDevToolsController
 
 use App\Http\Controllers\Api\Nurse\AppointmentController as NurseAppointmentController;
 use App\Http\Controllers\Api\Nurse\ConsultationController as NurseConsultationController;
+use App\Http\Controllers\Api\Nurse\ConsultationDraftController;
+use App\Http\Controllers\Api\Nurse\QueueSettingsController;
 use App\Http\Controllers\Api\Nurse\StudentController as NurseStudentController;
 use App\Http\Controllers\Api\Nurse\DashboardController as NurseDashboardController;
 use App\Http\Controllers\Api\Nurse\AnnouncementController;
@@ -824,6 +826,11 @@ Route::middleware([
                 );
 
                 Route::post(
+                    '/queue/{id}/hold',
+                    [KioskController::class, 'holdPatient']
+                );
+
+                Route::post(
                     '/queue/{id}/no-show',
                     [KioskController::class, 'markNoShow']
                 );
@@ -1018,6 +1025,15 @@ Route::middleware([
                 */
 
                 Route::get('/nurses', [NurseConsultationController::class, 'nurses']);
+
+                // Consultation → visit → Save progress (server-side draft of one visit).
+                Route::get('/consultation-drafts/{id}', [ConsultationDraftController::class, 'show']);
+                Route::put('/consultation-drafts/{id}', [ConsultationDraftController::class, 'update']);
+                Route::delete('/consultation-drafts/{id}', [ConsultationDraftController::class, 'destroy']);
+
+                // Consultation → Queue list → Options: arrival time before a called student is skipped.
+                Route::get('/queue-settings', [QueueSettingsController::class, 'show']);
+                Route::put('/queue-settings', [QueueSettingsController::class, 'update']);
 
                 Route::get(
                     '/consultations',

@@ -96,7 +96,7 @@ class StudentController extends Controller
 
             abort_if(ClinicQueue::ordered()
                 ->where('appointment_checkins.user_id', $student->id)
-                ->whereIn('appointment_checkins.status', ['waiting', 'called', 'serving', 'skipped'])
+                ->whereIn('appointment_checkins.status', ['waiting', 'called', 'serving', 'skipped', 'on_hold'])
                 ->exists(), 422, 'Student cannot be archived with an active queue entry.');
 
             $student->update([

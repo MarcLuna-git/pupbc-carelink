@@ -173,9 +173,11 @@ class KioskController extends Controller
         return response()->json(['success' => true, 'data' => $checkin, 'message' => 'Patient now in consultation.']);
     }
     /*
-     * Recall has two uses. A called patient is announced again and the one-minute arrival
+     * Recall has two uses. A called patient is announced again and the arrival
      * timer restarts. A skipped patient (did not arrive in time) who came back is called again,
      * as long as nobody else is called or being served and their appointment deadline has not passed.
+     * A patient on hold is recalled the same way, but the deadline does not apply: the nurse put
+     * them on hold to wait for them.
      */
     public function recallPatient(Request $request, $id)
     {
@@ -184,7 +186,7 @@ class KioskController extends Controller
             $checkin = AppointmentCheckin::lockForUpdate()->findOrFail($id);
             abort_if($checkin->is_walk_in, 409, 'Walk-in visits cannot be recalled.');
 
-            if ($checkin->status === 'skipped') {
+            if (in_array($checkin->status, ['skipped', 'on_hold'], true)) {
                 abort_if(
                     ClinicQueue::busy()->where('id', '!=', $checkin->id)->exists(),
                     409,
@@ -192,7 +194,7 @@ class KioskController extends Controller
                 );
                 abort_if($checkin->consultation()->exists(), 409, 'This visit already has a consultation.');
                 $appointment = Appointment::findOrFail($checkin->appointment_id);
-                abort_unless(TimeGuard::nursePortalBypassed() || now('Asia/Manila')->lt(app(AppointmentExpiry::class)->getCheckinDeadline($appointment)),
+                abort_unless($checkin->status === 'on_hold' || TimeGuard::nursePortalBypassed() || now('Asia/Manila')->lt(app(AppointmentExpiry::class)->getCheckinDeadline($appointment)),
                     409, 'The original check-in deadline has passed. This skipped visit is no longer eligible.');
                 $checkin->update([
                     'status' => 'called', 'called_at' => now(), 'called_by' => auth()->id(),
@@ -210,10 +212,43 @@ class KioskController extends Controller
         }, 3);
         return response()->json(['success' => true, 'data' => $checkin, 'message' => 'Patient recalled.']);
     }
+    /*
+     * The nurse sets a skipped patient aside: not arrived yet, but maybe still coming. A visit on
+     * hold is not a No Show and is not closed at the check-in deadline (SkippedQueueExpiry only
+     * closes skipped visits); Recall brings the patient back, Close as No show ends the visit.
+     * Visits still on hold after their day are closed as No Show (AppointmentExpiry).
+     */
+    public function holdPatient(Request $request, $id)
+    {
+        $checkin = DB::transaction(function () use ($id) {
+            ClinicQueue::lock();
+            $checkin = AppointmentCheckin::lockForUpdate()->findOrFail($id);
+            abort_unless($checkin->status === 'skipped', 409, 'Only a skipped patient can be put on hold.');
+            abort_if($checkin->consultation()->exists(), 409, 'This visit already has a consultation.');
+            $checkin->update(['status' => 'on_hold']);
+            DB::table('nurse_visit_claims')->where('checkin_id', $checkin->id)->delete();
+            return $checkin;
+        }, 3);
+        return response()->json(['success' => true, 'data' => $checkin, 'message' => 'Patient on hold.']);
+    }
+    /*
+     * The nurse confirms a skipped or on-hold patient is not coming back, without waiting for the
+     * check-in deadline that would mark them no-show anyway (SkippedQueueExpiry).
+     * Only skipped or on-hold visits: a called patient is still skipped by the timer first.
+     */
     public function markNoShow(Request $request, $id)
     {
-        // Reject obsolete timer-driven clients instead of bypassing nurse Skip.
-        abort(409, 'Automatic no-show is no longer supported. Refresh the queue; a called patient who does not arrive within a minute is skipped automatically.');
+        $checkin = DB::transaction(function () use ($id) {
+            ClinicQueue::lock();
+            $checkin = AppointmentCheckin::lockForUpdate()->findOrFail($id);
+            abort_unless(in_array($checkin->status, ['skipped', 'on_hold'], true), 409, 'Only a skipped or on-hold patient can be marked as no show.');
+            abort_if($checkin->consultation()->exists(), 409, 'This visit already has a consultation.');
+            $checkin->update(['status' => 'no_show', 'no_show_at' => now(), 'no_show_by' => auth()->id()]);
+            Appointment::whereKey($checkin->appointment_id)->first()?->forceFill(['no_show' => true])->save();
+            DB::table('nurse_visit_claims')->where('checkin_id', $checkin->id)->delete();
+            return $checkin;
+        }, 3);
+        return response()->json(['success' => true, 'data' => $checkin, 'message' => 'Marked as no show.']);
     }
     public function claimVisit(Request $request, $id)
     {

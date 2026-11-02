@@ -104,8 +104,17 @@ const NurseLayoutForDesktopView = ({ children }) => {
   }, []);
 
   // Developer Tools → Remove time Guard lives on the server; mirror it once per visit.
+  // A slow server can time the first read out, so try again a few times before giving up.
   useEffect(() => {
-    fetchNurseDevTools().catch(() => {});
+    let timer;
+    let cancelled = false;
+    const load = (attempt) => {
+      fetchNurseDevTools().catch(() => {
+        if (!cancelled && attempt < 4) timer = setTimeout(() => load(attempt + 1), 5000 * attempt);
+      });
+    };
+    load(1);
+    return () => { cancelled = true; clearTimeout(timer); };
   }, []);
 
   const confirmLogout = async () => {

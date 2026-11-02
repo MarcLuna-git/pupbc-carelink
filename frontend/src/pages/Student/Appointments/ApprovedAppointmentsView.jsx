@@ -92,7 +92,7 @@ function HistoryViewMenu({ value, onChange }) {
 }
 
 function StatusBadge({ status }) {
-  const labels = { approved: 'Confirmed', pending: 'Pending', completed: 'Completed', cancelled: 'Cancelled', rejected: 'Rejected', expired: 'Expired', called: 'Called', skipped: 'Skipped', serving: 'Serving', no_show: 'No show' };
+  const labels = { approved: 'Confirmed', pending: 'Pending', completed: 'Completed', cancelled: 'Cancelled', rejected: 'Rejected', expired: 'Expired', called: 'Called', skipped: 'Skipped', on_hold: 'On hold', serving: 'Serving', no_show: 'No show' };
   return <span className={`ap-status ap-status-${status || 'pending'}`}><span />{labels[status] || status || 'Pending'}</span>;
 }
 

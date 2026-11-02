@@ -151,6 +151,11 @@ const authService = {
 
     clearSession(portal);
 
+    // The server switched Remove time Guard off on sign-out; drop the nurse portal's mirror of it.
+    if (portal === 'nurse') {
+      try { localStorage.removeItem('carelink.nurse.dev.timeGuardBypass'); } catch { /* storage blocked */ }
+    }
+
     // Student-only cleanup of per-session caches. "Remember me" is kept
     // (stored outside this namespace, see studentRememberLogin.js), and the
     // Nurse portal's logout never touches Student data.

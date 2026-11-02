@@ -37,22 +37,24 @@ return [
             ]) : [],
         ],
 
+        // Supabase. Reads SUPABASE_DB_*, so it never mixes with the local MySQL DB_* values;
+        // falls back to DB_* for deployments that still set the old names.
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'forge'),
-            'username' => env('DB_USERNAME', 'forge'),
-            'password' => env('DB_PASSWORD', ''),
+            'host' => env('SUPABASE_DB_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('SUPABASE_DB_PORT', env('DB_PORT', '5432')),
+            'database' => env('SUPABASE_DB_DATABASE', env('DB_DATABASE', 'postgres')),
+            'username' => env('SUPABASE_DB_USERNAME', env('DB_USERNAME', 'forge')),
+            'password' => env('SUPABASE_DB_PASSWORD', env('DB_PASSWORD', '')),
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
             'schema' => 'public',
-            'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'sslmode' => env('SUPABASE_DB_SSLMODE', env('DB_SSLMODE', 'prefer')),
             // Reuse the connection per PHP worker: a new SSL connection to the Supabase
             // session pooler costs ~3s from Render Singapore. Session mode (5432) only.
-            'options' => [PDO::ATTR_PERSISTENT => (bool) env('DB_PERSISTENT', false)],
+            'options' => [PDO::ATTR_PERSISTENT => (bool) env('SUPABASE_DB_PERSISTENT', env('DB_PERSISTENT', false))],
         ],
 
         'sqlsrv' => [

@@ -4,13 +4,14 @@ namespace App\Services;
 
 use App\Models\Appointment;
 use App\Models\AppointmentCheckin;
+use App\Support\ClinicSettings;
 use App\Support\TimeGuard;
 use Illuminate\Support\Facades\DB;
 
 class SkippedQueueExpiry
 {
-    /** A called student has this long to show up before being skipped automatically. */
-    public const CALL_TIMEOUT_SECONDS = 60;
+    /** The default arrival time only; the clinic's own is ClinicSettings::callTimeoutSeconds(). */
+    public const CALL_TIMEOUT_SECONDS = ClinicSettings::DEFAULT_CALL_TIMEOUT_SECONDS;
 
     /**
      * Server-side housekeeping that runs before every nurse queue/sync request and
@@ -31,13 +32,14 @@ class SkippedQueueExpiry
     }
 
     /*
-     * A called student who has not been confirmed as arrived within CALL_TIMEOUT_SECONDS is
+     * A called student who has not been confirmed as arrived within the clinic's arrival time
+     * (Consultation → Queue list → Options; 1 minute by default) is
      * skipped. The row stays in the queue as "skipped" until their appointment deadline, and the
      * nurse can Recall them if they come back. Identity, queue number and priority are unchanged.
      */
     public function skipOverdueCalls(): int
     {
-        $cutoff = now()->subSeconds(self::CALL_TIMEOUT_SECONDS);
+        $cutoff = now()->subSeconds(ClinicSettings::callTimeoutSeconds());
         $count = 0;
 
         AppointmentCheckin::where('status', 'called')->where('is_walk_in', false)

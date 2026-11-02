@@ -3,7 +3,7 @@ services:
   - type: web
     name: pupbc-carelink-api
     runtime: docker
-    region: singapore # Supabase session pooler: Tokyo (ap-northeast-1)
+    region: singapore # Supabase session pooler: Singapore (ap-southeast-1)
     plan: free
     # Relative sa repo root ang mga path na ito.
     dockerfilePath: ./backend/Dockerfile
@@ -27,21 +27,24 @@ services:
         value: stderr
 
       # Supabase session pooler (port 5432). Iwas sa prepared-statement errors ng 6543.
+      # Same region as this service: Southeast Asia (Singapore), ap-southeast-1.
+      # Naming: SUPABASE_DB_* = Supabase, DB_* = local MySQL only (not used here).
+      # DB_CONNECTION is the switch for both: pgsql = Supabase, mysql = MySQL.
       - key: DB_CONNECTION
         value: pgsql
-      - key: DB_HOST
+      - key: SUPABASE_DB_HOST
         sync: false # secret: set in the Render dashboard
-      - key: DB_PORT
+      - key: SUPABASE_DB_PORT
         value: "5432"
-      - key: DB_DATABASE
+      - key: SUPABASE_DB_DATABASE
         value: postgres
-      - key: DB_USERNAME
+      - key: SUPABASE_DB_USERNAME
         sync: false # secret: set in the Render dashboard
-      - key: DB_PASSWORD
+      - key: SUPABASE_DB_PASSWORD
         sync: false # secret: set in the Render dashboard
-      - key: DB_SSLMODE
+      - key: SUPABASE_DB_SSLMODE
         value: require
-      - key: DB_PERSISTENT
+      - key: SUPABASE_DB_PERSISTENT
         value: "true"
 
       - key: JWT_SECRET

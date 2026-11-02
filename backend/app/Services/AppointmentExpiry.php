@@ -37,7 +37,7 @@ class AppointmentExpiry
     /*
      * The nurse queue only lists today's check-ins, so a student who checked in on an earlier
      * day and was never called or seen can no longer be served. Close that visit instead of
-     * leaving it "waiting" forever: the check-in becomes a no-show and the appointment is flagged
+     * leaving it "waiting" (or on hold) forever: the check-in becomes a no-show and the appointment is flagged
      * no_show, the same way a skipped student who never returned is handled. The appointment's
      * status stays approved, and the nurse Appointments page shows the pair as Expired.
      */
@@ -45,7 +45,7 @@ class AppointmentExpiry
     {
         $count = 0;
 
-        AppointmentCheckin::whereIn('status', ['waiting', 'called'])->where('is_walk_in', false)
+        AppointmentCheckin::whereIn('status', ['waiting', 'called', 'on_hold'])->where('is_walk_in', false)
             ->where('created_at', '<', today())
             ->orderBy('id')
             ->chunkById(100, function ($checkins) use (&$count) {
@@ -53,7 +53,7 @@ class AppointmentExpiry
                     DB::transaction(function () use ($candidate, &$count) {
                         ClinicQueue::lock();
                         $checkin = AppointmentCheckin::whereKey($candidate->id)->lockForUpdate()->first();
-                        if (!$checkin || !in_array($checkin->status, ['waiting', 'called'], true) || $checkin->consultation()->exists()) {
+                        if (!$checkin || !in_array($checkin->status, ['waiting', 'called', 'on_hold'], true) || $checkin->consultation()->exists()) {
                             return;
                         }
 

@@ -106,6 +106,8 @@ class KioskIdentity
                 'status',
                 'approved'
             )
+            // A visit already closed as No Show is over; a new booking for today is the one to check in.
+            ->where(fn ($query) => $query->where('no_show', false)->orWhereNull('no_show'))
             ->when($lock, function ($query) { $query->lockForUpdate(); })
             ->orderBy(
                 'created_at'

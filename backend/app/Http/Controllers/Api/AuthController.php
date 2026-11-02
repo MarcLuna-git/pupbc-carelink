@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\AuthService;
+use App\Support\TimeGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -444,6 +445,8 @@ public function login(Request $request): JsonResponse
 
         // Keep the existing authentication service.
         $result = $this->authService->login($data);
+        // Developer Tools → Remove time Guard is always OFF after signing in.
+        TimeGuard::resetFor($result['user']);
 
         // Correct login resets previous failed attempts.
         $limiter->clear($attemptKey);
@@ -556,6 +559,9 @@ public function login(Request $request): JsonResponse
                     $data['email'],
                     $data['password']
                 );
+
+            // Developer Tools → Remove time Guard is always OFF after signing in.
+            TimeGuard::resetFor($result['user']);
 
             return response()->json([
                 'success' => true,
@@ -813,6 +819,8 @@ public function login(Request $request): JsonResponse
     public function logout(): JsonResponse
     {
         try {
+            // Developer Tools → Remove time Guard never stays on after signing out.
+            TimeGuard::resetFor(auth()->user());
             $this->authService->logout();
 
             return response()->json([

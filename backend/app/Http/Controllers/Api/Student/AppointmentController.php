@@ -121,6 +121,8 @@ class AppointmentController extends Controller
                 'pending',
                 'approved',
             ])
+            // A no-show visit is over: it no longer blocks booking that date again.
+            ->where(fn ($q) => $q->where('no_show', false)->orWhereNull('no_show'))
             ->exists();
 
         $closed = AppointmentSlot::isClosed($date);
@@ -201,6 +203,8 @@ class AppointmentController extends Controller
                             'approved',
                         ]
                     )
+            // A no-show visit is over: it no longer blocks booking that date again.
+            ->where(fn ($q) => $q->where('no_show', false)->orWhereNull('no_show'))
                     ->exists();
 
             if ($existingOnDate) {
@@ -394,6 +398,8 @@ class AppointmentController extends Controller
                                 'approved',
                             ]
                         )
+            // A no-show visit is over: it no longer blocks booking that date again.
+            ->where(fn ($q) => $q->where('no_show', false)->orWhereNull('no_show'))
                         ->where(
                             'id',
                             '!=',
@@ -799,6 +805,11 @@ class AppointmentController extends Controller
 
         $data =
             $appointment->toArray();
+
+        // A no-show (approved but never attended) reads as Expired, like the nurse Appointments page.
+        if ($appointment->status === 'approved' && $appointment->no_show) {
+            $data['status'] = 'expired';
+        }
 
         $expiry = app(AppointmentExpiry::class);
         $data['checkin_opens_at'] = $expiry->getCheckinOpening($appointment)->toIso8601String();
