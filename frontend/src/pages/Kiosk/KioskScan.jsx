@@ -72,6 +72,29 @@ const decodeQrFromFile = async (file) => {
   });
 };
 
+// Student ID format: 2001-00123-BN-0 (4 digits, 5 digits, 2 letters, 1 digit).
+// Keeps only characters valid for each segment and inserts dashes as the user types.
+const STUDENT_ID_SEGMENTS = [
+  { length: 4, pattern: /[0-9]/ },
+  { length: 5, pattern: /[0-9]/ },
+  { length: 2, pattern: /[A-Z]/ },
+  { length: 1, pattern: /[0-9]/ },
+];
+
+const formatStudentId = (value) => {
+  const chars = value.toUpperCase().replace(/[^0-9A-Z]/g, '').split('');
+  const segments = STUDENT_ID_SEGMENTS.map(() => '');
+  let segment = 0;
+
+  for (const char of chars) {
+    while (segment < STUDENT_ID_SEGMENTS.length && segments[segment].length === STUDENT_ID_SEGMENTS[segment].length) segment += 1;
+    if (segment === STUDENT_ID_SEGMENTS.length) break;
+    if (STUDENT_ID_SEGMENTS[segment].pattern.test(char)) segments[segment] += char;
+  }
+
+  return segments.filter(Boolean).join('-');
+};
+
 const KioskScan = ({
   onStudentFound,
   onBack,
@@ -1134,10 +1157,10 @@ const KioskScan = ({
                       type="text"
                       value={studentId}
                       onChange={(event) =>
-                        setStudentId(event.target.value)
+                        setStudentId(formatStudentId(event.target.value))
                       }
                       placeholder="2023-00000-BN-0"
-                      maxLength={17}
+                      maxLength={15}
                       autoFocus
                     />
                   </div>

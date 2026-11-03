@@ -19,8 +19,6 @@
 .nurse-nav-link { padding-left:16px; }
 .nurse-sidebar-brand { padding:20px 18px 20px 21px; }
 .nurse-nav-label { white-space:nowrap;overflow:hidden;max-width:200px;opacity:1;transition:max-width .28s ease,opacity .18s ease; }
-.nurse-sidebar .nurse-account-button { padding-left:9px; }
-.nurse-sidebar :is(.nurse-account-caption) { max-width:200px;opacity:1;transition:max-width .28s ease,opacity .18s ease; }
 .nurse-sidebar-brand a>div { white-space:nowrap;overflow:hidden;max-width:200px;opacity:1;transition:max-width .28s ease,opacity .18s ease; }
 .nurse-sidebar-campus { transition:opacity .28s ease; }
 
@@ -55,8 +53,6 @@
 .nurse-sidebar.is-collapsed .nurse-nav-section { color:transparent; }
 /* Unread count becomes a dot on the bell icon in the folded rail. */
 .nurse-sidebar.is-collapsed .nurse-nav-count { position:absolute;top:6px;left:34px;min-width:16px;height:16px;padding:0 4px;font-size:10px;line-height:16px; }
-.nurse-sidebar.is-collapsed .nurse-account-caption { max-width:0;opacity:0;overflow:hidden; }
-.nurse-sidebar.is-collapsed .nurse-account-button { gap:0;border-color:transparent;background:transparent; }
 
 @media (min-width:768px) and (max-width:1099px) {
   .nurse-header-inner { padding:0 18px;gap:10px; }

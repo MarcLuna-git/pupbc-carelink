@@ -16,13 +16,18 @@ const FLAGS = [
 // 0-10 pain scale shown at check-in. The band name helps patients who are unsure of a number.
 const PAIN_LEVELS = Array.from({ length: 11 }, (_, level) => level);
 const painBand = (level) => (level === 0 ? 'No pain' : level <= 3 ? 'Mild pain' : level <= 6 ? 'Moderate pain' : 'Severe pain');
+// Severity is derived from the pain scale; backend uses it for queue priority.
+const painSeverity = (level) => (level <= 3 ? 'mild' : level <= 6 ? 'moderate' : 'severe');
+
+// Section subtitle shown above each part of the confirm form.
+const SECTION_TITLE = 'border-t border-white/10 pt-4 text-xs font-semibold uppercase tracking-wider text-yellow-300';
 
 const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
   const { user, appointment, has_active_checkin, active_checkin } = data;
   const [chiefComplaint, setChiefComplaint] = useState(appointment?.concern || '');
-  const [severity, setSeverity] = useState('mild');
   const [painLevel, setPainLevel] = useState(null);
   const [redFlags, setRedFlags] = useState([]);
+  const [hasOther, setHasOther] = useState(false);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -48,18 +53,21 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
   }
 
   const toggleFlag = (flag) => setRedFlags((current) => current.includes(flag) ? current.filter((item) => item !== flag) : [...current.filter((item) => item !== 'none'), flag]);
+  // "Others" is not a backend red flag; it opens the notes field so the student can describe it.
+  const toggleOther = () => { if (hasOther) setNotes(''); setHasOther(!hasOther); setError(''); };
 
   const submit = async (event) => {
     event.preventDefault();
     if (!chiefComplaint.trim()) { setError('Please describe your reason for visit.'); return; }
     if (painLevel === null) { setError('Please rate your pain from 0 to 10. Choose 0 if you have no pain.'); return; }
+    if (hasOther && !notes.trim()) { setError('Please describe your other concern.'); return; }
     setLoading(true); setError('');
     try {
       const response = await api.post('/kiosk/checkin', {
         ...data.identity,
         student_id: user.student_id,
         chief_complaint: chiefComplaint.trim(),
-        severity,
+        severity: painSeverity(painLevel),
         pain_level: painLevel,
         red_flags: redFlags.length ? redFlags : ['none'],
         notes: notes.trim() || undefined,
@@ -72,7 +80,11 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
 
   return <KioskLayout><form onSubmit={submit} className="w-full max-w-lg mx-auto space-y-4 text-white">
     <button type="button" onClick={onBack} className="p-3 bg-white/5 rounded-2xl"><ArrowLeft className="w-5 h-5 text-white/70" /></button>
-    <h1 className="text-2xl font-bold">Confirm Today&apos;s Appointment</h1>
+    <div>
+      <h1 className="text-2xl font-bold">Confirm Today&apos;s Appointment</h1>
+      <p className="mt-1 text-sm text-white/60">Review your appointment, then tell us how you are feeling.</p>
+    </div>
+    <h2 className={SECTION_TITLE}>Appointment Details</h2>
     <div className="rounded-2xl border border-green-400/20 bg-green-500/5 p-4">
       <p className="font-semibold">{user.first_name} {user.last_name}</p>
       <p className="text-sm text-white/70">{appointment?.appointment_date} · {appointment?.time_slot}</p>
@@ -90,9 +102,11 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
         </div>
       )}
     </div>
+    <h2 className={SECTION_TITLE}>Reason for Visit</h2>
     <label className="block text-sm text-white/70">Chief complaint or reason *
       <textarea required rows="3" value={chiefComplaint} onChange={(e) => setChiefComplaint(e.target.value)} className="mt-2 w-full rounded-xl bg-white/5 border border-white/10 p-3 text-white" />
     </label>
+    <h2 className={SECTION_TITLE}>Pain Level</h2>
     <fieldset>
       <legend className="mb-1 text-sm text-white/70">Rate your pain *</legend>
       <p className="mb-3 text-sm text-white/70">0 means no pain, 10 means the worst pain you can imagine.</p>
@@ -113,15 +127,13 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
       <div className="mt-2 flex justify-between text-xs text-white/70" aria-hidden="true"><span>No pain</span><span>Worst pain</span></div>
       <p className="mt-2 min-h-5 text-sm font-semibold text-yellow-300" aria-live="polite">{painLevel === null ? '' : painLevel + ' / 10 · ' + painBand(painLevel)}</p>
     </fieldset>
-    <label className="block text-sm text-white/70">Severity
-      <select value={severity} onChange={(e) => setSeverity(e.target.value)} className="mt-2 w-full rounded-xl bg-slate-900 border border-white/10 p-3 text-white">
-        <option value="mild">Mild</option><option value="moderate">Moderate</option><option value="severe">Severe</option><option value="critical">Critical</option>
-      </select>
-    </label>
-    <fieldset><legend className="text-sm text-white/70 mb-2">Red flags (select any that apply)</legend><div className="grid gap-2">{FLAGS.map(([value, label]) => <label key={value} className="flex gap-2 items-center text-sm text-white/70"><input type="checkbox" checked={redFlags.includes(value)} onChange={() => toggleFlag(value)} />{label}</label>)}</div></fieldset>
-    <label className="block text-sm text-white/70">Additional notes
-      <textarea rows="2" value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-2 w-full rounded-xl bg-white/5 border border-white/10 p-3 text-white" />
-    </label>
+    <h2 className={SECTION_TITLE}>Warning Signs</h2>
+    <fieldset><legend className="text-sm text-white/70 mb-2">Red flags (select any that apply)</legend><div className="grid gap-2">{FLAGS.map(([value, label]) => <label key={value} className="flex gap-2 items-center text-sm text-white/70"><input type="checkbox" checked={redFlags.includes(value)} onChange={() => toggleFlag(value)} />{label}</label>)}
+      <label className="flex gap-2 items-center text-sm text-white/70"><input type="checkbox" checked={hasOther} onChange={toggleOther} />Others</label>
+      {hasOther && <label className="block text-sm text-white/70">Please describe
+        <textarea rows="2" autoFocus maxLength={1000} value={notes} onChange={(e) => { setNotes(e.target.value); setError(''); }} placeholder="Describe your other concern" className="mt-2 w-full rounded-xl bg-white/5 border border-white/10 p-3 text-white placeholder:text-white/40" />
+      </label>}
+    </div></fieldset>
     {error && <p className="rounded-xl bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
     <button disabled={loading} className="w-full rounded-xl bg-yellow-400 py-3 font-bold text-slate-900 disabled:opacity-50">{loading ? <Loader2 className="mx-auto animate-spin" /> : 'Confirm and Check In'}</button>
   </form></KioskLayout>;

@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { PanelLeftClose, PanelLeftOpen, Stethoscope } from 'lucide-react';
-import NurseAccountMenu from './NurseAccountMenu';
 import { NURSE_NAV_GROUPS } from './nurseNavigation';
 import clinicBackground from '../../../assets/clinic-waiting-area.jpg';
 
@@ -13,7 +12,6 @@ const NurseSidebar = ({
   isActive = () => false,
   collapsed = false,
   onToggle,
-  accountMenuProps,
 }) => (
   <aside
     id="nurse-sidebar"
@@ -88,10 +86,6 @@ const NurseSidebar = ({
         ];
       })}
     </nav>
-
-    <div className="nurse-sidebar-footer">
-      <NurseAccountMenu variant="sidebar" collapsed={collapsed} {...accountMenuProps} />
-    </div>
   </aside>
 );
 

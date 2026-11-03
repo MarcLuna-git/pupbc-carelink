@@ -42,7 +42,6 @@
  * User account button (sidebar foot on tablet / desktop; Settings page on
  * mobile): avatar + name + course + chevron; opens the account dropdown.
  */
-.student-sidebar-footer { position:relative;padding:12px 12px 16px;border-top:1px solid #ffffff16; }
 .student-account-button { display:flex;width:100%;align-items:center;gap:10px;min-width:0;padding:8px 10px;border:1px solid;border-radius:10px;text-align:left;cursor:pointer;transition:background-color .15s ease,border-color .15s ease; }
 .student-account-avatar { display:flex;flex-shrink:0;align-items:center;justify-content:center;overflow:hidden;border-radius:999px;background:#fbeee9;color:var(--color-maroon-800);font-weight:700; }
 .dark .student-account-avatar { background:#3b1d27;color:#efb0bd; }
@@ -68,7 +67,7 @@
 .student-account-button.is-header:hover,.student-account-button.is-header.is-open { background:var(--sp-soft);border-color:#c67c8a; }
 .student-account-button.is-header:focus-visible { outline:2px solid var(--sp-accent);outline-offset:2px; }
 .student-account-button.is-header :is(.student-account-caption,.student-account-chevron) { display:none; }
-.student-sidebar-campus { position:absolute;bottom:76px;left:0;width:100%;height:245px;object-fit:cover;filter:grayscale(1);mix-blend-mode:luminosity;opacity:.16;mask-image:linear-gradient(transparent,#000 35%);pointer-events:none; }
+.student-sidebar-campus { position:absolute;bottom:0;left:0;width:100%;height:245px;object-fit:cover;filter:grayscale(1);mix-blend-mode:luminosity;opacity:.16;mask-image:linear-gradient(transparent,#000 35%);pointer-events:none; }
 .student-shell-body { min-height:100dvh;min-width:0;margin-left:var(--sp-sidebar);display:flex;flex-direction:column;padding-bottom:calc(var(--sp-nav-height) + env(safe-area-inset-bottom));background:var(--sp-bg); }
 .student-header { position:fixed;top:0;left:var(--sp-sidebar);right:0;z-index:30;background:var(--sp-surface);border-bottom:1px solid var(--sp-border);box-shadow:0 2px 10px #3d12200a; }
 .student-header-inner { height:var(--sp-header-height);display:flex;align-items:center;gap:16px;padding:0 24px; }

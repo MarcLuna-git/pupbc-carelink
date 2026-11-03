@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
 
 import NurseSidebar from './nurse-shell/NurseSidebar';
+import NurseAccountMenu from './nurse-shell/NurseAccountMenu';
 import NurseNotificationsMenu from './nurse-shell/NurseNotificationsMenu';
 import './NurseLayout-for-Tablet-View.css';
 
@@ -11,8 +12,8 @@ import './NurseLayout-for-Tablet-View.css';
  * NurseLayout-for-Desktop-View picks between this shell and the mobile shell
  * with a JS media query, so only one shell is ever mounted. This shell owns:
  *   - the collapsible sidebar (icon rail by default on tablet widths,
- *     full sidebar on desktop) with the account button at its foot
- *   - the header with the page title, notifications and theme toggle
+ *     full sidebar on desktop)
+ *   - the header with the page title, notifications, theme toggle and account button
  * The routed page arrives through `children`.
  */
 const TABLET_QUERY = '(max-width: 1099px)';
@@ -50,7 +51,6 @@ const NurseLayoutForTabletView = ({
         isActive={isActive}
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed((value) => !value)}
-        accountMenuProps={accountMenuProps}
       />
 
       <div className="nurse-shell-body" data-route-scroll>
@@ -75,6 +75,8 @@ const NurseLayoutForTabletView = ({
               >
                 {darkMode ? <Sun className="h-5 w-5 text-yellow-500" /> : <Moon className="h-5 w-5" />}
               </button>
+
+              <NurseAccountMenu variant="header" {...accountMenuProps} />
             </div>
           </div>
         </header>

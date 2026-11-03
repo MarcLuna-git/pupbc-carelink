@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { ChevronRight, HeartPulse, X } from 'lucide-react';
-import StudentAccountMenu from './StudentAccountMenu';
 import campusBackground from '../../../assets/pup-binan-hero.jpg';
 import { preloadForPath } from '../../../utils/preloadStudentPages';
 import { STUDENT_NAV_GROUPS } from '../../../utils/studentPortalNavigation';
@@ -103,13 +102,6 @@ const StudentSidebar = ({
         ];
       })}
     </nav>
-
-    {/* User account (relocated from the header) pinned to the sidebar's
-        foot: avatar + name + course; opens the account dropdown upward. On
-        the folded tablet rail only the avatar shows. */}
-    <div className="student-sidebar-footer">
-      <StudentAccountMenu variant="sidebar" collapsed={collapsed} />
-    </div>
   </aside>
 );
 

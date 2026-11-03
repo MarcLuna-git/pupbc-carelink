@@ -67,8 +67,6 @@
 /* Account button: the 32px avatar sits on the same 38px icon axis as the nav
    (12px foot + 1px border + 9px padding + 16px half-avatar); name, course
    and chevron fold away with the rail. */
-.student-sidebar .student-account-button { padding-left:9px; }
-.student-sidebar :is(.student-account-caption,.student-account-chevron) { max-width:200px;opacity:1;transition:max-width .28s ease,opacity .18s ease; }
 .student-sidebar-brand a>div { white-space:nowrap;overflow:hidden;max-width:200px;opacity:1;transition:max-width .28s ease,opacity .18s ease; }
 .student-sidebar-campus { transition:opacity .28s ease; }
 /*
@@ -111,8 +109,6 @@
 .student-sidebar.is-collapsed .student-sidebar-nav>a span { max-width:0;opacity:0; }
 /* The folded rail keeps the gap between groups but hides their labels. */
 .student-sidebar.is-collapsed .student-nav-section { color:transparent; }
-.student-sidebar.is-collapsed :is(.student-account-caption,.student-account-chevron) { max-width:0;opacity:0;overflow:hidden; }
-.student-sidebar.is-collapsed .student-account-button { gap:0;border-color:transparent;background:transparent; }
 
 @media (min-width:768px) and (max-width:1099px) {
   .student-header-inner { padding:0 18px;gap:10px; }

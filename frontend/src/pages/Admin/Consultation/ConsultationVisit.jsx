@@ -84,6 +84,8 @@ const rxLine = p => [p.name, p.dose, p.duration && `for ${p.duration}`, p.quanti
 
 const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
   const draft = useMemo(() => readDraft(visit.checkin_id), [visit.checkin_id]);
+  // The kiosk sends ['none'] when no red flag was ticked; that is not a red flag to show.
+  const redFlags = (visit.triage?.red_flags || []).filter(flag => flag !== 'none');
   const [tab, setTab] = useState('form');
   const [form, setForm] = useState(() => (draft.form
     ? { ...EMPTY_FORM, ...draft.form }
@@ -480,7 +482,8 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
             <div className="flex items-start gap-2"><CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-500 dark:text-gray-400">Date & Time</dt><dd className="text-gray-900 dark:text-white">{appointment.appointment_date ? formatAppointmentDate(appointment.appointment_date, { weekday: 'short' }) : 'Today'} · {appointment.time_slot || '—'}</dd></div></div>
             <div className="flex items-start gap-2"><MessageSquareText className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-500 dark:text-gray-400">Reason for Visit</dt><dd className="text-gray-900 dark:text-white">{visit.complaint || appointment.concern || 'Not specified'}</dd></div></div>
             <div className="flex items-start gap-2"><ClipboardList className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-500 dark:text-gray-400">Appointment Type · Queue</dt><dd className="text-gray-900 dark:text-white">{visit.appointment} · {visit.queue_number}</dd></div></div>
-            <div className="flex items-start gap-2"><Activity className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-500 dark:text-gray-400">Kiosk Triage</dt><dd className="text-gray-900 dark:text-white">{visit.priority}{visit.triage?.severity && ` · ${capitalize(visit.triage.severity)}`}{visit.triage?.pain_level != null && ` · Pain ${visit.triage.pain_level}/10`}{visit.triage?.red_flags?.length ? ` · Red flags: ${visit.triage.red_flags.join(', ').replaceAll('_', ' ')}` : ''}</dd></div></div>
+            <div className="flex items-start gap-2"><Activity className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-500 dark:text-gray-400">Kiosk Triage</dt><dd className="text-gray-900 dark:text-white">{visit.priority}{visit.triage?.severity && ` · ${capitalize(visit.triage.severity)}`}{visit.triage?.pain_level != null && ` · Pain ${visit.triage.pain_level}/10`}{redFlags.length ? ` · Red flags: ${redFlags.join(', ').replaceAll('_', ' ')}` : ''}</dd></div></div>
+            {visit.triage?.notes && <div className="flex items-start gap-2"><MessageSquareText className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-500 dark:text-gray-400">Other Concern (from kiosk)</dt><dd className="whitespace-pre-line text-gray-900 dark:text-white">{visit.triage.notes}</dd></div></div>}
           </dl>
         </section>
       </div>

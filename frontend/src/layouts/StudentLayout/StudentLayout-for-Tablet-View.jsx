@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ChevronsLeft, ChevronsRight, Moon, Sun } from 'lucide-react';
 
 import StudentSidebar from './student-shell/StudentSidebar';
+import StudentAccountMenu from './student-shell/StudentAccountMenu';
 import StudentNotificationsMenu from './student-shell/StudentNotificationsMenu';
 import './StudentLayout-for-Tablet-View.css';
 
@@ -11,10 +12,9 @@ import './StudentLayout-for-Tablet-View.css';
  * StudentLayout-for-Desktop-View picks between this shell and the mobile shell with a JS media
  * query, so only one shell is ever mounted. This component owns the
  * tablet-only chrome:
- *   - fixed sidebar (rendered via the shared StudentSidebar), with the
- *     user account button + dropdown at its foot
- *   - header with clinic status, alerts / theme (no page title — pages
- *     show their own headings)
+ *   - fixed sidebar (rendered via the shared StudentSidebar)
+ *   - header with clinic status, alerts / theme / account (no page title —
+ *     pages show their own headings)
  * The page content is injected through `children`; shared data and handlers
  * are passed down from StudentLayout-for-Desktop-View so logic is never duplicated.
  *
@@ -135,6 +135,8 @@ const StudentLayoutForTabletView = ({
               )}
             </button>
 
+            {/* User account: avatar button + dropdown */}
+            <StudentAccountMenu variant="header" />
           </div>
         </div>
       </header>
