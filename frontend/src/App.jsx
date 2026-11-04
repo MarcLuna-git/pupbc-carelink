@@ -337,6 +337,12 @@ function App() {
               element={<Settings />}
             />
 
+            {/* Short link to the hidden Developer Tools tab (no menu link). */}
+            <Route
+              path="developer"
+              element={<Navigate to="/student/settings?tab=developer" replace />}
+            />
+
             <Route
               path="help"
               element={<Help />}
@@ -417,6 +423,12 @@ function App() {
             <Route
               path="settings"
               element={<NurseSettings />}
+            />
+
+            {/* Short link to the hidden Developer Tools tab (no menu link). */}
+            <Route
+              path="developer"
+              element={<Navigate to="/nurse/settings?tab=developer" replace />}
             />
           </Route>
 
