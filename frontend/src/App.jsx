@@ -47,7 +47,6 @@ import { useStudentHealthProfileStatus } from './hooks/useStudentHealthProfileSt
 
 const KioskPage = lazy(() => import('./pages/Kiosk/KioskPage'));
 const KioskSettings = lazy(() => import('./pages/Kiosk/KioskSettings'));
-const KioskV2Page = lazy(() => import('./pages/KioskV2/KioskV2Page'));
 import AppErrorBoundary from './components/AppErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
 
@@ -179,12 +178,6 @@ function App() {
           <Route
             path="/kiosk"
             element={<KioskPage />}
-          />
-
-          {/* Kiosk v2: rebuilt flow, runs beside v1 on the same API. */}
-          <Route
-            path="/kioskv2"
-            element={<KioskV2Page />}
           />
 
           {/* Hidden: no link on the kiosk; staff type the URL. */}

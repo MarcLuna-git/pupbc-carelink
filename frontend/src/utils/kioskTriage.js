@@ -1,5 +1,5 @@
 /*
- * Kiosk triage rules shared by /kiosk and /kioskv2 (the backend applies the same ones).
+ * Kiosk triage rules for /kiosk (the backend applies the same ones).
  * Only General Consultation asks for symptoms, duration and pain. Every other service was
  * already explained in the student portal, so it goes straight to a Regular queue ticket.
  */

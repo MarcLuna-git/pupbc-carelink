@@ -31,6 +31,8 @@ class KioskController extends Controller
             'user' => $student->only(['student_id', 'first_name', 'last_name']),
             'appointment' => [
                 'service' => $appointment->service,
+                // The reason typed in the portal: shown on the confirm screen and starts the symptoms field.
+                'concern' => $appointment->concern,
                 'appointment_date' => $appointment->appointment_date->toDateString(),
                 'time_slot' => $appointment->time_slot,
                 'checkin_opens_at' => $expiryService->getCheckinOpening($appointment)->toIso8601String(),
