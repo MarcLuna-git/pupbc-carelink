@@ -7,13 +7,11 @@ import {
 } from 'lucide-react';
 import authService from '../../services/authService';
 import { formatPersonName } from '../../utils/studentUser';
-import COURSES from '../../data/registration-academics.json';
 import clinicLogo from '../../assets/clinic-logo.webp';
 import campusPhoto from '../../assets/pup-binan-hero.jpg';
 import clinicPhoto from '../../assets/clinic-waiting-area.jpg';
 import { StudentNoticeModal, StudentToast } from '../../components/StudentFeedback';
 
-const YEARS = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
@@ -149,15 +147,30 @@ export default function Register() {
   const [resending, setResending] = useState(false);
   const [verified, setVerified] = useState(false);
   const [legalModal, setLegalModal] = useState(null);
+  const [courses, setCourses] = useState([]);
+  const [catalogStatus, setCatalogStatus] = useState('loading'); // loading | ready | empty | error
+
+  const loadCatalog = async () => {
+    setCatalogStatus('loading');
+    try {
+      const list = await authService.registrationOptions();
+      setCourses(list);
+      setCatalogStatus(list.length ? 'ready' : 'empty');
+    } catch {
+      setCatalogStatus('error');
+    }
+  };
+  useEffect(() => { loadCatalog(); }, []);
 
   const years = useMemo(() => {
     const current = Number(getManilaDate().slice(0, 4));
     return Array.from({ length: 83 }, (_, index) => current - 17 - index);
   }, []);
   const passwordStrength = getPasswordStrength(form.password);
-  const selectedCourse = COURSES.find((course) => course.code === form.course);
-  const availableYears = YEARS.filter((year, index) => selectedCourse?.sections.some((section) => section.startsWith(`${index + 1}-`)));
-  const availableSections = selectedCourse?.sections.filter((section) => YEARS[Number(section[0]) - 1] === form.year) || [];
+  const selectedCourse = courses.find((course) => course.code === form.course);
+  // The backend sends sections already ordered by year level, then section.
+  const availableYears = [...new Set(selectedCourse?.sections.map((entry) => entry.year) || [])];
+  const availableSections = selectedCourse?.sections.filter((entry) => entry.year === form.year).map((entry) => entry.section) || [];
   const dayCount = form.dobYear && form.dobMonth
     ? new Date(+form.dobYear, +form.dobMonth, 0).getDate() : 31;
 
@@ -189,8 +202,8 @@ export default function Register() {
     setForm((previous) => {
       const updated = { ...previous, [name]: next };
       if (name === 'course') {
-        const course = COURSES.find((entry) => entry.code === next);
-        if (!course?.sections.some((section) => YEARS[Number(section[0]) - 1] === previous.year)) updated.year = '';
+        const course = courses.find((entry) => entry.code === next);
+        if (!course?.sections.some((entry) => entry.year === previous.year)) updated.year = '';
         updated.section = '';
       }
       if (name === 'year') updated.section = '';
@@ -516,10 +529,21 @@ export default function Register() {
                   <SectionTitle icon={GraduationCap}>Academic Information</SectionTitle>
                   <div className="space-y-3">
                     <Field id="course" label="Course" error={errors.course}>
-                      <select id="course" name="course" value={form.course} onChange={change} disabled={loading} aria-invalid={Boolean(errors.course)} className={`${INPUT} ${errors.course ? INVALID : ''}`}>
-                        <option value="">Select your course</option>
-                        {COURSES.map((course) => <option key={course.code} value={course.code}>{course.abbreviation} — {course.name}</option>)}
+                      <select id="course" name="course" value={form.course} onChange={change} disabled={loading || catalogStatus !== 'ready'} aria-invalid={Boolean(errors.course)} className={`${INPUT} ${errors.course ? INVALID : ''}`}>
+                        <option value="">{catalogStatus === 'loading' ? 'Loading courses…' : 'Select your course'}</option>
+                        {courses.map((course) => <option key={course.code} value={course.code}>{course.code} — {course.name}</option>)}
                       </select>
+                      {catalogStatus === 'error' && (
+                        <p role="alert" className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                          Courses could not be loaded.{' '}
+                          <button type="button" onClick={loadCatalog} className="font-semibold underline">Try again</button>
+                        </p>
+                      )}
+                      {catalogStatus === 'empty' && (
+                        <p role="alert" className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                          Registration is not open yet. Please contact the clinic.
+                        </p>
+                      )}
                     </Field>
                     <Field id="year" label="Year level" error={errors.year}>
                       <select id="year" name="year" value={form.year} onChange={change} disabled={loading || !form.course} aria-invalid={Boolean(errors.year)} className={`${INPUT} ${errors.year ? INVALID : ''}`}>

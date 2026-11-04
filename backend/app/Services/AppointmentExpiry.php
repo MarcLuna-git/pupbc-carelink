@@ -10,7 +10,10 @@ use Carbon\Carbon;
 
 class AppointmentExpiry
 {
-    /** Expire overdue pending/approved appointments without deleting history. */
+    /** The clinic closes at 5:00 PM; expired appointments are removed once their day's hours are over. */
+    private const CLINIC_CLOSE = '17:00';
+
+    /** Expire overdue pending/approved appointments, then delete the day's expired ones after clinic hours. */
     public function run(): int
     {
         // Nurse → Developer Tools → Remove time Guard: no automatic expiry at all.
@@ -31,7 +34,27 @@ class AppointmentExpiry
         // Not part of the count: the appointment itself stays approved (a successful check-in is never undone).
         $this->closeStaleQueueVisits();
 
+        // 4. After clinic hours, expired appointments of that day are deleted (not kept as records).
+        $this->deleteExpiredAfterClinicHours();
+
         return $count;
+    }
+
+    /*
+     * Expired = status "expired", or approved but the student never came (no_show). Once the
+     * clinic closes on the appointment's day (5:00 PM, or any later day) they are deleted.
+     * Their check-ins go with them (cascade); a consultation, if any, only loses the link.
+     */
+    protected function deleteExpiredAfterClinicHours(): int
+    {
+        $now = now('Asia/Manila');
+        $lastClosedDay = $now->format('H:i') >= self::CLINIC_CLOSE ? $now->toDateString() : $now->copy()->subDay()->toDateString();
+
+        // forceDelete: Appointment uses soft deletes, but these are not kept as records.
+        return Appointment::withTrashed()->whereDate('appointment_date', '<=', $lastClosedDay)
+            ->where(fn ($q) => $q->where('status', 'expired')
+                ->orWhere(fn ($q) => $q->where('status', 'approved')->where('no_show', true)))
+            ->forceDelete();
     }
 
     /*

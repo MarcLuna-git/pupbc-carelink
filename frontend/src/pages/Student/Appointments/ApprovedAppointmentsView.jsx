@@ -2,11 +2,19 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import RouteLoadingBar from '../../../components/RouteLoadingBar';
+import { SearchField, FilterMenu } from '../../../components/StudentSearchFilter';
 import { AlertCircle, ArrowRight, CalendarDays, Check, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Clock, FileText, HelpCircle, LayoutGrid, List, Loader2, MapPin, RotateCcw, ShieldCheck, Stethoscope, UserRound, X } from 'lucide-react';
 import { appointmentDate, appointmentTime, clinicDate, formatAppointmentDate, isClinicSunday } from '../../../utils/appointmentDate';
 import { useTimeGuardBypass } from '../../../services/devTools';
 
 const SERVICE_TITLES = { Consultation: 'General Consultation', 'Follow-up Checkup': 'Follow-up Check-up' };
+// The short reason asked once a service is picked ("Other" keeps its own inline field).
+const REASON_PROMPTS = {
+  Consultation: ['Reason for consultation', 'e.g. Headache and fever since yesterday'],
+  'Medical Certificate': ['Purpose', 'e.g. OJT requirement, PE class'],
+  'Follow-up Checkup': ['Reason for follow-up', 'e.g. Recheck blood pressure'],
+  Vaccination: ['Purpose', 'e.g. Flu vaccine, booster shot'],
+};
 const SERVICE_NOTES = { Consultation: 'Medical concerns & clinic care', 'Medical Certificate': 'For school requirements',
   'Medical Clearance': 'For clearance requests', 'Follow-up Checkup': 'Review an earlier clinic visit',
   Vaccination: 'Check vaccine availability' };
@@ -244,7 +252,8 @@ function BookingReviewModal({ form, editingId, loading, canBook, onClose }) {
 export default function ApprovedAppointmentsView({ appointments, filteredAppointments, form, onChange, onSubmit, onView, onEdit,
   filter, onFilter, editingId, onCancelEdit, services, timeSlots, availableSlots, slotsLoading, loading, message, messageType, onDismissMessage, retrySlots }) {
   const [page, setPage] = useState(1);
-  useEffect(() => setPage(1), [filter]);
+  const [search, setSearch] = useState('');
+  useEffect(() => setPage(1), [filter, search]);
   const [historyView, setHistoryView] = useState(readHistoryView);
   useEffect(() => {
     try {
@@ -255,10 +264,19 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
   }, [historyView]);
   /* Appointment history — formerly filtered by the sidebar search box,
      which has been removed from the portal shell. */
-  const history = filteredAppointments;
+  const term = search.trim().toLowerCase();
+  const history = term
+    ? filteredAppointments.filter(item => [serviceTitle(item.service), item.service, item.concern, item.status, formatAppointmentDate(item.appointment_date), item.time_slot]
+      .some(value => String(value || '').toLowerCase().includes(term)))
+    : filteredAppointments;
   const pages = Math.max(1, Math.ceil(history.length / 5));
   const currentPage = Math.min(page, pages);
   const rows = history.slice((currentPage - 1) * 5, currentPage * 5);
+  // Clicking anywhere on a history row opens its details; its own buttons and links keep their action.
+  const openFromRow = (event, appointment) => {
+    if (event.target.closest('a, button')) return;
+    onView(appointment);
+  };
   const upcoming = appointments.filter(item => ['approved', 'pending'].includes(item.status) && appointmentDate(item.appointment_date) >= clinicDate())
     .sort((a, b) => (a.status === 'approved' ? 0 : 1) - (b.status === 'approved' ? 0 : 1)
       || (appointmentTime(a.appointment_date, a.time_slot)?.getTime() || 0) - (appointmentTime(b.appointment_date, b.time_slot)?.getTime() || 0))[0];
@@ -266,7 +284,9 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
   const bypass = useTimeGuardBypass();
   const selectedSlot = availableSlots.find(slot => slot.time === form.time);
   const selectedInstant = appointmentTime(form.date, form.time);
-  const canBook = Boolean(form.service && form.date && form.time && selectedSlot && !selectedSlot.isFull && selectedInstant && (bypass || (!selectedSlot.is_past && selectedInstant >= new Date())) && !slotsLoading && !loading);
+  // "Other" needs the student to say what the visit is for.
+  const reasonMissing = Boolean(form.service) && !(form.concern || '').trim();
+  const canBook = Boolean(form.service && !reasonMissing && form.date && form.time && selectedSlot && !selectedSlot.isFull && selectedInstant && (bypass || (!selectedSlot.is_past && selectedInstant >= new Date())) && !slotsLoading && !loading);
   const progress = !form.date ? 1 : !form.time ? 2 : !form.service ? 3 : 4;
   // An appointment being edited may use a service that is no longer offered (e.g. "Other").
   const serviceOptions = form.service && !services.includes(form.service) ? [...services, form.service] : services;
@@ -279,8 +299,12 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
   const pickedRef = useRef(false);
   const onStepChange = event => {
     pickedRef.current = true;
+    if (event.target.name === 'service' && event.target.value !== form.service) onChange({ target: { name: 'concern', value: '' } });
     onChange(event);
   };
+  // Typing the reason doesn't pop the review open mid-word; leaving the field or pressing Enter does.
+  const reasonDone = () => { if (canBook) setReviewOpen(true); };
+  const reasonKey = event => { if (event.key === 'Enter') { event.preventDefault(); reasonDone(); } };
   useEffect(() => {
     if (canBook && pickedRef.current) setReviewOpen(true);
     pickedRef.current = false;
@@ -331,8 +355,13 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
             <section className="ap-booking-column"><div className="ap-step-body"><div className="ap-service-list" role="radiogroup" aria-label="Appointment service">{serviceOptions.map((service, index) => <label key={service} className={form.service === service ? 'is-selected' : ''}>
               <input type="radio" name="service" value={service} checked={form.service === service} onChange={onStepChange} onClick={() => { if (form.service === service) toggleOption(onStepChange, 'service', service, true); }} disabled={loading} />
               {index === 0 ? <Stethoscope /> : <FileText />}{service === 'Other'
-                ? <span className="ap-other-service"><strong>Other:</strong><input type="text" name="concern" value={form.concern || ''} onChange={onChange} onFocus={() => { if (form.service !== 'Other') onChange({ target: { name: 'service', value: 'Other' } }); }} onBlur={() => { if (canBook) setReviewOpen(true); }} maxLength={1000} aria-label="Specify other service" disabled={loading} /></span>
-                : <span><strong>{serviceTitle(service)}</strong>{SERVICE_NOTES[service] && <small>{SERVICE_NOTES[service]}</small>}</span>}
+                ? <span className="ap-other-service"><strong>Other:</strong><input type="text" name="concern" value={form.service === 'Other' ? form.concern || '' : ''} onChange={onChange} onFocus={() => { if (form.service !== 'Other') onStepChange({ target: { name: 'service', value: 'Other' } }); }} onBlur={reasonDone} onKeyDown={reasonKey} maxLength={150} placeholder="Please specify" required={form.service === 'Other'} aria-label="Please specify the service" disabled={loading} /></span>
+                : <span><strong>{serviceTitle(service)}</strong>{SERVICE_NOTES[service] && <small>{SERVICE_NOTES[service]}</small>}
+                  {form.service === service && REASON_PROMPTS[service] && <span className="ap-service-reason">
+                    <span>{REASON_PROMPTS[service][0]} <em aria-hidden="true">*</em></span>
+                    <input type="text" name="concern" value={form.concern || ''} onChange={onChange} onBlur={reasonDone} onKeyDown={reasonKey}
+                      maxLength={150} placeholder={REASON_PROMPTS[service][1]} required aria-label={REASON_PROMPTS[service][0]} disabled={loading} autoFocus />
+                  </span>}</span>}
             </label>)}</div></div></section>
           </li>
         </ol>
@@ -342,18 +371,25 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
     <section className="ap-card ap-history">
       <div className="ap-section-heading"><Clock /><div><h2>Appointment History</h2><p>View your past and upcoming clinic visits.</p></div>
         <div className="ap-history-controls">
-          <label><span className="sr-only">Filter appointment history</span><select value={filter} onChange={event => onFilter(event.target.value)}><option value="all">All Appointments</option><option value="pending">Pending Requests</option><option value="approved">Approved Appointments</option><option value="past">Past Appointments</option></select></label>
+          <SearchField value={search} onChange={setSearch} placeholder="Search appointments..." label="Search appointment history" className="sm:w-56" />
+          <FilterMenu
+            fields={[['status', 'Status', [['all', 'All appointments'], ['pending', 'Pending requests'], ['approved', 'Approved appointments'], ['past', 'Past appointments']]]]}
+            values={{ status: filter }}
+            defaults={{ status: 'all' }}
+            onChange={(_, value) => onFilter(value)}
+            onReset={() => onFilter('all')}
+          />
           <HistoryViewMenu value={historyView} onChange={setHistoryView} />
         </div>
       </div>
-      {history.length === 0 ? <div className="ap-history-empty"><CalendarDays /><p>No appointments to display yet.</p></div> : <>
+      {history.length === 0 ? <div className="ap-history-empty"><CalendarDays /><p>{term || filter !== 'all' ? 'No appointments match your search or filters.' : 'No appointments to display yet.'}</p></div> : <>
         {historyView === 'list' ? <div className="ap-history-table" role="table" aria-label="Appointment history">
           <div className="ap-history-table-head" role="row">
             <span role="columnheader">Date</span><span role="columnheader">Service</span><span role="columnheader">Staff · Room</span><span role="columnheader">Status</span><span role="columnheader" className="sr-only">Actions</span>
           </div>
           {rows.map(appointment => {
             const date = appointmentDate(appointment.appointment_date);
-            return <div key={appointment.id} className="ap-history-row" role="row">
+            return <div key={appointment.id} className="ap-history-row" role="row" onClick={event => openFromRow(event, appointment)}>
               <span role="cell" className="ap-history-row-date"><strong>{formatAppointmentDate(appointment.appointment_date)}</strong><small>{appointment.time_slot || 'Time not set'}</small></span>
               <span role="cell" className="ap-history-row-service"><strong>{serviceTitle(appointment.service)}</strong>{appointment.concern && <small>“{appointment.concern}”</small>}</span>
               <span role="cell" className="ap-history-row-meta">{providerName(appointment)}<small>{roomName(appointment)}</small></span>
@@ -368,7 +404,7 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
         </div> : <div className="ap-history-list">
           {rows.map(appointment => {
             const date = appointmentDate(appointment.appointment_date);
-            return <article key={appointment.id} className="ap-history-item">
+            return <article key={appointment.id} className="ap-history-item" onClick={event => openFromRow(event, appointment)}>
               <div className="ap-date-tile"><span>{date ? formatAppointmentDate(date, { month: 'short', year: undefined, day: undefined }).toUpperCase() : 'DATE'}</span><strong>{date ? date.slice(-2) : <span className="ap-date-placeholder is-day" />}</strong><small>{date ? formatAppointmentDate(date, { weekday: 'short', day: undefined, month: undefined, year: undefined }) : <span className="ap-date-placeholder is-weekday" />}</small></div>
               <div className="ap-history-info">
                 <strong>{serviceTitle(appointment.service)}</strong>

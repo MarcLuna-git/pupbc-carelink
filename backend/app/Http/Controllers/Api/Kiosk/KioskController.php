@@ -10,6 +10,7 @@ use App\Services\KioskIdentity;
 use App\Services\NurseVisitClaim;
 use App\Support\TimeGuard;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
 
 class KioskController extends Controller
@@ -39,13 +40,30 @@ class KioskController extends Controller
             'active_checkin' => $checkin ? $this->ticket($checkin) : null,
         ]]);
     }
+    // Answers for "How long have you had these symptoms?" on the kiosk.
+    public const SYMPTOM_DURATIONS = ['Today', '1-2 days', '3-7 days', 'More than a week'];
+
+    // Only General Consultation goes through the kiosk triage form.
+    public static function needsTriage(?string $service): bool
+    {
+        return $service === 'Consultation';
+    }
+
+    // Pain 1-3 mild, 4-6 moderate, 7-10 severe (same bands the kiosk shows).
+    private static function painSeverity(int $pain): string
+    {
+        return $pain <= 3 ? 'mild' : ($pain <= 6 ? 'moderate' : 'severe');
+    }
+
     public function checkin(Request $request)
     {
+        // Only General Consultation is triaged; the other services are checked in from what the
+        // student already wrote in the portal, so these fields are checked once the service is known.
         $request->validate([
-            'chief_complaint' => 'required|string|max:500',
-            'severity' => 'required|in:mild,moderate,severe,critical',
-            // 0 = no pain, 10 = worst pain. Optional so older kiosk screens keep working.
-            'pain_level' => 'nullable|integer|between:0,10',
+            'chief_complaint' => 'nullable|string|max:500',
+            'symptom_duration' => ['nullable', Rule::in(self::SYMPTOM_DURATIONS)],
+            'severity' => 'nullable|in:mild,moderate,severe,critical',
+            'pain_level' => 'nullable|integer|between:1,10',
             'red_flags' => 'nullable|array',
             'red_flags.*' => 'string|in:difficulty_breathing,severe_chest_pain,heavy_uncontrolled_bleeding,fainting,severe_allergic_reaction,seizure,sudden_weakness_confusion,none',
             'notes' => 'nullable|string|max:1000',
@@ -57,18 +75,43 @@ class KioskController extends Controller
             $appointment = KioskIdentity::appointment($student, true);
             $existing = AppointmentCheckin::where('appointment_id', $appointment->id)->where('is_walk_in', false)->first();
             if ($existing) return $existing; // Sa retry, gamitin ang existing row at queue number.
-            $flags = $request->input('red_flags') ?: [];
-            $priority = $this->triagePriority($student, $request->severity, $flags, $request->chief_complaint);
+            if (self::needsTriage($appointment->service)) {
+                $request->validate([
+                    'chief_complaint' => 'required|string|max:500',
+                    'symptom_duration' => ['required', Rule::in(self::SYMPTOM_DURATIONS)],
+                    'pain_level' => 'required|integer|between:1,10',
+                    'red_flags' => 'required|array|min:1',
+                ], [
+                    'chief_complaint.required' => 'Please describe your symptoms.',
+                    'symptom_duration.required' => 'Please tell us how long you have had these symptoms.',
+                    'pain_level.required' => 'Please rate your pain from 1 to 10.',
+                    'red_flags.required' => 'Please answer the warning signs question.',
+                ]);
+                $triage = [
+                    'chief_complaint' => $request->chief_complaint, 'symptom_duration' => $request->symptom_duration,
+                    'severity' => self::painSeverity((int) $request->pain_level), 'pain_level' => (int) $request->pain_level,
+                    'red_flags' => $request->input('red_flags'), 'notes' => $request->notes,
+                ];
+                $priority = $this->triagePriority($student, $triage['severity'], $triage['red_flags'], $triage['chief_complaint']);
+            } else {
+                // Med cert, follow-up, vaccination and other: no triage, regular queue, the
+                // portal reason becomes the chief complaint.
+                $triage = [
+                    'chief_complaint' => trim((string) $appointment->concern) ?: $appointment->service, 'symptom_duration' => null,
+                    'severity' => 'mild', 'pain_level' => null, 'red_flags' => ['none'], 'notes' => null,
+                ];
+                $priority = 'LOW';
+            }
             $type = $priority === 'HIGH' ? 'priority' : 'regular';
             $number = ClinicQueue::allocate($type);
             $checkin = AppointmentCheckin::create([
                 'appointment_id' => $appointment->id, 'user_id' => $student->id,
                 'queue_number' => $number, 'queue_type' => $type, 'is_walk_in' => false,
-                'triage_reason' => mb_substr($request->chief_complaint, 0, 191),
-                'chief_complaint' => $request->chief_complaint, 'checkin_status' => 'confirmed',
+                'triage_reason' => mb_substr($triage['chief_complaint'], 0, 191),
+                'chief_complaint' => $triage['chief_complaint'], 'checkin_status' => 'confirmed',
                 'checked_in_at' => now(), 'check_in_time' => now(), 'status' => 'waiting',
             ]);
-            $checkin->triage()->create(['chief_complaint' => $request->chief_complaint, 'severity' => $request->severity, 'pain_level' => $request->pain_level, 'red_flags' => $flags, 'priority' => $priority, 'notes' => $request->notes]);
+            $checkin->triage()->create($triage + ['priority' => $priority]);
             $appointment->forceFill(['checked_in_at' => now(), 'queue_number' => $number, 'queue_type' => $type])->save();
             $created = true;
             return $checkin;

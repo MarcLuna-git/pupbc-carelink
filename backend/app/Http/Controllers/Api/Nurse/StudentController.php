@@ -11,6 +11,7 @@ use App\Models\Notification;
 use App\Models\AuditLog;
 use App\Models\HealthProfile;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class StudentController extends Controller
@@ -51,6 +52,18 @@ class StudentController extends Controller
                     $query->withTrashed();
                 }
             }
+        }
+
+        // Registered between the From / To dates (inclusive, clinic time).
+        $dates = $request->validate([
+            'date_from' => 'nullable|date_format:Y-m-d',
+            'date_to' => 'nullable|date_format:Y-m-d|after_or_equal:date_from',
+        ]);
+        if (!empty($dates['date_from'])) {
+            $query->where('created_at', '>=', Carbon::parse($dates['date_from'], 'Asia/Manila')->startOfDay());
+        }
+        if (!empty($dates['date_to'])) {
+            $query->where('created_at', '<=', Carbon::parse($dates['date_to'], 'Asia/Manila')->endOfDay());
         }
 
         $students = $query->orderBy('last_name')->paginate(20);

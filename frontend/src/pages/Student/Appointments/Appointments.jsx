@@ -6,10 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar,
   Clock,
-  X,
   AlertCircle,
-  CheckCircle,
-  XCircle,
   Stethoscope,
   FileText,
   Edit3,
@@ -217,7 +214,6 @@ const Appointments = () => {
   const services = [
     'Consultation',
     'Medical Certificate',
-    'Medical Clearance',
     'Follow-up Checkup',
     'Vaccination',
     'Other',
@@ -400,44 +396,6 @@ const Appointments = () => {
         : orderedAppointments.filter(
             (appointment) => appointment.status === filter
           );
-
-  const statusConfig = {
-    approved: {
-      bg: 'bg-green-50 dark:bg-green-900/20',
-      text: 'text-green-700 dark:text-green-400',
-      icon: CheckCircle,
-    },
-
-    pending: {
-      bg: 'bg-yellow-50 dark:bg-yellow-900/20',
-      text: 'text-yellow-700 dark:text-yellow-400',
-      icon: Clock,
-    },
-
-    completed: {
-      bg: 'bg-blue-50 dark:bg-blue-900/20',
-      text: 'text-blue-700 dark:text-blue-400',
-      icon: CheckCircle,
-    },
-
-    cancelled: {
-      bg: 'bg-red-50 dark:bg-red-900/20',
-      text: 'text-red-700 dark:text-red-400',
-      icon: XCircle,
-    },
-
-    rejected: {
-      bg: 'bg-red-50 dark:bg-red-900/20',
-      text: 'text-red-700 dark:text-red-400',
-      icon: XCircle,
-    },
-
-    expired: {
-      bg: 'bg-gray-100 dark:bg-gray-700/40',
-      text: 'text-gray-600 dark:text-gray-300',
-      icon: XCircle,
-    },
-  };
 
   const handleChange = (e) => {
     const {
@@ -931,7 +889,7 @@ const Appointments = () => {
               transition={{
                 duration: 0.2,
               }}
-              className="bg-white dark:bg-gray-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden"
+              className="flex w-full max-w-md flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-gray-800"
               style={{
                 maxHeight: '90vh',
               }}
@@ -939,45 +897,8 @@ const Appointments = () => {
                 e.stopPropagation()
               }
             >
-              <div className="flex items-center justify-between px-5 pt-5 pb-3">
-                <span
-                  className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
-                    (
-                      statusConfig[
-                        selectedAppointment.status
-                      ] ||
-                      statusConfig.pending
-                    ).bg
-                  } ${
-                    (
-                      statusConfig[
-                        selectedAppointment.status
-                      ] ||
-                      statusConfig.pending
-                    ).text
-                  }`}
-                >
-                  <span className="capitalize">
-                    {
-                      selectedAppointment.status
-                    }
-                  </span>
-                </span>
-
-                <button
-                  onClick={() =>
-                    setSelectedAppointment(
-                      null
-                    )
-                  }
-                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl"
-                >
-                  <X className="w-5 h-5 text-gray-400" />
-                </button>
-              </div>
-
               <div
-                className="overflow-y-auto px-5 pb-5"
+                className="min-h-0 flex-1 overflow-y-auto p-5"
                 style={{
                   WebkitOverflowScrolling:
                     'touch',

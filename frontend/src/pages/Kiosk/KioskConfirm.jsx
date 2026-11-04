@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, CheckCircle, Loader2, Clock, Info } from 'lucide-react';
 import api from '../../services/api';
 import KioskLayout from '../../layouts/KioskLayout';
+import { PAIN_LEVELS, SYMPTOM_DURATIONS, needsTriage, painBand } from '../../utils/kioskTriage';
 
 const FLAGS = [
   ['difficulty_breathing', 'Difficulty breathing'],
@@ -13,11 +14,6 @@ const FLAGS = [
   ['sudden_weakness_confusion', 'Sudden severe weakness or confusion'],
 ];
 
-// 0-10 pain scale shown at check-in. The band name helps patients who are unsure of a number.
-const PAIN_LEVELS = Array.from({ length: 11 }, (_, level) => level);
-const painBand = (level) => (level === 0 ? 'No pain' : level <= 3 ? 'Mild pain' : level <= 6 ? 'Moderate pain' : 'Severe pain');
-// Severity is derived from the pain scale; backend uses it for queue priority.
-const painSeverity = (level) => (level <= 3 ? 'mild' : level <= 6 ? 'moderate' : 'severe');
 
 // Section subtitle shown above each part of the confirm form.
 const SECTION_TITLE = 'border-t border-white/10 pt-4 text-xs font-semibold uppercase tracking-wider text-yellow-300';
@@ -25,6 +21,10 @@ const SECTION_TITLE = 'border-t border-white/10 pt-4 text-xs font-semibold upper
 const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
   const { user, appointment, has_active_checkin, active_checkin } = data;
   const [chiefComplaint, setChiefComplaint] = useState(appointment?.concern || '');
+  // Only General Consultation is triaged here. Other services were explained in the portal
+  // and go straight to the regular queue.
+  const triage = needsTriage(appointment?.service);
+  const [duration, setDuration] = useState(null);
   const [painLevel, setPainLevel] = useState(null);
   const [redFlags, setRedFlags] = useState([]);
   const [hasOther, setHasOther] = useState(false);
@@ -58,19 +58,23 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
 
   const submit = async (event) => {
     event.preventDefault();
-    if (!chiefComplaint.trim()) { setError('Please describe your reason for visit.'); return; }
-    if (painLevel === null) { setError('Please rate your pain from 0 to 10. Choose 0 if you have no pain.'); return; }
-    if (hasOther && !notes.trim()) { setError('Please describe your other concern.'); return; }
+    if (triage && !chiefComplaint.trim()) { setError('Please describe your symptoms.'); return; }
+    if (triage && !duration) { setError('Please tell us how long you have had these symptoms.'); return; }
+    if (triage && painLevel === null) { setError('Please rate your pain from 1 to 10.'); return; }
+    if (triage && hasOther && !notes.trim()) { setError('Please describe your other concern.'); return; }
     setLoading(true); setError('');
     try {
       const response = await api.post('/kiosk/checkin', {
         ...data.identity,
         student_id: user.student_id,
-        chief_complaint: chiefComplaint.trim(),
-        severity: painSeverity(painLevel),
-        pain_level: painLevel,
-        red_flags: redFlags.length ? redFlags : ['none'],
-        notes: notes.trim() || undefined,
+        // Other services send no triage: the server uses the portal reason and the regular queue.
+        ...(triage ? {
+          chief_complaint: chiefComplaint.trim(),
+          symptom_duration: duration,
+          pain_level: painLevel,
+          red_flags: redFlags.length ? redFlags : ['none'],
+          notes: notes.trim() || undefined,
+        } : {}),
       });
       onCheckedIn(response.data.data);
     } catch (err) {
@@ -82,7 +86,7 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
     <button type="button" onClick={onBack} className="p-3 bg-white/5 rounded-2xl"><ArrowLeft className="w-5 h-5 text-white/70" /></button>
     <div>
       <h1 className="text-2xl font-bold">Confirm Today&apos;s Appointment</h1>
-      <p className="mt-1 text-sm text-white/60">Review your appointment, then tell us how you are feeling.</p>
+      <p className="mt-1 text-sm text-white/60">{triage ? 'Review your appointment, then tell us how you are feeling.' : 'Review your appointment, then check in.'}</p>
     </div>
     <h2 className={SECTION_TITLE}>Appointment Details</h2>
     <div className="rounded-2xl border border-green-400/20 bg-green-500/5 p-4">
@@ -102,15 +106,39 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
         </div>
       )}
     </div>
+    {!triage && <>
     <h2 className={SECTION_TITLE}>Reason for Visit</h2>
-    <label className="block text-sm text-white/70">Chief complaint or reason *
-      <textarea required rows="3" value={chiefComplaint} onChange={(e) => setChiefComplaint(e.target.value)} className="mt-2 w-full rounded-xl bg-white/5 border border-white/10 p-3 text-white" />
+    <p className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">{appointment?.concern || appointment?.service}</p>
+    <p className="text-xs text-white/60">No health check needed. You will get a Regular queue number.</p>
+    </>}
+    {triage && <>
+    <h2 className={SECTION_TITLE}>Symptoms</h2>
+    <label className="block text-sm text-white/70">What are your symptoms? *
+      <textarea required rows="3" maxLength={500} value={chiefComplaint} onChange={(e) => { setChiefComplaint(e.target.value); setError(''); }} placeholder="Example: headache and fever" className="mt-2 w-full rounded-xl bg-white/5 border border-white/10 p-3 text-white placeholder:text-white/40" />
     </label>
+    <h2 className={SECTION_TITLE}>Duration</h2>
+    <fieldset>
+      <legend className="mb-3 text-sm text-white/70">How long have you had these symptoms? *</legend>
+      <div role="radiogroup" aria-label="Symptom duration" className="grid grid-cols-2 gap-2">
+        {SYMPTOM_DURATIONS.map((option) => (
+          <button
+            key={option}
+            type="button"
+            role="radio"
+            aria-checked={duration === option}
+            onClick={() => { setDuration(option); setError(''); }}
+            className={'min-h-12 cursor-pointer rounded-xl border px-3 font-bold transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ' + (duration === option ? 'border-yellow-400 bg-yellow-400 text-maroon-950' : 'border-white/30 bg-white/5 text-white hover:bg-white/15')}
+          >
+            {option.replace('-', '–')}
+          </button>
+        ))}
+      </div>
+    </fieldset>
     <h2 className={SECTION_TITLE}>Pain Level</h2>
     <fieldset>
       <legend className="mb-1 text-sm text-white/70">Rate your pain *</legend>
-      <p className="mb-3 text-sm text-white/70">0 means no pain, 10 means the worst pain you can imagine.</p>
-      <div role="radiogroup" aria-label="Pain from 0 to 10" className="grid grid-cols-6 gap-2 sm:grid-cols-11">
+      <p className="mb-3 text-sm text-white/70">1 means very mild, 10 means the worst pain you can imagine.</p>
+      <div role="radiogroup" aria-label="Pain from 1 to 10" className="grid grid-cols-5 gap-2 sm:grid-cols-10">
         {PAIN_LEVELS.map((level) => (
           <button
             key={level}
@@ -124,8 +152,8 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
           </button>
         ))}
       </div>
-      <div className="mt-2 flex justify-between text-xs text-white/70" aria-hidden="true"><span>No pain</span><span>Worst pain</span></div>
-      <p className="mt-2 min-h-5 text-sm font-semibold text-yellow-300" aria-live="polite">{painLevel === null ? '' : painLevel + ' / 10 · ' + painBand(painLevel)}</p>
+      <div className="mt-2 flex justify-between text-xs text-white/70" aria-hidden="true"><span>Very mild</span><span>Worst pain</span></div>
+      <p className="mt-2 min-h-5 text-sm font-semibold text-yellow-300" aria-live="polite">{painLevel === null ? '' : painLevel + ' / 10 · ' + painBand(painLevel) + ' pain'}</p>
     </fieldset>
     <h2 className={SECTION_TITLE}>Warning Signs</h2>
     <fieldset><legend className="text-sm text-white/70 mb-2">Red flags (select any that apply)</legend><div className="grid gap-2">{FLAGS.map(([value, label]) => <label key={value} className="flex gap-2 items-center text-sm text-white/70"><input type="checkbox" checked={redFlags.includes(value)} onChange={() => toggleFlag(value)} />{label}</label>)}
@@ -134,6 +162,7 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
         <textarea rows="2" autoFocus maxLength={1000} value={notes} onChange={(e) => { setNotes(e.target.value); setError(''); }} placeholder="Describe your other concern" className="mt-2 w-full rounded-xl bg-white/5 border border-white/10 p-3 text-white placeholder:text-white/40" />
       </label>}
     </div></fieldset>
+    </>}
     {error && <p className="rounded-xl bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
     <button disabled={loading} className="w-full rounded-xl bg-yellow-400 py-3 font-bold text-slate-900 disabled:opacity-50">{loading ? <Loader2 className="mx-auto animate-spin" /> : 'Confirm and Check In'}</button>
   </form></KioskLayout>;

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
-import { BookMarked, CalendarDays, Layers, Search, X, Pencil, AlertCircle, ChevronDown, TableProperties } from 'lucide-react';
+import { BookMarked, CalendarDays, Layers, Search, X, Pencil, Plus, Trash2, AlertCircle, ChevronDown, TableProperties } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import NursePageTitle from '../../../components/NursePageTitle';
 import NurseListCard, { CountChip } from '../../../components/NurseListCard';
 import { Pagination } from '../Students/StudentDirectory';
-import { inputStyle, secondary, focus } from '../Students/directoryOptions';
-import AcademicFormCard from './AcademicFormCard';
+import { inputStyle, primary, secondary, focus } from '../Students/directoryOptions';
+import AcademicFormModal, { AcademicDeleteModal } from './AcademicFormModal';
 import useNurseSync from '../../../hooks/useNurseSync';
 import { periodLabel, academicNames } from './academicOptions';
 import { NurseToast } from '../../../components/NurseFeedback';
@@ -37,8 +37,10 @@ export default function CourseManagement() {
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const requestId = useRef(0);
-  const formRef = useRef(null);
 
   const load = useCallback(async signal => {
     const request = ++requestId.current;
@@ -102,17 +104,25 @@ export default function CourseManagement() {
     finally { setSaving(false); }
   };
   const canAddSection = periods.length > 0 && courses.some(course => course.is_active);
-  // The add / edit form is a permanent card that follows the selected tab.
-  // After a save or Clear / Cancel edit (modal cleared) it resets to "add".
-  useEffect(() => {
-    if (!modal || (!modal.id && modal.type !== tab)) openForm(tab);
-  }, [modal, tab]); // eslint-disable-line react-hooks/exhaustive-deps
-  // Editing a row lower in the list brings the form card into view.
-  useEffect(() => {
-    if (modal?.id) formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [modal?.id]);
-  const formDirty = Boolean(modal && !modal.id && Object.entries(form).some(([key, value]) => key !== 'is_active' && value !== '' && value !== defaults[modal.type]?.[key]));
-  const edit = item => <button type="button" onClick={() => openForm(tab, item)} className={`inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 dark:text-maroon-300 dark:hover:bg-maroon-950 ${focus}`} aria-label={`Edit ${tab === 'course' ? item.code : tab === 'section' ? item.section_code : periodLabel(item)}`}><Pencil size={15} />Edit</button>;
+  const itemLabel = item => tab === 'course' ? item.code : tab === 'section' ? `${courseFor(item)?.code || 'Course'} ${item.section_code}` : periodLabel(item);
+  const closeForm = () => { if (!saving) setModal(null); };
+  const openDelete = item => { setDeleteTarget({ type: tab, item }); setDeleteError(''); };
+  const closeDelete = () => { if (!deleting) setDeleteTarget(null); };
+  const confirmDelete = async () => {
+    const { type, item } = deleteTarget;
+    setDeleting(true); setDeleteError('');
+    try {
+      await api.delete(`${paths[type]}/${item.id}`, { headers: { 'If-Match': item.sync_version } });
+      setData(previous => ({ ...previous, [type]: previous[type].filter(entry => entry.id !== item.id) }));
+      setMessage(`${type === 'period' ? 'Academic period' : type === 'course' ? 'Course' : 'Section'} deleted successfully.`);
+      setDeleteTarget(null);
+    } catch (err) { setDeleteError(err.response?.data?.message || 'Unable to delete. Please try again.'); }
+    finally { setDeleting(false); }
+  };
+  const edit = item => <div className="flex items-center gap-1">
+    <button type="button" onClick={() => openForm(tab, item)} className={`inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 dark:text-maroon-300 dark:hover:bg-maroon-950 ${focus}`} aria-label={`Edit ${itemLabel(item)}`}><Pencil size={15} />Edit</button>
+    <button type="button" onClick={() => openDelete(item)} className={`inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950/40 ${focus}`} aria-label={`Delete ${itemLabel(item)}`}><Trash2 size={15} />Delete</button>
+  </div>;
   const title = tabs.find(item => item.key === tab).label;
   const headers = tab === 'course' ? ['Course', 'Sections', 'Status', 'Action'] : tab === 'section' ? ['Course', 'Year & section', 'Academic period', 'Status', 'Action'] : ['Academic year', 'Semester', 'Sections', 'Status', 'Action'];
 
@@ -122,13 +132,15 @@ export default function CourseManagement() {
     <div role="group" aria-label="Academic records view" className="flex flex-wrap gap-1 rounded-lg border border-gray-100 bg-white p-1.5 dark:border-gray-700 dark:bg-gray-800">{tabs.map(({ key, label, icon: Icon }) => <button key={key} type="button" onClick={() => switchTab(key)} aria-pressed={tab === key} className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors sm:flex-none ${tab === key ? 'bg-maroon-800 text-white' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60 dark:hover:text-gray-200'} ${focus}`}><Icon size={16} aria-hidden="true" /><span>{label}</span></button>)}</div>
     <NurseToast message={message} type="success" onClose={() => setMessage('')} />
     {loadError && <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-300"><AlertCircle size={18} /><p className="min-w-0 flex-1">{loadError}</p><button type="button" onClick={() => load()} disabled={refreshing} className={`${secondary} bg-white dark:bg-gray-800`}>Try again</button></div>}
-    {modal && <AcademicFormCard ref={formRef} type={modal.type} editing={Boolean(modal.id)} form={form} onChange={changeField} onClose={() => { if (!saving) setModal(null); }} onSubmit={submit} saving={saving} errors={errors} error={formError} courses={courses} periods={periods} dirty={formDirty} disabled={loading || (modal.type === 'section' && !modal.id && !canAddSection)} />}
+    {modal && <AcademicFormModal type={modal.type} editing={Boolean(modal.id)} form={form} onChange={changeField} onClose={closeForm} onSubmit={submit} saving={saving} errors={errors} error={formError} courses={courses} periods={periods} disabled={loading || (modal.type === 'section' && !modal.id && !canAddSection)} />}
+    {deleteTarget && <AcademicDeleteModal type={deleteTarget.type} label={itemLabel(deleteTarget.item)} onClose={closeDelete} onConfirm={confirmDelete} deleting={deleting} error={deleteError} />}
     <NurseListCard
       aria-label={title}
       aria-busy={loading || refreshing}
       icon={TableProperties}
       title={<>{tab === 'course' ? 'Course list' : tab === 'section' ? 'Section list' : 'Academic period list'}<CountChip>{loading ? '…' : filtered.length}</CountChip></>}
       description={tab === 'course' ? 'Every course offered on campus, with its linked sections.' : tab === 'section' ? 'Sections grouped by course, year level, and academic period.' : 'Academic years and semesters used by sections.'}
+      actions={<button type="button" onClick={() => openForm(tab)} disabled={loading || (tab === 'section' && !canAddSection)} className={`${primary} min-h-11`}><Plus size={16} />Add {academicNames[tab]}</button>}
       toolbar={
         <>
         <div className="space-y-3"><div className={`grid min-w-0 grid-cols-1 gap-3 ${tab === 'section' ? 'sm:grid-cols-2 xl:grid-cols-[minmax(220px,2fr)_repeat(3,minmax(150px,1fr))]' : 'sm:grid-cols-[minmax(0,1fr)_180px]'}`}><label className="relative block min-w-0"><span className="sr-only">Search {title.toLowerCase()}</span><Search size={17} className="absolute left-3 top-3.5 text-gray-400" aria-hidden="true" /><input type="search" value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} placeholder={tab === 'course' ? 'Search course abbreviation or name…' : tab === 'section' ? 'Search course or section…' : 'Search academic year or semester…'} className={`${inputStyle} min-h-11 pl-10 pr-10`} />{search && <button type="button" onClick={() => { setSearch(''); setPage(1); }} aria-label="Clear search" className={`absolute right-0 top-0 flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 dark:text-gray-300 ${focus}`}><X size={16} /></button>}</label>

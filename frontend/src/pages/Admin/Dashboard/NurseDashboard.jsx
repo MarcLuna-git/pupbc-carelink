@@ -1,13 +1,12 @@
 import { getToken, getUser } from '../../../services/session';
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Calendar, Clock, ClipboardList, Activity, CalendarClock, CalendarCheck, CalendarRange, BellRing, ChevronRight } from 'lucide-react';
+import { Users, Calendar, Clock, ClipboardList, Activity, CalendarClock, CalendarCheck, CalendarRange, ChevronRight } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import { nurseGreeting } from '../../../utils/nurseGreeting';
 import NurseListCard, { CountChip } from '../../../components/NurseListCard';
 import ClinicCalendar from './ClinicCalendar';
-import { fetchNurseNotifications } from '../../../services/nurseNotifications';
 import useNurseSync from '../../../hooks/useNurseSync';
 
 const UPCOMING_ROWS = 3;
@@ -28,21 +27,17 @@ const NurseDashboard = () => {
   const [todaySchedule, setTodaySchedule] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
   const [upcoming, setUpcoming] = useState([]);
-  const [notifications, setNotifications] = useState([]);
-  const [notifCount, setNotifCount] = useState(0);
-  const requests = useRef({ stats: 0, schedule: 0, activity: 0, notifications: 0 });
+  const requests = useRef({ stats: 0, schedule: 0, activity: 0 });
 
   useEffect(() => {
     fetchDashboardData();
     fetchTodaySchedule();
     fetchRecentActivity();
-    fetchNotifications();
   }, []);
 
   useNurseSync(['appointments', 'consultations', 'students', 'queue'], () => Promise.all([
     fetchDashboardData(true), fetchTodaySchedule(), fetchRecentActivity(),
   ]));
-  useNurseSync(['notifications', 'medicines'], () => fetchNotifications());
 
   const fetchDashboardData = async (silent = false) => {
     const request = ++requests.current.stats;
@@ -128,29 +123,6 @@ const NurseDashboard = () => {
       }
     } catch (err) {
       console.log('Recent activity error:', err);
-    }
-  };
-
-  const fetchNotifications = async () => {
-    const request = ++requests.current.notifications;
-    try {
-      const response = await fetchNurseNotifications();
-      if (request !== requests.current.notifications) return;
-      if (response.data.success) {
-        const data = response.data.data;
-        const notifs = Array.isArray(data) ? data : (data?.data || []);
-        // The 4 newest notifications, read or not; unread ones are marked.
-        setNotifications(notifs.slice(0, 3).map(n => ({
-          id: n.id,
-          title: n.title || 'Notification',
-          message: n.message || n.text || '',
-          time: formatTimeAgo(n.created_at),
-          read: Boolean(n.read),
-        })));
-        setNotifCount(Number(response.data.unread_count) || 0);
-      }
-    } catch (err) {
-      console.log('Notifications error:', err);
     }
   };
 
@@ -287,33 +259,6 @@ const NurseDashboard = () => {
               </ul>
             )}
             {upcoming.length === 0 && <p className="sr-only">No upcoming visits.</p>}
-          </NurseListCard>
-
-          <NurseListCard
-            aria-label="Unread notifications"
-            icon={BellRing}
-            title={<>Notifications{notifCount > 0 && <span className="min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-xs font-bold leading-4 text-white">{notifCount}</span>}</>}
-            description="Latest clinic updates. Unread ones have a dot."
-            actions={<Link to="/nurse/notifications" className="inline-flex items-center gap-1 text-sm font-semibold text-maroon-700 hover:text-maroon-900 dark:text-maroon-400">View all <ChevronRight className="h-4 w-4" /></Link>}
-          >
-            {notifications.length === 0 ? (
-              <div className="px-4 py-10 text-center"><p className="text-sm font-medium text-gray-500 dark:text-gray-400">No notifications yet.</p><p className="mt-1 text-xs text-gray-400">New bookings and clinic alerts will show up here.</p></div>
-            ) : (
-              <ul className="divide-y divide-gray-100 dark:divide-gray-700">
-                {notifications.map((item) => (
-                  <li key={item.id}>
-                    <Link to="/nurse/notifications" className="flex items-start gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/40">
-                      <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${item.read ? 'bg-gray-300 dark:bg-gray-600' : 'bg-maroon-600'}`} aria-label={item.read ? undefined : 'Unread'} />
-                      <div className="min-w-0 flex-1">
-                        <p className={`truncate text-sm ${item.read ? 'font-medium text-gray-600 dark:text-gray-300' : 'font-semibold text-gray-900 dark:text-white'}`}>{item.title}</p>
-                        {item.message && <p className="mt-0.5 line-clamp-1 text-xs text-gray-500 dark:text-gray-400">{item.message}</p>}
-                        <p className="mt-0.5 text-xs text-gray-400">{item.time}</p>
-                      </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
           </NurseListCard>
 
           <NurseListCard

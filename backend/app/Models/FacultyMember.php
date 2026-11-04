@@ -40,4 +40,9 @@ class FacultyMember extends Model
     {
         return $this->hasMany(FacultyDispensing::class);
     }
+
+    public function consultations()
+    {
+        return $this->hasMany(FacultyConsultation::class);
+    }
 }

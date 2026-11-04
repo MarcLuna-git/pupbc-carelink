@@ -6,6 +6,7 @@ import {
 import api from '../../../services/api';
 import { getUser } from '../../../services/session';
 import { formatAppointmentDate } from '../../../utils/appointmentDate';
+import { bloodPressureOnly, decimalOnly, digitsOnly } from '../../../utils/inputFilters';
 import { buildRecordDocument, openRecordDocument, studentDetails } from '../../Student/HealthRecords/recordDocuments';
 
 /*
@@ -45,11 +46,11 @@ const MEDICINE_MODES = [
 const EMPTY_ITEM = { medicine: null, dose: '', duration: '', quantity: '1' };
 const EMPTY_RX = { name: '', dose: '', duration: '', quantity: '' };
 const VITALS = [
-  { name: 'bp', label: 'Blood Pressure', unit: 'mmHg', placeholder: '120/80' },
-  { name: 'rr', label: 'Respiratory Rate', unit: '/min', placeholder: '16' },
-  { name: 'temp', label: 'Temperature', unit: '°C', placeholder: '36.5' },
-  { name: 'o2_sat', label: 'Pulse Oxygen Rate', unit: '%', placeholder: '98' },
-  { name: 'hr', label: 'Pulse Rate', unit: 'bpm', placeholder: '72' },
+  { name: 'bp', label: 'Blood Pressure', unit: 'mmHg', placeholder: '120/80', filter: bloodPressureOnly },
+  { name: 'rr', label: 'Respiratory Rate', unit: '/min', placeholder: '16', filter: v => digitsOnly(v, 3) },
+  { name: 'temp', label: 'Temperature', unit: '°C', placeholder: '36.5', filter: v => decimalOnly(v, 2, 1) },
+  { name: 'o2_sat', label: 'Pulse Oxygen Rate', unit: '%', placeholder: '98', filter: v => digitsOnly(v, 3) },
+  { name: 'hr', label: 'Pulse Rate', unit: 'bpm', placeholder: '72', filter: v => digitsOnly(v, 3) },
 ];
 const TEXT_LIMIT = 500;
 // "Save progress" keeps the unfinished form on the server (any nurse device can continue it);
@@ -193,7 +194,9 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
   }, [prescribedIds, tab, saved]);
 
   const change = e => {
-    const { name, value, type, checked } = e.target;
+    const { name, type, checked } = e.target;
+    const filter = VITALS.find(v => v.name === name)?.filter;
+    const value = filter ? filter(e.target.value) : e.target.value;
     edited.current = true;
     setForm(current => ({ ...current, [name]: type === 'checkbox' ? checked : value }));
     if (serverErrors[name]) setServerErrors(current => ({ ...current, [name]: undefined }));
@@ -482,7 +485,7 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
             <div className="flex items-start gap-2"><CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-500 dark:text-gray-400">Date & Time</dt><dd className="text-gray-900 dark:text-white">{appointment.appointment_date ? formatAppointmentDate(appointment.appointment_date, { weekday: 'short' }) : 'Today'} · {appointment.time_slot || '—'}</dd></div></div>
             <div className="flex items-start gap-2"><MessageSquareText className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-500 dark:text-gray-400">Reason for Visit</dt><dd className="text-gray-900 dark:text-white">{visit.complaint || appointment.concern || 'Not specified'}</dd></div></div>
             <div className="flex items-start gap-2"><ClipboardList className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-500 dark:text-gray-400">Appointment Type · Queue</dt><dd className="text-gray-900 dark:text-white">{visit.appointment} · {visit.queue_number}</dd></div></div>
-            <div className="flex items-start gap-2"><Activity className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-500 dark:text-gray-400">Kiosk Triage</dt><dd className="text-gray-900 dark:text-white">{visit.priority}{visit.triage?.severity && ` · ${capitalize(visit.triage.severity)}`}{visit.triage?.pain_level != null && ` · Pain ${visit.triage.pain_level}/10`}{redFlags.length ? ` · Red flags: ${redFlags.join(', ').replaceAll('_', ' ')}` : ''}</dd></div></div>
+            <div className="flex items-start gap-2"><Activity className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-500 dark:text-gray-400">Kiosk Triage</dt><dd className="text-gray-900 dark:text-white">{visit.priority}{visit.triage?.severity && ` · ${capitalize(visit.triage.severity)}`}{visit.triage?.pain_level != null && ` · Pain ${visit.triage.pain_level}/10`}{visit.triage?.symptom_duration && ` · Symptoms for ${visit.triage.symptom_duration.replace('-', '–').toLowerCase()}`}{redFlags.length ? ` · Red flags: ${redFlags.join(', ').replaceAll('_', ' ')}` : ''}</dd></div></div>
             {visit.triage?.notes && <div className="flex items-start gap-2"><MessageSquareText className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-500 dark:text-gray-400">Other Concern (from kiosk)</dt><dd className="whitespace-pre-line text-gray-900 dark:text-white">{visit.triage.notes}</dd></div></div>}
           </dl>
         </section>
@@ -565,7 +568,7 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
                           <label key={v.name} className="block">
                             <span className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">{v.label}</span>
                             <span className="flex items-center gap-1.5">
-                              <input name={v.name} value={form[v.name]} onChange={change} className={input} placeholder={v.placeholder} inputMode={v.name === 'bp' ? 'text' : 'decimal'} />
+                              <input name={v.name} value={form[v.name]} onChange={change} className={input} placeholder={v.placeholder} inputMode={v.name === 'temp' ? 'decimal' : 'numeric'} maxLength={7} />
                               <span className="w-11 shrink-0 text-xs text-gray-600 dark:text-gray-300">{v.unit}</span>
                             </span>
                           </label>
@@ -675,7 +678,7 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
                         <div className="grid gap-3 sm:grid-cols-[1fr_1fr_100px_auto] sm:items-end">
                           <label className="block"><span className={label}>Dose / Frequency</span><input value={item.dose} onChange={e => setItem(current => ({ ...current, dose: e.target.value }))} className={input} placeholder="1 tab 3× a day" maxLength={60} /></label>
                           <label className="block"><span className={label}>Duration</span><input value={item.duration} onChange={e => setItem(current => ({ ...current, duration: e.target.value }))} className={input} placeholder="3 days" maxLength={40} /></label>
-                          <label className="block"><span className={label}>Qty</span><input type="number" min="1" value={item.quantity} onChange={e => setItem(current => ({ ...current, quantity: e.target.value }))} className={input} /></label>
+                          <label className="block"><span className={label}>Qty</span><input inputMode="numeric" maxLength={4} value={item.quantity} onChange={e => setItem(current => ({ ...current, quantity: digitsOnly(e.target.value, 4) }))} className={input} /></label>
                           <button type="button" onClick={addPrescribed} disabled={!item.medicine || !(Number(item.quantity) >= 1)} className={`${btn} bg-maroon-800 px-3 py-2 text-white hover:bg-maroon-900`}><Plus className="h-4 w-4" /> Add</button>
                         </div>
                       </div>
@@ -745,7 +748,7 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
                       <label className="block"><span className={label}>Medicine *</span><input value={rxItem.name} onChange={e => setRxItem(current => ({ ...current, name: e.target.value }))} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addRx(); } }} className={input} placeholder="e.g. Paracetamol 500 mg" maxLength={120} /></label>
                       <label className="block"><span className={label}>Dose / Frequency</span><input value={rxItem.dose} onChange={e => setRxItem(current => ({ ...current, dose: e.target.value }))} className={input} placeholder="1 tab 3× a day" maxLength={60} /></label>
                       <label className="block"><span className={label}>Duration</span><input value={rxItem.duration} onChange={e => setRxItem(current => ({ ...current, duration: e.target.value }))} className={input} placeholder="3 days" maxLength={40} /></label>
-                      <label className="block"><span className={label}>Qty</span><input value={rxItem.quantity} onChange={e => setRxItem(current => ({ ...current, quantity: e.target.value }))} className={input} placeholder="optional" maxLength={10} /></label>
+                      <label className="block"><span className={label}>Qty</span><input inputMode="numeric" value={rxItem.quantity} onChange={e => setRxItem(current => ({ ...current, quantity: digitsOnly(e.target.value, 4) }))} className={input} placeholder="optional" maxLength={4} /></label>
                       <button type="button" onClick={addRx} disabled={!rxItem.name.trim()} className={`${btn} bg-maroon-800 px-3 py-2 text-white hover:bg-maroon-900`}><Plus className="h-4 w-4" /> Add</button>
                     </div>
                     <div className="overflow-x-auto rounded-lg border border-gray-100 dark:border-gray-700">

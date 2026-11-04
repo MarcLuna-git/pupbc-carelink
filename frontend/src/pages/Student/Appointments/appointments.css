@@ -177,6 +177,12 @@
 .ap-other-service strong { flex-shrink:0; }
 .ap-service-list .ap-other-service input { flex:1;width:auto;height:auto;min-width:0;padding:3px 6px;border:0;border-bottom:1px solid var(--sp-muted);border-radius:4px 4px 0 0;background:var(--sp-surface);font-size:12px;color:var(--sp-text); }
 .ap-service-list .ap-other-service input:focus { outline:none;border-bottom-color:var(--color-maroon-800); }
+.ap-service-list label.is-selected>span:last-child { flex:1;min-width:0; }
+.ap-service-list .ap-service-reason { display:flex;flex-direction:column;gap:4px;margin-top:8px; }
+.ap-service-reason>span { font-size:11px;font-weight:600;color:var(--sp-text); }
+.ap-service-reason em { font-style:normal;color:var(--color-maroon-800); }
+.ap-service-list .ap-service-reason input { width:100%;height:auto;padding:6px 8px;border:1px solid var(--sp-border);border-radius:6px;background:var(--sp-surface);font-size:12px;color:var(--sp-text); }
+.ap-service-list .ap-service-reason input:focus { outline:none;border-color:var(--color-maroon-800); }
 .ap-summary dl>div { display:flex;align-items:flex-start;gap:8px;padding:16px 0;border-bottom:1px solid var(--sp-border); }
 .ap-summary dl svg { width:15px;height:15px;flex-shrink:0;margin-top:3px;color:var(--sp-accent); }
 .ap-summary dt { font-size:12px;color:var(--sp-muted); }
@@ -192,6 +198,7 @@
  */
 .ap-history .ap-section-heading { padding-top:8px;padding-bottom:7px; }
 .ap-history-list { display:grid;gap:8px;padding:10px 12px 6px; }
+.ap-history-item,.ap-history-row { cursor:pointer; }
 .ap-history-item { display:flex;align-items:center;gap:14px;padding:12px 14px;border:1px solid var(--sp-border);border-radius:10px;background:var(--sp-surface);transition:background .15s ease,border-color .15s ease,box-shadow .15s ease; }
 /* Hover feedback: the card "lifts" — the same neutral gray as a hovered list
    row (--sp-bg), a plain gray border and a soft shadow; no pink tint. */
@@ -305,6 +312,7 @@
 }
 @media (max-width:767px) {
   .ap-service-list .ap-other-service input { width:auto;height:auto;font-size:16px; }
+  .ap-service-list .ap-service-reason input { font-size:16px; }
   .approved-appointments-page { gap:12px; }
   /* Full-width toast just under the mobile header. */
   .ap-toast { top:calc(58px + env(safe-area-inset-top) + 10px);left:12px;right:12px;width:auto; }
@@ -348,7 +356,8 @@
   .ap-history-actions { justify-content:flex-start; }
   .ap-history-actions button,.ap-history-actions a { min-height:34px; }
   .ap-history-pagination { padding:10px 12px; }
-  .ap-history-controls { gap:6px; }
+  .ap-history .ap-section-heading { flex-wrap:wrap; }
+  .ap-history-controls { gap:6px;width:100%;margin-left:0; }
   .ap-view-menu-button { height:34px; }
   /* List layout on phones: no column header; each row stacks into
      date + status on top, service, then staff · room and actions. */

@@ -1,21 +1,21 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search,
   FileText,
   Stethoscope,
   ClipboardList,
   CalendarDays,
   CalendarClock,
-  Filter,
-  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Eye,
   Printer,
   X,
 } from 'lucide-react';
 import api from '../../../services/api';
 import StudentPageHero from '../../../components/StudentPageHero';
+import { SearchField, FilterMenu } from '../../../components/StudentSearchFilter';
 import { openRecordDocument } from './recordDocuments';
 import { StudentToast } from '../../../components/StudentFeedback';
 
@@ -40,6 +40,8 @@ const TABS = [
 ];
 
 const DEFAULT_FILTERS = { type: 'all', year: 'all', sort: 'newest' };
+
+const PAGE_SIZE = 7;
 
 const CLINIC_TZ = 'Asia/Manila';
 
@@ -88,25 +90,6 @@ const toRecord = (c, index) => {
     },
     status: c.status || 'completed',
   };
-};
-
-/* Closes a popover on outside click or Escape. */
-const useDismiss = (open, onClose) => {
-  const ref = useRef(null);
-  useEffect(() => {
-    if (!open) return undefined;
-    const onPointer = (event) => {
-      if (ref.current && !ref.current.contains(event.target)) onClose();
-    };
-    const onKey = (event) => event.key === 'Escape' && onClose();
-    document.addEventListener('mousedown', onPointer);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onPointer);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open, onClose]);
-  return ref;
 };
 
 const Skeleton = ({ className = '' }) => (
@@ -290,12 +273,11 @@ const HealthRecords = () => {
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('consultations');
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
-  const [filterOpen, setFilterOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [page, setPage] = useState(1);
   /* Cosmetic hold for the route-loading animation — see ROUTE LOADING note. */
   const [routeReady, setRouteReady] = useState(false);
 
-  const filterRef = useDismiss(filterOpen, () => setFilterOpen(false));
 
   useEffect(() => {
     fetchRecords();
@@ -354,6 +336,13 @@ const HealthRecords = () => {
       return new Date(b.date) - new Date(a.date);
     });
   }, [records, certificates, tab, search, filters]);
+
+  /* A new tab, search or filter starts again from the first page. */
+  useEffect(() => setPage(1), [tab, search, filters]);
+
+  const pageCount = Math.max(1, Math.ceil(visibleRecords.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pagedRecords = visibleRecords.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const activeFilterCount = Object.keys(DEFAULT_FILTERS).filter((key) => filters[key] !== DEFAULT_FILTERS[key]).length;
   const isFiltering = Boolean(search.trim()) || activeFilterCount > 0;
@@ -482,63 +471,24 @@ const HealthRecords = () => {
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row xl:ml-auto">
-            <div className="relative min-w-0 flex-1 xl:w-72 xl:flex-none">
-              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                type="search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={tab === 'certificates' ? 'Search certificates...' : 'Search consultations...'}
-                aria-label="Search records"
-                className="w-full rounded-xl border border-[var(--sp-border)] bg-gray-50 py-2.5 pl-10 pr-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-maroon-500 dark:bg-gray-900/30 dark:text-white"
-              />
-            </div>
-
-            <div ref={filterRef} className="relative">
-              <button
-                type="button"
-                onClick={() => setFilterOpen((open) => !open)}
-                aria-expanded={filterOpen}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--sp-border)] px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700 sm:inline-flex sm:h-full sm:w-auto sm:py-0"
-              >
-                <Filter className="h-4 w-4" />
-                Filter
-                {activeFilterCount > 0 && (
-                  <span className="rounded-full bg-maroon-800 px-1.5 text-xs text-white">{activeFilterCount}</span>
-                )}
-                <ChevronDown className={`h-4 w-4 transition ${filterOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {filterOpen && (
-                <div className="absolute left-0 right-0 top-full z-20 mt-2 space-y-3 sm:left-auto sm:w-64 rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)] p-4 shadow-lg">
-                  {[
-                    ['type', 'Type', [['all', 'All types'], ['consultation', 'Consultations'], ['emergency', 'Emergencies']]],
-                    ['year', 'Year', [['all', 'All years'], ...years.map((year) => [year, year])]],
-                    ['sort', 'Sort by', [['newest', 'Newest first'], ['oldest', 'Oldest first'], ['title', 'Title A–Z']]],
-                  ].map(([key, label, options]) => (
-                    <label key={key} className="block">
-                      <span className="mb-1 block text-xs font-semibold text-gray-500 dark:text-gray-400">{label}</span>
-                      <select
-                        value={filters[key]}
-                        onChange={(e) => setFilters((current) => ({ ...current, [key]: e.target.value }))}
-                        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-maroon-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                      >
-                        {options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
-                      </select>
-                    </label>
-                  ))}
-                  {activeFilterCount > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setFilters(DEFAULT_FILTERS)}
-                      className="text-xs font-semibold text-maroon-800 hover:underline dark:text-maroon-300"
-                    >
-                      Reset filters
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
+            <SearchField
+              value={search}
+              onChange={setSearch}
+              placeholder={tab === 'certificates' ? 'Search certificates...' : 'Search consultations...'}
+              label="Search records"
+              className="xl:w-72 xl:flex-none"
+            />
+            <FilterMenu
+              fields={[
+                ['type', 'Type', [['all', 'All types'], ['consultation', 'Consultations'], ['emergency', 'Emergencies']]],
+                ['year', 'Year', [['all', 'All years'], ...years.map((year) => [year, year])]],
+                ['sort', 'Sort by', [['newest', 'Newest first'], ['oldest', 'Oldest first'], ['title', 'Title A–Z']]],
+              ]}
+              values={filters}
+              defaults={DEFAULT_FILTERS}
+              onChange={(key, value) => setFilters((current) => ({ ...current, [key]: value }))}
+              onReset={() => setFilters(DEFAULT_FILTERS)}
+            />
           </div>
         </div>
 
@@ -580,7 +530,7 @@ const HealthRecords = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--sp-border)]">
-                  {visibleRecords.map((record) => (
+                  {pagedRecords.map((record) => (
                     <tr key={record.id} className="align-middle transition hover:bg-gray-50/60 dark:hover:bg-gray-900/20">
                       <td className="whitespace-nowrap px-4 py-3.5">
                         <p className="font-semibold text-gray-900 dark:text-white">{formatDate(record.date)}</p>
@@ -624,7 +574,7 @@ const HealthRecords = () => {
 
             {/* Mobile / tablet cards */}
             <div className="space-y-3 lg:hidden">
-              {visibleRecords.map((record) => (
+              {pagedRecords.map((record) => (
                 <div key={record.id} className="rounded-xl border border-[var(--sp-border)] p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -654,6 +604,32 @@ const HealthRecords = () => {
               ))}
             </div>
           </>
+        )}
+
+        {visibleRecords.length > 0 && (
+          <nav aria-label="Records pages" className="mt-5 flex items-center justify-center gap-2 border-t border-[var(--sp-border)] pt-4">
+            <button
+              type="button"
+              aria-label="Previous page"
+              disabled={currentPage === 1}
+              onClick={() => setPage(currentPage - 1)}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--sp-border)] text-gray-700 transition hover:bg-maroon-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent dark:text-gray-300 dark:hover:bg-maroon-900/20"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span aria-current="page" className="inline-flex h-9 min-w-9 items-center justify-center rounded-lg bg-maroon-800 px-3 text-sm font-semibold text-white">
+              {currentPage}
+            </span>
+            <button
+              type="button"
+              aria-label="Next page"
+              disabled={currentPage === pageCount}
+              onClick={() => setPage(currentPage + 1)}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--sp-border)] text-gray-700 transition hover:bg-maroon-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent dark:text-gray-300 dark:hover:bg-maroon-900/20"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </nav>
         )}
       </div>
 

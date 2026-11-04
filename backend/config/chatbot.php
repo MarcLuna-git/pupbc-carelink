@@ -107,7 +107,6 @@ return [
     'services' => [
         'Consultation',
         'Medical Certificate',
-        'Medical Clearance',
         'Follow-up Checkup',
         'Vaccination',
         'Other',
@@ -221,7 +220,7 @@ return [
         ],
         [
             'question' => 'What services can I book?',
-            'answer' => 'Consultation, Medical Certificate, Medical Clearance, Follow-up Checkup, Vaccination, and Other.',
+            'answer' => 'Consultation, Medical Certificate, Follow-up Checkup, Vaccination, and Other.',
         ],
         [
             'question' => 'How do I contact the clinic?',

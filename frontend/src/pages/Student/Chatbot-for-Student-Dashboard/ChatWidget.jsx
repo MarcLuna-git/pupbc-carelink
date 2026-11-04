@@ -7,14 +7,15 @@ import chatbotService from '../../../services/chatbotService';
 import { setStudentWidgetPref } from '../../../utils/studentWidgetPrefs';
 
 // Where the student dragged the launcher, as an offset from its default
-// bottom-right spot. Remembered per browser.
-const DOCK_OFFSET_KEY = 'studentChatWidgetOffset';
+// bottom-right spot. Remembered per browser, separately for phone and wider
+// screens, so a spot picked on a laptop doesn't land over a phone's content.
+const dockOffsetKey = () => `studentChatWidgetOffset${window.innerWidth < 768 ? ':mobile' : ''}`;
 const DRAG_THRESHOLD = 4;
 const VIEWPORT_MARGIN = 8;
 
 const readDockOffset = () => {
   try {
-    const saved = JSON.parse(localStorage.getItem(DOCK_OFFSET_KEY) || 'null');
+    const saved = JSON.parse(localStorage.getItem(dockOffsetKey()) || 'null');
     return Number.isFinite(saved?.x) && Number.isFinite(saved?.y) ? saved : { x: 0, y: 0 };
   } catch {
     return { x: 0, y: 0 };
@@ -144,7 +145,13 @@ export default function ChatWidget() {
 
   // Re-clamp on mount and whenever the viewport changes size.
   useEffect(() => {
-    const reclamp = () => setDockOffset((current) => clampDockOffset(current, dockRef.current));
+    // Crossing the phone/desktop width switches to that size's saved spot.
+    let key = dockOffsetKey();
+    const reclamp = () => {
+      const next = dockOffsetKey();
+      if (next !== key) { key = next; setDockOffset(readDockOffset()); return; }
+      setDockOffset((current) => clampDockOffset(current, dockRef.current));
+    };
     reclamp();
     window.addEventListener('resize', reclamp);
     return () => window.removeEventListener('resize', reclamp);
@@ -189,7 +196,7 @@ export default function ChatWidget() {
       setDragging(false);
       setDockOffset((current) => {
         try {
-          localStorage.setItem(DOCK_OFFSET_KEY, JSON.stringify(current));
+          localStorage.setItem(dockOffsetKey(), JSON.stringify(current));
         } catch {
           /* Remembering the spot is best-effort. */
         }

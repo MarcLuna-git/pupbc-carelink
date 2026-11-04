@@ -14,6 +14,12 @@ use Illuminate\Support\Facades\DB;
 
 class CourseManagementController extends Controller
 {
+    private const FORMAT_MESSAGES = [
+        'code.regex' => 'Course abbreviation can only contain letters, numbers and hyphens (no spaces).',
+        'name.regex' => 'Course name can only contain letters and basic punctuation.',
+        'section_code.regex' => 'Section code can only contain letters, numbers and hyphens, like 1-1.',
+    ];
+
     public function periods()
     {
         return response()->json(['success' => true, 'data' => AcademicPeriod::with('sections.course')->orderByDesc('academic_year_start')->orderBy('semester')->get()]);
@@ -49,14 +55,14 @@ class CourseManagementController extends Controller
 
     public function storeCourse(Request $request)
     {
-        $data = $request->validate(['code' => 'required|string|max:50|unique:courses,code', 'name' => 'required|string|max:150', 'is_active' => 'sometimes|boolean']);
+        $data = $request->validate(['code' => ['required', 'string', 'max:50', 'unique:courses,code', 'regex:/^[\pL\d-]+$/u'], 'name' => ['required', 'string', 'max:150', 'regex:/^[\pL\s.,\'\-\/&]+$/u'], 'is_active' => 'sometimes|boolean'], self::FORMAT_MESSAGES);
         return response()->json(['success' => true, 'data' => Course::create($data)->fresh()], 201);
     }
 
     public function updateCourse(Request $request, $id)
     {
         $course = Course::findOrFail($id);
-        $data = $request->validate(['code' => 'sometimes|string|max:50|unique:courses,code,' . $course->id, 'name' => 'sometimes|string|max:150', 'is_active' => 'sometimes|boolean']);
+        $data = $request->validate(['code' => ['sometimes', 'string', 'max:50', 'unique:courses,code,' . $course->id, 'regex:/^[\pL\d-]+$/u'], 'name' => ['sometimes', 'string', 'max:150', 'regex:/^[\pL\s.,\'\-\/&]+$/u'], 'is_active' => 'sometimes|boolean'], self::FORMAT_MESSAGES);
         return DB::transaction(function () use ($course, $data) {
             $oldCode = $course->code;
             $course->update($data);
@@ -82,10 +88,10 @@ class CourseManagementController extends Controller
         $data = $request->validate([
             'academic_period_id' => 'bail|required|uuid|exists:academic_periods,id',
             'course_id' => 'bail|required|uuid|exists:courses,id',
-            'year_level' => 'required|string|max:30',
-            'section_code' => 'required|string|max:30',
+            'year_level' => 'required|string|max:10',
+            'section_code' => ['required', 'string', 'max:10', 'regex:/^[\pL\d-]+$/u'],
             'is_active' => 'sometimes|boolean',
-        ]);
+        ], self::FORMAT_MESSAGES);
         return response()->json(['success' => true, 'data' => CourseSection::create($data)->fresh()], 201);
     }
 
@@ -95,11 +101,42 @@ class CourseManagementController extends Controller
         $section->update($request->validate([
             'academic_period_id' => 'bail|sometimes|uuid|exists:academic_periods,id',
             'course_id' => 'bail|sometimes|uuid|exists:courses,id',
-            'year_level' => 'sometimes|string|max:30',
-            'section_code' => 'sometimes|string|max:30',
+            'year_level' => 'sometimes|string|max:10',
+            'section_code' => ['sometimes', 'string', 'max:10', 'regex:/^[\pL\d-]+$/u'],
             'is_active' => 'sometimes|boolean',
-        ]));
+        ], self::FORMAT_MESSAGES));
         return response()->json(['success' => true, 'data' => $section->fresh()]);
+    }
+
+    // Deletes only records nothing depends on; anything in use is set to inactive instead.
+    public function destroyPeriod($id)
+    {
+        $period = AcademicPeriod::findOrFail($id);
+        abort_if($period->sections()->exists(), 422, 'This academic period still has sections. Delete them first, or set the period to inactive.');
+        $period->delete();
+        return response()->json(['success' => true]);
+    }
+
+    public function destroyCourse($id)
+    {
+        $course = Course::findOrFail($id);
+        abort_if($course->sections()->exists(), 422, 'This course still has sections. Delete them first, or set the course to inactive.');
+        abort_if(
+            User::where('course', $course->code)->exists() || StudentProfile::where('course', $course->code)->exists(),
+            422,
+            'Students are registered under this course. Set it to inactive instead.'
+        );
+        // A soft-deleted code would block adding the same course again later.
+        $course->forceDelete();
+        return response()->json(['success' => true]);
+    }
+
+    public function destroySection($id)
+    {
+        $section = CourseSection::findOrFail($id);
+        abort_if($section->enrollments()->exists(), 422, 'Students are enrolled in this section. Set it to inactive instead.');
+        $section->delete();
+        return response()->json(['success' => true]);
     }
 
     public function enroll(Request $request)

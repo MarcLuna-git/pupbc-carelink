@@ -3,6 +3,7 @@ import { AlertTriangle, ClipboardList, Loader2, PackagePlus, Trash2, X } from 'l
 import api from '../../../services/api';
 import { Modal } from '../Students/StudentDetailsModal';
 import { focus } from '../Students/directoryOptions';
+import { formatStudentId } from '../../../utils/inputFilters';
 
 /*
  * The popups for the other things a nurse does to a medicine: Restock (add stock, optionally as a batch
@@ -121,7 +122,7 @@ export function MovementModal({ medicine, onClose, onDone }) {
           </label>
           <label><Label required>Quantity</Label><input className={field} inputMode="numeric" value={form.quantity} onChange={event => { if (isWhole(event.target.value)) setForm({ ...form, quantity: event.target.value }); }} required /></label>
         </div>
-        {dispensing && <label className="block"><Label required>Student ID</Label><input className={field} value={form.student_id} onChange={event => { setForm({ ...form, student_id: event.target.value }); setError(''); }} placeholder="2023-00000-BN-0" required /></label>}
+        {dispensing && <label className="block"><Label required>Student ID</Label><input className={field} value={form.student_id} onChange={event => { setForm({ ...form, student_id: formatStudentId(event.target.value) }); setError(''); }} placeholder="2023-00000-BN-0" required /></label>}
         <label className="block"><Label required>Reason</Label><textarea className={`${field} h-auto resize-none py-2.5`} rows={3} maxLength={500} value={form.reason} onChange={event => setForm({ ...form, reason: event.target.value })} placeholder="e.g. Damaged stock" required /></label>
         {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{error}</p>}
       </div>

@@ -6,6 +6,7 @@ import { ArrowRight, ArrowLeft, Check, Loader2, Heart, Shield, ClipboardList, Al
 import api from '../../../services/api';
 import { StudentToast } from '../../../components/StudentFeedback';
 import { contactNameError, contactPhoneError, formatContactPhone, ownMobileContactError, signatureNameError } from '../../../utils/contactValidation';
+import { digitsOnly, nameOnly, wordsOnly } from '../../../utils/inputFilters';
 
 const getManilaDateString = () => {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -272,6 +273,10 @@ const HealthProfile = ({ onBack }) => {
       formatted = formatContactPhone(value);
       if (formatted === null) return;
     }
+    // Names take letters only; counts and ages take digits only.
+    if (name === 'emergency_name' || name === 'consent_signature') formatted = nameOnly(value);
+    if (name === 'occupation') formatted = wordsOnly(value);
+    if (name === 'number_of_children' || name === 'age_first_pregnancy') formatted = digitsOnly(value, name === 'number_of_children' ? 2 : 3);
 
     setForm({ ...form, [name]: formatted });
     if (errors[name]) setErrors({ ...errors, [name]: '' });
@@ -578,7 +583,7 @@ const HealthProfile = ({ onBack }) => {
                     <div className="space-y-3">
                       <div><label className={labelClass}>Last Menstrual Period</label><input type="date" max={getManilaDateString()} className={inputClass('last_menstrual_period')} name="last_menstrual_period" value={form.last_menstrual_period} onChange={handleChange} /></div>
                       <div className="space-y-2"><div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-2xl"><span className="text-sm">Do you have children?</span><YesNoButtons name="has_children" value={form.has_children} onChange={setForm} /></div>
-                        {form.has_children && (<div className="grid grid-cols-2 gap-3"><div><label className={labelClass}>Number of Children</label><input className={inputClass('number_of_children')} name="number_of_children" value={form.number_of_children} onChange={handleChange} type="number" min="0" max="30" step="1" /></div><div><label className={labelClass}>Age on First Pregnancy</label><input className={inputClass('age_first_pregnancy')} name="age_first_pregnancy" value={form.age_first_pregnancy} onChange={handleChange} type="number" min="1" max="100" step="1" /></div></div>)}
+                        {form.has_children && (<div className="grid grid-cols-2 gap-3"><div><label className={labelClass}>Number of Children</label><input className={inputClass('number_of_children')} name="number_of_children" value={form.number_of_children} onChange={handleChange} inputMode="numeric" maxLength={2} /></div><div><label className={labelClass}>Age on First Pregnancy</label><input className={inputClass('age_first_pregnancy')} name="age_first_pregnancy" value={form.age_first_pregnancy} onChange={handleChange} inputMode="numeric" maxLength={3} /></div></div>)}
                       </div>
                       <div><label className={labelClass}>Obstetric History</label><div className="grid grid-cols-2 gap-2">{[{ name: 'gravidity', label: 'Gravidity' },{ name: 'term', label: 'Term' },{ name: 'premature', label: 'Premature' },{ name: 'abortion', label: 'Abortion' },{ name: 'living_children', label: 'Living Children' }].map(item => (<label key={item.name} className="flex items-center space-x-2 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"><input type="checkbox" name={item.name} checked={form[item.name]} onChange={handleChange} className="w-4 h-4 rounded accent-maroon-800" /><span className="text-xs text-gray-600 dark:text-gray-300">{item.label}</span></label>))}</div></div>
                     </div>

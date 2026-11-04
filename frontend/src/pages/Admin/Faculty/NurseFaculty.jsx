@@ -1,23 +1,24 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Clock, UserCheck, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import NursePageTitle from '../../../components/NursePageTitle';
 import { NurseToast } from '../../../components/NurseFeedback';
 import useNurseSync from '../../../hooks/useNurseSync';
 import { focus } from '../Students/directoryOptions';
+import ConsultationForm from './ConsultationForm';
 import DispenseForm from './DispenseForm';
 import DispensingHistory from './DispensingHistory';
 import FacultyDetails from './FacultyDetails';
 import FacultyDirectory from './FacultyDirectory';
 
 /*
- * Faculty: three cards (how many faculty), then three tabs — the Faculty Directory, Dispense Medicine,
+ * Faculty: the total faculty card, then the tabs — the Faculty Directory, Consultation, Dispense Medicine,
  * and the Dispensing History. A faculty member's details open in place of the tabs (?member=ID).
  */
-const TABS = [['directory', 'Faculty Directory'], ['dispense', 'Dispense Medicine'], ['history', 'Dispensing History']];
-const EMPTY_ROSTER = { list: [], courses: [], stats: { total: 0, full_time: 0, part_time: 0 } };
+const TABS = [['directory', 'Faculty Directory'], ['consultation', 'Consultation'], ['dispense', 'Dispense Medicine'], ['history', 'Dispensing History']];
+const EMPTY_ROSTER = { list: [], stats: { total: 0 } };
 
 function StatCard({ icon: Icon, label, value }) {
   return <div className="flex items-center gap-4 rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
@@ -41,7 +42,7 @@ const NurseFaculty = () => {
   const notify = useCallback((text, type = 'success') => { setMessageType(type); setMessage(text); }, []);
   const go = useCallback(next => setParams(next), [setParams]);
 
-  // Every faculty member (for the cards, the course filter and the pickers), a page of 100 at a time.
+  // Every faculty member (for the total and the pickers), a page of 100 at a time.
   const loadRoster = useCallback(async (signal, silent = false) => {
     try {
       const list = [];
@@ -53,7 +54,7 @@ const NurseFaculty = () => {
         list.push(...(data.data?.data || []));
         if (page >= (data.data?.last_page || 1)) break;
       }
-      setRoster({ list, courses: first.courses || [], stats: first.stats || EMPTY_ROSTER.stats });
+      setRoster({ list, stats: first.stats || EMPTY_ROSTER.stats });
       setError('');
     } catch (err) {
       if (signal?.aborted || err.code === 'ERR_CANCELED') return;
@@ -92,8 +93,6 @@ const NurseFaculty = () => {
         <>
           <div className="grid gap-4 sm:grid-cols-3">
             <StatCard icon={Users} label="Total Faculty" value={stats.total} />
-            <StatCard icon={UserCheck} label="Full-time" value={stats.full_time} />
-            <StatCard icon={Clock} label="Part-time" value={stats.part_time} />
           </div>
 
           <div role="tablist" aria-label="Faculty sections" className="flex gap-1 overflow-x-auto border-b border-gray-200 dark:border-gray-700">
@@ -102,7 +101,16 @@ const NurseFaculty = () => {
           </div>
 
           <div id="faculty-panel" role="tabpanel" aria-labelledby={`faculty-tab-${tab}`}>
-            {tab === 'directory' && <FacultyDirectory courses={roster.courses} onView={id => go({ member: id })} onChanged={() => loadRoster(undefined, true).catch(() => {})} onNotify={notify} />}
+            {tab === 'directory' && <FacultyDirectory onView={id => go({ member: id })} onChanged={() => loadRoster(undefined, true).catch(() => {})} onNotify={notify} />}
+            {tab === 'consultation' && (
+              <section aria-label="Faculty consultation" className="max-w-2xl rounded-lg border border-gray-100 bg-white p-5 text-gray-900 sm:p-6 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+                <h2 className="text-lg font-bold">Consultation</h2>
+                <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">Record a clinic consultation for a faculty member. It shows on their details.</p>
+                {active.length === 0
+                  ? <p className="rounded-lg bg-gray-50 p-4 text-sm text-gray-600 dark:bg-gray-700/40 dark:text-gray-300">There is no active faculty member yet. Add one in the Faculty Directory first.</p>
+                  : <ConsultationForm key={formKey} facultyOptions={active} onDone={text => { notify(text); setFormKey(value => value + 1); }} />}
+              </section>
+            )}
             {tab === 'dispense' && (
               <section aria-label="Dispense medicine" className="max-w-2xl rounded-lg border border-gray-100 bg-white p-5 text-gray-900 sm:p-6 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
                 <h2 className="text-lg font-bold">Dispense Medicine</h2>

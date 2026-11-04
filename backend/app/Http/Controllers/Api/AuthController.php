@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\AuthService;
+use App\Support\RegistrationAcademics;
 use App\Support\TimeGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,31 +15,16 @@ class AuthController extends Controller
 {
     protected AuthService $authService;
 
-    private const ALLOWED_COURSES = [
-        'BSIT',
-        'BSCPE',
-        'BSIE',
-        'BSBA-HRM',
-        'BSED-SS',
-        'BSED-English',
-        'BEED',
-        'BSPSYCH',
-        'DIT',
-        'DCET',
-    ];
-
-    private const ALLOWED_YEARS = [
-        '1st Year',
-        '2nd Year',
-        '3rd Year',
-        '4th Year',
-    ];
-
-
     public function __construct(
         AuthService $authService
     ) {
         $this->authService = $authService;
+    }
+
+    // Public: the Course, Year level, and Section choices on the registration form.
+    public function registrationOptions(): JsonResponse
+    {
+        return response()->json(['success' => true, 'data' => ['courses' => RegistrationAcademics::courses()]]);
     }
 
     public function register(Request $request): JsonResponse
@@ -60,8 +46,10 @@ class AuthController extends Controller
             $minimumDate->day(min($today->day, $minimumDate->daysInMonth));
             $minimumBirthday = $minimumDate->toDateString();
 
-            $allowedSections =
-                \App\Support\RegistrationAcademics::sections((string) $request->input('course'), (string) $selectedYear);
+            // Course, year, and section options come from Nurse → Course Management.
+            $catalog = RegistrationAcademics::courses();
+            $selectedCourse = RegistrationAcademics::find($catalog, (string) $request->input('course'));
+            $allowedSections = RegistrationAcademics::sectionsFor($selectedCourse, (string) $selectedYear);
 
             $data = $request->validate(
                 [
@@ -132,7 +120,7 @@ class AuthController extends Controller
                         'string',
                         'max:100',
                         Rule::in(
-                            self::ALLOWED_COURSES
+                            array_column($catalog, 'code')
                         ),
                     ],
 
@@ -141,7 +129,7 @@ class AuthController extends Controller
                         'string',
                         'max:10',
                         Rule::in(
-                            self::ALLOWED_YEARS
+                            RegistrationAcademics::yearsFor($selectedCourse)
                         ),
                     ],
 

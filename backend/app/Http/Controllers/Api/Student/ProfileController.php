@@ -3,10 +3,15 @@
 namespace App\Http\Controllers\Api\Student;
 
 use App\Http\Controllers\Controller;
+use App\Mail\EmailChangeOtpMail;
 use App\Models\StudentProfile;
+use App\Models\User;
 use App\Services\AvatarStore;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -123,7 +128,10 @@ class ProfileController extends Controller
         return AvatarStore::response(AvatarStore::DIRECTORY . '/' . $path);
     }
 
-    public function updateEmail(Request $request)
+    private const EMAIL_OTP_MINUTES = 10;
+
+    // Step 1: check the password, then send a code to the new address.
+    public function requestEmailOtp(Request $request)
     {
         $user = auth()->user();
         $request->merge(['email' => strtolower(trim((string) $request->input('email')))]);
@@ -134,8 +142,61 @@ class ProfileController extends Controller
         if (!Hash::check($data['password'], $user->password)) {
             throw ValidationException::withMessages(['password' => ['Your current password is incorrect.']]);
         }
-        $user->update(['email' => $data['email']]);
+        if ($data['email'] === strtolower((string) $user->email)) {
+            throw ValidationException::withMessages(['email' => ['This is already your email address.']]);
+        }
+
+        $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        Cache::put($this->emailOtpKey($user->id), [
+            'email' => $data['email'],
+            'otp_hash' => Hash::make($otp),
+            'attempts' => 0,
+        ], now()->addMinutes(self::EMAIL_OTP_MINUTES));
+
+        try {
+            Mail::to($data['email'])->send(new EmailChangeOtpMail($user, $otp));
+        } catch (\Throwable $e) {
+            Cache::forget($this->emailOtpKey($user->id));
+            Log::error('Email change code failed to send.', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'We could not send the code. Please try again later.'], 503);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'We sent a 6-digit code to ' . $data['email'] . '. It is valid for ' . self::EMAIL_OTP_MINUTES . ' minutes.',
+        ]);
+    }
+
+    // Step 2: the code from the new inbox confirms the change.
+    public function updateEmail(Request $request)
+    {
+        $user = auth()->user();
+        $data = $request->validate(['otp' => ['required', 'digits:6']]);
+        $key = $this->emailOtpKey($user->id);
+        $pending = Cache::get($key);
+        if (!$pending) {
+            throw ValidationException::withMessages(['otp' => ['The code has expired. Please request a new one.']]);
+        }
+        if (!Hash::check($data['otp'], $pending['otp_hash'])) {
+            // Five wrong tries cancel the code.
+            $pending['attempts']++;
+            $tooMany = $pending['attempts'] >= 5;
+            $tooMany ? Cache::forget($key) : Cache::put($key, $pending, now()->addMinutes(self::EMAIL_OTP_MINUTES));
+            throw ValidationException::withMessages(['otp' => [$tooMany ? 'Too many incorrect codes. Please request a new one.' : 'The code is incorrect.']]);
+        }
+        Cache::forget($key);
+        // Someone may have taken the address while the code was pending.
+        if (User::where('email', $pending['email'])->where('id', '!=', $user->id)->exists()) {
+            throw ValidationException::withMessages(['otp' => ['This email address is already in use.']]);
+        }
+
+        $user->update(['email' => $pending['email']]);
         return response()->json(['success' => true, 'message' => 'Email updated successfully.', 'data' => ['email' => $user->email]]);
+    }
+
+    private function emailOtpKey(string $userId): string
+    {
+        return 'student-email-change:' . $userId;
     }
 
     private function emergencyContact($user): array

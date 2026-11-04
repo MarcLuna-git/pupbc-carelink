@@ -1,8 +1,9 @@
 import { getToken } from '../../../services/session';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Search, Calendar, ChevronDown, Megaphone, AlertTriangle, Heart, GraduationCap, Siren, Loader2 } from 'lucide-react';
+import { Bell, Calendar, ChevronDown, Megaphone, AlertTriangle, Heart, GraduationCap, Siren, Loader2 } from 'lucide-react';
 import api from '../../../services/api';
+import { SearchField, FilterMenu } from '../../../components/StudentSearchFilter';
 
 const Skeleton = ({ className = '' }) => (
   <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded-2xl ${className}`} />
@@ -176,32 +177,15 @@ const Announcements = () => {
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input 
-            className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-2xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500/20 focus:border-maroon-500"
-            type="text" value={search} onChange={(e) => setSearch(e.target.value)} 
-            placeholder="Search announcements..." />
-        </div>
-        <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}
-          className="border border-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500/20 focus:border-maroon-500">
-          <option value="all">All Categories</option>
-          {categories.filter(c => c !== 'all').map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-      </div>
-
-      <div className="flex flex-wrap gap-2 overflow-x-auto pb-1">
-        {categories.map(cat => (
-          <button key={cat} onClick={() => setFilterCategory(cat)}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold capitalize whitespace-nowrap transition-all flex-shrink-0 ${
-              filterCategory === cat 
-                ? 'bg-maroon-800 text-white shadow-md' 
-                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-            }`}>
-            {cat === 'all' ? 'All' : cat}
-          </button>
-        ))}
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <SearchField value={search} onChange={setSearch} placeholder="Search announcements..." label="Search announcements" />
+        <FilterMenu
+          fields={[['category', 'Category', categories.map(c => [c, c === 'all' ? 'All categories' : c])]]}
+          values={{ category: filterCategory }}
+          defaults={{ category: 'all' }}
+          onChange={(_, value) => setFilterCategory(value)}
+          onReset={() => setFilterCategory('all')}
+        />
       </div>
 
       <div className="space-y-3">

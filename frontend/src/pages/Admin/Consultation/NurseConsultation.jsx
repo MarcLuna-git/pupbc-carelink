@@ -1,6 +1,6 @@
 import { getToken } from '../../../services/session';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ClipboardList, CheckCircle, Stethoscope, ListOrdered, Users, UserX, Star, ChevronRight, SlidersHorizontal } from 'lucide-react';
+import { ClipboardList, CheckCircle, Stethoscope, ListOrdered, Users, UserX, Star, ChevronRight, SlidersHorizontal, Play, Square } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import NursePageTitle from '../../../components/NursePageTitle';
@@ -10,6 +10,7 @@ import { NurseNoticeModal, NurseToast } from '../../../components/NurseFeedback'
 import ConsultationVisit from './ConsultationVisit';
 import QueuePatientModal, { PRIORITY } from './QueuePatientModal';
 import QueueOptionsModal, { formatDuration } from './QueueOptionsModal';
+import { useNurseTimeGuardBypass } from '../../../services/devTools';
 
 // Queue status shown on each row.
 const QUEUE_STATUS = {
@@ -39,6 +40,17 @@ const secondsLeft = (calledAt, now, timeout) => {
 const textOnly = (className) => className.split(' ').filter(c => !/^(dark:)?(bg|border)-/.test(c)).join(' ');
 const clockLeft = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 
+// The queue can only be started during clinic hours, 8:00 AM – 5:00 PM (Manila time).
+const CLINIC_OPEN_HOUR = 8;
+const CLINIC_CLOSE_HOUR = 17;
+const withinClinicHours = (time) => {
+  const hour = Number(new Date(time).toLocaleString('en-US', { timeZone: 'Asia/Manila', hour: 'numeric', hourCycle: 'h23' }));
+  return hour >= CLINIC_OPEN_HOUR && hour < CLINIC_CLOSE_HOUR;
+};
+// Auto call next stays on for this browser tab until the nurse stops it.
+const AUTO_KEY = 'carelink.nurse.autoQueue';
+const readAuto = () => { try { return sessionStorage.getItem(AUTO_KEY) === '1'; } catch { return false; } };
+
 const NurseConsultation = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -64,6 +76,15 @@ const NurseConsultation = () => {
   // Queue list → Options: the arrival time a called student has before being skipped.
   const [optionsOpen, setOptionsOpen] = useState(false);
   const closeOptions = useCallback(() => setOptionsOpen(false), []);
+  // Start → the queue runs by itself: whenever nobody is being called or seen, the next student is called.
+  const [autoQueue, setAutoQueue] = useState(readAuto);
+  const autoCalling = useRef(false);
+  // Developer Tools → Remove time Guard also lifts the clinic-hours limit (for testing).
+  const timeGuardOff = useNurseTimeGuardBypass();
+  const toggleAuto = (on) => {
+    setAutoQueue(on);
+    try { on ? sessionStorage.setItem(AUTO_KEY, '1') : sessionStorage.removeItem(AUTO_KEY); } catch { /* per-tab convenience only */ }
+  };
 
   const queueAction = async (student, action) => {
     setLoading(true); setMessage('');
@@ -219,6 +240,19 @@ const NurseConsultation = () => {
 
 
 
+  const clinicOpen = timeGuardOff || withinClinicHours(serverNow);
+  const deskFree = !checkedInStudents.some(s => ['called', 'serving'].includes(s.status));
+  const hasWaiting = checkedInStudents.some(s => s.status === 'waiting');
+  // Auto call next: after a called student runs out of time (the server skips them) and after
+  // a consultation is saved, the desk is free again, so the next student in line is called.
+  const autoReady = autoQueue && clinicOpen && deskFree && hasWaiting && !loading && !pageLoading && (step === 1 || visitSaved);
+  useEffect(() => {
+    if (!autoReady || autoCalling.current) return;
+    autoCalling.current = true;
+    // A failed call stops the automation (its error shows as a toast) instead of retrying in a loop.
+    callNext().then(ok => { if (!ok) toggleAuto(false); }).finally(() => { autoCalling.current = false; });
+  }, [autoReady]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (pageLoading) {
     return <NursePageSkeleton label="Loading consultations" />;
   }
@@ -276,13 +310,25 @@ const NurseConsultation = () => {
           aria-label="Clinic queue"
           icon={ListOrdered}
           title={<>Queue list<CountChip>{checkedInStudents.length}</CountChip></>}
-          description={`${new Date(now).toLocaleDateString('en-US', { timeZone: 'Asia/Manila', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} · Priority students are called first. A called student has ${formatDuration(callTimeout)} to arrive, otherwise they are skipped and can be recalled.`}
-          actions={
+          description={`${new Date(now).toLocaleDateString('en-US', { timeZone: 'Asia/Manila', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} · Priority students are called first. A called student has ${formatDuration(callTimeout)} to arrive, otherwise they are skipped${autoQueue ? ' and the next student is called automatically' : ' and can be recalled'}.${!clinicOpen ? ' The queue can be started from 8:00 AM to 5:00 PM.' : ''}`}
+          actions={<div className="flex items-center gap-2">
+            {autoQueue ? (
+              <button type="button" onClick={() => toggleAuto(false)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-maroon-200 bg-maroon-50 px-3 py-2 text-xs font-semibold text-maroon-800 transition hover:bg-maroon-100 dark:border-maroon-800/40 dark:bg-maroon-900/20 dark:text-maroon-300">
+                <Square className="h-3.5 w-3.5 fill-current" aria-hidden="true" /> {clinicOpen ? 'Stop' : 'Stop (clinic closed)'}
+              </button>
+            ) : (
+              <button type="button" onClick={() => toggleAuto(true)} disabled={!clinicOpen}
+                title={clinicOpen ? 'Call students automatically' : 'Available from 8:00 AM to 5:00 PM'}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-maroon-800 px-3 py-2 text-xs font-semibold text-white transition hover:bg-maroon-900 disabled:cursor-not-allowed disabled:opacity-50">
+                <Play className="h-3.5 w-3.5 fill-current" aria-hidden="true" /> Start
+              </button>
+            )}
             <button type="button" onClick={() => setOptionsOpen(true)}
               className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:bg-transparent dark:text-gray-200 dark:hover:bg-gray-700/50">
               <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" /> Options
             </button>
-          }
+          </div>}
         >
           {checkedInStudents.length === 0 ? (
             <div className="py-14 text-center">
@@ -325,6 +371,7 @@ const NurseConsultation = () => {
                         <td className="px-3 py-3 sm:px-4">
                           <span className={`text-xs font-semibold ${textOnly(priority.className)}`}>{priority.label}</span>
                           {s.triage?.pain_level != null && <p className="mt-1 whitespace-nowrap text-xs text-gray-600 dark:text-gray-300">Pain {s.triage.pain_level}/10</p>}
+                          {s.triage?.symptom_duration && <p className="whitespace-nowrap text-xs text-gray-600 dark:text-gray-300">{s.triage.symptom_duration.replace('-', '–')}</p>}
                         </td>
                         <td className="whitespace-nowrap px-3 py-3 text-gray-600 sm:px-4 dark:text-gray-300">{s.time_slot}</td>
                         <td className="whitespace-nowrap px-3 py-3 text-gray-600 sm:px-4 dark:text-gray-300">{s.status === 'waiting' ? minutesSince(s.check_in_time, serverNow) : '—'}</td>

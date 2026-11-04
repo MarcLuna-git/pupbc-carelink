@@ -22,16 +22,15 @@ const STATUS_TABS = [
   { key: 'all', label: 'All' },
   { key: 'pending', label: 'Pending' },
   { key: 'approved', label: 'Approved' },
+  { key: 'completed', label: 'Completed' },
   { key: 'rejected', label: 'Declined' },
   { key: 'cancelled', label: 'Cancelled' },
   { key: 'expired', label: 'Expired' },
 ];
 
-// This page shows the state of the booking request only. Where the visit is in the queue
-// (waiting, called, in consultation, completed) is on the Consultation page.
+// This page shows the state of the booking request, plus Completed once the visit's
+// consultation is saved. Where a visit is in the queue is on the Consultation page.
 const stageOf = app => {
-  // A finished visit was an approved request.
-  if (app.status === 'completed') return 'approved';
   // Approved, but the student never made it to the clinic: the slot is over, so it reads as expired.
   if (app.status === 'approved' && app.no_show) return 'expired';
   return app.status;
@@ -41,6 +40,7 @@ const stageOf = app => {
 const STAGE_LABELS = {
   pending: 'Pending',
   approved: 'Approved',
+  completed: 'Completed',
   rejected: 'Declined',
   cancelled: 'Cancelled',
   expired: 'Expired',
@@ -201,6 +201,7 @@ const NurseAppointments = () => {
   const statusColors = {
     pending: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/30',
     approved: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/30',
+    completed: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800/30',
     cancelled: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/30',
     rejected: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/30',
     expired: 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-700/40 dark:text-gray-300 dark:border-gray-700',
@@ -209,6 +210,7 @@ const NurseAppointments = () => {
   const statusConfig = {
     pending: { icon: Clock },
     approved: { icon: CheckCircle },
+    completed: { icon: CheckCircle },
     cancelled: { icon: XCircle },
     rejected: { icon: XCircle },
     expired: { icon: XCircle },

@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Mail, Phone, Pill } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Pill, Stethoscope } from 'lucide-react';
 import api from '../../../services/api';
 import useNurseSync from '../../../hooks/useNurseSync';
 import { focus } from '../Students/directoryOptions';
 import { personName } from '../Medicine/medicineOptions';
 import { DispenseModal } from './DispenseForm';
-import { STATUSES, TYPE_PILL, avatarColor, dateTimeLabel, dayLabel, initials, quantityLabel, typeLabel } from './facultyOptions';
+import { ConsultationModal } from './ConsultationForm';
+import { STATUSES, avatarColor, dateTimeLabel, dayLabel, initials, quantityLabel } from './facultyOptions';
 
 /*
- * One faculty member: who they are, how to reach them, whether they are active, and the last
- * medicines the clinic gave them. Dispense Medicine opens the same form as the Dispense tab.
+ * One faculty member: who they are, how to reach them, whether they are active, their clinic
+ * consultations and the last medicines the clinic gave them. Record Consultation and Dispense
+ * Medicine open the same forms as their tabs.
  */
 const card = 'rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800';
 const COLUMNS = 'md:grid-cols-[minmax(0,1.3fr)_minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,1.6fr)_minmax(0,1.2fr)]';
@@ -24,11 +26,12 @@ function ContactRow({ icon: Icon, label, value, href }) {
 }
 
 export default function FacultyDetails({ id, onBack, onViewHistory, onNotify }) {
-  const [state, setState] = useState({ member: null, recent: [], count: 0 });
+  const [state, setState] = useState({ member: null, recent: [], count: 0, consultations: [], consultationCount: 0 });
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
   const [error, setError] = useState('');
   const [dispensing, setDispensing] = useState(false);
+  const [consulting, setConsulting] = useState(false);
   const requestId = useRef(0);
 
   const load = useCallback(async (signal, silent = false) => {
@@ -36,7 +39,7 @@ export default function FacultyDetails({ id, onBack, onViewHistory, onNotify }) 
     try {
       const { data } = await api.get(`/nurse/faculty/${id}`, { signal });
       if (signal?.aborted || request !== requestId.current) return;
-      setState({ member: data.data, recent: data.recent_dispensings || [], count: data.dispensing_count || 0 });
+      setState({ member: data.data, recent: data.recent_dispensings || [], count: data.dispensing_count || 0, consultations: data.consultations || [], consultationCount: data.consultation_count || 0 });
       setMissing(false); setError('');
     } catch (err) {
       if (signal?.aborted || err.code === 'ERR_CANCELED') return;
@@ -70,7 +73,7 @@ export default function FacultyDetails({ id, onBack, onViewHistory, onNotify }) 
     </div>;
   }
 
-  const { member, recent, count } = state;
+  const { member, recent, count, consultations, consultationCount } = state;
   const status = STATUSES[member.status] || STATUSES.active;
   const inactive = member.status !== 'active';
 
@@ -82,14 +85,12 @@ export default function FacultyDetails({ id, onBack, onViewHistory, onNotify }) 
         <span aria-hidden="true" className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-xl font-semibold text-white ${avatarColor(member.full_name)}`}>{initials(member.full_name)}</span>
         <div className="min-w-0">
           <h2 className="break-words text-xl font-bold">{member.full_name}</h2>
-          <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${TYPE_PILL[member.faculty_type] || TYPE_PILL.full_time}`}>{typeLabel(member.faculty_type)}</span>
-            {member.course && <span className="inline-flex rounded-full bg-maroon-50 px-2.5 py-1 text-xs font-semibold text-maroon-800 dark:bg-maroon-900/30 dark:text-maroon-300">{member.course}</span>}
-          </div>
-          <p className="mt-1.5 break-words text-sm text-gray-500 dark:text-gray-400">{[member.designation, member.department].filter(Boolean).join(' · ') || 'No department recorded'}</p>
+          <p className="mt-1 break-words text-sm text-gray-500 dark:text-gray-400">{member.email || 'No email recorded'}</p>
         </div>
       </div>
       <div className="flex flex-wrap gap-3">
+        <button type="button" onClick={() => setConsulting(true)} disabled={inactive} title={inactive ? 'Make this faculty member active to record a consultation' : undefined}
+          className={`inline-flex h-10 items-center gap-2 rounded-lg bg-maroon-800 px-5 text-sm font-semibold text-white hover:bg-maroon-900 disabled:cursor-not-allowed disabled:opacity-50 ${focus}`}><Stethoscope size={16} aria-hidden="true" />Record Consultation</button>
         <button type="button" onClick={() => setDispensing(true)} disabled={inactive} title={inactive ? 'Make this faculty member active to dispense medicine' : undefined}
           className={`inline-flex h-10 items-center gap-2 rounded-lg bg-maroon-800 px-5 text-sm font-semibold text-white hover:bg-maroon-900 disabled:cursor-not-allowed disabled:opacity-50 ${focus}`}><Pill size={16} aria-hidden="true" />Dispense Medicine</button>
         <button type="button" onClick={() => onViewHistory(member.id)}
@@ -110,12 +111,33 @@ export default function FacultyDetails({ id, onBack, onViewHistory, onNotify }) 
         <dl className="space-y-3 text-sm">
           <div className="flex items-center justify-between gap-3"><dt className="text-gray-500 dark:text-gray-400">Status</dt><dd><span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${status.pill}`}><span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} aria-hidden="true" />{status.label}</span></dd></div>
           <div className="flex items-center justify-between gap-3"><dt className="text-gray-500 dark:text-gray-400">Added</dt><dd className="font-medium">{dayLabel(member.created_at) || '—'}</dd></div>
+          <div className="flex items-center justify-between gap-3"><dt className="text-gray-500 dark:text-gray-400">Consultations</dt><dd className="font-medium tabular-nums">{consultationCount}</dd></div>
           <div className="flex items-center justify-between gap-3"><dt className="text-gray-500 dark:text-gray-400">Times dispensed</dt><dd className="font-medium tabular-nums">{count}</dd></div>
-          {inactive && <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">Inactive faculty cannot be given medicine. Edit them in the directory to make them active.</p>}
+          {inactive && <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">Inactive faculty cannot be consulted or given medicine. Edit them in the directory to make them active.</p>}
         </dl>
-        {member.notes && <p className="mt-4 whitespace-pre-line break-words border-t border-gray-100 pt-3 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300"><span className="mb-1 block text-xs font-semibold text-gray-500">Notes</span>{member.notes}</p>}
       </section>
     </div>
+
+    <section aria-label="Consultations" className="rounded-lg border border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
+      <div className="px-5 py-4"><h3 className="text-sm font-bold">Consultations</h3></div>
+      {consultations.length === 0 ? <p className="border-t border-gray-100 px-5 py-10 text-center text-sm text-gray-500 dark:border-gray-700">No consultation has been recorded for {member.full_name} yet.</p> : (
+        <ul className="divide-y divide-gray-100 border-t border-gray-100 dark:divide-gray-700 dark:border-gray-700">
+          {consultations.map(row => {
+            const vitals = [row.blood_pressure && `BP ${row.blood_pressure}`, row.temperature != null && `Temp ${row.temperature}°C`, row.pulse_rate != null && `Pulse ${row.pulse_rate} bpm`].filter(Boolean);
+            return <li key={row.id} className="space-y-1.5 px-5 py-3.5 text-sm">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <p className="break-words font-semibold">{row.chief_complaint}</p>
+                <p className="text-xs tabular-nums text-gray-500 dark:text-gray-400">{dateTimeLabel(row.created_at)} · {personName(row.consultant) || '—'}</p>
+              </div>
+              {vitals.length > 0 && <p className="text-xs text-gray-600 dark:text-gray-300">{vitals.join(' · ')}</p>}
+              {row.assessment && <p className="break-words text-gray-700 dark:text-gray-200"><span className="text-xs font-semibold text-gray-500">Assessment: </span>{row.assessment}</p>}
+              {row.intervention && <p className="break-words text-gray-700 dark:text-gray-200"><span className="text-xs font-semibold text-gray-500">Intervention: </span>{row.intervention}</p>}
+              {row.notes && <p className="whitespace-pre-line break-words text-gray-600 dark:text-gray-300"><span className="text-xs font-semibold text-gray-500">Notes: </span>{row.notes}</p>}
+            </li>;
+          })}
+        </ul>
+      )}
+    </section>
 
     <section aria-label="Recent dispensing" className="rounded-lg border border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
       <div className="flex items-center justify-between gap-3 px-5 py-4">
@@ -138,6 +160,10 @@ export default function FacultyDetails({ id, onBack, onViewHistory, onNotify }) 
       </>}
     </section>
 
+    {consulting && <ConsultationModal faculty={member} onClose={() => setConsulting(false)} onDone={async text => {
+      try { await load(undefined, true); } catch { /* the sync poll will catch up */ }
+      setConsulting(false); onNotify(text);
+    }} />}
     {dispensing && <DispenseModal faculty={member} onClose={() => setDispensing(false)} onDone={async text => {
       try { await load(undefined, true); } catch { /* the sync poll will catch up */ }
       setDispensing(false); onNotify(text);

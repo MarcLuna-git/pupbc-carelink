@@ -20,7 +20,6 @@ import {
   CircleCheck,
   Users,
   LogIn,
-  IdCard,
   Info,
   Stethoscope,
   FileText,
@@ -36,6 +35,7 @@ import { useStudentHealthProfileStatus } from '../../../hooks/useStudentHealthPr
 import { formatPersonName } from '../../../utils/studentUser';
 import { escapeHtml } from '../../../utils/escapeHtml';
 import { StudentToast } from '../../../components/StudentFeedback';
+import { QUEUE_STATUS_NOTES, checkinStepIndex } from './checkinTracker';
 
 const formatDate = (value) => formatAppointmentDate(value, { month: 'long' });
 const formatDateWithWeekday = (value) =>
@@ -67,19 +67,6 @@ const CHECKIN_STEPS = [
   { title: 'Completed', desc: 'Your clinic visit is finished.' },
 ];
 
-const checkinStepIndex = (queue, appointment) => {
-  if (appointment?.status === 'completed') return 3;
-  switch (queue?.status) {
-    case 'waiting':
-      return 1;
-    case 'serving':
-      return 2;
-    case 'completed':
-      return 3;
-    default:
-      return 0;
-  }
-};
 
 /*
  * ROUTE LOADING — same restored effect as the Settings / Profile / Records
@@ -104,9 +91,9 @@ const QR_HERO = {
 };
 
 const CardTitle = ({ icon: Icon, children, action }) => (
-  <div className="mb-5 flex items-center justify-between gap-3">
-    <h2 className="flex items-center gap-2.5 text-lg font-bold text-maroon-800 dark:text-maroon-300">
-      <Icon className="h-6 w-6" />
+  <div className="mb-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+    <h2 className="flex items-center gap-2.5 whitespace-nowrap text-lg font-bold text-maroon-800 dark:text-maroon-300">
+      <Icon className="h-6 w-6 shrink-0" />
       {children}
     </h2>
     {action}
@@ -128,7 +115,7 @@ const DetailRow = ({ icon: Icon, label, value, hint }) => (
 );
 
 const CHECKIN_TIPS = [
-  { icon: IdCard, title: 'Bring your PUP ID', desc: 'Present your valid PUP ID at the kiosk.' },
+  { icon: QrCode, title: 'Bring your QR code', desc: 'Have your QR code ready on your phone or printed.' },
   { icon: Clock, title: 'Arrive early', desc: 'Check in within the valid time window.' },
   { icon: Info, title: 'Use the clinic kiosk', desc: 'Scan your QR code at the Student Clinic kiosk.' },
 ];
@@ -167,10 +154,15 @@ const QR = () => {
 
   const today = getManilaDateString();
   // Today's visit stays on this page all day — including after it is completed.
+  // A visit still waiting to be served wins over one that is already finished.
   const todayAppointment = useMemo(
-    () => appointments.find((item) =>
-      ['approved', 'completed'].includes(item.status) &&
-      appointmentDate(item.appointment_date) === today) || null,
+    () => {
+      const todays = appointments.filter((item) =>
+        ['approved', 'completed'].includes(item.status) &&
+        appointmentDate(item.appointment_date) === today);
+      return todays.find((item) => item.status === 'approved' && item.queue?.status !== 'completed') ||
+        todays[0] || null;
+    },
     // `today` re-evaluates the selection when the clinic day rolls over.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [appointments, today]
@@ -182,10 +174,12 @@ const QR = () => {
   const allDayWindow = Boolean(checkinOpensAt && checkinDeadlineAt) &&
     formatTime(checkinOpensAt) === '12:00 AM' && formatTime(checkinDeadlineAt) === '11:59 PM';
 
+  // The QR is only for checking in, so it is hidden once today's visit is completed.
   const canUseQr =
     Boolean(qrUsable) &&
     Boolean(qrCodeHash) &&
-    Boolean(todayAppointment);
+    Boolean(todayAppointment) &&
+    !visitCompleted;
 
   /* Minutes between check-in opening and the appointment's start time. */
   const minutesBeforeStart = useMemo(() => {
@@ -471,6 +465,22 @@ const QR = () => {
       <div className="w-full min-w-0 space-y-3">
         <StudentPageHero {...QR_HERO} loading />
 
+        {/* Ghost of Check-in Status */}
+        <div className={CARD}>
+          <Skeleton className="mb-5 h-6 w-40" />
+          <div className="grid gap-4 sm:grid-cols-4">
+            {[0, 1, 2, 3].map((key) => (
+              <div key={key} className="flex gap-3">
+                <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-3.5 w-28" />
+                  <Skeleton className="h-3 w-32 max-w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="grid gap-3 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
           {/* Ghost of the QR card */}
           <div className={CARD}>
@@ -528,22 +538,6 @@ const QR = () => {
             </div>
           </div>
         </div>
-
-        {/* Ghost of Check-in Status */}
-        <div className={CARD}>
-          <Skeleton className="mb-5 h-6 w-40" />
-          <div className="grid gap-4 sm:grid-cols-4">
-            {[0, 1, 2, 3].map((key) => (
-              <div key={key} className="flex gap-3">
-                <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
-                <div className="flex-1 space-y-1.5">
-                  <Skeleton className="h-3.5 w-28" />
-                  <Skeleton className="h-3 w-32 max-w-full" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     );
   }
@@ -558,7 +552,10 @@ const QR = () => {
 
   const fullName = `${formatPersonName(user.first_name)} ${formatPersonName(user.last_name)}`.trim();
   const courseLine = [user.course, user.year, user.section].filter(Boolean).join(' • ');
-  const currentStep = checkinStepIndex(queue, todayAppointment);
+  // Today's visit stays on the tracker until the day ends; once finished, all four steps are done.
+  const trackedAppointment = todayAppointment;
+  const currentStep = visitCompleted ? 3 : trackedAppointment ? checkinStepIndex(queue, trackedAppointment) : 0;
+  const statusNote = !visitCompleted && QUEUE_STATUS_NOTES[queue?.status];
   const isNoShow = queue?.status === 'no_show';
   const opensLabel = formatTime(checkinOpensAt);
   const deadlineLabel = formatTime(checkinDeadlineAt);
@@ -574,18 +571,100 @@ const QR = () => {
 
       <StudentToast message={message} type={messageType === 'error' ? 'error' : 'success'} onClose={() => setMessage('')} />
 
+      {/* Check-in Status */}
+      <div className={CARD}>
+          <CardTitle icon={History}>Check-in Status</CardTitle>
+
+          {!trackedAppointment && (
+            <p className="-mt-2 mb-4 text-xs text-gray-500 dark:text-gray-400">
+              Your progress will be tracked here on the day of an approved appointment.
+            </p>
+          )}
+
+          {isNoShow ? (
+            <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-800/30 dark:bg-red-900/20">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
+              <div>
+                <p className="text-sm font-semibold text-red-800 dark:text-red-300">Marked as No Show</p>
+                <p className="mt-0.5 text-xs text-red-700 dark:text-red-400">
+                  You were not present when called. Please approach the clinic staff for assistance.
+                </p>
+              </div>
+            </div>
+          ) : (
+            /* Progress tracker: horizontal on desktop, vertical below lg.
+               A connector fills maroon once the step before it is done. */
+            <ol className="flex flex-col lg:flex-row lg:gap-3">
+              {CHECKIN_STEPS.map((step, index) => {
+                const active = Boolean(trackedAppointment) && index === currentStep;
+                const done = index < currentStep || (visitCompleted && active);
+                const isLast = index === CHECKIN_STEPS.length - 1;
+                const connectorColor = done
+                  ? 'bg-maroon-800 dark:bg-maroon-500'
+                  : 'bg-gray-200 dark:bg-gray-700';
+                return (
+                  <li
+                    key={step.title}
+                    className={`relative flex items-start gap-3 ${isLast ? 'lg:flex-none' : 'pb-6 lg:flex-1 lg:pb-0'}`}
+                    aria-current={active ? 'step' : undefined}
+                  >
+                    {!isLast && (
+                      <span
+                        aria-hidden="true"
+                        className={`absolute bottom-0 left-5 top-10 w-0.5 -translate-x-1/2 lg:hidden ${connectorColor}`}
+                      />
+                    )}
+                    <span
+                      className={`relative z-[1] flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                        active
+                          ? 'bg-maroon-800 text-white'
+                          : done
+                            ? 'bg-maroon-100 text-maroon-800 dark:bg-maroon-900/40 dark:text-maroon-300'
+                            : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                      }`}
+                    >
+                      {done ? <CircleCheck className="h-5 w-5" /> : index + 1}
+                    </span>
+                    <div className="min-w-0 lg:max-w-[10.5rem]">
+                      <p
+                        className={`text-sm font-semibold ${
+                          active ? 'text-maroon-800 dark:text-maroon-300' : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {active && queue?.status === 'called' ? 'Called' : step.title}
+                      </p>
+                      <p
+                        className={`mt-0.5 text-xs leading-relaxed ${active && statusNote ? 'font-semibold text-amber-700 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'}`}
+                        aria-live={active ? 'polite' : undefined}
+                      >
+                        {active && statusNote ? statusNote : step.desc}
+                      </p>
+                    </div>
+                    {!isLast && (
+                      <span
+                        aria-hidden="true"
+                        className={`mt-5 hidden h-0.5 min-w-6 flex-1 rounded-full lg:block ${connectorColor}`}
+                      />
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+      </div>
+
       <div className="grid gap-3 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         {/* Your QR Code */}
-        <div className={CARD}>
+        <div className={`${CARD} flex flex-col`}>
           <CardTitle
             icon={QrCode}
             action={
               canUseQr && (
-                <div className="flex items-center gap-2 rounded-xl bg-green-50 px-3 py-2 dark:bg-green-900/20">
+                <div className="flex shrink-0 items-center gap-2 rounded-xl bg-green-50 px-3 py-2 dark:bg-green-900/20">
                   <CircleCheck className="h-5 w-5 fill-green-600 text-white dark:fill-green-500 dark:text-green-950" />
                   <div className="leading-tight">
-                    <p className="text-sm font-semibold text-green-700 dark:text-green-400">{visitCompleted ? 'Visit Completed' : 'Approved'}</p>
-                    <p className="text-xs text-green-700/80 dark:text-green-500/80">{visitCompleted ? 'Your clinic visit is finished' : 'Ready for Check-in'}</p>
+                    <p className="text-sm font-semibold text-green-700 dark:text-green-400">Approved</p>
+                    <p className="whitespace-nowrap text-xs text-green-700/80 dark:text-green-500/80">Ready for Check-in</p>
                   </div>
                 </div>
               )
@@ -641,7 +720,7 @@ const QR = () => {
               </div>
             </motion.div>
           ) : (
-            <div className="py-6 text-center">
+            <div className="flex flex-1 flex-col items-center justify-center py-6 text-center">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-700">
                 <QrCode className="h-8 w-8 text-gray-400" />
               </div>
@@ -649,7 +728,7 @@ const QR = () => {
               <h3 className="mt-5 text-lg font-bold text-gray-900 dark:text-white">QR Check-in Not Available</h3>
 
               <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500 dark:text-gray-400">
-                {todayAppointment
+                {todayAppointment && !visitCompleted
                   ? 'Your QR credential is currently unavailable. Please contact the clinic if this continues.'
                   : 'You need an approved appointment scheduled for today before the QR can be used at the clinic kiosk.'}
               </p>
@@ -664,7 +743,8 @@ const QR = () => {
             </div>
           )}
 
-          {todayAppointment && (
+          {/* After a completed visit this card looks the same as with no appointment today. */}
+          {todayAppointment && !visitCompleted && (
             <div className="mt-6 space-y-5 border-t border-gray-100 pt-5 dark:border-gray-700">
               <DetailRow
                 icon={CalendarDays}
@@ -815,82 +895,28 @@ const QR = () => {
         </div>
       </div>
 
-      {/* Check-in Status */}
-      <div className={CARD}>
-          <CardTitle icon={History}>Check-in Status</CardTitle>
-
-          {!todayAppointment && (
-            <p className="-mt-2 mb-4 text-xs text-gray-500 dark:text-gray-400">
-              Your progress will be tracked here on the day of an approved appointment.
-            </p>
-          )}
-
-          {isNoShow ? (
-            <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-800/30 dark:bg-red-900/20">
-              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
-              <div>
-                <p className="text-sm font-semibold text-red-800 dark:text-red-300">Marked as No Show</p>
-                <p className="mt-0.5 text-xs text-red-700 dark:text-red-400">
-                  You were not present when called. Please approach the clinic staff for assistance.
-                </p>
-              </div>
+      {/* View Records: its own card, shown once today's visit is finished */}
+      {visitCompleted && (
+        <div className={`${CARD} flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between`}>
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-maroon-50 dark:bg-maroon-900/20">
+              <FileText className="h-5 w-5 text-maroon-800 dark:text-maroon-300" />
+            </span>
+            <div>
+              <p className="text-base font-bold text-gray-900 dark:text-white">View Records</p>
+              <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+                See your consultation records, findings, and any follow-up instructions from today&apos;s visit.
+              </p>
             </div>
-          ) : (
-            /* Progress tracker: horizontal on desktop, vertical below lg.
-               A connector fills maroon once the step before it is done. */
-            <ol className="flex flex-col lg:flex-row lg:gap-3">
-              {CHECKIN_STEPS.map((step, index) => {
-                const active = Boolean(todayAppointment) && index === currentStep;
-                const done = index < currentStep;
-                const isLast = index === CHECKIN_STEPS.length - 1;
-                const connectorColor = done
-                  ? 'bg-maroon-800 dark:bg-maroon-500'
-                  : 'bg-gray-200 dark:bg-gray-700';
-                return (
-                  <li
-                    key={step.title}
-                    className={`relative flex items-start gap-3 ${isLast ? 'lg:flex-none' : 'pb-6 lg:flex-1 lg:pb-0'}`}
-                    aria-current={active ? 'step' : undefined}
-                  >
-                    {!isLast && (
-                      <span
-                        aria-hidden="true"
-                        className={`absolute bottom-0 left-5 top-10 w-0.5 -translate-x-1/2 lg:hidden ${connectorColor}`}
-                      />
-                    )}
-                    <span
-                      className={`relative z-[1] flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
-                        active
-                          ? 'bg-maroon-800 text-white'
-                          : done
-                            ? 'bg-maroon-100 text-maroon-800 dark:bg-maroon-900/40 dark:text-maroon-300'
-                            : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-                      }`}
-                    >
-                      {done ? <CircleCheck className="h-5 w-5" /> : index + 1}
-                    </span>
-                    <div className="min-w-0 lg:max-w-[10.5rem]">
-                      <p
-                        className={`text-sm font-semibold ${
-                          active ? 'text-maroon-800 dark:text-maroon-300' : 'text-gray-700 dark:text-gray-300'
-                        }`}
-                      >
-                        {step.title}
-                      </p>
-                      <p className="mt-0.5 text-xs leading-relaxed text-gray-500 dark:text-gray-400">{step.desc}</p>
-                    </div>
-                    {!isLast && (
-                      <span
-                        aria-hidden="true"
-                        className={`mt-5 hidden h-0.5 min-w-6 flex-1 rounded-full lg:block ${connectorColor}`}
-                      />
-                    )}
-                  </li>
-                );
-              })}
-            </ol>
-          )}
-      </div>
+          </div>
+          <Link
+            to="/student/health-records"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-maroon-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900"
+          >
+            GO
+          </Link>
+        </div>
+      )}
     </motion.div>
   );
 };

@@ -16,6 +16,15 @@ use Carbon\Carbon;
 
 class ConsultationController extends Controller
 {
+    // Plain-language errors for vital signs typed in the wrong format.
+    private const VITAL_MESSAGES = [
+        'vital_signs.bp.regex' => 'Blood pressure must look like 120/80.',
+        'vital_signs.hr.digits_between' => 'Pulse rate must be a number.',
+        'vital_signs.rr.digits_between' => 'Respiratory rate must be a number.',
+        'vital_signs.o2_sat.digits_between' => 'Pulse oxygen rate must be a number.',
+        'vital_signs.temp.regex' => 'Temperature must be a number like 36.5.',
+    ];
+
     public function index(Request $request)
     {
         $query = Consultation::with(['user:id,student_id,first_name,last_name', 'nurse:id,first_name,last_name'])
@@ -51,7 +60,7 @@ class ConsultationController extends Controller
             'appointment_checkin_id' => 'bail|required|uuid|exists:appointment_checkins,id',
             'chief_complaint' => 'required|string|max:2000',
             'vital_signs' => 'nullable|array:bp,hr,rr,temp,o2_sat',
-            'vital_signs.*' => 'nullable|string|max:50',
+            'vital_signs.bp' => ['nullable', 'regex:/^\d{2,3}\/\d{2,3}$/'], 'vital_signs.hr' => 'nullable|digits_between:1,3', 'vital_signs.rr' => 'nullable|digits_between:1,3', 'vital_signs.o2_sat' => 'nullable|digits_between:1,3', 'vital_signs.temp' => ['nullable', 'regex:/^\d{2}(\.\d)?$/'],
             'general_remarks' => 'nullable|string|max:5000',
             // Required parts of the clinic's consultation form (the rest stays optional).
             'history_present_illness' => 'required|string|max:2000',
@@ -69,7 +78,7 @@ class ConsultationController extends Controller
             'history_present_illness.required' => 'Enter the history / present illness.',
             'nursing_assessment.required' => 'Enter the nursing assessment.',
             'nursing_interventions.required' => 'Enter the nursing interventions.',
-        ]);
+        ], self::VITAL_MESSAGES);
         $attendingNurseId = $data['attending_nurse_id'] ?? null;
         unset($data['attending_nurse_id']);
         abort_if(
@@ -119,12 +128,12 @@ class ConsultationController extends Controller
         $consultation = Consultation::findOrFail($id);
         abort_unless($consultation->status !== 'completed', 422, 'Completed consultations are read-only.');
         $consultation->update($request->validate([
-            'chief_complaint' => 'sometimes|required|string|max:2000', 'vital_signs' => 'nullable|array:bp,hr,rr,temp,o2_sat', 'vital_signs.*' => 'nullable|string|max:50',
+            'chief_complaint' => 'sometimes|required|string|max:2000', 'vital_signs' => 'nullable|array:bp,hr,rr,temp,o2_sat', 'vital_signs.bp' => ['nullable', 'regex:/^\d{2,3}\/\d{2,3}$/'], 'vital_signs.hr' => 'nullable|digits_between:1,3', 'vital_signs.rr' => 'nullable|digits_between:1,3', 'vital_signs.o2_sat' => 'nullable|digits_between:1,3', 'vital_signs.temp' => ['nullable', 'regex:/^\d{2}(\.\d)?$/'],
             'general_remarks' => 'nullable|string|max:5000', 'medical_certificate' => 'sometimes|boolean', 'medical_certificate_ref' => 'nullable|string|max:191',
             'history_present_illness' => 'sometimes|required|string|max:2000', 'nursing_assessment' => 'sometimes|required|string|max:2000',
             'nursing_interventions' => 'sometimes|required|string|max:2000', 'treatment_plan' => 'nullable|string|max:2000',
             'follow_up_required' => 'sometimes|boolean', 'follow_up_date' => 'nullable|date',
-        ]));
+        ], self::VITAL_MESSAGES));
         return response()->json(['success' => true, 'data' => $consultation->fresh(), 'message' => 'Consultation updated']);
     }
 

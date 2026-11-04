@@ -1,5 +1,6 @@
 import { clearSession, getToken, getUser, setUser } from '../../../services/session';
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Key, Lock, Save, Loader2, Eye, EyeOff, User, Mail, Bell, Building, CheckCircle, Wrench, Clock, LogOut, Moon, SlidersHorizontal, ChevronDown, CalendarCheck, UserPlus } from 'lucide-react';
 import api from '../../../services/api';
@@ -58,7 +59,11 @@ const SETTINGS_TABS = [
 
 const NurseSettings = () => {
   const user = getUser('nurse');
-  const [activeTab, setActiveTab] = useState('general');
+  const [params] = useSearchParams();
+  // Developer Tools is hidden: it only appears when opened by its direct link (?tab=developer).
+  const devToolsUnlocked = params.get('tab') === 'developer';
+  const tabs = SETTINGS_TABS.filter((tab) => tab.id !== 'developer' || devToolsUnlocked);
+  const [activeTab, setActiveTab] = useState(devToolsUnlocked ? 'developer' : 'general');
   const [darkMode, setDarkMode] = useState(() => readDarkMode('nurse'));
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
@@ -602,7 +607,7 @@ const NurseSettings = () => {
         <div className="grid gap-5 md:grid-cols-[220px_minmax(0,1fr)]">
           {/* Mobile: accordion — tapping a section slides its panel open beneath it */}
           <div className="space-y-2 md:hidden">
-            {SETTINGS_TABS.map((tab) => {
+            {tabs.map((tab) => {
               const isOpen = activeTab === tab.id;
               return (
                 <div key={tab.id} className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
@@ -647,7 +652,7 @@ const NurseSettings = () => {
 
           {/* Tablet / desktop: vertical tab rail */}
           <nav aria-label="Settings sections" className="hidden md:flex md:flex-col">
-            {SETTINGS_TABS.map((tab) => (
+            {tabs.map((tab) => (
               <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)}
                 aria-pressed={(activeTab || 'general') === tab.id}
                 className={`flex w-full items-center gap-3 rounded-lg border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold transition-colors last:border-b-0 dark:border-gray-700 ${
@@ -665,7 +670,7 @@ const NurseSettings = () => {
                 of the tallest panel and switching tabs never shrinks the
                 page (which made the scroll jump like a page change). */}
             <div className="grid">
-              {SETTINGS_TABS.map((tab) => {
+              {tabs.map((tab) => {
                 const shown = (activeTab || 'general') === tab.id;
                 return (
                   <div

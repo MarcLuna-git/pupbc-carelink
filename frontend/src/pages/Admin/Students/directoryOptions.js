@@ -17,7 +17,7 @@ export const directoryCourses = academics.map(({ code, name }) => [code, name]);
 export const directorySections = [...new Set(academics.flatMap(({ sections }) => sections))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 export const directorySectionsForYear = year => year ? directorySections.filter(section => section.startsWith(`${years.indexOf(year) + 1}-`)) : directorySections;
 export const nextDirectoryFilters = (previous, key, value) => ({ ...previous, [key]: value, ...(key === 'year' && value !== previous.year ? { section: '' } : {}) });
-export const emptyFilters = { search: '', course: '', year: '', section: '', status: '' };
+export const emptyFilters = { search: '', course: '', year: '', section: '', status: '', date_from: '', date_to: '' };
 export const directoryStatusOptions = [['active', 'Active'], ['archived', 'Archived']];
 export const directoryDefaultFilters = { ...emptyFilters, status: 'active' };
 export const appliedDirectoryFilters = filters => Object.entries(filters).filter(([key, value]) => value && (key !== 'status' || value !== directoryDefaultFilters.status));

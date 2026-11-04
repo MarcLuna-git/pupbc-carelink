@@ -142,9 +142,9 @@ export default function NurseStudents() {
       icon={IdCard}
       title={<>Student directory<CountChip>{loading ? '…' : listError ? '—' : meta.total.toLocaleString()}</CountChip></>}
       description={`${filtered ? 'Students matching your filters, sorted' : 'Registered students, sorted'} by last name, A–Z. Open a student to see their health record.`}
-      toolbar={<StudentFilters embedded filters={filters} onChange={changeFilter} onClear={clearFilters} />}
+      toolbar={<StudentFilters embedded filters={filters} onChange={changeFilter} onClear={clearFilters} dateLabel="Registered" />}
     >
-      {listError ? <div role="alert" className="space-y-3 p-8 text-center"><p className="text-sm text-red-600">{listError}</p><button className={secondary} onClick={() => setListRefresh(value => value + 1)}>Try again</button></div> : <><StudentDirectory students={students} loading={loading} filtered={filtered} onClear={clearFilters} onView={id => { setSelectedId(id); setTab('Overview'); }} /><Pagination meta={meta} page={page} onPage={setPage} loading={loading} hideShowingText /></>}
+      {listError ? <div role="alert" className="space-y-3 p-8 text-center"><p className="text-sm text-red-600">{listError}</p><button className={secondary} onClick={() => setListRefresh(value => value + 1)}>Try again</button></div> : <><StudentDirectory students={students} loading={loading} filtered={filtered} onClear={clearFilters} onView={id => { setSelectedId(id); setTab('Overview'); }} /><Pagination meta={meta} page={page} onPage={setPage} loading={loading} summary="pages" /></>}
     </NurseListCard>
     {selectedId && <StudentDetailsModal student={selected} loading={detailLoading} error={detailError} appointments={appointments} history={history} tab={tab} onTab={setTab} onClose={close} emergencyOpen={emergencyOpen} archiveOpen={archiveOpen} onEmergency={() => { setEmergencyError(''); setEmergencyOpen(true); }} onArchive={openArchive} onRestore={restoreStudent} statusSaving={statusSaving} />}
     {archiveOpen && selectedId && <ArchiveStudentModal reason={archiveReason} reasonError={archiveError} onReasonChange={value => { setArchiveReason(value); setArchiveError(''); }} onSubmit={archiveStudent} onClose={closeArchive} saving={statusSaving} />}

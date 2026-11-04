@@ -112,10 +112,11 @@ const Settings = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [darkMode, setDarkMode] = useState(() => readDarkMode('student'));
-  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
 
   const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '', new_password_confirmation: '' });
-  const [emailForm, setEmailForm] = useState({ new_email: '', password: '' });
+  const [emailForm, setEmailForm] = useState({ new_email: '', password: '', otp: '' });
+  // Email change: 'details' (new email + password) → 'otp' (code sent to the new email).
+  const [emailStep, setEmailStep] = useState('details');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [resetPassword, setResetPassword] = useState('');
 
@@ -221,20 +222,35 @@ const Settings = () => {
     e.preventDefault();
     setLoading(true); setMessage('');
     try {
-      const response = await api.patch('/student/profile/email', { email: emailForm.new_email, password: emailForm.password });
+      if (emailStep === 'details') {
+        const response = await api.post('/student/profile/email/otp', { email: emailForm.new_email, password: emailForm.password });
+        setEmailStep('otp');
+        setEmailForm(current => ({ ...current, password: '', otp: '' }));
+        setMessageType('success');
+        setMessage(response.data.message);
+        return;
+      }
+      const response = await api.patch('/student/profile/email', { otp: emailForm.otp });
       const storedUser = getUser('student');
       setUser({ ...storedUser, email: response.data.data.email }, 'student');
       window.dispatchEvent(new Event('studentProfileUpdated'));
       setMessageType('success');
       setMessage('Email updated successfully. Use your updated email the next time you log in.');
-      setEmailForm({ new_email: '', password: '' });
+      setEmailForm({ new_email: '', password: '', otp: '' });
+      setEmailStep('details');
     } catch (err) {
       setMessageType('error');
       setMessage(Object.values(err.response?.data?.errors || {}).flat().join(' ') || err.response?.data?.message || 'Failed to update email.');
     } finally {
       setLoading(false);
-      setTimeout(() => setMessage(''), 4000);
+      setTimeout(() => setMessage(''), 6000);
     }
+  };
+
+  const restartEmailChange = () => {
+    setEmailStep('details');
+    setEmailForm({ new_email: emailForm.new_email, password: '', otp: '' });
+    setMessage('');
   };
 
   const handleResetData = async (e) => {
@@ -293,7 +309,9 @@ const Settings = () => {
     { id: 'developer', icon: Wrench, label: 'Developer Tools', desc: 'Testing tools' },
   ];
 
-  const tabs = isDesktop ? desktopTabs : desktopTabs;
+  // Developer Tools is hidden: it only appears when opened by its direct link (?tab=developer).
+  const devToolsUnlocked = params.get('tab') === 'developer';
+  const tabs = desktopTabs.filter(tab => tab.id !== 'developer' || devToolsUnlocked);
 
   // Shared panel body, rendered in the right column on desktop and slid open
   // inside the tapped accordion item on mobile.
@@ -415,20 +433,28 @@ const Settings = () => {
             <input type="email" value={user.email || ''} disabled
               className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 text-sm bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed" />
           </div>
-          <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5">New Email</label>
-            <input type="email" value={emailForm.new_email} onChange={(e) => setEmailForm({...emailForm, new_email: e.target.value})}
-              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5">Confirm Password</label>
-            <input type="password" value={emailForm.password} onChange={(e) => setEmailForm({...emailForm, password: e.target.value})}
-              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
-          </div>
-          <button type="submit" disabled={loading}
+          {emailStep === 'details' ? <>
+            <div>
+              <label htmlFor="settings-new-email" className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5">New Email</label>
+              <input id="settings-new-email" type="email" value={emailForm.new_email} onChange={(e) => setEmailForm({...emailForm, new_email: e.target.value})}
+                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
+            </div>
+            <div>
+              <label htmlFor="settings-email-password" className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5">Confirm Password</label>
+              <input id="settings-email-password" type="password" value={emailForm.password} onChange={(e) => setEmailForm({...emailForm, password: e.target.value})}
+                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
+            </div>
+          </> : <div>
+            <label htmlFor="settings-email-otp" className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5">Verification Code</label>
+            <input id="settings-email-otp" type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} pattern="\d{6}" value={emailForm.otp}
+              onChange={(e) => setEmailForm({...emailForm, otp: e.target.value.replace(/\D/g, '').slice(0, 6)})} autoFocus placeholder="000000"
+              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 text-center text-lg tracking-[0.4em] focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
+            <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">Enter the 6-digit code we sent to <strong className="text-gray-700 dark:text-gray-200">{emailForm.new_email}</strong>. <button type="button" onClick={restartEmailChange} disabled={loading} className="font-semibold text-maroon-800 hover:underline dark:text-maroon-300">Change email or resend code</button></p>
+          </div>}
+          <button type="submit" disabled={loading || (emailStep === 'otp' && emailForm.otp.length !== 6)}
             className="w-full py-3 bg-maroon-800 text-white font-semibold rounded-lg hover:bg-maroon-900 transition flex items-center justify-center space-x-2 disabled:opacity-50">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            <span>{loading ? 'Saving...' : 'Update Email'}</span>
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : emailStep === 'details' ? <Mail className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+            <span>{loading ? (emailStep === 'details' ? 'Sending code...' : 'Saving...') : emailStep === 'details' ? 'Send Verification Code' : 'Verify & Update Email'}</span>
           </button>
         </form>
       );

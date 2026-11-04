@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Eye, Search, SlidersHorizontal, Users, X, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarDays, Eye, Search, SlidersHorizontal, Users, X, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { mediaUrl } from '../../../utils/mediaUrl';
 import { pageWindow } from '../../../utils/pageWindow';
 import { academic, appliedDirectoryFilters, directoryCourses, directoryDefaultFilters, directoryStatusOptions, years, directorySectionsForYear, fullName, focus, inputStyle, secondary } from './directoryOptions';
+import useAcademicCatalog from '../../../hooks/useAcademicCatalog';
 
 export function Avatar({ student }) {
   const path = student?.student_profile?.profile_picture;
@@ -17,14 +18,24 @@ export function StatusBadge({ status }) {
   const label = status || 'normal';
   return <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium capitalize ${colors[status] || 'bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-300'}`}>{label.replaceAll('_', ' ')}</span>;
 }
-export function StudentFilters({ filters, onChange, onClear, filterDefinitions, label = 'Student filters', searchLabel = 'Search students', searchPlaceholder = 'Search by name or student ID', embedded = false }) {
+const dateChip = value => new Date(`${value}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+const chipLabel = (key, value, dateLabel) => key === 'search' ? `Search: ${value}` : key === 'section' ? `Section ${value}`
+  : key === 'date_from' ? `${dateLabel} from ${dateChip(value)}` : key === 'date_to' ? `${dateLabel} to ${dateChip(value)}` : value;
+// `dateLabel` names what the From / To calendar filters (e.g. "Registered", "Visit date"); the fields show when filters has date_from.
+export function StudentFilters({ filters, onChange, onClear, filterDefinitions, label = 'Student filters', searchLabel = 'Search students', searchPlaceholder = 'Search by name or student ID', embedded = false, dateLabel = 'Date' }) {
   const applied = appliedDirectoryFilters(filters);
   const active = applied.length > 0;
   const isApplied = key => applied.some(([field]) => field === key);
+  // Course Management entries plus the older catalog, so students registered under either stay filterable.
+  const catalog = useAcademicCatalog();
+  const courseOptions = [...new Map([...catalog.map(({ code, name }) => [code, name]), ...directoryCourses].map(([code, name]) => [code, name])).entries()]
+    .sort(([a], [b]) => a.localeCompare(b));
+  const catalogSections = catalog.flatMap(({ sections }) => sections).filter(entry => !filters.year || entry.year === filters.year).map(entry => entry.section);
+  const sectionOptions = [...new Set([...directorySectionsForYear(filters.year), ...catalogSections])].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   const definitions = filterDefinitions || [
-    ['course', 'Course', 'All Courses', directoryCourses.map(([value, label]) => [value, `${value} — ${label}`])],
+    ['course', 'Course', 'All Courses', courseOptions.map(([value, label]) => [value, `${value} — ${label}`])],
     ['year', 'Year', 'All Years', years.map(value => [value, value])],
-    ['section', 'Section', 'All Sections', directorySectionsForYear(filters.year).map(value => [value, value])],
+    ['section', 'Section', 'All Sections', sectionOptions.map(value => [value, value])],
     ['status', 'Status', null, directoryStatusOptions],
   ];
   return <section aria-label={label} className={embedded ? "" : "rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"}>
@@ -32,7 +43,14 @@ export function StudentFilters({ filters, onChange, onClear, filterDefinitions, 
       <label className="col-span-2 lg:col-span-4 xl:col-span-1"><span className="sr-only">{searchLabel}</span><span className="relative block"><Search size={18} aria-hidden="true" className="absolute left-3 top-3 text-gray-400" /><input type="search" className={`${inputStyle} pl-10`} placeholder={searchPlaceholder} value={filters.search} onChange={e => onChange('search', e.target.value)} /></span></label>
       {definitions.map(([key, label, all, options]) => <label key={key} className="relative block"><span className="sr-only">{label}</span><select aria-label={label} value={filters[key]} onChange={e => onChange(key, e.target.value)} className={`${inputStyle} cursor-pointer appearance-none truncate pr-10 ${isApplied(key) ? 'border-maroon-500 bg-maroon-50 dark:bg-maroon-950' : ''}`}>{all !== null && <option value="">{all}</option>}{options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select><ChevronDown size={16} aria-hidden="true" className={`pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 ${isApplied(key) ? 'text-maroon-700 dark:text-maroon-300' : 'text-gray-400'}`} /></label>)}
     </div>
-    {active && <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3 dark:border-gray-700"><SlidersHorizontal size={14} aria-hidden="true" className="text-gray-400" />{applied.map(([key, value]) => <button key={key} onClick={() => onChange(key, key === 'status' ? directoryDefaultFilters.status : '')} aria-label={`Remove ${key} filter: ${value}`} className={`inline-flex max-w-full items-center gap-1 rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-200 ${focus}`}><span className="truncate">{key === 'search' ? `Search: ${value}` : key === 'section' ? `Section ${value}` : value}</span><X size={12} className="shrink-0" /></button>)}<button onClick={onClear} className={`ml-auto rounded px-2 py-1 text-sm font-medium text-maroon-800 dark:text-maroon-300 ${focus}`}>Clear filters</button></div>}
+    {'date_from' in filters && <div className="mt-3 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center">
+      <span className="col-span-2 flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 sm:col-span-1"><CalendarDays size={14} aria-hidden="true" />{dateLabel}</span>
+      {[['date_from', 'From', { max: filters.date_to || undefined }], ['date_to', 'To', { min: filters.date_from || undefined }]].map(([key, text, limits]) => <label key={key} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+        <span className="shrink-0 text-xs">{text}</span>
+        <input type="date" aria-label={`${dateLabel} ${text.toLowerCase()}`} value={filters[key]} {...limits} onChange={e => onChange(key, e.target.value)} className={`${inputStyle} py-2 sm:w-44 ${filters[key] ? 'border-maroon-500 bg-maroon-50 dark:bg-maroon-950' : ''}`} />
+      </label>)}
+    </div>}
+    {active && <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3 dark:border-gray-700"><SlidersHorizontal size={14} aria-hidden="true" className="text-gray-400" />{applied.map(([key, value]) => <button key={key} onClick={() => onChange(key, key === 'status' ? directoryDefaultFilters.status : '')} aria-label={`Remove ${key} filter: ${value}`} className={`inline-flex max-w-full items-center gap-1 rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-200 ${focus}`}><span className="truncate">{chipLabel(key, value, dateLabel)}</span><X size={12} className="shrink-0" /></button>)}<button onClick={onClear} className={`ml-auto rounded px-2 py-1 text-sm font-medium text-maroon-800 dark:text-maroon-300 ${focus}`}>Clear filters</button></div>}
   </section>;
 }
 export function StudentDirectory({ students, loading, filtered, onClear, onView }) {
@@ -47,11 +65,12 @@ export function StudentDirectory({ students, loading, filtered, onClear, onView 
   </>;
 }
 // `numbered` shows the page numbers (1 2 3) between the arrows, instead of only the current page.
-export function Pagination({ meta, page, onPage, loading, entity = 'students', hideShowingText = false, numbered = false }) {
+// `summary="pages"` reads "Page 1 of 16 · 152 total" instead of "Showing 1–10 of 152".
+export function Pagination({ meta, page, onPage, loading, entity = 'students', hideShowingText = false, numbered = false, summary = 'range' }) {
   const last = meta.last_page || 1;
   // Arrows around the current page number only, so the bar stays the same width however many pages there are.
   const arrow = `flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:bg-transparent dark:text-gray-300 dark:hover:bg-gray-700 ${focus}`;
-  return <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-gray-200 px-4 py-3 dark:border-gray-700">{!hideShowingText && <p className="text-sm text-gray-500" aria-live="polite">{loading ? `Loading ${entity}…` : `Showing ${meta.from || 0}–${meta.to || 0} of ${meta.total || 0} ${entity}`}</p>}<nav aria-label={`${entity} pages`} className={hideShowingText ? 'ml-auto flex items-center gap-2' : 'flex items-center gap-2'}><button className={arrow} disabled={loading || page <= 1} onClick={() => onPage(page - 1)} aria-label="Previous page"><ChevronLeft size={16} /></button>{numbered
+  return <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-gray-200 px-4 py-3 dark:border-gray-700">{!hideShowingText && <p className="text-sm text-gray-500" aria-live="polite">{loading ? `Loading ${entity}…` : summary === 'pages' ? `Page ${Math.min(page, last)} of ${last} · ${(meta.total || 0).toLocaleString()} total` : `Showing ${meta.from || 0}–${meta.to || 0} of ${meta.total || 0} ${entity}`}</p>}<nav aria-label={`${entity} pages`} className={hideShowingText ? 'ml-auto flex items-center gap-2' : 'flex items-center gap-2'}><button className={arrow} disabled={loading || page <= 1} onClick={() => onPage(page - 1)} aria-label="Previous page"><ChevronLeft size={16} /></button>{numbered
     ? pageWindow(page, last).map((number, index) => number === null
       ? <span key={`gap-${index}`} className="px-1 text-gray-400" aria-hidden="true">…</span>
       : number === page

@@ -21,7 +21,8 @@ test('student directory options follow the registration catalog without changing
 
     const html = renderToStaticMarkup(React.createElement(StudentFilters, { filters: emptyFilters, onChange: () => {}, onClear: () => {} }));
     const values = label => [...html.match(new RegExp(`<select aria-label="${label}"[^>]*>(.*?)</select>`, 's'))[1].matchAll(/<option value="([^"]*)"/g)].map(match => match[1]).filter(Boolean);
-    assert.deepEqual(values('Course'), catalog.map(({ code }) => code));
+    // The Course filter lists codes A–Z (Course Management entries merged with this catalog).
+    assert.deepEqual(values('Course'), catalog.map(({ code }) => code).sort((a, b) => a.localeCompare(b)));
     assert.deepEqual(values('Section'), expectedSections);
   } finally {
     await server.close();

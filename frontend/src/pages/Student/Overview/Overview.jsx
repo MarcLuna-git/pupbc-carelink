@@ -8,7 +8,6 @@ import {
   Camera,
   CalendarCheck,
   CalendarClock,
-  ChevronRight,
   ClipboardList,
   HeartPulse,
   Loader2,
@@ -34,6 +33,7 @@ import { mediaUrl } from '../../../utils/mediaUrl';
 import { clinicDate } from '../../../utils/appointmentDate';
 import { StudentToast } from '../../../components/StudentFeedback';
 import { contactNameError, contactPhoneError, formatContactPhone, ownMobileContactError } from '../../../utils/contactValidation';
+import { nameOnly } from '../../../utils/inputFilters';
 
 /*
  * ROUTE LOADING — same restored effect as the Settings page, scoped to this
@@ -388,7 +388,9 @@ const Overview = () => {
       ? value.replace(/[^\d+]/g, '').slice(0, 13)
       : name === 'emergency_phone'
         ? formatContactPhone(value)
-        : value;
+        : name === 'emergency_name'
+          ? nameOnly(value)
+          : value;
     if (next === null) return;
     setDraft((current) => ({ ...current, [name]: next }));
   };
@@ -658,7 +660,7 @@ const Overview = () => {
             {showHealthProfile ? (
               <><ArrowLeft className="h-4 w-4" /> Go Back</>
             ) : (
-              <>Go <ChevronRight className="h-4 w-4" /></>
+              'Go'
             )}
           </button>
         </div>

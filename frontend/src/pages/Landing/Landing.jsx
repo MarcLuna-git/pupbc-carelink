@@ -180,12 +180,6 @@ const SERVICES = [
       'Request a medical certificate through a clinic appointment.',
   },
   {
-    icon: ShieldCheck,
-    title: 'Medical Clearance',
-    description:
-      'Request medical clearance through the clinic.',
-  },
-  {
     icon: HeartPulse,
     title: 'Follow-up Checkup',
     description:

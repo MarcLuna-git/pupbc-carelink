@@ -87,8 +87,7 @@
 .student-notification-bell { order:2; }
 /* Unread count: a compact pill tucked over the bell's top-right, kept INSIDE
    the button's border. The surface-colored ring separates it from the icon. */
-.student-bell-count { position:absolute;top:3px;right:3px;display:flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;line-height:1;box-shadow:0 0 0 2px var(--sp-surface);pointer-events:none; }
-.student-notification-bell:hover .student-bell-count { box-shadow:0 0 0 2px var(--sp-soft); }
+.student-bell-count { position:absolute;top:-7px;right:-7px;z-index:1;display:flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;line-height:1;box-shadow:0 0 0 2px var(--sp-surface);pointer-events:none; }
 .dark .student-bell-count { background:#b91c1c; }
 .student-main { flex:1 0 auto;min-height:100dvh;min-width:0;overflow:visible;overscroll-behavior:contain;padding:calc(var(--sp-header-height) + 16px) 22px 16px;scroll-behavior:smooth;scroll-padding-top:calc(var(--sp-header-height) + 16px); }
 .student-page-content { width:100%;max-width:1440px;margin:0 auto;min-width:0; }

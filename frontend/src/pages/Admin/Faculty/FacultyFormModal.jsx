@@ -1,41 +1,40 @@
 import { useState } from 'react';
 import { Loader2, Save, Users, X } from 'lucide-react';
 import api from '../../../services/api';
-import academics from '../../../data/registration-academics.json';
 import { Modal } from '../Students/StudentDetailsModal';
 import { focus } from '../Students/directoryOptions';
-import { DEPARTMENTS, DESIGNATIONS, FACULTY_TYPES } from './facultyOptions';
+import { nameOnly } from '../../../utils/inputFilters';
+import { formatContactPhone } from '../../../utils/contactValidation';
 
 /*
- * Add Faculty Member / Edit Faculty Member popup. Course is the program the faculty member teaches under
- * (the same programs as the Courses page). Email and contact number are optional and show on their details.
+ * Add Faculty Member / Edit Faculty Member popup: name, and an optional email and contact number
+ * that show on their details. Editing also sets Active / Inactive.
  */
 const field = 'h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:ring-maroon-300/30';
-const blank = { full_name: '', faculty_type: 'full_time', course: '', designation: '', department: '', email: '', phone: '', notes: '', status: 'active' };
-const fromMember = member => ({
-  full_name: member.full_name || '', faculty_type: member.faculty_type || 'full_time', course: member.course || '', designation: member.designation || '',
-  department: member.department || '', email: member.email || '', phone: member.phone || '', notes: member.notes || '', status: member.status || 'active',
-});
+const blank = { full_name: '', email: '', phone: '', status: 'active' };
+const fromMember = member => ({ full_name: member.full_name || '', email: member.email || '', phone: member.phone || '', status: member.status || 'active' });
 
 function Label({ children, required }) {
   return <span className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-300">{children}{required && <span className="ml-0.5 text-red-600" aria-hidden="true">*</span>}</span>;
 }
-// A saved value that is not in the standard list (typed in before, or from an older list) stays selectable.
-const withCurrent = (list, value) => (value && !list.includes(value) ? [value, ...list] : list);
 
 export default function FacultyFormModal({ member = null, onClose, onSaved }) {
   const editing = Boolean(member);
   const [form, setForm] = useState(editing ? fromMember(member) : blank);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const set = key => event => setForm(current => ({ ...current, [key]: event.target.value }));
-  const courses = academics.map(course => course.abbreviation);
+  const set = key => event => {
+    const raw = event.target.value;
+    const value = key === 'full_name' ? nameOnly(raw) : key === 'phone' ? formatContactPhone(raw) : raw;
+    if (value === null) return;
+    setForm(current => ({ ...current, [key]: value }));
+  };
 
   const submit = async event => {
     event.preventDefault();
     if (saving) return;
     setSaving(true); setError('');
-    const body = { ...form, designation: form.designation || null, department: form.department || null, email: form.email.trim() || null, phone: form.phone.trim() || null, notes: form.notes.trim() || null };
+    const body = { ...form, email: form.email.trim() || null, phone: form.phone.trim() || null };
     try {
       if (editing) await api.put(`/nurse/faculty/${member.id}`, body, { headers: { 'If-Match': member.sync_version } });
       else await api.post('/nurse/faculty', body);
@@ -57,42 +56,14 @@ export default function FacultyFormModal({ member = null, onClose, onSaved }) {
       </header>
 
       <div className="space-y-4 px-5 pb-5 pt-3 sm:px-6">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label><Label required>Full Name</Label><input className={field} value={form.full_name} onChange={set('full_name')} placeholder="e.g. Maria Santos" maxLength={150} required /></label>
-          <label><Label required>Faculty Type</Label>
-            <select className={`${field} cursor-pointer`} value={form.faculty_type} onChange={set('faculty_type')} required>{FACULTY_TYPES.map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select>
-          </label>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label><Label required>Course</Label>
-            <select className={`${field} cursor-pointer`} value={form.course} onChange={set('course')} required>
-              <option value="">Select course</option>
-              {withCurrent(courses, form.course).map(name => <option key={name} value={name}>{name}</option>)}
-            </select>
-          </label>
-          <label><Label>Designation</Label>
-            <select className={`${field} cursor-pointer`} value={form.designation} onChange={set('designation')}>
-              <option value="">Select designation</option>
-              {withCurrent(DESIGNATIONS, form.designation).map(name => <option key={name} value={name}>{name}</option>)}
-            </select>
-          </label>
-        </div>
-        <label className="block"><Label>Organization / Department</Label>
-          <select className={`${field} cursor-pointer`} value={form.department} onChange={set('department')}>
-            <option value="">Select department</option>
-            {withCurrent(DEPARTMENTS, form.department).map(name => <option key={name} value={name}>{name}</option>)}
-          </select>
-        </label>
+        <label className="block"><Label required>Full Name</Label><input className={field} value={form.full_name} onChange={set('full_name')} placeholder="e.g. Maria Santos" maxLength={150} required /></label>
         <div className="grid gap-4 sm:grid-cols-2">
           <label><Label>Email <span className="font-normal text-gray-400">(optional)</span></Label><input className={field} type="email" value={form.email} onChange={set('email')} placeholder="e.g. maria.santos@school.edu" maxLength={150} /></label>
-          <label><Label>Contact Number <span className="font-normal text-gray-400">(optional)</span></Label><input className={field} type="tel" value={form.phone} onChange={set('phone')} placeholder="e.g. +63 912 345 6789" maxLength={50} /></label>
+          <label><Label>Contact Number <span className="font-normal text-gray-400">(optional)</span></Label><input className={field} type="tel" value={form.phone} onChange={set('phone')} placeholder="09XXXXXXXXX" inputMode="tel" maxLength={13} /></label>
         </div>
         {editing && <label className="block sm:max-w-xs"><Label required>Status</Label>
           <select className={`${field} cursor-pointer`} value={form.status} onChange={set('status')}><option value="active">Active</option><option value="inactive">Inactive</option></select>
         </label>}
-        <label className="block"><Label>Notes <span className="font-normal text-gray-400">(optional)</span></Label>
-          <textarea className={`${field} h-auto resize-none py-2.5`} rows={3} maxLength={500} value={form.notes} onChange={set('notes')} placeholder="Additional notes about the faculty member..." />
-        </label>
         {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{error}</p>}
       </div>
 

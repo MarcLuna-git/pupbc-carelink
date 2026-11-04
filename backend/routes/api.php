@@ -116,6 +116,9 @@ Route::prefix('kiosk')
         );
     });
 
+// Registration form options, kept out of the auth group's tight rate limit.
+Route::get('/auth/registration-options', [AuthController::class, 'registrationOptions'])
+    ->middleware('throttle:60,1,registration-options:');
 
 Route::prefix('auth')
     ->middleware([
@@ -526,6 +529,7 @@ Route::middleware([
                     [ProfileController::class, 'removeAvatar']
                 );
 
+                Route::post('/profile/email/otp', [ProfileController::class, 'requestEmailOtp'])->middleware('throttle:5,10');
                 Route::patch('/profile/email', [ProfileController::class, 'updateEmail']);
 
 
@@ -972,6 +976,9 @@ Route::middleware([
                 Route::get('/course-sections', [\App\Http\Controllers\Api\Nurse\CourseManagementController::class, 'sections']);
                 Route::post('/course-sections', [\App\Http\Controllers\Api\Nurse\CourseManagementController::class, 'storeSection']);
                 Route::put('/course-sections/{id}', [\App\Http\Controllers\Api\Nurse\CourseManagementController::class, 'updateSection']);
+                Route::delete('/academic-periods/{id}', [\App\Http\Controllers\Api\Nurse\CourseManagementController::class, 'destroyPeriod']);
+                Route::delete('/courses/{id}', [\App\Http\Controllers\Api\Nurse\CourseManagementController::class, 'destroyCourse']);
+                Route::delete('/course-sections/{id}', [\App\Http\Controllers\Api\Nurse\CourseManagementController::class, 'destroySection']);
                 Route::post('/student-enrollments', [\App\Http\Controllers\Api\Nurse\CourseManagementController::class, 'enroll']);
 
                 Route::get(
@@ -1155,6 +1162,7 @@ Route::middleware([
                 Route::put('/faculty/{id}', [\App\Http\Controllers\Api\Nurse\FacultyController::class, 'update']);
                 Route::delete('/faculty/{id}', [\App\Http\Controllers\Api\Nurse\FacultyController::class, 'destroy']);
                 Route::post('/faculty/{id}/dispense', [\App\Http\Controllers\Api\Nurse\FacultyController::class, 'dispense']);
+                Route::post('/faculty/{id}/consultations', [\App\Http\Controllers\Api\Nurse\FacultyController::class, 'consult']);
                 Route::get('/faculty-dispensings', [\App\Http\Controllers\Api\Nurse\FacultyController::class, 'dispensings']);
 
                 /*

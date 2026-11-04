@@ -27,7 +27,6 @@ class AppointmentController extends Controller
     private const SERVICES = [
         'Consultation',
         'Medical Certificate',
-        'Medical Clearance',
         'Follow-up Checkup',
         'Vaccination',
         'Other',
@@ -175,8 +174,8 @@ class AppointmentController extends Controller
                     implode(',', self::TIME_SLOTS),
 
                 'concern' =>
-                    'nullable|string|max:1000',
-            ]);
+                    'required|string|max:1000',
+            ], ['concern.required' => 'Please give a short reason for this appointment.']);
 
             $date = $validated['appointment_date'];
             $time = $validated['time_slot'];
@@ -320,14 +319,17 @@ class AppointmentController extends Controller
             ) {
                 ClinicQueue::lock();
 
+                // A request booked before a service was retired (e.g. Medical Clearance) may keep it.
+                $currentService = Appointment::where('user_id', auth()->id())->whereKey($id)->value('service');
+                $allowedServices = array_values(array_unique(array_filter([...self::SERVICES, $currentService])));
+
                 $validated =
                     $request->validate([
-                        'service' =>
-                            'required|string|in:' .
-                            implode(
-                                ',',
-                                self::SERVICES
-                            ),
+                        'service' => [
+                            'required',
+                            'string',
+                            \Illuminate\Validation\Rule::in($allowedServices),
+                        ],
 
                         'appointment_date' =>
                             'required|date_format:Y-m-d',
@@ -340,8 +342,8 @@ class AppointmentController extends Controller
                             ),
 
                         'concern' =>
-                            'nullable|string|max:1000',
-                    ]);
+                            'required|string|max:1000',
+                    ], ['concern.required' => 'Please give a short reason for this appointment.']);
 
                 $appointment =
                     Appointment::where(

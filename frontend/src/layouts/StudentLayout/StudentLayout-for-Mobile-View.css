@@ -38,3 +38,9 @@
   body:has(.student-approved-shell)::-webkit-scrollbar,
   .student-approved-shell::-webkit-scrollbar { display:none; }
 }
+
+/* Small phones (320–374px): keep the brand caption on one line and the bottom-nav labels whole. */
+@media (max-width:374px) {
+  .student-header-brand-caption { font-size:10px;letter-spacing:.8px;white-space:nowrap; }
+  .student-bottom-nav-label { font-size:10.5px;letter-spacing:-.1px; }
+}

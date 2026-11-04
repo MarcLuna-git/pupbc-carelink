@@ -47,17 +47,18 @@ class AppointmentController extends Controller
     /*
      * Appointments-page tabs: the state of the booking request only. Where the visit is in the
      * queue (waiting, called, in consultation, completed) lives on the Consultation page.
-     *   approved  = approved, plus visits that were completed (the request was approved)
+     *   approved  = approved requests whose visit has not finished yet
+     *   completed = the visit's consultation was saved
      *   expired   = expired, plus approved bookings the student never attended (no_show)
      */
-    private const STAGES = ['pending', 'approved', 'rejected', 'cancelled', 'expired'];
+    private const STAGES = ['pending', 'approved', 'completed', 'rejected', 'cancelled', 'expired'];
 
     private function whereStage($query, string $stage)
     {
         $attended = fn($q) => $q->where('no_show', false)->orWhereNull('no_show');
 
         if ($stage === 'approved') {
-            return $query->whereIn('status', ['approved', 'completed'])->where($attended);
+            return $query->where('status', 'approved')->where($attended);
         }
         if ($stage === 'expired') {
             return $query->where(fn($q) => $q->where('status', 'expired')

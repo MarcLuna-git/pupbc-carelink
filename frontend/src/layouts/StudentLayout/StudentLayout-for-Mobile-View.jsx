@@ -101,7 +101,7 @@ const StudentLayoutForMobileView = ({
 
                 <Icon className="relative z-10 h-5 w-5" />
 
-                <span className="relative z-10 max-w-full truncate text-xs font-semibold leading-none sm:text-xs">
+                <span className="student-bottom-nav-label relative z-10 max-w-full truncate text-xs font-semibold leading-none sm:text-xs">
                   {item.label}
                 </span>
               </Link>

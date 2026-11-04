@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Nurse;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Models\FacultyConsultation;
 use App\Models\FacultyDispensing;
 use App\Models\FacultyMember;
 use App\Models\Medicine;
@@ -20,26 +21,31 @@ use Illuminate\Validation\ValidationException;
  */
 class FacultyController extends Controller
 {
+    private const FORMAT_MESSAGES = [
+        'full_name.regex' => 'Name can only contain letters, spaces, periods, hyphens and apostrophes.',
+        'phone.regex' => 'Use 09XXXXXXXXX or +639XXXXXXXXX.',
+    ];
+
     private function rules(bool $creating): array
     {
         $required = $creating ? 'required' : 'sometimes|required';
         return [
-            'full_name' => "$required|string|max:150",
+            'full_name' => [...explode('|', "$required|string|max:150"), 'regex:/^[\pL\s\-\'.]+$/u'],
             'faculty_type' => ['sometimes', 'required', Rule::in(FacultyMember::TYPES)],
-            'course' => "$required|string|max:50",
+            'course' => 'nullable|string|max:50',
             'designation' => 'nullable|string|max:100',
             'department' => 'nullable|string|max:150',
             'email' => 'nullable|email|max:150',
-            'phone' => 'nullable|string|max:50',
+            'phone' => ['nullable', 'string', 'regex:/^(?:09\d{9}|\+639\d{9})$/'],
             'notes' => 'nullable|string|max:500',
             'status' => ['sometimes', 'required', Rule::in(FacultyMember::STATUSES)],
         ];
     }
 
-    // Same name in the same course twice is almost certainly a duplicate entry.
-    private function ensureNotDuplicate(string $name, ?string $course, ?string $ignoreId = null): void
+    // The same name twice is almost certainly a duplicate entry.
+    private function ensureNotDuplicate(string $name, ?string $ignoreId = null): void
     {
-        $query = FacultyMember::whereRaw('LOWER(full_name) = ?', [strtolower(trim($name))])->where('course', $course);
+        $query = FacultyMember::whereRaw('LOWER(full_name) = ?', [strtolower(trim($name))]);
         if ($ignoreId) {
             $query->where('id', '!=', $ignoreId);
         }
@@ -96,8 +102,8 @@ class FacultyController extends Controller
 
     public function store(Request $request)
     {
-        $data = $this->clean($request->validate($this->rules(true)));
-        $this->ensureNotDuplicate($data['full_name'], $data['course'] ?? null);
+        $data = $this->clean($request->validate($this->rules(true), self::FORMAT_MESSAGES));
+        $this->ensureNotDuplicate($data['full_name']);
 
         $faculty = FacultyMember::create(array_merge(['faculty_type' => 'full_time', 'status' => 'active'], $data, ['created_by' => auth()->id()]));
 
@@ -109,14 +115,49 @@ class FacultyController extends Controller
         $faculty = FacultyMember::findOrFail($id);
 
         return response()->json(['success' => true, 'data' => $faculty, 'recent_dispensings' => $faculty->dispensings()
-            ->with('dispenser:id,first_name,last_name')->latest()->limit(5)->get(), 'dispensing_count' => $faculty->dispensings()->count()]);
+            ->with('dispenser:id,first_name,last_name')->latest()->limit(5)->get(), 'dispensing_count' => $faculty->dispensings()->count(),
+            'consultations' => $faculty->consultations()->with('consultant:id,first_name,last_name')->latest()->limit(10)->get(),
+            'consultation_count' => $faculty->consultations()->count()]);
+    }
+
+    /* Record a clinic consultation for a faculty member. */
+    public function consult(Request $request, $id)
+    {
+        $data = $request->validate([
+            'chief_complaint' => 'required|string|max:500',
+            'blood_pressure' => ['nullable', 'string', 'max:20', 'regex:/^\d{2,3}\/\d{2,3}$/'],
+            'temperature' => 'nullable|numeric|between:30,45',
+            'pulse_rate' => 'nullable|integer|between:20,250',
+            'assessment' => 'nullable|string|max:2000',
+            'intervention' => 'nullable|string|max:2000',
+            'notes' => 'nullable|string|max:2000',
+        ], ['blood_pressure.regex' => 'Enter the blood pressure like 120/80.']);
+        $faculty = FacultyMember::findOrFail($id);
+        abort_unless($faculty->status === 'active', 422, 'This faculty member is inactive. Make them active before recording a consultation.');
+        $data = array_map(fn ($value) => is_string($value) ? (trim($value) === '' ? null : trim($value)) : $value, $data);
+        abort_if(empty($data['chief_complaint']), 422, 'Enter the chief complaint.');
+
+        $consultation = FacultyConsultation::create($data + ['faculty_member_id' => $faculty->id, 'consulted_by' => auth()->id()]);
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'faculty_consulted',
+            'description' => "Recorded a consultation for faculty member {$faculty->id}",
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Consultation saved for {$faculty->full_name}.",
+            'data' => $consultation->load('consultant:id,first_name,last_name'),
+        ], 201);
     }
 
     public function update(Request $request, $id)
     {
         $faculty = FacultyMember::findOrFail($id);
-        $data = $this->clean($request->validate($this->rules(false)));
-        $this->ensureNotDuplicate($data['full_name'] ?? $faculty->full_name, array_key_exists('course', $data) ? $data['course'] : $faculty->course, $faculty->id);
+        $data = $this->clean($request->validate($this->rules(false), self::FORMAT_MESSAGES));
+        $this->ensureNotDuplicate($data['full_name'] ?? $faculty->full_name, $faculty->id);
 
         $faculty->update($data);
 

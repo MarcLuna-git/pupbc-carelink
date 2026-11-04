@@ -52,6 +52,12 @@ const authService = {
   },
 
 
+  // Course, year level, and section choices, managed in Nurse → Course Management.
+  async registrationOptions() {
+    const response = await api.get('/auth/registration-options');
+    return response.data?.data?.courses || [];
+  },
+
   async register(data) {
     const response = await api.post(
       '/auth/register',
