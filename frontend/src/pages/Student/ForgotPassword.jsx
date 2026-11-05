@@ -16,7 +16,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Clock,
-  Lock,
   ShieldCheck,
 } from 'lucide-react';
 import { StudentToast } from '../../components/StudentFeedback';
@@ -120,28 +119,9 @@ const ForgotPassword = () => {
 
         <div className="mb-6 flex flex-col items-center">
 
-          {/* Mail + lock icon */}
-          <div className="relative mb-5 mt-2">
-            <div className="absolute -inset-x-6 inset-y-2 rounded-full bg-rose-100/70" />
-
-            <span className="absolute -left-5 top-0 h-1 w-4 rotate-45 rounded-full bg-rose-400/80" />
-            <span className="absolute -left-7 top-5 h-1 w-3 rounded-full bg-rose-400/70" />
-            <span className="absolute -right-5 top-2 h-1 w-3 -rotate-45 rounded-full bg-rose-400/70" />
-            <span className="absolute -right-7 top-7 h-1 w-3 rounded-full bg-rose-400/70" />
-
-            <div className="relative flex h-16 w-16 -rotate-6 items-center justify-center rounded-2xl bg-gradient-to-br from-maroon-800 to-maroon-950">
-              <Mail
-                className="h-8 w-8 rotate-6 text-white"
-                strokeWidth={2.2}
-              />
-            </div>
-
-            <span className="absolute -bottom-2 -right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-md">
-              <Lock
-                className="h-4 w-4 text-maroon-800"
-                strokeWidth={2.6}
-              />
-            </span>
+          {/* Simple icon badge — same style as the appointment info modal. */}
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-rose-100">
+            <Mail className="h-6 w-6 text-maroon-800" />
           </div>
 
           <h1 className="text-center text-3xl font-black leading-tight tracking-tight sm:text-4xl">

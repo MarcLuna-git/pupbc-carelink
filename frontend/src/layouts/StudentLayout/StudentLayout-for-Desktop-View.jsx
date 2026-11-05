@@ -14,6 +14,7 @@ import {
 import {
   Calendar,
   FileText,
+  LogOut,
   QrCode,
   Settings,
   User,
@@ -24,6 +25,7 @@ import {
 } from 'framer-motion';
 
 import authService from '../../services/authService';
+import { StudentConfirmModal } from '../../components/StudentFeedback';
 import api from '../../services/api';
 import { fetchDevTools } from '../../services/devTools';
 import { getToken } from '../../services/session';
@@ -37,7 +39,7 @@ import { STUDENT_LOGOUT_REQUEST_EVENT, STUDENT_PRIMARY_LINKS, isStudentNavActive
  */
 import './StudentLayout-for-Desktop-View.css';
 import StudentLayoutForTabletView from './StudentLayout-for-Tablet-View';
-import StudentLayoutForMobileView from './StudentLayout-for-Mobile-View';
+import StudentLayoutForMobileView from './StudentLayout-for-Mobile-View-Min-300px';
 
 /*
  * Student portal outer shell / main frame (desktop view).
@@ -48,7 +50,7 @@ import StudentLayoutForMobileView from './StudentLayout-for-Mobile-View';
  * and the clinic assistant). It then embeds ONE of
  * the two view shells, chosen with a JS media query:
  *   - StudentLayout-for-Tablet-View  (>= 768px)
- *   - StudentLayout-for-Mobile-View  (<= 767px)
+ *   - StudentLayout-for-Mobile-View-Min-300px  (<= 767px)
  * The routed page is passed to whichever shell is active through `children`.
  */
 
@@ -74,7 +76,7 @@ const StudentLayoutForDesktopView = ({ children }) => {
   /*
    * Which shell to render. The frame picks a single shell with a JS media
    * query so only one of them is ever mounted:
-   *   - <= 767px : StudentLayout-for-Mobile-View (header + bottom nav)
+   *   - <= 767px : StudentLayout-for-Mobile-View-Min-300px (header + bottom nav)
    *   - >= 768px : StudentLayout-for-Tablet-View (sidebar + header)
    */
   const [isMobileView, setIsMobileView] = useState(getIsMobileView);
@@ -328,7 +330,7 @@ const StudentLayoutForDesktopView = ({ children }) => {
         /* ==================================================
             MOBILE SHELL (<= 767px)
             Drawer sidebar, bottom nav, and its own CSS live in
-            StudentLayout-for-Mobile-View.
+            StudentLayout-for-Mobile-View-Min-300px.
         ================================================== */
         <StudentLayoutForMobileView
           navItems={navItems}
@@ -357,18 +359,18 @@ const StudentLayoutForDesktopView = ({ children }) => {
         </StudentLayoutForTabletView>
       )}
 
-      {showLogoutConfirm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" role="presentation">
-          <section role="dialog" aria-modal="true" aria-labelledby="student-logout-title" className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
-            <h2 id="student-logout-title" className="text-lg font-bold text-gray-900 dark:text-white">Sign out?</h2>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Are you sure you want to end your student session?</p>
-            <div className="mt-6 flex gap-3">
-              <button type="button" onClick={() => setShowLogoutConfirm(false)} disabled={logoutLoading} className="flex-1 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-semibold text-gray-700 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-200">Cancel</button>
-              <button type="button" onClick={confirmLogout} disabled={logoutLoading} className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{logoutLoading ? 'Signing out...' : 'Sign Out'}</button>
-            </div>
-          </section>
-        </div>
-      )}
+      {/* Same popup style as the login notices (icon badge, motion, maroon action). */}
+      <StudentConfirmModal
+        open={showLogoutConfirm}
+        icon={LogOut}
+        title="Sign out?"
+        message="Are you sure you want to end your student session?"
+        confirmLabel="Sign Out"
+        busyLabel="Signing out..."
+        busy={logoutLoading}
+        onConfirm={confirmLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
 
       {/* Clinic assistant. Student portal only; conversation lives in memory.
           Hidden when the student turns it off in Settings → General. */}

@@ -5,10 +5,10 @@ import { HeartPulse, Moon, Sun } from 'lucide-react';
 import StudentAccountMenu from './student-shell/StudentAccountMenu';
 import StudentNotificationsMenu from './student-shell/StudentNotificationsMenu';
 import { preloadForPath } from '../../utils/preloadStudentPages';
-import './StudentLayout-for-Mobile-View.css';
+import './StudentLayout-for-Mobile-View-Min-300px.css';
 
 /*
- * Mobile outer shell for the Student portal (viewport <= 767px).
+ * Mobile outer shell for the Student portal (viewport 300px – 767px).
  *
  * StudentLayout-for-Desktop-View picks between this shell and the desktop/tablet shell with a
  * JS media query, so only one shell is ever mounted. This component owns the

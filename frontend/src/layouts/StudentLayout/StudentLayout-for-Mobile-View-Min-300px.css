@@ -1,10 +1,11 @@
 /*
- * Mobile outer shell styles (viewport <= 767px).
+ * Mobile outer shell styles (viewport 300px – 767px; 300px is the narrowest
+ * width the layout is tuned for).
  *
  * Split out of StudentLayout-for-Desktop-View.css. These rules deliberately come
  * AFTER StudentLayout-for-Desktop-View.css in the bundle (StudentLayout-for-Desktop-View
  * imports StudentLayout-for-Desktop-View.css, then imports
- * StudentLayout-for-Mobile-View, which imports this file), so the cascade order
+ * StudentLayout-for-Mobile-View-Min-300px, which imports this file), so the cascade order
  * matches the original single stylesheet.
  */
 
@@ -43,4 +44,28 @@
 @media (max-width:374px) {
   .student-header-brand-caption { font-size:10px;letter-spacing:.8px;white-space:nowrap; }
   .student-bottom-nav-label { font-size:10.5px;letter-spacing:-.1px; }
+}
+
+/*
+ * Narrowest phones (300–339px). At 300px the header has ~276px of room once
+ * padded: three 44px icons would leave the brand only ~110px, so the icons
+ * shrink to 40px (still a comfortable tap target), the gaps and padding
+ * tighten, and the bottom-nav tabs (~73px each) get smaller labels so
+ * "Appointments" fits without being cut off.
+ */
+@media (max-width:339px) {
+  .student-approved-shell { --sp-header-height:54px; }
+  .student-header-inner { padding:0 8px;gap:4px; }
+  .student-header-brand { gap:6px; }
+  .student-header-brand-symbol { width:24px;height:24px; }
+  .student-header-brand-name { font-size:15px; }
+  .student-header-brand-caption { font-size:9px;letter-spacing:.5px; }
+  .student-header-actions { gap:2px; }
+  .student-header-icon { width:40px;height:40px; }
+  .student-main { padding:calc(var(--sp-header-height) + 10px) 8px 14px;scroll-padding-top:calc(var(--sp-header-height) + 10px); }
+  .student-bottom-nav>div { padding:6px 2px; }
+  .student-bottom-nav a { padding:0 2px; }
+  .student-bottom-nav-label { font-size:10px;letter-spacing:-.2px; }
+  .student-approved-shell .carelink-assistant-dock { right:10px;width:44px;height:44px; }
+  .student-approved-shell .carelink-assistant-panel { right:8px;width:calc(100vw - 16px); }
 }

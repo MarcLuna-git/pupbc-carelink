@@ -260,12 +260,12 @@ const StudentAccountMenu = ({ variant = 'sidebar', collapsed = false }) => {
               type="button"
               role="menuitem"
               onClick={signOut}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-maroon-800 transition-colors hover:bg-maroon-50 dark:text-maroon-300 dark:hover:bg-maroon-900/30"
             >
               <LogOut className="h-4 w-4" />
               <span>
                 <span className="block">Sign Out</span>
-                <span className="block text-xs font-normal text-red-500/70 dark:text-red-400/70">End your current session</span>
+                <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">End your current session</span>
               </span>
             </button>
           </div>

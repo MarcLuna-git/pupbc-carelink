@@ -67,7 +67,7 @@ export const StudentToast = ({ message, type = 'success', onClose, duration = 40
   );
 };
 
-export const StudentNoticeModal = ({ open, type = 'error', title, message, actionLabel = 'OK', onClose }) => {
+export const StudentNoticeModal = ({ open, type = 'error', title, highlight, message, actionLabel = 'OK', onClose }) => {
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
@@ -106,7 +106,11 @@ export const StudentNoticeModal = ({ open, type = 'error', title, message, actio
               {isSuccess ? <CheckCircle2 className="h-8 w-8" /> : <AlertTriangle className="h-8 w-8" />}
             </span>
             <h4 id="student-notice-title" className="mt-5 text-xl font-bold text-gray-900 dark:text-white">{title}</h4>
-            <p className="mt-2 text-[15px] leading-relaxed text-gray-500 dark:text-gray-300">{message}</p>
+            {/* Optional key fact (e.g. attempts left) shown right under the title. */}
+            {highlight && (
+              <p className="mt-1 text-sm font-bold tracking-wide text-gray-900 dark:text-white">{highlight}</p>
+            )}
+            <p className="mt-2 whitespace-pre-line text-[15px] leading-relaxed text-gray-500 dark:text-gray-300">{message}</p>
             <button
               type="button"
               autoFocus
@@ -115,6 +119,84 @@ export const StudentNoticeModal = ({ open, type = 'error', title, message, actio
             >
               {actionLabel}
             </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    document.body
+  );
+};
+
+/*
+ * StudentConfirmModal: a yes/no question (e.g. "Sign out?"). Same look and
+ * motion as StudentNoticeModal — icon badge, centered title and message,
+ * rounded-full buttons — with a Cancel button beside the maroon confirm.
+ * Esc or a click on the backdrop cancels, unless the action is running.
+ */
+export const StudentConfirmModal = ({
+  open,
+  icon: Icon = AlertTriangle,
+  title,
+  message,
+  confirmLabel = 'Confirm',
+  busyLabel,
+  cancelLabel = 'Cancel',
+  busy = false,
+  onConfirm,
+  onCancel,
+}) => {
+  useEffect(() => {
+    if (!open || busy) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') onCancel?.(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, busy, onCancel]);
+
+  return createPortal(
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => !busy && onCancel?.()}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/50 px-5 backdrop-blur-sm"
+        >
+          <motion.div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="student-confirm-title"
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-3xl bg-white p-7 text-center shadow-2xl dark:bg-gray-800"
+          >
+            <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-maroon-50 text-maroon-800 dark:bg-maroon-900/30 dark:text-maroon-300">
+              <Icon className="h-8 w-8" />
+            </span>
+            <h4 id="student-confirm-title" className="mt-5 text-xl font-bold text-gray-900 dark:text-white">{title}</h4>
+            <p className="mt-2 whitespace-pre-line text-[15px] leading-relaxed text-gray-500 dark:text-gray-300">{message}</p>
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                autoFocus
+                onClick={onCancel}
+                disabled={busy}
+                className="h-12 flex-1 rounded-full bg-gray-100 text-[15px] font-semibold text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              >
+                {cancelLabel}
+              </button>
+              <button
+                type="button"
+                onClick={onConfirm}
+                disabled={busy}
+                className="h-12 flex-1 rounded-full bg-maroon-800 text-[15px] font-semibold text-white transition-colors hover:bg-maroon-900 disabled:opacity-60"
+              >
+                {busy && busyLabel ? busyLabel : confirmLabel}
+              </button>
+            </div>
           </motion.div>
         </motion.div>
       )}

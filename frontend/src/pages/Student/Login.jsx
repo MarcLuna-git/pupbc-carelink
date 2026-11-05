@@ -113,10 +113,12 @@ const Login = () => {
 
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState('');
+  const [noticeTitle, setNoticeTitle] = useState('Sign-in failed');
+  const [noticeHighlight, setNoticeHighlight] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const [attemptsRemaining, setAttemptsRemaining] = useState(null);
+  const [, setAttemptsRemaining] = useState(null);
 
   const [lockUntil, setLockUntil] = useState(
     () => getSavedLockUntil(rememberedLogin.student_id)
@@ -263,6 +265,14 @@ const Login = () => {
 
     setErrors(nextErrors);
 
+    /* Field errors open in the popup instead of expanding the card. */
+    const errorList = Object.values(nextErrors);
+    if (errorList.length) {
+      setNoticeTitle('Check your details');
+      setNoticeHighlight('');
+      setMessage(errorList.join('\n'));
+    }
+
     return Object.keys(nextErrors).length === 0;
   };
 
@@ -338,6 +348,8 @@ const Login = () => {
     submittingRef.current = true;
     setLoading(true);
     setMessage('');
+    setNoticeTitle('Sign-in failed');
+    setNoticeHighlight('');
 
     try {
       /*
@@ -418,8 +430,9 @@ const Login = () => {
           // Laravel still enforces the actual lock.
         }
 
+        setNoticeTitle('Login temporarily locked');
         setMessage(
-          'Too many login attempts. Please wait before trying again.'
+          `Too many login attempts. Please wait ${seconds} seconds before trying again.`
         );
       } else if (status === 401) {
         /*
@@ -434,22 +447,22 @@ const Login = () => {
           body.attempts_remaining
         );
 
-        if (
-          supplied &&
-          Number.isFinite(remaining)
-        ) {
-          setAttemptsRemaining(
-            Math.max(
-              0,
-              Math.min(5, Math.trunc(remaining))
-            )
-          );
-        } else {
-          setAttemptsRemaining(null);
-        }
+        const left =
+          supplied && Number.isFinite(remaining)
+            ? Math.max(0, Math.min(5, Math.trunc(remaining)))
+            : null;
+
+        setAttemptsRemaining(left);
+
+        setNoticeHighlight(
+          left
+            ? `${left} attempt${left === 1 ? '' : 's'} remaining`
+            : ''
+        );
 
         setMessage(
-          'Student ID, birthday, or password is incorrect.'
+          'Student ID, birthday, or password is incorrect.' +
+            (left ? ' Login locks for 60 seconds when attempts run out.' : '')
         );
       } else if (status === 403) {
         setAttemptsRemaining(null);
@@ -582,37 +595,21 @@ const Login = () => {
             {/* Sign-in errors open as a popup */}
             <StudentNoticeModal
               open={Boolean(message)}
-              title="Sign-in failed"
+              title={noticeTitle}
+              highlight={noticeHighlight}
               message={message}
               actionLabel="Try again"
               onClose={() => setMessage('')}
             />
 
-            {isLocked && (
-              <div
-                role="status"
-                aria-live="polite"
-                className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-center text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300"
-              >
-                Login temporarily locked. Try again in{' '}
-                <strong>{lockSeconds}s</strong>.
-              </div>
-            )}
-
-            {!isLocked &&
-              attemptsRemaining !== null &&
-              attemptsRemaining > 0 && (
-                <p className="mb-4 text-center text-xs font-medium text-amber-700 dark:text-amber-300">
-                  {attemptsRemaining} attempt
-                  {attemptsRemaining === 1 ? '' : 's'} remaining
-                  before a 60-second lock.
-                </p>
-              )}
+            {/* Lock and attempt info are shown in the popup; the Sign In
+                button keeps the live countdown, so the card never resizes. */}
 
             <form
               onSubmit={handleSubmit}
               className="space-y-5"
               autoComplete="on"
+              noValidate
             >
               {/* Student ID */}
               <div>
@@ -632,7 +629,7 @@ const Login = () => {
                     id="student-id"
                     className={`w-full border rounded-2xl pl-10 pr-4 py-3 text-sm focus:outline-none transition-all dark:bg-gray-700 dark:text-white ${
                       errors.student_id
-                        ? 'border-red-300 focus:border-red-400 bg-red-50 dark:bg-red-900/20'
+                        ? 'border-red-400 focus:border-red-500 dark:border-red-500'
                         : 'border-slate-200 dark:border-gray-600 focus:border-maroon-800 hover:border-maroon-300'
                     }`}
                     type="text"
@@ -647,11 +644,6 @@ const Login = () => {
                   />
                 </div>
 
-                {errors.student_id && (
-                  <p className="text-red-500 text-xs mt-1 ml-1">
-                    {errors.student_id}
-                  </p>
-                )}
               </div>
 
               {/* Birthday */}
@@ -663,7 +655,7 @@ const Login = () => {
                 <div
                   className={`rounded-2xl border p-3 transition-all ${
                     errors.birthday
-                      ? 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20'
+                      ? 'border-red-400 bg-white dark:border-red-500 dark:bg-gray-700'
                       : 'border-slate-200 bg-white hover:border-maroon-300 dark:border-gray-600 dark:bg-gray-700'
                   }`}
                 >
@@ -765,11 +757,6 @@ const Login = () => {
                   </div>
                 </div>
 
-                {errors.birthday && (
-                  <p className="text-red-500 text-xs mt-1 ml-1">
-                    {errors.birthday}
-                  </p>
-                )}
               </div>
 
               {/* Password */}
@@ -790,7 +777,7 @@ const Login = () => {
                     id="student-password"
                     className={`w-full border rounded-2xl pl-10 pr-12 py-3 text-sm focus:outline-none transition-all dark:bg-gray-700 dark:text-white ${
                       errors.password
-                        ? 'border-red-300 focus:border-red-400 bg-red-50 dark:bg-red-900/20'
+                        ? 'border-red-400 focus:border-red-500 dark:border-red-500'
                         : 'border-slate-200 dark:border-gray-600 focus:border-maroon-800 hover:border-maroon-300'
                     }`}
                     type={showPassword ? 'text' : 'password'}
@@ -827,11 +814,6 @@ const Login = () => {
                   </button>
                 </div>
 
-                {errors.password && (
-                  <p className="text-red-500 text-xs mt-1 ml-1">
-                    {errors.password}
-                  </p>
-                )}
               </div>
 
               {/* Remember Me and Forgot Password */}

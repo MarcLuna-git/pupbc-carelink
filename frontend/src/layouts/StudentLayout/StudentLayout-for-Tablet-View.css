@@ -8,7 +8,7 @@
  * pieces and the tablet/desktop breakpoints.
  *
  * Load order (StudentLayout-for-Desktop-View imports StudentLayout-for-Desktop-View.css,
- * then StudentLayout-for-Tablet-View, then StudentLayout-for-Mobile-View) keeps
+ * then StudentLayout-for-Tablet-View, then StudentLayout-for-Mobile-View-Min-300px) keeps
  * these rules after the base and before the mobile overrides.
  */
 

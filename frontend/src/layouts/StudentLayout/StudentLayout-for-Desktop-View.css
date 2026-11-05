@@ -6,7 +6,7 @@
  * their default rules live here; each shell stylesheet then overrides them
  * inside its own breakpoint:
  *   - StudentLayout-for-Tablet-View.css  (>= 768px)
- *   - StudentLayout-for-Mobile-View.css  (<= 767px)
+ *   - StudentLayout-for-Mobile-View-Min-300px.css  (<= 767px)
  */
 .student-approved-shell {
   --sp-bg: #f8f5f3; --sp-surface: #fff; --sp-soft: #faeeec; --sp-border: #ebdfe0;
@@ -119,7 +119,7 @@
 /*
  * The tablet / desktop (>= 768px) breakpoints live in
  * StudentLayout-for-Tablet-View.css, and the mobile (<= 767px) breakpoint
- * lives in StudentLayout-for-Mobile-View.css. Both are loaded after this
+ * lives in StudentLayout-for-Mobile-View-Min-300px.css. Both are loaded after this
  * file so the cascade order is preserved.
  */
 @media (prefers-reduced-motion:reduce) { .student-approved-shell .student-main { scroll-behavior:auto; } }

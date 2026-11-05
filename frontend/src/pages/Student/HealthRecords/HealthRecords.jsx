@@ -159,7 +159,7 @@ const PrintButton = ({ record, kind, onDocument }) => {
       onClick={() => onDocument(kind, record, 'print')}
       aria-label={label}
       title={label}
-      className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 px-2.5 py-2 text-sm font-semibold text-maroon-800 transition hover:bg-gray-50 dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-gray-900/30 lg:px-3"
+      className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 px-2.5 py-2 text-sm font-semibold text-maroon-800 transition hover:bg-maroon-900 hover:text-white dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-maroon-900 dark:hover:text-white lg:px-3"
     >
       <Printer className="h-4 w-4" />
       <span className="hidden lg:inline">Print</span>
@@ -171,7 +171,7 @@ const ViewButton = ({ onClick }) => (
   <button
     type="button"
     onClick={onClick}
-    className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-maroon-800 transition hover:bg-gray-50 dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-gray-900/30"
+    className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-maroon-800 transition hover:bg-maroon-900 hover:text-white dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-maroon-900 dark:hover:text-white"
   >
     <FileText className="h-4 w-4" /> View Details
   </button>
@@ -546,7 +546,6 @@ const HealthRecords = () => {
           <div role="tablist" aria-label="Record type" className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             {TABS.map(({ id, label, icon: Icon }) => {
               const active = tab === id;
-              const count = id === 'certificates' ? certificates.length : records.length;
               return (
                 <button
                   key={id}
@@ -562,7 +561,6 @@ const HealthRecords = () => {
                 >
                   <Icon className="h-4 w-4" />
                   {label}
-                  <span className={`rounded-full px-1.5 text-xs ${active ? 'bg-white/20' : 'bg-gray-100 dark:bg-gray-700'}`}>{count}</span>
                 </button>
               );
             })}
@@ -646,7 +644,7 @@ const HealthRecords = () => {
                             <button
                               type="button"
                               onClick={() => handleDocument('certificate', record, 'preview')}
-                              className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-maroon-800 transition hover:bg-gray-50 dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-gray-900/30"
+                              className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-maroon-800 transition hover:bg-maroon-900 hover:text-white dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-maroon-900 dark:hover:text-white"
                             >
                               <Eye className="h-4 w-4" /> Preview
                             </button>
@@ -719,6 +717,10 @@ const HealthRecords = () => {
             >
               <ChevronRight className="h-4 w-4" />
             </button>
+            {/* Running count: records seen so far out of the total (7 of 16, then 14 of 16). */}
+            <span className="ml-2 text-xs font-medium text-gray-500 dark:text-gray-400" aria-live="polite">
+              {Math.min(currentPage * PAGE_SIZE, visibleRecords.length)} of {visibleRecords.length}
+            </span>
           </nav>
         )}
       </div>

@@ -112,6 +112,8 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showEmailPassword, setShowEmailPassword] = useState(false);
   const [darkMode, setDarkMode] = useState(() => readDarkMode('student'));
 
   const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '', new_password_confirmation: '' });
@@ -406,11 +408,16 @@ const Settings = () => {
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
-                type="password"
+                type={showConfirmPassword ? 'text' : 'password'}
                 value={passwordForm.new_password_confirmation}
                 onChange={(e) => setPasswordForm({...passwordForm, new_password_confirmation: e.target.value})}
-                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500"
+                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg pl-10 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500"
                 placeholder="Re-enter new password" required />
+              <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600">
+                {showConfirmPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
@@ -438,13 +445,23 @@ const Settings = () => {
           {emailStep === 'details' ? <>
             <div>
               <label htmlFor="settings-new-email" className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5">New Email</label>
-              <input id="settings-new-email" type="email" value={emailForm.new_email} onChange={(e) => setEmailForm({...emailForm, new_email: e.target.value})}
-                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+                <input id="settings-new-email" type="email" value={emailForm.new_email} onChange={(e) => setEmailForm({...emailForm, new_email: e.target.value})}
+                  className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
+              </div>
             </div>
             <div>
               <label htmlFor="settings-email-password" className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5">Confirm Password</label>
-              <input id="settings-email-password" type="password" value={emailForm.password} onChange={(e) => setEmailForm({...emailForm, password: e.target.value})}
-                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
+              <div className="relative">
+                <input id="settings-email-password" type={showEmailPassword ? 'text' : 'password'} value={emailForm.password} onChange={(e) => setEmailForm({...emailForm, password: e.target.value})}
+                  className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg pl-4 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
+                <button type="button" onClick={() => setShowEmailPassword(!showEmailPassword)}
+                  aria-label={showEmailPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600">
+                  {showEmailPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
           </> : <div>
             <label htmlFor="settings-email-otp" className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5">Verification Code</label>

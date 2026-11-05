@@ -54,13 +54,13 @@ function AppointmentToast({ message, type, onDismiss }) {
 
 /* Appointment history layout: a table (shown on every page load) or cards. */
 const HISTORY_VIEWS = [
-  { value: 'cards', label: 'View in rows', icon: LayoutGrid },
   { value: 'list', label: 'View in list', icon: List },
+  { value: 'cards', label: 'View in rows', icon: LayoutGrid },
 ];
 
 /* Cards / list switch: a two-icon track with a thumb that slides under the active layout. */
 function HistoryViewMenu({ value, onChange }) {
-  return <div role="radiogroup" aria-label="History layout" className={`ap-view-toggle${value === 'list' ? ' is-list' : ''}`}>
+  return <div role="radiogroup" aria-label="History layout" className={`ap-view-toggle${value === 'cards' ? ' is-cards' : ''}`}>
     <span className="ap-view-toggle-thumb" aria-hidden="true" />
     {HISTORY_VIEWS.map(({ value: option, label, icon: Icon }) => <button key={option} type="button" role="radio" aria-checked={option === value}
       aria-label={label} title={label} className={option === value ? 'is-selected' : ''} onClick={() => onChange(option)}>
@@ -79,7 +79,7 @@ const HISTORY_PAGE_SIZE = 3;
 /* Appointment History panel defaults; Status lives in the parent's `filter`. */
 const DEFAULT_HISTORY_FILTERS = { service: 'all' };
 /* List-view column sorts. Each header click cycles descending → ascending →
-   the page's own order (pending / approved soonest first). */
+   the default order (pending / approved soonest first, then newest first). */
 const HISTORY_SORTS = {
   date: item => appointmentTime(item.appointment_date, item.time_slot)?.getTime() || 0,
   service: item => serviceTitle(item.service).toLowerCase(),
@@ -266,6 +266,15 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
       const left = value(x), right = value(y);
       return direction * (typeof left === 'number' ? left - right : left.localeCompare(right));
     });
+  } else {
+    /* Default order: active requests (pending / approved) stay on top in the
+       parent's soonest-first order; every finished record (completed,
+       cancelled, rejected, expired) follows newest first, so a recent
+       rejection is not buried on the last page behind older completions. */
+    const active = item => ['pending', 'approved'].includes(item.status);
+    history.sort((x, y) => (active(x) === active(y)
+      ? (active(x) ? 0 : HISTORY_SORTS.date(y) - HISTORY_SORTS.date(x))
+      : active(x) ? -1 : 1));
   }
   const pages = Math.max(1, Math.ceil(history.length / HISTORY_PAGE_SIZE));
   const currentPage = Math.min(page, pages);
@@ -374,7 +383,7 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
           <SearchField value={search} onChange={setSearch} placeholder="Search appointments..." label="Search appointment history" className="[&_input]:bg-[var(--sp-surface)]" />
         </div>
         {[
-          ['status', 'Status', filter, value => onFilter(value), [['all', 'All appointments'], ['pending', 'Pending requests'], ['approved', 'Approved appointments'], ['past', 'Past appointments']]],
+          ['status', 'Status', filter, value => onFilter(value), [['all', 'All appointments'], ['pending', 'Pending requests'], ['approved', 'Approved appointments'], ['past', 'Past appointments'], ['completed', 'Completed'], ['cancelled', 'Cancelled'], ['rejected', 'Rejected']]],
           ['service', 'Service', historyFilters.service, value => setHistoryFilters(current => ({ ...current, service: value })), [['all', 'All services'], ...historyServices.map(service => [service, serviceTitle(service)])]],
         ].map(([key, label, value, change, options]) => <label key={key}>
           <span>{label}</span>
@@ -445,7 +454,7 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
             </article>;
           })}
         </div>}
-        <div className="ap-history-pagination"><p>Showing {(currentPage - 1) * HISTORY_PAGE_SIZE + 1}–{Math.min(currentPage * HISTORY_PAGE_SIZE, history.length)} of {history.length} appointments</p><div><button type="button" disabled={currentPage === 1} onClick={() => setPage(current => current - 1)} aria-label="Previous history page"><ChevronLeft /></button><span aria-label={`History page ${currentPage} of ${pages}`}>{currentPage}</span><button type="button" disabled={currentPage === pages} onClick={() => setPage(current => current + 1)} aria-label="Next history page"><ChevronRight /></button></div></div>
+        <div className="ap-history-pagination"><div><button type="button" disabled={currentPage === 1} onClick={() => setPage(current => current - 1)} aria-label="Previous history page"><ChevronLeft /></button><span aria-label={`History page ${currentPage} of ${pages}`}>{currentPage}</span><button type="button" disabled={currentPage === pages} onClick={() => setPage(current => current + 1)} aria-label="Next history page"><ChevronRight /></button></div></div>
       </>}
     </section>
     <p className="ap-policy-note"><HelpCircle />Check-in opens 15 minutes before your slot and closes strictly 30 minutes after. Follow your server-provided window; a queue number is assigned only after kiosk check-in and triage.</p>
