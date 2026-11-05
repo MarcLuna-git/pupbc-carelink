@@ -285,6 +285,8 @@
 .ap-history-pagination span { background:var(--color-maroon-800);color:white;border-color:var(--color-maroon-800); }
 .ap-history-pagination button:disabled { opacity:.35;cursor:not-allowed; }
 .ap-history-pagination svg { width:13px;height:13px; }
+.ap-history-pagination small { margin-left:8px;font-size:12px;font-weight:500;color:var(--color-gray-500);white-space:nowrap; }
+.dark .ap-history-pagination small { color:var(--color-gray-400); }
 .ap-history-empty { display:flex;align-items:center;justify-content:center;gap:10px;padding:25px;font-size:13px;color:var(--sp-muted); }
 .ap-history-empty svg { width:22px;height:22px; }
 .ap-policy-note { display:flex;align-items:flex-start;gap:7px;font-size:12px;line-height:1.5;color:var(--sp-muted);padding:0 4px; }

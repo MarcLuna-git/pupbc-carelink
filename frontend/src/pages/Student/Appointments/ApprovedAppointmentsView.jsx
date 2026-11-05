@@ -454,7 +454,7 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
             </article>;
           })}
         </div>}
-        <div className="ap-history-pagination"><div><button type="button" disabled={currentPage === 1} onClick={() => setPage(current => current - 1)} aria-label="Previous history page"><ChevronLeft /></button><span aria-label={`History page ${currentPage} of ${pages}`}>{currentPage}</span><button type="button" disabled={currentPage === pages} onClick={() => setPage(current => current + 1)} aria-label="Next history page"><ChevronRight /></button></div></div>
+        <div className="ap-history-pagination"><div><button type="button" disabled={currentPage === 1} onClick={() => setPage(current => current - 1)} aria-label="Previous history page"><ChevronLeft /></button><span aria-label={`History page ${currentPage} of ${pages}`}>{currentPage}</span><button type="button" disabled={currentPage === pages} onClick={() => setPage(current => current + 1)} aria-label="Next history page"><ChevronRight /></button><small aria-live="polite">{Math.min(currentPage * HISTORY_PAGE_SIZE, history.length)} of {history.length}</small></div></div>
       </>}
     </section>
     <p className="ap-policy-note"><HelpCircle />Check-in opens 15 minutes before your slot and closes strictly 30 minutes after. Follow your server-provided window; a queue number is assigned only after kiosk check-in and triage.</p>

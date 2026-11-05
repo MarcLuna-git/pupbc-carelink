@@ -3,14 +3,14 @@
    code to join the queue. */
 export const STUDENT_NAV_GROUPS = [
   { key: 'management', label: 'Management' },
-  { key: 'record', label: 'Record' },
+  { key: 'record', label: 'Medical' },
   { key: 'account', label: 'Account' },
 ];
 
 export const STUDENT_PRIMARY_LINKS = [
   { key: 'appointments', path: '/student/appointments', label: 'Appointments', group: 'management' },
   { key: 'qr', path: '/student/qr', label: 'QR Code', group: 'management' },
-  { key: 'records', path: '/student/health-records', label: 'Records', group: 'record' },
+  { key: 'records', path: '/student/health-records', label: 'Health Records', shortLabel: 'Records', group: 'record' },
   { key: 'profile', path: '/student/profile', label: 'Profile', group: 'account' },
   { key: 'settings', path: '/student/settings', label: 'Settings', group: 'account' },
 ];

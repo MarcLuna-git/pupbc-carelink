@@ -34,7 +34,7 @@ const FIELD_LABEL = 'mb-1.5 block text-xs font-semibold text-gray-600 dark:text-
 
 const RECORDS_HERO = {
   id: 'records-title',
-  title: 'Records',
+  title: 'Health Records',
   description: 'View your consultation records, health documents, and clinic history.',
 };
 

@@ -244,3 +244,46 @@ Pangalawang summary ngayong araw, kasunod ng "November 5, 2026 - Student Portal 
 - Ilapat din ba ang naka-center na message style sa Approved, Cancelled at Rejected na modal? Maroon ba dapat ang info icon?
 - Pink pa rin ang pagination arrows sa Records.
 - Hindi pa nasusubukan: dark mode, mobile/tablet layout ng bagong table at filters, at modal ng pending appointment na may tatlong button.
+
+---
+
+## November 6, 2026 - Login Modals, Sign Out, Settings at Health Records
+
+Kasunod ng "November 5, 2026 (Part 2)" sa itaas. Naka-commit na ang karamihan sa `75d12ed`. Ang **hindi pa naka-commit** ay ang Medical/Health Records rename at ang running count sa dalawang pager (tingnan ang "Files").
+
+### Appointments: Appointment History
+- Bakit parang nawawala ang rejected: nasa data sila, pero itinutulak ng status-rank sort sa huling page. Bagong default na ayos (kapag walang column sort): pending/approved sa itaas, tapos lahat ng tapos na ay newest first.
+- Status filter: may Completed, Cancelled at **Rejected** na. Walang `declined` status sa database (approved, rejected, completed, cancelled lang).
+- Tinanggal ang text na "Showing 1–3 of 24 appointments".
+- Running count sa kanan ng pager: "3 of 24", "6 of 24"... (`<small>` sa `.ap-history-pagination`). *(uncommitted)*
+- View Details hover: `maroon-900` na background at puting text, kapareho ng Book a Visit.
+
+### Login at Forgot Password
+- Lahat ng error at info message ng Login ay **modal popup** na (`StudentNoticeModal`), para hindi na lumalaki o "nag-zoom" ang card. Pareho na ang taas ng card kahit may error.
+  - Validation: "Check your details", isang linya bawat error.
+  - Maling password: "Sign-in failed", at sa ilalim ng title ang bold na "N attempts remaining" (bagong `highlight` prop).
+  - Lockout (429): "Login temporarily locked" na may bilang ng segundo.
+- Field na may error: pulang border lang, walang pink na background. Wala na ring inline error text.
+- Forgot Password: simpleng bilog na badge na may mail icon na lang ang icon sa itaas.
+
+### Sign Out
+- Bagong `StudentConfirmModal` sa `StudentFeedback.jsx`: kapareho ng itsura ng mga login popup, may gray na Cancel at maroon na confirm. Esc o click sa labas para mag-cancel, maliban kung nagsa-sign out na.
+- Sign Out item sa account menu: maroon na, hindi na light red na mukhang warning.
+
+### Settings
+- New Email: may mail icon sa kaliwa.
+- Eye toggle sa Confirm New Password (Password tab) at sa Confirm Password (Email tab).
+
+### Health Records
+- Running count sa tabi ng pager: "7 of 16", "14 of 16" (7 bawat page). *(uncommitted)*
+- Tinanggal ang count badge sa mga tab button.
+- View Details, Print at Preview: maroon-900 hover na may puting text.
+- Sidebar section label: **MEDICAL** na (dating RECORD). Menu item, page title at breadcrumb: **Health Records**. Sa mobile bottom bar, "Records" pa rin para hindi maputol sa 300px (`shortLabel`). *(uncommitted)*
+
+### Files
+- Naka-commit (`75d12ed`): `StudentFeedback.jsx`, `Login.jsx`, `ForgotPassword.jsx`, `Settings.jsx`, `StudentAccountMenu.jsx`, `StudentLayout-for-Desktop-View.jsx`, at mga naunang bahagi ng `ApprovedAppointmentsView.jsx`, `appointments.css`, `HealthRecords.jsx`.
+- Hindi pa naka-commit: `ApprovedAppointmentsView.jsx`, `appointments.css`, `HealthRecords.jsx`, `studentPortalNavigation.js`, `studentPortalNavigation.test.js`, `StudentLayout-for-Mobile-View-Min-300px.jsx`.
+
+### Mga natitirang tanong
+- Hindi pa nasusubukan sa dark mode ang mga bagong modal at ang running count.
+- Ang pagsubok sa maling password ay ginawa gamit ang pekeng Student ID, para hindi maubos ang attempts ng totoong account.
