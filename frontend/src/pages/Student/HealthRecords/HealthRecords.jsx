@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Eye,
   Printer,
+  RotateCcw,
   X,
 } from 'lucide-react';
 import api from '../../../services/api';
@@ -42,9 +43,31 @@ const TABS = [
   { id: 'certificates', label: 'Medical Certificates', icon: FileText },
 ];
 
-const DEFAULT_FILTERS = { type: 'all', year: 'all', sort: 'newest' };
+const DEFAULT_FILTERS = { type: 'all', year: 'all' };
 
 const PAGE_SIZE = 7;
+
+/* Table column sorts. Each header click cycles descending → ascending → back
+   to the default order (newest first). */
+const text = (value) => String(value || '').toLowerCase();
+const COLUMN_SORTS = {
+  date: (r) => new Date(r.date).getTime() || 0,
+  complaint: (r) => text(r.complaint),
+  detail: (r, tab) => text(tab === 'certificates' ? r.medicalCertificateRef : r.diagnosis),
+  staff: (r) => text(r.staff),
+  status: (r) => text(r.status),
+};
+
+/* Stacked ▲/▼: both hollow until the column is sorted, then the active
+   direction fills maroon. */
+const SortCaret = ({ direction }) => (
+  <svg viewBox="0 0 10 14" aria-hidden="true" className="h-[13px] w-[9px] text-gray-400">
+    {[['asc', 'M1.5 5.5h7L5 1.5z'], ['desc', 'M1.5 8.5h7L5 12.5z']].map(([dir, d]) => (
+      <path key={dir} d={d} strokeWidth="1.1" strokeLinejoin="round"
+        className={direction === dir ? 'fill-maroon-700 stroke-maroon-700 dark:fill-maroon-300 dark:stroke-maroon-300' : 'fill-none stroke-current'} />
+    ))}
+  </svg>
+);
 
 const CLINIC_TZ = 'Asia/Manila';
 
@@ -279,6 +302,8 @@ const HealthRecords = () => {
   useStudentBreadcrumbTab(TABS.find(({ id }) => id === tab)?.label);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [page, setPage] = useState(1);
+  const [columnSort, setColumnSort] = useState(null);
+  const cycleSort = (key) => setColumnSort((current) => current?.key !== key ? { key, dir: 'desc' } : current.dir === 'desc' ? { key, dir: 'asc' } : null);
   /* Cosmetic hold for the route-loading animation — see ROUTE LOADING note. */
   const [routeReady, setRouteReady] = useState(false);
 
@@ -334,15 +359,22 @@ const HealthRecords = () => {
       const matchesType = filters.type === 'all' || r.recordType === filters.type;
       return matchesSearch && matchesYear && matchesType;
     });
-    return matches.sort((a, b) => {
-      if (filters.sort === 'oldest') return new Date(a.date) - new Date(b.date);
-      if (filters.sort === 'title') return a.title.localeCompare(b.title);
-      return new Date(b.date) - new Date(a.date);
-    });
-  }, [records, certificates, tab, search, filters]);
+    if (columnSort) {
+      const value = COLUMN_SORTS[columnSort.key];
+      const sign = columnSort.dir === 'asc' ? 1 : -1;
+      return matches.sort((a, b) => {
+        const x = value(a, tab);
+        const y = value(b, tab);
+        return sign * (typeof x === 'number' ? x - y : x.localeCompare(y));
+      });
+    }
+    return matches.sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [records, certificates, tab, search, filters, columnSort]);
 
-  /* A new tab, search or filter starts again from the first page. */
-  useEffect(() => setPage(1), [tab, search, filters]);
+  /* A new tab, search, filter or sort starts again from the first page. */
+  useEffect(() => setPage(1), [tab, search, filters, columnSort]);
+  /* Column meanings differ between the tabs, so a header sort ends with its tab. */
+  useEffect(() => setColumnSort(null), [tab]);
 
   const pageCount = Math.max(1, Math.ceil(visibleRecords.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -350,6 +382,8 @@ const HealthRecords = () => {
 
   const activeFilterCount = Object.keys(DEFAULT_FILTERS).filter((key) => filters[key] !== DEFAULT_FILTERS[key]).length;
   const isFiltering = Boolean(search.trim()) || activeFilterCount > 0;
+  const canReset = isFiltering || Boolean(columnSort);
+  const resetFilters = () => { setSearch(''); setFilters(DEFAULT_FILTERS); setColumnSort(null); };
 
   const consultationCount = records.filter((r) => r.recordType === 'consultation').length;
   const followUpCount = records.filter((r) => r.followUpRequired).length;
@@ -448,7 +482,7 @@ const HealthRecords = () => {
           Search and Filter
         </h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Find a record by keyword, or narrow the list by type, year and order.
+          Find a record by keyword, or narrow the list by type and year.
         </p>
 
         <div className="mt-4 grid gap-3 rounded-xl border border-[var(--sp-border)] bg-gray-50 p-3 dark:bg-gray-900/30 sm:grid-cols-2 sm:p-4 lg:grid-cols-[2fr_1fr_1fr_1fr]">
@@ -465,7 +499,6 @@ const HealthRecords = () => {
           {[
             ['type', 'Record Type', [['all', 'All types'], ['consultation', 'Consultations'], ['emergency', 'Emergencies']]],
             ['year', 'Year', [['all', 'All years'], ...years.map((year) => [year, year])]],
-            ['sort', 'Sort By', [['newest', 'Newest first'], ['oldest', 'Oldest first'], ['title', 'Title A–Z']]],
           ].map(([key, label, options]) => (
             <label key={key} className="block min-w-0">
               <span className={FIELD_LABEL}>{label}</span>
@@ -481,17 +514,20 @@ const HealthRecords = () => {
               </span>
             </label>
           ))}
+          <div className="min-w-0">
+            <span aria-hidden="true" className={FIELD_LABEL}>&nbsp;</span>
+            <button
+              type="button"
+              onClick={resetFilters}
+              disabled={!canReset}
+              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-[var(--sp-border)] bg-white text-sm font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:disabled:hover:bg-gray-800"
+            >
+              <RotateCcw aria-hidden="true" className="h-4 w-4 text-maroon-700 dark:text-maroon-300" />
+              Reset filters
+            </button>
+          </div>
         </div>
 
-        {Object.keys(DEFAULT_FILTERS).some((key) => filters[key] !== DEFAULT_FILTERS[key]) && (
-          <button
-            type="button"
-            onClick={() => setFilters(DEFAULT_FILTERS)}
-            className="mt-2 text-xs font-semibold text-maroon-800 hover:underline dark:text-maroon-300"
-          >
-            Reset filters
-          </button>
-        )}
       </section>
 
       {/* My Records */}
@@ -562,11 +598,24 @@ const HealthRecords = () => {
               <table className="w-full min-w-[960px] text-left text-sm">
                 <thead className="whitespace-nowrap bg-gray-100 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">
                   <tr>
-                    <th className="rounded-tl-xl px-4 py-3 font-medium">{tab === 'certificates' ? 'Visit Date' : 'Date & Time'}</th>
-                    <th className="px-4 py-3 font-medium">{tab === 'certificates' ? 'Reason for Visit' : 'Chief Complaint'}</th>
-                    <th className="px-4 py-3 font-medium">{tab === 'certificates' ? 'Reference' : 'Diagnosis / Findings'}</th>
-                    <th className="px-4 py-3 font-medium">{tab === 'certificates' ? 'Issued By' : 'Attending Staff'}</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
+                    {[
+                      ['date', tab === 'certificates' ? 'Visit Date' : 'Date & Time'],
+                      ['complaint', tab === 'certificates' ? 'Reason for Visit' : 'Chief Complaint'],
+                      ['detail', tab === 'certificates' ? 'Reference' : 'Diagnosis / Findings'],
+                      ['staff', tab === 'certificates' ? 'Issued By' : 'Attending Staff'],
+                      ['status', 'Status'],
+                    ].map(([key, label], index) => {
+                      const active = columnSort?.key === key ? columnSort.dir : null;
+                      return (
+                        <th key={key} aria-sort={active === 'desc' ? 'descending' : active === 'asc' ? 'ascending' : 'none'}
+                          className={`px-4 py-3 font-medium${index === 0 ? ' rounded-tl-xl' : ''}`}>
+                          <button type="button" onClick={() => cycleSort(key)}
+                            className={`inline-flex items-center gap-1 transition hover:text-gray-900 dark:hover:text-white${active ? ' text-gray-900 dark:text-white' : ''}`}>
+                            {label}<SortCaret direction={active} />
+                          </button>
+                        </th>
+                      );
+                    })}
                     <th className="rounded-tr-xl px-4 py-3 font-medium">Actions</th>
                   </tr>
                 </thead>

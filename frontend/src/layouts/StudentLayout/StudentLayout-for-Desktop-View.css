@@ -31,7 +31,7 @@
 .student-sidebar-nav>p { display:none; }
 /* Section labels (Management, Record, Account) above each group of links. */
 /* Smaller than the tabs and a neutral gray (still readable on the maroon sidebar) so labels read as headings, not links. */
-.student-nav-section { margin:4px 0 8px;padding:0 12px;font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#b4b4b4;white-space:nowrap;overflow:hidden;transition:color .18s ease; }
+.student-nav-section { margin:4px 0 8px;padding:0 12px;font-size:10px;font-weight:700;letter-spacing:.14em;line-height:1.4;text-transform:uppercase;color:rgb(255 255 255 / .5);white-space:nowrap;overflow:hidden;transition:color .18s ease; }
 /* A clear gap between groups. */
 .student-sidebar-nav>a + .student-nav-section { margin-top:26px; }
 .student-sidebar-nav>a { margin-bottom:8px;border-radius:8px;padding:13px 12px;gap:11px;font-size:13px;min-height:45px;font-weight:500; }
@@ -64,7 +64,8 @@
 /* In the mobile header: avatar only, a round 44px target next to the
    outlined bell / theme buttons; the ring turns maroon on hover / open. */
 .student-account-button.is-header { order:3;justify-content:center;gap:0;width:44px;height:44px;padding:0;border-color:var(--sp-border);border-radius:999px;background:var(--sp-surface); }
-.student-account-button.is-header:hover,.student-account-button.is-header.is-open { background:var(--sp-soft);border-color:#c67c8a; }
+.student-account-button.is-header:hover,.student-account-button.is-header.is-open { background:var(--color-gray-100);border-color:var(--color-gray-200); }
+.dark .student-account-button.is-header:hover,.dark .student-account-button.is-header.is-open { background:var(--color-gray-700);border-color:var(--color-gray-600); }
 .student-account-button.is-header:focus-visible { outline:2px solid var(--sp-accent);outline-offset:2px; }
 .student-account-button.is-header :is(.student-account-caption,.student-account-chevron) { display:none; }
 .student-sidebar-campus { position:absolute;bottom:0;left:0;width:100%;height:245px;object-fit:cover;filter:grayscale(1);mix-blend-mode:luminosity;opacity:.16;mask-image:linear-gradient(transparent,#000 35%);pointer-events:none; }
@@ -75,13 +76,15 @@
 .student-old-header-brand,.student-old-header-greeting { display:none; }
 .student-header-actions { display:flex;align-items:center;gap:8px;flex-shrink:0; }
 .student-header-icon { position:relative;align-items:center;justify-content:center;display:flex;width:38px;height:40px;border-radius:9px;color:var(--sp-text);cursor:pointer; }
-.student-header-icon:hover, .student-header-icon.is-open { background:var(--sp-soft);color:var(--sp-accent); }
+.student-header-icon:hover, .student-header-icon.is-open { background:var(--color-gray-100);color:var(--sp-text); }
+.dark .student-header-icon:hover, .dark .student-header-icon.is-open { background:var(--color-gray-700); }
 .student-header-icon svg { width:19px;height:19px; }
 /* Theme toggle + alerts bell: outlined squares at rest (icon + border, no
    fill); the shared .student-header-icon:hover adds the soft shade fill.
    Applies to every shell. */
 .student-theme-toggle,.student-notification-bell { width:40px;border:1px solid var(--sp-border);transition:background-color .15s ease,border-color .15s ease,color .15s ease; }
-.student-theme-toggle:hover,.student-notification-bell:hover { border-color:#c67c8a; }
+.student-theme-toggle:hover,.student-notification-bell:hover { border-color:var(--color-gray-200); }
+.dark .student-theme-toggle:hover,.dark .student-notification-bell:hover { border-color:var(--color-gray-600); }
 .student-theme-toggle:focus-visible,.student-notification-bell:focus-visible { outline:2px solid var(--sp-accent);outline-offset:2px; }
 .student-theme-toggle { order:1; }
 .student-notification-bell { order:2; }

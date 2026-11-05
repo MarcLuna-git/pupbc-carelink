@@ -236,41 +236,49 @@
    card stays overflow-visible so the layout dropdown is never clipped. */
 .ap-card.ap-history { overflow:visible; }
 .ap-history-controls { display:flex;align-items:center;gap:8px;margin-left:auto; }
-.ap-view-menu { position:relative; }
-.ap-view-menu-button { display:flex;align-items:center;gap:4px;height:31px;padding:0 7px 0 9px;border:1px solid var(--sp-border);border-radius:7px;background:var(--sp-surface);color:var(--sp-accent);cursor:pointer;transition:background-color .15s ease,border-color .15s ease; }
-.ap-view-menu-button:hover,.ap-view-menu-button.is-open { background:var(--sp-soft);border-color:#c67c8a; }
-.ap-view-menu-button svg { width:15px;height:15px; }
-.ap-view-menu-button .ap-view-menu-chevron { width:13px;height:13px;color:var(--sp-muted);transition:transform .15s ease; }
-.ap-view-menu-button.is-open .ap-view-menu-chevron { transform:rotate(180deg); }
-.ap-view-menu-list { position:absolute;top:calc(100% + 6px);right:0;z-index:20;min-width:170px;padding:5px;border:1px solid var(--sp-border);border-radius:10px;background:var(--sp-surface);box-shadow:0 10px 26px #2a0a1422;animation:ap-toast-in .15s ease-out; }
-.ap-view-menu-list button { display:flex;width:100%;align-items:center;gap:9px;padding:8px 9px;border-radius:7px;font-size:12px;color:var(--sp-text);text-align:left;cursor:pointer; }
-.ap-view-menu-list button:hover { background:color-mix(in srgb,var(--sp-bg) 94%,#000); }
-.ap-view-menu-list button.is-selected { color:var(--sp-accent);font-weight:700; }
-.ap-view-menu-list svg { width:15px;height:15px;flex-shrink:0; }
-.ap-view-menu-list span { flex:1; }
-.ap-view-menu-check { color:var(--sp-accent); }
+.ap-view-toggle { position:relative;display:inline-grid;grid-template-columns:1fr 1fr;padding:3px;border:1px solid var(--sp-border);border-radius:9px;background:var(--color-gray-100); }
+.dark .ap-view-toggle { background:var(--color-gray-700); }
+.ap-view-toggle-thumb { position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 3px);border-radius:7px;background:var(--sp-surface);box-shadow:0 1px 3px #0000001f;transition:transform .2s ease; }
+.ap-view-toggle.is-list .ap-view-toggle-thumb { transform:translateX(100%); }
+.ap-view-toggle button { position:relative;z-index:1;display:flex;align-items:center;justify-content:center;width:32px;height:25px;border-radius:7px;color:var(--color-gray-500);cursor:pointer;transition:color .2s ease; }
+.ap-view-toggle button.is-selected { color:var(--sp-accent); }
+.ap-view-toggle button:not(.is-selected):hover { color:var(--color-gray-700); }
+.ap-view-toggle button:focus-visible { outline:2px solid var(--sp-accent);outline-offset:1px; }
+.ap-view-toggle svg { width:15px;height:15px; }
 /* List layout: one compact row per appointment under a column header. */
-.ap-history-table { padding:8px 12px 4px; }
-.ap-history-table-head,.ap-history-row { display:grid;grid-template-columns:minmax(120px,1fr) minmax(150px,1.3fr) minmax(130px,1.1fr) 112px minmax(150px,auto);align-items:center;gap:12px;padding:0 12px; }
-.ap-history-table-head { padding-top:8px;padding-bottom:8px;border-radius:8px;background:color-mix(in srgb,var(--sp-bg) 94%,#000);font-size:12px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.4px; }
-.ap-history-row { min-height:54px;padding-top:9px;padding-bottom:9px;border-bottom:1px solid var(--sp-border);font-size:12px;color:var(--sp-text);transition:background-color .15s ease; }
-.ap-history-row:last-child { border-bottom:0; }
-/* Neutral grays, no pink: the column header takes the darker shade of
-   --sp-bg and a hovered row the lighter --sp-bg itself. Both derive from the
-   token so they track light / dark theme. */
-.ap-history-row:hover { background:var(--sp-bg); }
+/* List view: a nested, bordered table wrapper like the Records page —
+   gray-100 column header, divided rows, outlined row actions. */
+.ap-history-table { margin:4px 16px 4px;border:1px solid var(--sp-border);border-radius:12px;overflow:hidden; }
+.ap-history-table-head,.ap-history-row { display:grid;grid-template-columns:minmax(120px,1fr) minmax(150px,1.3fr) minmax(130px,1.1fr) 112px minmax(150px,auto);align-items:center;gap:12px;padding:0 16px; }
+.ap-history-table-head { padding-top:12px;padding-bottom:12px;background:var(--color-gray-100);font-size:12px;font-weight:500;color:var(--color-gray-500); }
+.dark .ap-history-table-head { background:var(--color-gray-700);color:var(--color-gray-400); }
+.ap-history-table-head>:last-child { text-align:right; }
+.ap-sort-button { display:inline-flex;align-items:center;gap:4px;font:inherit;color:inherit;cursor:pointer; }
+.ap-sort-button:hover,.ap-sort-button.is-active { color:var(--color-gray-900); }
+.dark .ap-sort-button:hover,.dark .ap-sort-button.is-active { color:#fff; }
+.ap-sort-button svg { width:9px;height:13px;color:var(--color-gray-400); }
+.ap-sort-button svg path { fill:none;stroke:currentColor;stroke-width:1.1;stroke-linejoin:round; }
+.ap-sort-button svg path.is-on { fill:var(--sp-accent);stroke:var(--sp-accent); }
+.ap-history-row { min-height:60px;padding-top:12px;padding-bottom:12px;border-top:1px solid var(--sp-border);font-size:13px;color:var(--sp-text);transition:background-color .15s ease; }
+.ap-history-row:hover { background:color-mix(in oklab,var(--color-gray-50) 60%,transparent); }
+.dark .ap-history-row:hover { background:color-mix(in oklab,var(--color-gray-900) 20%,transparent); }
 .ap-history-row>span { min-width:0; }
-.ap-history-row strong { display:block;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.ap-history-row strong { display:block;font-size:13px;font-weight:600;color:var(--color-gray-900);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.dark .ap-history-row strong { color:#fff; }
 .ap-history-row small { display:block;margin-top:2px;font-size:12px;color:var(--sp-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
 .ap-history-row-service small { font-style:italic; }
 .ap-history-row-meta { overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-.ap-history-row .ap-history-actions { justify-content:flex-end; }
+.ap-history-row .ap-history-actions { justify-content:flex-end;gap:6px; }
+.ap-history-row .ap-history-actions :is(button,a) { min-height:32px;padding:0 10px;border:1px solid var(--color-gray-200);border-radius:8px;transition:background-color .15s ease; }
+.ap-history-row .ap-history-actions :is(button,a):hover { background:var(--color-gray-50);text-decoration:none; }
+.dark .ap-history-row .ap-history-actions :is(button,a) { border-color:var(--color-gray-600); }
+.dark .ap-history-row .ap-history-actions :is(button,a):hover { background:color-mix(in oklab,var(--color-gray-900) 30%,transparent); }
 /* Tablet: drop the Staff · Room column (still in View Details). */
 @media (min-width:768px) and (max-width:1023px) {
   .ap-history-table-head,.ap-history-row { grid-template-columns:minmax(110px,1fr) minmax(130px,1.3fr) 104px auto; }
   .ap-history-table-head>:nth-child(3),.ap-history-row-meta { display:none; }
 }
-.ap-history-pagination { display:flex;align-items:center;justify-content:space-between;padding:10px 16px 14px;gap:8px; }
+.ap-history-pagination { display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:10px 16px 14px;gap:8px; }
 .ap-history-pagination p { font-size:12px;color:var(--sp-muted); }
 .ap-history-pagination>div { display:flex;align-items:center;gap:6px; }
 .ap-history-pagination button,.ap-history-pagination span { min-width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:1px solid var(--sp-border);border-radius:7px;font-size:12px;font-weight:600; }
@@ -373,13 +381,37 @@
   .ap-history-pagination { padding:10px 12px; }
   .ap-history .ap-section-heading { flex-wrap:wrap; }
   .ap-history-controls { gap:6px;width:100%;margin-left:0; }
-  .ap-view-menu-button { height:34px; }
+  .ap-view-toggle button { height:28px; }
   /* List layout on phones: no column header; each row stacks into
      date + status on top, service, then staff · room and actions. */
-  .ap-history-table { padding:6px 10px 2px; }
+  .ap-history-table { margin:4px 12px; }
   .ap-history-table-head { display:none; }
-  .ap-history-row { grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:10px 4px; }
+  .ap-history-row { grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:12px; }
+  .ap-history-table-head+.ap-history-row { border-top:0; }
   .ap-history-row-service,.ap-history-row-meta { grid-column:1/-1; }
   .ap-history-row .ap-history-actions { grid-column:1/-1;justify-content:flex-start; }
   .ap-policy-note { font-size:12px; }
 }
+
+/* Appointment History search + filter panel — mirrors the Records page's
+   Search and Filter box (gray-50 well, labelled fields, maroon chevrons). */
+.ap-history-filters { display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:12px;margin:4px 16px 12px;padding:16px;border:1px solid var(--sp-border);border-radius:12px;background:var(--color-gray-50); }
+.dark .ap-history-filters { background:color-mix(in oklab,var(--color-gray-900) 30%,transparent); }
+.ap-history-filters>* { display:block;min-width:0; }
+.ap-history-filters>*>span:first-child { display:block;margin-bottom:6px;font-size:12px;font-weight:600;color:var(--color-gray-600); }
+.dark .ap-history-filters>*>span:first-child { color:var(--color-gray-300); }
+.ap-history-select { position:relative;display:block; }
+.ap-history-select select { width:100%;height:40px;padding:0 40px 0 12px;appearance:none;cursor:pointer;border:1px solid var(--sp-border);border-radius:12px;background:var(--sp-surface);font-size:14px;color:var(--color-gray-900); }
+.dark .ap-history-select select { color:#fff; }
+.ap-history-select select:focus { outline:none;box-shadow:0 0 0 2px var(--color-maroon-500); }
+.ap-history-filter-reset button { display:flex;width:100%;height:40px;align-items:center;justify-content:center;gap:6px;border:1px solid var(--sp-border);border-radius:12px;background:var(--sp-surface);font-size:14px;font-weight:600;color:var(--color-gray-700);cursor:pointer;transition:background-color .15s ease; }
+.ap-history-filter-reset button:hover:not(:disabled) { background:var(--color-gray-100); }
+.ap-history-filter-reset button:disabled { opacity:.5;cursor:not-allowed; }
+.ap-history-filter-reset svg { width:15px;height:15px;color:var(--sp-accent); }
+.dark .ap-history-filter-reset button { color:var(--color-gray-300); }
+.dark .ap-history-filter-reset button:hover:not(:disabled) { background:var(--color-gray-700); }
+.ap-history-select svg { position:absolute;right:14px;top:50%;width:16px;height:16px;transform:translateY(-50%);pointer-events:none;color:var(--color-maroon-700); }
+.dark .ap-history-select svg { color:var(--color-maroon-300); }
+.ap-history-search .ap-history-filters { margin-bottom:16px; }
+@media (max-width:1023px) { .ap-history-filters { grid-template-columns:1fr 1fr; } .ap-history-filter-search { grid-column:1/-1; } }
+@media (max-width:639px) { .ap-history-filters { grid-template-columns:minmax(0,1fr);margin:4px 12px 12px;padding:12px; } }

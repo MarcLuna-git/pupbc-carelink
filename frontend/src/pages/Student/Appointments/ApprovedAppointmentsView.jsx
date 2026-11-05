@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import RouteLoadingBar from '../../../components/RouteLoadingBar';
-import { SearchField, FilterMenu } from '../../../components/StudentSearchFilter';
-import { AlertCircle, ArrowRight, CalendarDays, Check, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Clock, FileText, HelpCircle, LayoutGrid, List, Loader2, MapPin, RotateCcw, ShieldCheck, Stethoscope, UserRound, X } from 'lucide-react';
+import { SearchField } from '../../../components/StudentSearchFilter';
+import { AlertCircle, ArrowRight, CalendarDays, Check, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Clock, FileText, HelpCircle, LayoutGrid, List, Loader2, MapPin, RotateCcw, Search, ShieldCheck, Stethoscope, UserRound, X } from 'lucide-react';
 import { appointmentDate, appointmentTime, clinicDate, formatAppointmentDate, isClinicSunday } from '../../../utils/appointmentDate';
 import { useTimeGuardBypass } from '../../../services/devTools';
 
@@ -52,50 +52,20 @@ function AppointmentToast({ message, type, onDismiss }) {
   );
 }
 
-/* Appointment history layout: cards (default) or a compact list. The choice
-   is remembered per browser. */
-const HISTORY_VIEW_KEY = 'carelink.student.appointmentHistoryView';
+/* Appointment history layout: a table (shown on every page load) or cards. */
 const HISTORY_VIEWS = [
   { value: 'cards', label: 'View in rows', icon: LayoutGrid },
   { value: 'list', label: 'View in list', icon: List },
 ];
-const readHistoryView = () => {
-  try {
-    return localStorage.getItem(HISTORY_VIEW_KEY) === 'list' ? 'list' : 'cards';
-  } catch {
-    return 'cards';
-  }
-};
 
+/* Cards / list switch: a two-icon track with a thumb that slides under the active layout. */
 function HistoryViewMenu({ value, onChange }) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef(null);
-  const current = HISTORY_VIEWS.find(view => view.value === value) || HISTORY_VIEWS[0];
-  const CurrentIcon = current.icon;
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const onPointerDown = event => { if (!rootRef.current?.contains(event.target)) setOpen(false); };
-    const onKeyDown = event => { if (event.key === 'Escape') setOpen(false); };
-    document.addEventListener('mousedown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [open]);
-
-  return <div ref={rootRef} className="ap-view-menu">
-    <button type="button" className={`ap-view-menu-button${open ? ' is-open' : ''}`} aria-haspopup="menu" aria-expanded={open}
-      aria-label={`History layout: ${current.label}`} title="Change layout" onClick={() => setOpen(isOpen => !isOpen)}>
-      <CurrentIcon /><ChevronDown className="ap-view-menu-chevron" />
-    </button>
-    {open && <div role="menu" aria-label="History layout" className="ap-view-menu-list">
-      {HISTORY_VIEWS.map(({ value: option, label, icon: Icon }) => <button key={option} type="button" role="menuitemradio" aria-checked={option === value}
-        className={option === value ? 'is-selected' : ''} onClick={() => { onChange(option); setOpen(false); }}>
-        <Icon /><span>{label}</span>{option === value && <Check className="ap-view-menu-check" />}
-      </button>)}
-    </div>}
+  return <div role="radiogroup" aria-label="History layout" className={`ap-view-toggle${value === 'list' ? ' is-list' : ''}`}>
+    <span className="ap-view-toggle-thumb" aria-hidden="true" />
+    {HISTORY_VIEWS.map(({ value: option, label, icon: Icon }) => <button key={option} type="button" role="radio" aria-checked={option === value}
+      aria-label={label} title={label} className={option === value ? 'is-selected' : ''} onClick={() => onChange(option)}>
+      <Icon />
+    </button>)}
   </div>;
 }
 
@@ -106,6 +76,23 @@ function StatusBadge({ status }) {
 
 /* Appointment History rows shown per page. */
 const HISTORY_PAGE_SIZE = 3;
+/* Appointment History panel defaults; Status lives in the parent's `filter`. */
+const DEFAULT_HISTORY_FILTERS = { service: 'all' };
+/* List-view column sorts. Each header click cycles descending → ascending →
+   the page's own order (pending / approved soonest first). */
+const HISTORY_SORTS = {
+  date: item => appointmentTime(item.appointment_date, item.time_slot)?.getTime() || 0,
+  service: item => serviceTitle(item.service).toLowerCase(),
+  staff: item => `${providerName(item)} ${roomName(item)}`.toLowerCase(),
+  status: item => String(item.status || ''),
+};
+/* Stacked ▲/▼ on every sortable header: both hollow by default, the active
+   direction filled (▼ descending, ▲ ascending). */
+const SortCaret = ({ direction }) => <svg viewBox="0 0 10 14" aria-hidden="true">
+  <path d="M1.5 5.5h7L5 1.5z" className={direction === 'asc' ? 'is-on' : ''} />
+  <path d="M1.5 8.5h7L5 12.5z" className={direction === 'desc' ? 'is-on' : ''} />
+</svg>;
+const HISTORY_COLUMNS = [['date', 'Date'], ['service', 'Service'], ['staff', 'Staff · Room'], ['status', 'Status']];
 
 /* Click selects an option; clicking the selected option again clears it. */
 const toggleOption = (onChange, name, value, selected) =>
@@ -209,7 +196,7 @@ function BookingReviewModal({ form, editingId, loading, canBook, onClose }) {
       <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6 text-gray-900 shadow-xl dark:border-gray-700 dark:bg-gray-800 dark:text-white" onClick={event => event.stopPropagation()}>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 id="booking-review-title" className="text-lg font-bold text-maroon-800 dark:text-maroon-300">Booking Summary</h3>
+            <h3 id="booking-review-title" className="text-lg font-bold text-gray-900 dark:text-white">Booking Summary</h3>
             <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Please review your appointment details.</p>
           </div>
           <button type="button" onClick={onClose} disabled={loading} aria-label="Close" className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50 dark:hover:bg-gray-700">
@@ -256,22 +243,30 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
   filter, onFilter, editingId, onCancelEdit, services, timeSlots, availableSlots, slotsLoading, loading, message, messageType, onDismissMessage, retrySlots }) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  useEffect(() => setPage(1), [filter, search]);
-  const [historyView, setHistoryView] = useState(readHistoryView);
-  useEffect(() => {
-    try {
-      localStorage.setItem(HISTORY_VIEW_KEY, historyView);
-    } catch {
-      /* Remembering the layout is a per-browser convenience only. */
-    }
-  }, [historyView]);
+  const [historyFilters, setHistoryFilters] = useState(DEFAULT_HISTORY_FILTERS);
+  const [historySort, setHistorySort] = useState(null);
+  useEffect(() => setPage(1), [filter, search, historyFilters, historySort]);
+  const cycleSort = key => setHistorySort(current => current?.key !== key ? { key, dir: 'desc' } : current.dir === 'desc' ? { key, dir: 'asc' } : null);
+  const resetHistory = () => { setSearch(''); onFilter('all'); setHistoryFilters(DEFAULT_HISTORY_FILTERS); setHistorySort(null); };
+  const [historyView, setHistoryView] = useState('list');
   /* Appointment history — formerly filtered by the sidebar search box,
      which has been removed from the portal shell. */
   const term = search.trim().toLowerCase();
-  const history = term
-    ? filteredAppointments.filter(item => [serviceTitle(item.service), item.service, item.concern, item.status, formatAppointmentDate(item.appointment_date), item.time_slot]
-      .some(value => String(value || '').toLowerCase().includes(term)))
-    : filteredAppointments;
+  const historyServices = [...new Set(appointments.map(item => item.service).filter(Boolean))].sort((a, b) => serviceTitle(a).localeCompare(serviceTitle(b)));
+  const filtersActive = filter !== 'all' || Object.keys(DEFAULT_HISTORY_FILTERS).some(key => historyFilters[key] !== DEFAULT_HISTORY_FILTERS[key]);
+  const canReset = Boolean(term) || filtersActive || Boolean(historySort);
+  const history = filteredAppointments
+    .filter(item => historyFilters.service === 'all' || item.service === historyFilters.service)
+    .filter(item => !term || [serviceTitle(item.service), item.service, item.concern, item.status, formatAppointmentDate(item.appointment_date), item.time_slot]
+      .some(value => String(value || '').toLowerCase().includes(term)));
+  if (historySort) {
+    const value = HISTORY_SORTS[historySort.key];
+    const direction = historySort.dir === 'asc' ? 1 : -1;
+    history.sort((x, y) => {
+      const left = value(x), right = value(y);
+      return direction * (typeof left === 'number' ? left - right : left.localeCompare(right));
+    });
+  }
   const pages = Math.max(1, Math.ceil(history.length / HISTORY_PAGE_SIZE));
   const currentPage = Math.min(page, pages);
   const rows = history.slice((currentPage - 1) * HISTORY_PAGE_SIZE, currentPage * HISTORY_PAGE_SIZE);
@@ -371,24 +366,47 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
       </form>
       {reviewOpen && <BookingReviewModal form={form} editingId={editingId} loading={loading} canBook={canBook} onClose={() => setReviewOpen(false)} />}
     </section>
+    <section className="ap-card ap-history-search" aria-labelledby="ap-history-search-title">
+      <div className="ap-section-heading"><Search /><div><h2 id="ap-history-search-title">Search and Filter</h2><p>Find an appointment by keyword, or narrow the list by status, service and order.</p></div></div>
+      <div className="ap-history-filters">
+        <div className="ap-history-filter-search">
+          <span>Search</span>
+          <SearchField value={search} onChange={setSearch} placeholder="Search appointments..." label="Search appointment history" className="[&_input]:bg-[var(--sp-surface)]" />
+        </div>
+        {[
+          ['status', 'Status', filter, value => onFilter(value), [['all', 'All appointments'], ['pending', 'Pending requests'], ['approved', 'Approved appointments'], ['past', 'Past appointments']]],
+          ['service', 'Service', historyFilters.service, value => setHistoryFilters(current => ({ ...current, service: value })), [['all', 'All services'], ...historyServices.map(service => [service, serviceTitle(service)])]],
+        ].map(([key, label, value, change, options]) => <label key={key}>
+          <span>{label}</span>
+          <span className="ap-history-select">
+            <select value={value} onChange={event => change(event.target.value)}>
+              {options.map(([optionValue, text]) => <option key={optionValue} value={optionValue}>{text}</option>)}
+            </select>
+            <ChevronDown aria-hidden="true" />
+          </span>
+        </label>)}
+        <div className="ap-history-filter-reset">
+          <span aria-hidden="true">&nbsp;</span>
+          <button type="button" onClick={resetHistory} disabled={!canReset}><RotateCcw />Reset filters</button>
+        </div>
+      </div>
+    </section>
     <section className="ap-card ap-history">
       <div className="ap-section-heading"><Clock /><div><h2>Appointment History</h2><p>View your past and upcoming clinic visits.</p></div>
         <div className="ap-history-controls">
-          <SearchField value={search} onChange={setSearch} placeholder="Search appointments..." label="Search appointment history" className="sm:w-56" />
-          <FilterMenu
-            fields={[['status', 'Status', [['all', 'All appointments'], ['pending', 'Pending requests'], ['approved', 'Approved appointments'], ['past', 'Past appointments']]]]}
-            values={{ status: filter }}
-            defaults={{ status: 'all' }}
-            onChange={(_, value) => onFilter(value)}
-            onReset={() => onFilter('all')}
-          />
           <HistoryViewMenu value={historyView} onChange={setHistoryView} />
         </div>
       </div>
-      {history.length === 0 ? <div className="ap-history-empty"><CalendarDays /><p>{term || filter !== 'all' ? 'No appointments match your search or filters.' : 'No appointments to display yet.'}</p></div> : <>
+      {history.length === 0 ? <div className="ap-history-empty"><CalendarDays /><p>{term || filtersActive ? 'No appointments match your search or filters.' : 'No appointments to display yet.'}</p></div> : <>
         {historyView === 'list' ? <div className="ap-history-table" role="table" aria-label="Appointment history">
           <div className="ap-history-table-head" role="row">
-            <span role="columnheader">Date</span><span role="columnheader">Service</span><span role="columnheader">Staff · Room</span><span role="columnheader">Status</span><span role="columnheader" className="sr-only">Actions</span>
+            {HISTORY_COLUMNS.map(([key, label]) => {
+              const active = historySort?.key === key ? historySort.dir : null;
+              return <span key={key} role="columnheader" aria-sort={active === 'desc' ? 'descending' : active === 'asc' ? 'ascending' : 'none'}>
+                <button type="button" className={`ap-sort-button${active ? ' is-active' : ''}`} onClick={() => cycleSort(key)}>{label}<SortCaret direction={active} /></button>
+              </span>;
+            })}
+            <span role="columnheader">Actions</span>
           </div>
           {rows.map(appointment => {
             const date = appointmentDate(appointment.appointment_date);
@@ -398,8 +416,8 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
               <span role="cell" className="ap-history-row-meta">{providerName(appointment)}<small>{roomName(appointment)}</small></span>
               <span role="cell"><StatusBadge status={appointment.status} /></span>
               <span role="cell" className="ap-history-actions">
-                <button type="button" onClick={() => onView(appointment)}><FileText />Details</button>
-                {appointment.status === 'approved' && date === clinicDate() && <Link to="/student/qr"><FileText />QR</Link>}
+                <button type="button" onClick={() => onView(appointment)}><FileText />View Details</button>
+                {appointment.status === 'approved' && date === clinicDate() && <Link to="/student/qr"><FileText />View QR</Link>}
                 {appointment.status === 'pending' && <button type="button" onClick={() => onEdit(appointment)}><RotateCcw />Reschedule</button>}
               </span>
             </div>;

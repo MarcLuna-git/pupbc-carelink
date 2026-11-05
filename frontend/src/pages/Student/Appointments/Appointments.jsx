@@ -11,6 +11,8 @@ import {
   FileText,
   Edit3,
   Loader2,
+  Info,
+  Hash,
 } from 'lucide-react';
 import api from '../../../services/api';
 import { getToken } from '../../../services/session';
@@ -997,18 +999,18 @@ const Appointments = () => {
 
                 {selectedAppointment.status ===
                   'completed' && (
-                  <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/20 rounded-2xl p-4 mb-4">
-                    <div className="flex items-start gap-2">
-                      <div>
-                        <p className="text-sm font-semibold text-blue-800 dark:text-blue-400">
-                          Appointment Completed
-                        </p>
-
-                        <p className="text-xs text-blue-600 dark:text-blue-500 mt-1">
-                          Your visit is done! Check your medical records for any follow-up instructions or prescriptions.
-                        </p>
-                      </div>
+                  <div className="px-5 pt-2 pb-5 flex flex-col items-center text-center">
+                    <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-3">
+                      <Info className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                     </div>
+
+                    <p className="text-base font-semibold text-gray-900 dark:text-white">
+                      Appointment Completed
+                    </p>
+
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      Your visit is done! Check your medical records for any follow-up instructions or prescriptions.
+                    </p>
                   </div>
                 )}
 
@@ -1046,26 +1048,37 @@ const Appointments = () => {
                   </div>
                 )}
 
-                <div className="flex items-start gap-3 mb-4">
-                  <div className="w-10 h-10 bg-maroon-50 dark:bg-maroon-900/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Stethoscope className="w-5 h-5 text-maroon-800 dark:text-maroon-400" />
-                  </div>
-
-                  <div className="min-w-0">
-                    <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                      {selectedAppointment.service ||
-                        'Appointment'}
-                    </h3>
-
-                    <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
-                      Ref:{' '}
-                      {selectedAppointment.reference_number ||
-                        'N/A'}
-                    </p>
-                  </div>
-                </div>
-
                 <div className="bg-gray-50 dark:bg-gray-700/30 rounded-2xl p-4 space-y-3 mb-4">
+                  <div className="flex items-center gap-3">
+                    <Stethoscope className="w-4 h-4 text-gray-400 flex-shrink-0" />
+
+                    <div className="min-w-0">
+                      <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                        Service
+                      </p>
+
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {selectedAppointment.service ||
+                          'Appointment'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Hash className="w-4 h-4 text-gray-400 flex-shrink-0" />
+
+                    <div className="min-w-0">
+                      <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                        Reference
+                      </p>
+
+                      <p className="text-sm font-medium text-gray-900 dark:text-white font-mono">
+                        {selectedAppointment.reference_number ||
+                          'N/A'}
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="flex items-center gap-3">
                     <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
 
@@ -1113,7 +1126,7 @@ const Appointments = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="flex flex-wrap justify-center gap-2">
                   {selectedAppointment.status ===
                     'pending' && (
                     <>
@@ -1123,7 +1136,7 @@ const Appointments = () => {
                             selectedAppointment
                           )
                         }
-                        className="w-full py-3 bg-maroon-800 text-white font-semibold rounded-2xl hover:bg-maroon-900 transition flex items-center justify-center gap-1.5 text-sm"
+                        className="px-5 py-2.5 bg-maroon-800 text-white font-semibold rounded-xl hover:bg-maroon-900 transition flex items-center justify-center gap-1.5 text-sm"
                       >
                         <Edit3 className="w-4 h-4" />
                         Edit Appointment
@@ -1139,7 +1152,7 @@ const Appointments = () => {
                             null
                           );
                         }}
-                        className="w-full py-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold rounded-2xl hover:bg-red-100 dark:hover:bg-red-900/30 transition text-sm border border-red-200 dark:border-red-800/20"
+                        className="px-5 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition text-sm border border-red-200 dark:border-red-800/20"
                       >
                         Cancel Appointment
                       </button>
@@ -1152,7 +1165,7 @@ const Appointments = () => {
                         null
                       )
                     }
-                    className="w-full py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
+                    className="px-5 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
                   >
                     Close
                   </button>

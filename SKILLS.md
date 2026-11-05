@@ -197,3 +197,50 @@ Lahat ng nasa ibaba ay **hindi pa naka-commit**. Ang huling naka-commit at naka-
 - Pink pa rin ang hover: border ng Select Service options, at pagination arrows sa Records.
 - Hindi pa nasusubukan: dark mode ng lahat, at aktwal na pag-save ng Profile edit.
 - Mas luma: ang hindi malinaw na "medicine" item, at ang forgot-password fix para hindi malaman kung naka-register ang isang email.
+
+---
+
+## November 5, 2026 (Part 2) - Appointments at Records: Filter, Table at Sorting
+
+Pangalawang summary ngayong araw, kasunod ng "November 5, 2026 - Student Portal UI Refresh" sa itaas. Lahat ng nasa ibaba ay **hindi pa rin naka-commit**.
+
+### Appointments: kulay at hover
+- Select Service options: abo (`gray-50`) na ang hover at selected state, maroon na border kapag selected. Hindi na pink.
+- "Not booked" pill: `gray-50` na background at `gray-200` na border, parang hover ng button sa Records.
+- Empty DATE tile sa Upcoming Appointment: `gray-100` na may dashed border.
+- Date tiles sa Appointment History: `gray-100` na rin, at itim ang text.
+- Itim na text: Queue label, View Details, at ang "Booking Summary" title.
+- Step progress fields (tatlong booking column): `gray-50` na background, kapareho ng Search and Filter box ng Records.
+- Header (avatar, theme toggle, notification bell): abo (`gray-100`/`gray-200`) na ang hover, hindi pink.
+
+### Appointments: Details modal
+- Completed info message: naka-center ang icon sa itaas, sunod ang itim na title, tapos abo na paragraph. Walang background box.
+- Service, Reference, Date, Time at Concern ay iisang listahan na sa loob ng iisang gray box, pare-pareho ang itsura ng bawat row.
+- Edit, Cancel at Close buttons: hindi na full width, naka-center.
+
+### Appointments: Appointment History
+- Search and Filter: sariling card sa itaas ng history section (Search, Status, Service, Reset filters). Kapareho ng UI ng Records, pero appointment ang logic.
+- Layout switch: slide toggle na (grid / list), walang dropdown icon.
+- **Table view na ang default** tuwing bubuksan o ire-reload ang page; hindi na tinatandaan ang huling napiling layout.
+- List view: table na may header row (Date, Service, Staff · Room, Status, Actions).
+- Pagination: naka-center.
+
+### Column sorting (Appointments at Records)
+- Pindutin ang column header: 1st click pababa, 2nd click pataas, 3rd click balik sa default na ayos.
+- Icon: patong na ▲/▼. Outline at abo kapag hindi naka-sort; puno at maroon ang active na direksyon.
+- Appointments: Date, Service, Staff · Room, Status (`HISTORY_SORTS` at `SortCaret` sa `ApprovedAppointmentsView.jsx`).
+- Records: lahat ng column maliban sa Actions, sa dalawang tab (`COLUMN_SORTS` at `SortCaret` sa `HealthRecords.jsx`). Nawawala ang sort kapag lumipat ng tab.
+- Pinalitan ng **Reset filters** button ang Sort By dropdown sa parehong page. Nililinis nito ang search, filters at column sort; disabled kapag walang naka-set. Newest first ang default sa Records.
+
+### Sidebar
+- Section labels (MANAGEMENT, RECORD, ACCOUNT): 10px, bold, puti na 50% opacity (`.student-nav-section` sa `StudentLayout-for-Desktop-View.css`).
+
+### Files
+- `frontend/src/pages/Student/Appointments/ApprovedAppointmentsView.jsx`, `Appointments.jsx`, `appointments.css`
+- `frontend/src/pages/Student/HealthRecords/HealthRecords.jsx`
+- `frontend/src/layouts/StudentLayout/StudentLayout-for-Desktop-View.css`
+
+### Mga natitirang tanong
+- Ilapat din ba ang naka-center na message style sa Approved, Cancelled at Rejected na modal? Maroon ba dapat ang info icon?
+- Pink pa rin ang pagination arrows sa Records.
+- Hindi pa nasusubukan: dark mode, mobile/tablet layout ng bagong table at filters, at modal ng pending appointment na may tatlong button.
