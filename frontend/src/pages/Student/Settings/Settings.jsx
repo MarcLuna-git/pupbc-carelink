@@ -9,6 +9,7 @@ import { readDarkMode, saveDarkMode } from '../../../hooks/useAccountTheme';
 import StudentPageHero from '../../../components/StudentPageHero';
 import { fetchDevTools, updateTimeGuardBypass, useTimeGuardBypass } from '../../../services/devTools';
 import { StudentToast } from '../../../components/StudentFeedback';
+import { useStudentBreadcrumbTab } from '../../../utils/studentBreadcrumb';
 
 // Same hero as the other Student pages (aurora + tab icon).
 const SETTINGS_HERO = {
@@ -312,6 +313,7 @@ const Settings = () => {
   // Developer Tools is hidden: it only appears when opened by its direct link (?tab=developer).
   const devToolsUnlocked = params.get('tab') === 'developer';
   const tabs = desktopTabs.filter(tab => tab.id !== 'developer' || devToolsUnlocked);
+  useStudentBreadcrumbTab(desktopTabs.find(tab => tab.id === activeTab)?.label);
 
   // Shared panel body, rendered in the right column on desktop and slid open
   // inside the tapped accordion item on mobile.

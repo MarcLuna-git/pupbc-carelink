@@ -114,9 +114,17 @@
   .student-header-inner { padding:0 18px;gap:10px; }
 }
 @media (min-width:1100px) {
-  .student-header-page { flex:0 0 210px; }
   .student-header-actions { margin-left:auto; }
 }
+
+/* Breadcrumb ("Dashboard / Appointments") on the header's bottom edge. */
+.student-breadcrumb { align-self:flex-end;padding:0 0 9px 14px;font-size:13px;font-weight:500;color:var(--sp-muted); }
+.student-breadcrumb ol { display:flex;align-items:center;min-width:0;margin:0;padding:0;list-style:none; }
+.student-breadcrumb li { min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.student-breadcrumb li + li::before { content:'/';margin:0 8px;color:var(--sp-border-strong,#c9b4b8); }
+.student-breadcrumb a { color:var(--sp-muted);text-decoration:none; }
+.student-breadcrumb a:hover { color:var(--sp-accent);text-decoration:underline; }
+.student-breadcrumb [aria-current='page'] { font-weight:700;color:var(--sp-accent); }
 
 /*
  * The body is a fixed frame — the shell body is the scroll container, so the

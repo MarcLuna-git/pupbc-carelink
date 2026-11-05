@@ -8,6 +8,8 @@ import {
   Camera,
   CalendarCheck,
   CalendarClock,
+  Check,
+  ChevronDown,
   ClipboardList,
   HeartPulse,
   Loader2,
@@ -34,6 +36,7 @@ import { clinicDate } from '../../../utils/appointmentDate';
 import { StudentToast } from '../../../components/StudentFeedback';
 import { contactNameError, contactPhoneError, formatContactPhone, ownMobileContactError } from '../../../utils/contactValidation';
 import { nameOnly } from '../../../utils/inputFilters';
+import { useStudentBreadcrumbTab } from '../../../utils/studentBreadcrumb';
 
 /*
  * ROUTE LOADING — same restored effect as the Settings page, scoped to this
@@ -111,8 +114,100 @@ const EMERGENCY_RELATIONSHIPS = ['Parent', 'Guardian', 'Sibling', 'Spouse', 'Rel
 
 const FIELD_CLASS = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-maroon-800 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white';
 
+// Same choices as the Health Profile form.
+const MEDICAL_HISTORY_OPTIONS = [
+  'Convulsion / Epilepsy', 'Tonsillitis (Recurrent)', 'Hypertension (High Blood Pressure)',
+  'Heart Disease', 'Bronchial Asthma', 'Tuberculosis', 'COVID-19', 'Pneumonia',
+  'Bleeding Tendencies', 'Diabetes Mellitus (High Blood Sugar)', 'Kidney Disease',
+  'Hernia', 'Hemorrhoids (Almoranas)',
+];
+const FAMILY_HISTORY_OPTIONS = [
+  'Hypertension', 'Heart Disease', 'Kidney Problem', 'Anemia',
+  'Asthma', 'Diabetes Mellitus', 'Epilepsy', 'Tuberculosis',
+];
+const TOBACCO_OPTIONS = ['Never', 'Past', 'Present'];
+const ALCOHOL_OPTIONS = ['None', 'Occasional', 'Daily'];
+// Yes/No questions that need a date and diagnosis when answered Yes.
+const HISTORY_EVENTS = [
+  { flag: 'hospitalized', date: 'hospitalization_date', diagnosis: 'hospitalization_diagnosis' },
+  { flag: 'surgery', date: 'surgery_date', diagnosis: 'surgery_diagnosis' },
+  { flag: 'had_covid', date: 'covid_date', diagnosis: 'covid_diagnosis' },
+];
+
+/* Single-choice dropdown with the portal's own arrow. */
+const ChoiceButtons = ({ options, value, onSelect, label }) => (
+  <span className="relative block">
+    <select
+      aria-label={label}
+      value={value ?? ''}
+      onChange={(event) => onSelect(event.target.value)}
+      className={`${FIELD_CLASS} cursor-pointer appearance-none pr-10`}
+    >
+      {!options.includes(value) && <option value="">Select</option>}
+      {options.map((option) => <option key={option} value={option}>{option}</option>)}
+    </select>
+    <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-maroon-700 dark:text-maroon-300" />
+  </span>
+);
+
+/* Multi-choice dropdown: the button lists what is picked, the panel holds the checkboxes. */
+const CheckList = ({ options, selected, onToggle, label }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const closeOnOutside = (event) => { if (!ref.current?.contains(event.target)) setOpen(false); };
+    const closeOnEscape = (event) => { if (event.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', closeOnOutside);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutside);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        aria-label={label}
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className={`${FIELD_CLASS} flex items-center gap-2 pr-10 text-left`}
+      >
+        <span className={`min-w-0 flex-1 truncate ${selected.length ? '' : 'text-gray-400'}`}>
+          {selected.length ? selected.join(', ') : 'Select'}
+        </span>
+        {selected.length > 1 && <span className="shrink-0 rounded-full bg-maroon-800 px-1.5 text-xs text-white">{selected.length}</span>}
+      </button>
+      <ChevronDown aria-hidden="true" className={`pointer-events-none absolute right-3.5 top-[1.2rem] h-4 w-4 -translate-y-1/2 text-maroon-700 transition dark:text-maroon-300 ${open ? 'rotate-180' : ''}`} />
+      {open && (
+        <ul role="listbox" aria-multiselectable="true" aria-label={label} className="absolute left-0 right-0 top-full z-20 mt-1 grid max-h-60 gap-0.5 overflow-y-auto rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)] p-1.5 shadow-lg">
+          {[...new Set([...options, ...selected])].map((option) => {
+            const picked = selected.includes(option);
+            return (
+              <li key={option} role="option" aria-selected={picked}>
+                <button
+                  type="button"
+                  onClick={() => onToggle(option)}
+                  className={`flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-sm transition ${picked ? 'bg-gray-50 font-semibold text-maroon-800 dark:bg-gray-900/30 dark:text-maroon-300' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-900/30'}`}
+                >
+                  <span>{option}</span>
+                  {picked && <Check aria-hidden="true" className="h-4 w-4 shrink-0" />}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+};
+
 /* Inline input for one editable InfoCard row. */
 const RowEditor = ({ editor, draft, onChange }) => {
+  if (editor.render) return editor.render();
   const common = {
     id: `profile-${editor.name}`,
     name: editor.name,
@@ -146,11 +241,11 @@ const InfoCard = ({ icon: Icon, title, rows, footer, editing = false, draft = {}
         {title}
       </h3>
     </div>
-    <dl className="grid flex-1 grid-cols-[minmax(0,8.5rem)_minmax(0,1fr)] content-start items-center gap-x-4 gap-y-2.5 text-sm">
+    <dl className={`grid flex-1 grid-cols-[minmax(0,8.5rem)_minmax(0,1fr)] content-start gap-x-4 gap-y-2.5 text-sm ${editing ? 'items-start' : 'items-center'}`}>
       {rows.map(([label, value, editor]) => (
         <div key={label} className="contents">
-          <dt className="text-gray-500 dark:text-gray-400">
-            {editing && editor ? <label htmlFor={`profile-${editor.name}`}>{label}</label> : label}
+          <dt className={`text-gray-500 dark:text-gray-400 ${editing && editor ? 'pt-2' : ''}`}>
+            {editing && editor && !editor.render ? <label htmlFor={`profile-${editor.name}`}>{label}</label> : label}
           </dt>
           <dd className={`break-words ${value ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}`}>
             {editing && editor ? <><RowEditor editor={editor} draft={draft} onChange={onChange} />{fieldErrors[editor.name] && <p role="alert" className="mt-1 text-xs text-red-600">{fieldErrors[editor.name]}</p>}</> : value || 'Not provided'}
@@ -349,12 +444,22 @@ const Overview = () => {
 
   /* Inline editing of the "My Health Information" cards. */
   const [editing, setEditing] = useState(false);
+  useStudentBreadcrumbTab(showHealthProfile ? 'Health Profile' : editing ? 'Edit Profile' : '');
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState('');
   const [nameError, setNameError] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [draft, setDraft] = useState({});
+  const [healthErrors, setHealthErrors] = useState({});
 
+  const setDraftField = (name, value) => {
+    setHealthErrors((current) => ({ ...current, [name]: '' }));
+    setDraft((current) => ({ ...current, [name]: value }));
+  };
+  const toggleDraftItem = (name, item) => {
+    const list = draft[name] || [];
+    setDraftField(name, list.includes(item) ? list.filter((entry) => entry !== item) : [...list, item]);
+  };
 
   const startEdit = () => {
     setDraft({
@@ -365,10 +470,23 @@ const Overview = () => {
       emergency_phone: contact.phone || hp.emergency_phone || '',
       allergy_details: hp.allergy_details || '',
       medications: hp.medications || '',
+      medical_history: Array.isArray(hp.medical_history) ? hp.medical_history : [],
+      other_medical_history: hp.other_medical_history || '',
+      ...Object.fromEntries(HISTORY_EVENTS.flatMap(({ flag, date, diagnosis }) => [
+        [flag, Boolean(hp[flag])], [date, hp[date] || ''], [diagnosis, hp[diagnosis] || ''],
+      ])),
+      has_disability: Boolean(hp.has_disability),
+      disability_details: hp.disability_details || '',
+      family_history: Array.isArray(hp.family_history) ? hp.family_history : [],
+      tobacco_use: hp.tobacco_use || '',
+      tobacco_amount: hp.tobacco_amount || '',
+      tobacco_duration: hp.tobacco_duration || '',
+      alcohol_use: hp.alcohol_use || '',
     });
     setEditError('');
     setNameError('');
     setPhoneError('');
+    setHealthErrors({});
     setEditing(true);
   };
 
@@ -378,6 +496,27 @@ const Overview = () => {
     setEditError('');
     setNameError('');
     setPhoneError('');
+    setHealthErrors({});
+  };
+
+  /* Same required fields as the Health Profile form. */
+  const validateHealth = (values) => {
+    const errors = {};
+    if (!values.medical_history.length && !values.other_medical_history) errors.medical_history = 'Select at least one condition or type another illness.';
+    HISTORY_EVENTS.forEach(({ flag, date, diagnosis }) => {
+      if (!values[flag]) return;
+      if (!values[date]) errors[flag] = 'Enter the date and diagnosis.';
+      else if (values[date] > clinicDate()) errors[flag] = 'The date cannot be in the future.';
+      else if (!values[diagnosis]) errors[flag] = 'Enter the date and diagnosis.';
+    });
+    if (values.has_disability && !values.disability_details) errors.has_disability = 'Describe the disability.';
+    if (!values.allergy_details) errors.allergy_details = 'Enter your allergies, or type None.';
+    if (!values.medications) errors.medications = 'Enter your medications, or type None.';
+    if (!values.family_history.length) errors.family_history = 'Select at least one condition.';
+    if (!values.tobacco_use) errors.tobacco_use = 'Choose an answer.';
+    else if (values.tobacco_use !== 'Never' && (!values.tobacco_amount || !values.tobacco_duration)) errors.tobacco_use = 'Enter how much and how long.';
+    if (!values.alcohol_use) errors.alcohol_use = 'Choose an answer.';
+    return errors;
   };
 
   const handleDraftChange = (event) => {
@@ -397,7 +536,7 @@ const Overview = () => {
 
   const saveEdit = async () => {
     if (saving) return;
-    const trimmed = Object.fromEntries(Object.entries(draft).map(([key, value]) => [key, value.trim()]));
+    const trimmed = Object.fromEntries(Object.entries(draft).map(([key, value]) => [key, typeof value === 'string' ? value.trim() : value]));
     setEditError('');
     if (!/^(?:09\d{9}|\+639\d{9})$/.test(trimmed.mobile_number)) { setEditError('Use 09XXXXXXXXX or +639XXXXXXXXX for your mobile number.'); return; }
     const invalidName = contactNameError(trimmed.emergency_name, hasHealthProfile);
@@ -407,6 +546,11 @@ const Overview = () => {
     if (invalidPhone) { setPhoneError(invalidPhone); return; }
     const ownPhoneError = ownMobileContactError(trimmed.emergency_phone, trimmed.mobile_number);
     if (ownPhoneError) { setPhoneError(ownPhoneError); return; }
+    if (hasHealthProfile) {
+      const errors = validateHealth(trimmed);
+      setHealthErrors(errors);
+      if (Object.keys(errors).length) { setEditError('Please fix the highlighted fields.'); return; }
+    }
 
     setSaving(true);
     setEditError('');
@@ -428,6 +572,21 @@ const Overview = () => {
           emergency_phone: trimmed.emergency_phone,
           allergy_details: trimmed.allergy_details,
           medications: trimmed.medications,
+          medical_history: trimmed.medical_history,
+          other_medical_history: trimmed.other_medical_history || null,
+          // A "No" answer clears its date and diagnosis.
+          ...Object.fromEntries(HISTORY_EVENTS.flatMap(({ flag, date, diagnosis }) => [
+            [flag, trimmed[flag]],
+            [date, trimmed[flag] ? trimmed[date] : null],
+            [diagnosis, trimmed[flag] ? trimmed[diagnosis] : null],
+          ])),
+          has_disability: trimmed.has_disability,
+          disability_details: trimmed.has_disability ? trimmed.disability_details : null,
+          family_history: trimmed.family_history,
+          tobacco_use: trimmed.tobacco_use,
+          tobacco_amount: trimmed.tobacco_use === 'Never' ? null : trimmed.tobacco_amount,
+          tobacco_duration: trimmed.tobacco_use === 'Never' ? null : trimmed.tobacco_duration,
+          alcohol_use: trimmed.alcohol_use,
         });
         window.dispatchEvent(new CustomEvent('healthProfileUpdated'));
       }
@@ -696,7 +855,7 @@ const Overview = () => {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold text-maroon-800 dark:text-maroon-300">My Health Information</h2>
-                <span className="inline-flex items-center gap-1 rounded-full bg-maroon-50 px-2.5 py-0.5 text-xs font-semibold text-maroon-800 dark:bg-maroon-900/30 dark:text-maroon-300">
+                <span className="inline-flex items-center gap-1 rounded-full border border-[var(--sp-border)] bg-gray-50 px-2.5 py-0.5 text-xs font-semibold text-maroon-800 dark:bg-gray-900/30 dark:text-maroon-300">
                   <Lock className="h-3 w-3" aria-hidden="true" />Confidential
                 </span>
               </div>
@@ -786,12 +945,56 @@ const Overview = () => {
               <InfoCard
                 icon={HeartPulse}
                 title="Health Information"
+                editing={editing}
+                draft={draft}
+                onChange={handleDraftChange}
+                fieldErrors={healthErrors}
                 rows={[
-                  ['Known Conditions', listOrNone(hp.medical_history, hp.other_medical_history)],
-                  ['Hospitalization', yesNoDetail(hp.hospitalized, hp.hospitalization_diagnosis, hp.hospitalization_date)],
-                  ['Surgery', yesNoDetail(hp.surgery, hp.surgery_diagnosis, hp.surgery_date)],
-                  ['COVID-19 History', yesNoDetail(hp.had_covid, hp.covid_diagnosis, hp.covid_date)],
-                  ['Disability', hp.has_disability ? hp.disability_details || 'Yes' : 'None'],
+                  ['Known Conditions', listOrNone(hp.medical_history, hp.other_medical_history), {
+                    name: 'medical_history',
+                    render: () => (
+                      <div className="space-y-2">
+                        <CheckList label="Known conditions" options={MEDICAL_HISTORY_OPTIONS} selected={draft.medical_history || []} onToggle={(item) => toggleDraftItem('medical_history', item)} />
+                        <input
+                          aria-label="Other illness"
+                          value={draft.other_medical_history ?? ''}
+                          onChange={(event) => setDraftField('other_medical_history', event.target.value)}
+                          maxLength={191}
+                          placeholder="Other illness (optional)"
+                          className={FIELD_CLASS}
+                        />
+                      </div>
+                    ),
+                  }],
+                  ...[
+                    ['Hospitalization', HISTORY_EVENTS[0]],
+                    ['Surgery', HISTORY_EVENTS[1]],
+                    ['COVID-19 History', HISTORY_EVENTS[2]],
+                  ].map(([label, { flag, date, diagnosis }]) => [label, yesNoDetail(hp[flag], hp[diagnosis], hp[date]), {
+                    name: flag,
+                    render: () => (
+                      <div className="space-y-2">
+                        <ChoiceButtons label={label} options={['No', 'Yes']} value={draft[flag] ? 'Yes' : 'No'} onSelect={(answer) => setDraftField(flag, answer === 'Yes')} />
+                        {draft[flag] && (
+                          <>
+                            <input type="date" aria-label={`${label} date`} max={clinicDate()} value={draft[date] ?? ''} onChange={(event) => setDraftField(date, event.target.value)} className={FIELD_CLASS} />
+                            <input aria-label={`${label} diagnosis`} value={draft[diagnosis] ?? ''} onChange={(event) => setDraftField(diagnosis, event.target.value)} maxLength={191} placeholder="Diagnosis" className={FIELD_CLASS} />
+                          </>
+                        )}
+                      </div>
+                    ),
+                  }]),
+                  ['Disability', hp.has_disability ? hp.disability_details || 'Yes' : 'None', {
+                    name: 'has_disability',
+                    render: () => (
+                      <div className="space-y-2">
+                        <ChoiceButtons label="Disability" options={['No', 'Yes']} value={draft.has_disability ? 'Yes' : 'No'} onSelect={(answer) => setDraftField('has_disability', answer === 'Yes')} />
+                        {draft.has_disability && (
+                          <input aria-label="Disability details" value={draft.disability_details ?? ''} onChange={(event) => setDraftField('disability_details', event.target.value)} maxLength={2000} placeholder="Type of disability" className={FIELD_CLASS} />
+                        )}
+                      </div>
+                    ),
+                  }],
                 ]}
               />
 
@@ -801,9 +1004,13 @@ const Overview = () => {
                 editing={editing}
                 draft={draft}
                 onChange={handleDraftChange}
+                fieldErrors={healthErrors}
                 rows={[
                   ['Allergies', hp.allergy_details || 'None', { name: 'allergy_details', maxLength: 191, placeholder: 'Penicillin, Seafood, None' }],
-                  ['Family History', listOrNone(hp.family_history)],
+                  ['Family History', listOrNone(hp.family_history), {
+                    name: 'family_history',
+                    render: () => <CheckList label="Family history" options={FAMILY_HISTORY_OPTIONS} selected={draft.family_history || []} onToggle={(item) => toggleDraftItem('family_history', item)} />,
+                  }],
                 ]}
               />
 
@@ -813,10 +1020,27 @@ const Overview = () => {
                 editing={editing}
                 draft={draft}
                 onChange={handleDraftChange}
+                fieldErrors={healthErrors}
                 rows={[
                   ['Current Medications', hp.medications || 'None', { name: 'medications', type: 'textarea', maxLength: 2000, placeholder: 'List medications or type None' }],
-                  ['Tobacco Use', hp.tobacco_use || 'None'],
-                  ['Alcohol Use', hp.alcohol_use || 'None'],
+                  ['Tobacco Use', hp.tobacco_use || 'None', {
+                    name: 'tobacco_use',
+                    render: () => (
+                      <div className="space-y-2">
+                        <ChoiceButtons label="Tobacco use" options={TOBACCO_OPTIONS} value={draft.tobacco_use} onSelect={(answer) => setDraftField('tobacco_use', answer)} />
+                        {draft.tobacco_use && draft.tobacco_use !== 'Never' && (
+                          <>
+                            <input aria-label="How much tobacco" value={draft.tobacco_amount ?? ''} onChange={(event) => setDraftField('tobacco_amount', event.target.value)} maxLength={100} placeholder="How much?" className={FIELD_CLASS} />
+                            <input aria-label="How long" value={draft.tobacco_duration ?? ''} onChange={(event) => setDraftField('tobacco_duration', event.target.value)} maxLength={100} placeholder="How long?" className={FIELD_CLASS} />
+                          </>
+                        )}
+                      </div>
+                    ),
+                  }],
+                  ['Alcohol Use', hp.alcohol_use || 'None', {
+                    name: 'alcohol_use',
+                    render: () => <ChoiceButtons label="Alcohol use" options={ALCOHOL_OPTIONS} value={draft.alcohol_use} onSelect={(answer) => setDraftField('alcohol_use', answer)} />,
+                  }],
                 ]}
               />
             </>

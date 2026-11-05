@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { ChevronsLeft, ChevronsRight, Moon, Sun } from 'lucide-react';
+
+import { studentPageTitle } from '../../utils/studentPortalNavigation';
+import { useStudentBreadcrumbTabLabel } from '../../utils/studentBreadcrumb';
 
 import StudentSidebar from './student-shell/StudentSidebar';
 import StudentAccountMenu from './student-shell/StudentAccountMenu';
@@ -28,6 +32,9 @@ const StudentLayoutForTabletView = ({
   darkMode,
   toggleDarkMode,
 }) => {
+  const { pathname } = useLocation();
+  const tabLabel = useStudentBreadcrumbTabLabel();
+
   /*
    * Toggle button vertical position: measured from the brand symbol's
    * ACTUAL rendered center (getBoundingClientRect), so the pull tab is
@@ -103,9 +110,20 @@ const StudentLayoutForTabletView = ({
       {/* Header */}
       <header className="student-header">
         <div className="student-header-inner">
-          {/* Invisible spacer: holds the header layout balance now that the
-              page-title text is removed. */}
-          <div className="student-header-page" aria-hidden="true" />
+          {/* Breadcrumb, sitting on the header's bottom edge. */}
+          <nav className="student-header-page student-breadcrumb" aria-label="Breadcrumb">
+            <ol>
+              <li><Link to="/student">Dashboard</Link></li>
+              {tabLabel ? (
+                <>
+                  <li>{studentPageTitle(pathname)}</li>
+                  <li aria-current="page">{tabLabel}</li>
+                </>
+              ) : (
+                <li aria-current="page">{studentPageTitle(pathname)}</li>
+              )}
+            </ol>
+          </nav>
 
           {/* Header actions */}
           <div className="student-header-actions">

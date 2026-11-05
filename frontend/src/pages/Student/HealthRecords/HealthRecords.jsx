@@ -7,6 +7,7 @@ import {
   ClipboardList,
   CalendarDays,
   CalendarClock,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Eye,
@@ -15,7 +16,8 @@ import {
 } from 'lucide-react';
 import api from '../../../services/api';
 import StudentPageHero from '../../../components/StudentPageHero';
-import { SearchField, FilterMenu } from '../../../components/StudentSearchFilter';
+import { SearchField } from '../../../components/StudentSearchFilter';
+import { useStudentBreadcrumbTab } from '../../../utils/studentBreadcrumb';
 import { openRecordDocument } from './recordDocuments';
 import { StudentToast } from '../../../components/StudentFeedback';
 
@@ -27,6 +29,7 @@ import { StudentToast } from '../../../components/StudentFeedback';
 const ROUTE_LOADING_DELAY = 1600;
 
 const CARD = 'rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)]';
+const FIELD_LABEL = 'mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-300';
 
 const RECORDS_HERO = {
   id: 'records-title',
@@ -133,7 +136,7 @@ const PrintButton = ({ record, kind, onDocument }) => {
       onClick={() => onDocument(kind, record, 'print')}
       aria-label={label}
       title={label}
-      className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 px-2.5 py-2 text-sm font-semibold text-maroon-800 transition hover:border-maroon-200 hover:bg-maroon-50 dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-maroon-900/20 lg:px-3"
+      className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 px-2.5 py-2 text-sm font-semibold text-maroon-800 transition hover:bg-gray-50 dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-gray-900/30 lg:px-3"
     >
       <Printer className="h-4 w-4" />
       <span className="hidden lg:inline">Print</span>
@@ -145,7 +148,7 @@ const ViewButton = ({ onClick }) => (
   <button
     type="button"
     onClick={onClick}
-    className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-maroon-800 transition hover:border-maroon-200 hover:bg-maroon-50 dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
+    className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-maroon-800 transition hover:bg-gray-50 dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-gray-900/30"
   >
     <FileText className="h-4 w-4" /> View Details
   </button>
@@ -273,6 +276,7 @@ const HealthRecords = () => {
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('consultations');
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  useStudentBreadcrumbTab(TABS.find(({ id }) => id === tab)?.label);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [page, setPage] = useState(1);
   /* Cosmetic hold for the route-loading animation — see ROUTE LOADING note. */
@@ -438,13 +442,65 @@ const HealthRecords = () => {
         />
       </section>
 
+      {/* Search and filter */}
+      <section aria-labelledby="records-search-title" className={`${CARD} p-4 lg:p-6`}>
+        <h2 id="records-search-title" className="text-lg font-bold text-maroon-800 dark:text-maroon-300">
+          Search and Filter
+        </h2>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Find a record by keyword, or narrow the list by type, year and order.
+        </p>
+
+        <div className="mt-4 grid gap-3 rounded-xl border border-[var(--sp-border)] bg-gray-50 p-3 dark:bg-gray-900/30 sm:grid-cols-2 sm:p-4 lg:grid-cols-[2fr_1fr_1fr_1fr]">
+          <div className="min-w-0 sm:col-span-2 lg:col-span-1">
+            <span className={FIELD_LABEL}>Search</span>
+            <SearchField
+              value={search}
+              onChange={setSearch}
+              placeholder={tab === 'certificates' ? 'Search certificates...' : 'Search consultations...'}
+              label="Search records"
+              className="[&_input]:bg-[var(--sp-surface)]"
+            />
+          </div>
+          {[
+            ['type', 'Record Type', [['all', 'All types'], ['consultation', 'Consultations'], ['emergency', 'Emergencies']]],
+            ['year', 'Year', [['all', 'All years'], ...years.map((year) => [year, year])]],
+            ['sort', 'Sort By', [['newest', 'Newest first'], ['oldest', 'Oldest first'], ['title', 'Title A–Z']]],
+          ].map(([key, label, options]) => (
+            <label key={key} className="block min-w-0">
+              <span className={FIELD_LABEL}>{label}</span>
+              <span className="relative block">
+                <select
+                  value={filters[key]}
+                  onChange={(e) => setFilters((current) => ({ ...current, [key]: e.target.value }))}
+                  className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)] pl-3 pr-10 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-maroon-500 dark:text-white"
+                >
+                  {options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+                </select>
+                <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-maroon-700 dark:text-maroon-300" />
+              </span>
+            </label>
+          ))}
+        </div>
+
+        {Object.keys(DEFAULT_FILTERS).some((key) => filters[key] !== DEFAULT_FILTERS[key]) && (
+          <button
+            type="button"
+            onClick={() => setFilters(DEFAULT_FILTERS)}
+            className="mt-2 text-xs font-semibold text-maroon-800 hover:underline dark:text-maroon-300"
+          >
+            Reset filters
+          </button>
+        )}
+      </section>
+
       {/* My Records */}
       <div className={`${CARD} p-4 lg:p-6`}>
         <h2 className="mb-5 flex items-center gap-2.5 text-lg font-bold text-maroon-800 dark:text-maroon-300">
           <ClipboardList className="h-6 w-6" /> My Records
         </h2>
 
-        <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center">
+        <div className="mb-4">
           <div role="tablist" aria-label="Record type" className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             {TABS.map(({ id, label, icon: Icon }) => {
               const active = tab === id;
@@ -459,7 +515,7 @@ const HealthRecords = () => {
                   className={`flex w-full items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition sm:inline-flex sm:w-auto ${
                     active
                       ? 'border-maroon-800 bg-maroon-800 text-white'
-                      : 'border-[var(--sp-border)] text-gray-700 hover:bg-maroon-50 dark:text-gray-300 dark:hover:bg-maroon-900/20'
+                      : 'border-[var(--sp-border)] text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-900/30'
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -468,27 +524,6 @@ const HealthRecords = () => {
                 </button>
               );
             })}
-          </div>
-
-          <div className="flex flex-col gap-2 sm:flex-row xl:ml-auto">
-            <SearchField
-              value={search}
-              onChange={setSearch}
-              placeholder={tab === 'certificates' ? 'Search certificates...' : 'Search consultations...'}
-              label="Search records"
-              className="xl:w-72 xl:flex-none"
-            />
-            <FilterMenu
-              fields={[
-                ['type', 'Type', [['all', 'All types'], ['consultation', 'Consultations'], ['emergency', 'Emergencies']]],
-                ['year', 'Year', [['all', 'All years'], ...years.map((year) => [year, year])]],
-                ['sort', 'Sort by', [['newest', 'Newest first'], ['oldest', 'Oldest first'], ['title', 'Title A–Z']]],
-              ]}
-              values={filters}
-              defaults={DEFAULT_FILTERS}
-              onChange={(key, value) => setFilters((current) => ({ ...current, [key]: value }))}
-              onReset={() => setFilters(DEFAULT_FILTERS)}
-            />
           </div>
         </div>
 
@@ -556,7 +591,7 @@ const HealthRecords = () => {
                             <button
                               type="button"
                               onClick={() => handleDocument('certificate', record, 'preview')}
-                              className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-maroon-800 transition hover:bg-maroon-50 dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
+                              className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-maroon-800 transition hover:bg-gray-50 dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-gray-900/30"
                             >
                               <Eye className="h-4 w-4" /> Preview
                             </button>
