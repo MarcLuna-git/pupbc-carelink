@@ -279,8 +279,8 @@
   .ap-history-table-head>:nth-child(3),.ap-history-row-meta { display:none; }
 }
 .ap-history-pagination { display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:10px 16px 14px;gap:8px; }
-.ap-history-pagination p { font-size:12px;color:var(--sp-muted); }
-.ap-history-pagination>div { display:flex;align-items:center;gap:6px; }
+.ap-history-pagination p { grid-column:3;grid-row:1;justify-self:start;font-size:12px;color:var(--sp-muted);white-space:nowrap; }
+.ap-history-pagination>div { grid-column:2;grid-row:1;display:flex;align-items:center;gap:6px; }
 .ap-history-pagination button,.ap-history-pagination span { min-width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:1px solid var(--sp-border);border-radius:7px;font-size:12px;font-weight:600; }
 .ap-history-pagination span { background:var(--color-maroon-800);color:white;border-color:var(--color-maroon-800); }
 .ap-history-pagination button:disabled { opacity:.35;cursor:not-allowed; }
