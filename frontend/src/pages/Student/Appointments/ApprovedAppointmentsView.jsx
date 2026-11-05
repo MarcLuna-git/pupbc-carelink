@@ -104,6 +104,9 @@ function StatusBadge({ status }) {
   return <span className={`ap-status ap-status-${status || 'pending'}`}><span />{labels[status] || status || 'Pending'}</span>;
 }
 
+/* Appointment History rows shown per page. */
+const HISTORY_PAGE_SIZE = 3;
+
 /* Click selects an option; clicking the selected option again clears it. */
 const toggleOption = (onChange, name, value, selected) =>
   onChange({ target: { name, value: selected ? '' : value } });
@@ -168,7 +171,7 @@ function UpcomingAppointment({ appointment, onView, onEdit }) {
   } : {};
   return <section className={`ap-card ap-upcoming${hasAppointment ? '' : ' is-empty'}`}>
     <div className="ap-section-heading ap-upcoming-heading"><CalendarDays /><h2>Your Upcoming Appointment</h2>
-      {hasAppointment ? <StatusBadge status={appointment.status} /> : <span className="ap-status ap-status-expired"><span />Not booked</span>}
+      {hasAppointment ? <StatusBadge status={appointment.status} /> : <span className="ap-status ap-status-none"><span />Not booked</span>}
     </div>
     <div className="ap-upcoming-content">
       <div className={`ap-upcoming-summary${hasAppointment ? ' is-clickable' : ''}`} {...clickable}>
@@ -269,9 +272,9 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
     ? filteredAppointments.filter(item => [serviceTitle(item.service), item.service, item.concern, item.status, formatAppointmentDate(item.appointment_date), item.time_slot]
       .some(value => String(value || '').toLowerCase().includes(term)))
     : filteredAppointments;
-  const pages = Math.max(1, Math.ceil(history.length / 5));
+  const pages = Math.max(1, Math.ceil(history.length / HISTORY_PAGE_SIZE));
   const currentPage = Math.min(page, pages);
-  const rows = history.slice((currentPage - 1) * 5, currentPage * 5);
+  const rows = history.slice((currentPage - 1) * HISTORY_PAGE_SIZE, currentPage * HISTORY_PAGE_SIZE);
   // Clicking anywhere on a history row opens its details; its own buttons and links keep their action.
   const openFromRow = (event, appointment) => {
     if (event.target.closest('a, button')) return;
@@ -424,7 +427,7 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
             </article>;
           })}
         </div>}
-        <div className="ap-history-pagination"><p>Showing {(currentPage - 1) * 5 + 1}–{Math.min(currentPage * 5, history.length)} of {history.length} appointments</p><div><button type="button" disabled={currentPage === 1} onClick={() => setPage(current => current - 1)} aria-label="Previous history page"><ChevronLeft /></button><span aria-label={`History page ${currentPage} of ${pages}`}>{currentPage}</span><button type="button" disabled={currentPage === pages} onClick={() => setPage(current => current + 1)} aria-label="Next history page"><ChevronRight /></button></div></div>
+        <div className="ap-history-pagination"><p>Showing {(currentPage - 1) * HISTORY_PAGE_SIZE + 1}–{Math.min(currentPage * HISTORY_PAGE_SIZE, history.length)} of {history.length} appointments</p><div><button type="button" disabled={currentPage === 1} onClick={() => setPage(current => current - 1)} aria-label="Previous history page"><ChevronLeft /></button><span aria-label={`History page ${currentPage} of ${pages}`}>{currentPage}</span><button type="button" disabled={currentPage === pages} onClick={() => setPage(current => current + 1)} aria-label="Next history page"><ChevronRight /></button></div></div>
       </>}
     </section>
     <p className="ap-policy-note"><HelpCircle />Check-in opens 15 minutes before your slot and closes strictly 30 minutes after. Follow your server-provided window; a queue number is assigned only after kiosk check-in and triage.</p>

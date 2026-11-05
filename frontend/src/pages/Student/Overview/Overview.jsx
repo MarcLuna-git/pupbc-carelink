@@ -5,9 +5,9 @@ import {
   AlertCircle,
   ArrowLeft,
   BriefcaseMedical,
-  Camera,
   CalendarCheck,
   CalendarClock,
+  Camera,
   Check,
   ChevronDown,
   ClipboardList,
@@ -236,8 +236,8 @@ const RowEditor = ({ editor, draft, onChange }) => {
 const InfoCard = ({ icon: Icon, title, rows, footer, editing = false, draft = {}, onChange, fieldErrors = {} }) => (
   <section className="flex flex-col rounded-xl border border-[var(--sp-border)] p-4 sm:p-5">
     <div className="mb-4 flex items-center justify-between gap-3">
-      <h3 className="flex items-center gap-2.5 font-bold text-maroon-800 dark:text-maroon-300">
-        <Icon className="h-5 w-5" />
+      <h3 className="flex items-center gap-2.5 font-bold text-gray-900 dark:text-white">
+        <Icon className="h-5 w-5 shrink-0 text-maroon-800 dark:text-maroon-300" />
         {title}
       </h3>
     </div>
@@ -854,9 +854,9 @@ const Overview = () => {
             <ClipboardList className="mt-0.5 h-6 w-6 shrink-0 text-maroon-800 dark:text-maroon-300" />
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-bold text-maroon-800 dark:text-maroon-300">My Health Information</h2>
-                <span className="inline-flex items-center gap-1 rounded-full border border-[var(--sp-border)] bg-gray-50 px-2.5 py-0.5 text-xs font-semibold text-maroon-800 dark:bg-gray-900/30 dark:text-maroon-300">
-                  <Lock className="h-3 w-3" aria-hidden="true" />Confidential
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">My Health Information</h2>
+                <span className="inline-flex items-center gap-1 rounded-full border border-[var(--sp-border)] bg-gray-50 px-2.5 py-0.5 text-xs font-semibold text-gray-900 dark:bg-gray-900/30 dark:text-white">
+                  <Lock className="h-3 w-3 text-maroon-800 dark:text-maroon-300" aria-hidden="true" />Confidential
                 </span>
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Keep your information up to date for better and safer care.</p>
@@ -1060,7 +1060,7 @@ const Overview = () => {
           <div className="flex items-start gap-2.5">
             <BriefcaseMedical className="mt-0.5 h-6 w-6 text-maroon-800 dark:text-maroon-300" />
             <div>
-              <h2 className="text-lg font-bold text-maroon-800 dark:text-maroon-300">Health Summary</h2>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Health Summary</h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">Your key health records at a glance.</p>
             </div>
           </div>

@@ -42,7 +42,6 @@ const SkeletonUpcoming = () => (
       <Skeleton className="h-5 w-5 shrink-0 rounded-md" />
       <Skeleton className="h-4 w-44" />
       <Skeleton className="h-5 w-20 rounded-md" />
-      <Skeleton className="ml-auto h-5 w-8 rounded" />
     </div>
     <div className="ap-upcoming-content">
       <Skeleton className="h-16 w-full rounded-lg" />
@@ -137,9 +136,9 @@ const Appointments = () => {
   // Re-render when Developer Tools turns the time guard on or off.
   useTimeGuardBypass();
 
-  /* Fresh-reload default: today pre-selected (unless the clinic is closed)
-     so the step 2 slot labels are populated without picking a date. */
-  const defaultDate = isSunday(clinicDate()) ? '' : clinicDate();
+  /* Fresh-reload default: no date picked, so every booking step starts
+     unchecked until the student picks one. */
+  const defaultDate = '';
 
   const [showForm, setShowForm] = useState(true);
   const [editingId, setEditingId] = useState(null);

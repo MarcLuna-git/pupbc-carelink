@@ -25,7 +25,7 @@ import {
   FileText,
   Hash,
   History,
-  ArrowRight,
+  ArrowUpRight,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import useVisiblePolling from '../../../hooks/useVisiblePolling';
@@ -84,6 +84,17 @@ const Skeleton = ({ className = '' }) => (
   <div className={`animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 ${className}`} />
 );
 
+/* Ghost of CardTitle: icon + title, with an optional action that wraps below on narrow screens. */
+const SkeletonTitle = ({ width, action }) => (
+  <div className="mb-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+    <div className="flex items-center gap-2.5">
+      <Skeleton className="h-6 w-6 shrink-0" />
+      <Skeleton className={`h-6 ${width}`} />
+    </div>
+    {action}
+  </div>
+);
+
 const QR_HERO = {
   id: 'qr-title',
   title: 'QR Code',
@@ -92,8 +103,8 @@ const QR_HERO = {
 
 const CardTitle = ({ icon: Icon, children, action }) => (
   <div className="mb-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-    <h2 className="flex items-center gap-2.5 whitespace-nowrap text-lg font-bold text-maroon-800 dark:text-maroon-300">
-      <Icon className="h-6 w-6 shrink-0" />
+    <h2 className="flex items-center gap-2.5 whitespace-nowrap text-lg font-bold text-gray-900 dark:text-white">
+      <Icon className="h-6 w-6 shrink-0 text-maroon-800 dark:text-maroon-300" />
       {children}
     </h2>
     {action}
@@ -465,34 +476,43 @@ const QR = () => {
       <div className="w-full min-w-0 space-y-3">
         <StudentPageHero {...QR_HERO} loading />
 
-        {/* Ghost of Check-in Status */}
+        {/* Ghost of Check-in Status: vertical tracker below lg, horizontal on lg (like the real one) */}
         <div className={CARD}>
-          <Skeleton className="mb-5 h-6 w-40" />
-          <div className="grid gap-4 sm:grid-cols-4">
-            {[0, 1, 2, 3].map((key) => (
-              <div key={key} className="flex gap-3">
-                <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
-                <div className="flex-1 space-y-1.5">
-                  <Skeleton className="h-3.5 w-28" />
-                  <Skeleton className="h-3 w-32 max-w-full" />
-                </div>
-              </div>
-            ))}
-          </div>
+          <SkeletonTitle width="w-40" />
+          <ol className="flex flex-col lg:flex-row lg:gap-3">
+            {[0, 1, 2, 3].map((key) => {
+              const isLast = key === 3;
+              return (
+                <li key={key} className={`relative flex items-start gap-3 ${isLast ? 'lg:flex-none' : 'pb-6 lg:flex-1 lg:pb-0'}`}>
+                  {!isLast && <span aria-hidden="true" className="absolute bottom-0 left-5 top-10 w-0.5 -translate-x-1/2 bg-gray-200 dark:bg-gray-700 lg:hidden" />}
+                  <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+                  <div className="min-w-0 flex-1 space-y-1.5 pt-1 lg:max-w-[10.5rem]">
+                    <Skeleton className="h-3.5 w-28" />
+                    <Skeleton className="h-3 w-40 max-w-full" />
+                  </div>
+                  {!isLast && <span aria-hidden="true" className="mt-5 hidden h-0.5 min-w-6 flex-1 rounded-full bg-gray-200 dark:bg-gray-700 lg:block" />}
+                </li>
+              );
+            })}
+          </ol>
         </div>
 
         <div className="grid gap-3 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
           {/* Ghost of the QR card */}
-          <div className={CARD}>
-            <div className="mb-5 flex items-center justify-between">
-              <Skeleton className="h-6 w-36" />
-              <Skeleton className="h-11 w-36 rounded-xl" />
-            </div>
-            <div className="flex flex-col items-center gap-3">
-              <Skeleton className="h-56 w-56 rounded-2xl" />
-              <Skeleton className="h-5 w-44" />
-              <Skeleton className="h-3.5 w-36" />
-              <Skeleton className="h-3.5 w-32" />
+          <div className={`${CARD} flex flex-col`}>
+            <SkeletonTitle width="w-32" action={<Skeleton className="h-12 w-36 rounded-xl" />} />
+            <div className="flex flex-col items-center">
+              <div className="rounded-2xl border border-gray-200 p-3 dark:border-gray-600">
+                <Skeleton className="h-48 w-48 rounded-xl sm:h-56 sm:w-56" />
+              </div>
+              <Skeleton className="mt-4 h-6 w-44" />
+              <Skeleton className="mt-2 h-3.5 w-40" />
+              <Skeleton className="mt-1.5 h-3.5 w-28" />
+              {/* Download / Print */}
+              <div className="mt-4 grid w-full grid-cols-2 gap-3">
+                <Skeleton className="h-10 rounded-xl" />
+                <Skeleton className="h-10 rounded-xl" />
+              </div>
             </div>
             <div className="mt-6 space-y-5 border-t border-gray-100 pt-5 dark:border-gray-700">
               {[0, 1, 2].map((key) => (
@@ -519,22 +539,51 @@ const QR = () => {
           <div className="flex flex-col gap-3">
             {/* Ghost of Check-in Information */}
             <div className={CARD}>
-              <Skeleton className="mb-5 h-6 w-48" />
-              <Skeleton className="h-28 w-full rounded-xl" />
+              <SkeletonTitle width="w-48" />
+              <div className="grid gap-4 rounded-xl bg-gray-50 p-5 dark:bg-gray-900/30 sm:grid-cols-2">
+                {[0, 1].map((key) => (
+                  <div key={key} className={`flex items-start gap-3.5 ${key ? 'sm:pl-5' : ''}`}>
+                    <Skeleton className="mt-1 h-7 w-7 shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-3.5 w-28" />
+                      <Skeleton className="h-8 w-32" />
+                      <Skeleton className="h-3 w-full max-w-[12rem]" />
+                    </div>
+                  </div>
+                ))}
+              </div>
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                <Skeleton className="h-20 rounded-xl" />
-                <Skeleton className="h-20 rounded-xl" />
-                <Skeleton className="h-20 rounded-xl" />
+                {[0, 1, 2].map((key) => (
+                  <div key={key} className="flex items-start gap-3 rounded-xl bg-gray-50 p-3.5 dark:bg-gray-900/30">
+                    <Skeleton className="h-6 w-6 shrink-0" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-3.5 w-24" />
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-2/3" />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
             {/* Ghost of Appointment Summary — stretches like the real card */}
             <div className={`${CARD} flex flex-1 flex-col`}>
-              <div className="mb-5 flex items-center justify-between gap-3">
-                <Skeleton className="h-6 w-52" />
-                <Skeleton className="h-8 w-44 rounded-lg" />
+              <SkeletonTitle width="w-52" action={<Skeleton className="h-9 w-48 rounded-lg" />} />
+              <div className="grid flex-1 content-center gap-5 rounded-xl border border-gray-100 p-5 dark:border-gray-700 sm:grid-cols-2">
+                {[0, 1].map((column) => (
+                  <div key={column} className={`space-y-5 ${column ? 'sm:pl-5' : ''}`}>
+                    {[0, 1].map((key) => (
+                      <div key={key} className="flex gap-3.5">
+                        <Skeleton className="h-10 w-10 shrink-0" />
+                        <div className="flex-1 space-y-1.5">
+                          <Skeleton className="h-3 w-20" />
+                          <Skeleton className="h-4 w-36 max-w-full" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
               </div>
-              <Skeleton className="min-h-48 w-full flex-1 rounded-xl" />
             </div>
           </div>
         </div>
@@ -784,7 +833,7 @@ const QR = () => {
             <CardTitle icon={Clock}>Check-in Information</CardTitle>
 
             {opensLabel && deadlineLabel ? (
-              <div className="grid gap-4 rounded-xl bg-maroon-50/70 p-5 dark:bg-maroon-900/20 sm:grid-cols-2 sm:divide-x sm:divide-maroon-100 dark:sm:divide-maroon-900/40">
+              <div className="grid gap-4 rounded-xl bg-gray-50 p-5 dark:bg-gray-900/30 sm:grid-cols-2 sm:divide-x sm:divide-gray-200 dark:sm:divide-gray-700">
                 <div className="flex items-start gap-3.5">
                   <LogIn className="mt-1 h-7 w-7 shrink-0 text-maroon-700 dark:text-maroon-300" />
                   <div>
@@ -813,7 +862,7 @@ const QR = () => {
                 </div>
               </div>
             ) : (
-              <div className="rounded-xl bg-maroon-50/70 p-5 text-sm text-gray-600 dark:bg-maroon-900/20 dark:text-gray-400">
+              <div className="rounded-xl bg-gray-50 p-5 text-sm text-gray-600 dark:bg-gray-900/30 dark:text-gray-400">
                 Your check-in window will appear here on the day of an approved appointment.
               </div>
             )}
@@ -822,11 +871,11 @@ const QR = () => {
               {CHECKIN_TIPS.map(({ icon: Icon, title, desc }) => (
                 <div
                   key={title}
-                  className="flex items-start gap-3 rounded-xl bg-maroon-50/50 p-3.5 dark:bg-maroon-900/10"
+                  className="flex items-start gap-3 rounded-xl bg-gray-50 p-3.5 dark:bg-gray-900/30"
                 >
                   <Icon className="mt-0.5 h-6 w-6 shrink-0 text-maroon-700 dark:text-maroon-300" />
                   <div>
-                    <p className="text-sm font-semibold text-maroon-800 dark:text-maroon-300">{title}</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{title}</p>
                     <p className="mt-0.5 text-xs leading-relaxed text-gray-600 dark:text-gray-400">{desc}</p>
                   </div>
                 </div>
@@ -841,10 +890,10 @@ const QR = () => {
               action={
                 <Link
                   to="/student/appointments"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-maroon-800 px-3 py-2 text-xs font-semibold text-maroon-800 transition hover:bg-maroon-50 dark:border-maroon-700 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--sp-border)] px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-900/30"
                 >
                   View Appointment Details
-                  <ArrowRight className="h-3.5 w-3.5" />
+                  <ArrowUpRight className="h-4 w-4" />
                 </Link>
               }
             >
@@ -885,7 +934,7 @@ const QR = () => {
                 <p>No approved appointment scheduled for today.</p>
                 <Link
                   to="/student/appointments"
-                  className="text-xs font-semibold text-maroon-800 hover:underline dark:text-maroon-300"
+                  className="text-xs font-semibold text-gray-900 hover:underline dark:text-white"
                 >
                   Book an appointment
                 </Link>

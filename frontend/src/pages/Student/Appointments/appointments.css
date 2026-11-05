@@ -7,11 +7,13 @@
 .ap-hero { isolation:isolate; }
 .ap-hero-loading-bar { z-index:2; }
 .ap-hero-copy { position:relative;z-index:1;padding:24px; }
-.ap-hero h1 { color:var(--sp-accent);font-size:36px;font-weight:750;line-height:1.06;letter-spacing:-1.2px; }
+.ap-hero h1 { color:#111827;font-size:36px;font-weight:750;line-height:1.06;letter-spacing:-1.2px; }
+.dark .ap-hero h1 { color:#fff; }
 .ap-hero-description { margin-top:8px;max-width:65ch;font-size:14px;line-height:1.5;color:var(--sp-text); }
 .ap-section-heading { display:flex;align-items:center;gap:8px;padding:12px 16px 10px;min-width:0; }
 .ap-section-heading>svg { flex-shrink:0;width:17px;height:17px;color:var(--sp-accent); }
-.ap-section-heading h2 { font-size:15px;font-weight:700;color:var(--sp-accent);line-height:1.3; }
+.ap-section-heading h2 { font-size:15px;font-weight:700;color:#111827;line-height:1.3; }
+.dark .ap-section-heading h2 { color:#fff; }
 .ap-section-heading p { margin-top:2px;font-size:12px;color:var(--sp-muted); }
 .ap-section-heading>button,.ap-section-heading>label { margin-left:auto; }
 .ap-section-heading select { border:1px solid var(--sp-border);border-radius:7px;background:var(--sp-surface);color:var(--sp-muted);font-size:12px;padding:6px 9px;max-width:200px; }
@@ -64,7 +66,8 @@
 /* The status badge lives in the card heading (same spot as the empty card's
    "Not booked"), so this cell holds only the check-in window + queue. */
 .ap-upcoming-state p { font-size:12px;color:var(--sp-muted);line-height:1.5;margin:0; }
-.ap-queue-label { display:block;font-size:12px;margin-top:4px;color:var(--sp-accent);text-transform:capitalize; }
+.ap-queue-label { display:block;font-size:12px;margin-top:4px;color:#111827;text-transform:capitalize; }
+.dark .ap-queue-label { color:#fff; }
 .ap-status { display:inline-flex;align-items:center;gap:5px;font-size:12px;line-height:1.5;padding:3px 9px;border-radius:7px;background:var(--sp-soft);color:var(--sp-accent);white-space:nowrap;font-weight:600; }
 .ap-status>span { width:4px;height:4px;border-radius:50%;background:currentColor; }
 .ap-status-approved,.ap-status-completed { background:#e4f3e9;color:#2b7650; }
@@ -75,6 +78,8 @@
 .dark .ap-status-pending { background:#473b25;color:#f0d095; }
 .dark .ap-status-cancelled,.dark .ap-status-rejected,.dark .ap-status-no_show { background:#482c36;color:#e7acbc; }
 .dark .ap-status-expired { background:#3d3540;color:#d2c0c8; }
+.ap-status-none { background:var(--color-gray-50);border:1px solid var(--color-gray-200);color:var(--color-gray-700); }
+.dark .ap-status-none { background:color-mix(in oklab,var(--color-gray-900) 30%,transparent);border-color:var(--color-gray-600);color:var(--color-gray-300); }
 .ap-button { display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:8px 12px;background:var(--color-maroon-800);color:white;border:1px solid var(--color-maroon-800);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer; }
 .ap-button svg { width:13px;height:13px;flex-shrink:0; }
 .ap-button:hover:not(:disabled) { background:var(--color-maroon-900); }
@@ -84,8 +89,11 @@
 .ap-upcoming-actions { display:grid;gap:5px;cursor:default; }
 .ap-upcoming-actions .ap-button { min-height:31px; }
 /* Empty upcoming card: same grid, placeholder values in muted tones. */
-.ap-upcoming.is-empty .ap-date-tile { background:var(--sp-bg);color:var(--sp-muted);border-style:dashed; }
+.ap-upcoming.is-empty .ap-date-tile { background:var(--color-gray-100);color:var(--color-gray-500);border-color:var(--color-gray-200);border-style:dashed; }
+.dark .ap-upcoming.is-empty .ap-date-tile { background:var(--color-gray-700);color:var(--color-gray-300);border-color:var(--color-gray-600); }
 /* Empty tile: pulsing gray blocks stand in for the day and weekday. */
+.ap-upcoming.is-empty .ap-date-tile .ap-date-placeholder { background:var(--color-gray-200); }
+.dark .ap-upcoming.is-empty .ap-date-tile .ap-date-placeholder { background:var(--color-gray-600); }
 .ap-date-tile .ap-date-placeholder { display:block;margin:0 auto;border-radius:5px;background:var(--sp-border);animation:ap-date-pulse 1.6s ease-in-out infinite; }
 .ap-date-tile .ap-date-placeholder.is-day { width:26px;height:22px;margin-top:4px;margin-bottom:5px; }
 .ap-date-tile .ap-date-placeholder.is-weekday { width:20px;height:8px; }
@@ -122,9 +130,10 @@
 .ap-booking-progress li:not(.is-active):not(:has(.ap-step-marker svg)) .ap-step-label { color:var(--sp-muted);font-weight:600; }
 .ap-booking-column { min-width:0;max-width:420px; }
 /* Every step's contents live in their own equally-wide container. */
-.ap-step-body { background:var(--sp-bg);border-radius:10px;padding:12px; }
+.ap-step-body { background:var(--color-gray-50);border:1px solid var(--sp-border);border-radius:10px;padding:12px; }
 .ap-column-caption { font-size:12px;color:var(--sp-muted);min-height:16px;margin-bottom:7px; }
-.ap-calendar { background:var(--sp-bg);border-radius:10px;padding:12px; }
+.ap-calendar { background:var(--color-gray-50);border:1px solid var(--sp-border);border-radius:10px;padding:12px; }
+.dark .ap-step-body,.dark .ap-calendar { background:color-mix(in oklab,var(--color-gray-900) 30%,transparent); }
 .ap-calendar-month { display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:5px; }
 .ap-calendar-month strong { font-size:12px; }
 .ap-calendar-month>div { display:flex; }
@@ -137,10 +146,11 @@
    and dark: hover = soft tint + accent text; selected = solid maroon + white
    text, and hovering it only deepens the maroon (never swaps to the tint). */
 .ap-calendar-grid button { min-width:0;min-height:30px;border-radius:5px;font-size:12px;color:var(--sp-text);border:1px solid transparent;transition:background-color .12s ease,border-color .12s ease,color .12s ease; }
-.ap-calendar-grid button:hover:not(:disabled):not(.is-selected) { background:var(--sp-soft);border-color:var(--sp-border);color:var(--sp-accent); }
+.ap-calendar-grid button:hover:not(:disabled):not(.is-selected) { background:var(--color-gray-100);border-color:var(--sp-border);color:var(--color-gray-700); }
+.dark .ap-calendar-grid button:hover:not(:disabled):not(.is-selected) { background:color-mix(in oklab,var(--color-gray-900) 30%,transparent);color:var(--color-gray-300); }
 .ap-calendar-grid button.is-selected { background:var(--color-maroon-800);border-color:var(--color-maroon-800);color:#fff;font-weight:700; }
 .ap-calendar-grid button.is-selected:hover:not(:disabled) { background:var(--color-maroon-900);border-color:var(--color-maroon-900); }
-.ap-calendar-grid button.is-today:not(.is-selected) { border-color:#c67c8a;color:var(--sp-accent);font-weight:700; }
+.ap-calendar-grid button.is-today:not(.is-selected) { border-color:var(--color-gray-300);color:var(--sp-accent);font-weight:700; }
 .ap-calendar-grid button:focus-visible { outline:2px solid var(--sp-accent);outline-offset:1px; }
 .ap-calendar-grid button:disabled { opacity:.33;cursor:not-allowed; }
 .ap-calendar-note { margin-top:9px;font-size:12px;color:var(--sp-muted);text-align:center; }
@@ -153,7 +163,8 @@
 .ap-time-grid button>span.ap-slot-full-tag { color:#a13e51;font-weight:600; }
 .dark .ap-time-grid button>span.ap-slot-full-tag { color:#e7acbc; }
 .ap-time-grid button.is-past:not(.is-selected) { color:var(--sp-muted); }
-.ap-time-grid button:hover:not(:disabled):not(.is-selected) { background:var(--sp-soft); }
+.ap-time-grid button:hover:not(:disabled):not(.is-selected) { background:var(--color-gray-50);border-color:var(--color-gray-300); }
+.dark .ap-time-grid button:hover:not(:disabled):not(.is-selected) { background:color-mix(in oklab,var(--color-gray-900) 30%,transparent); }
 .ap-column-footnote,.ap-availability-note { font-size:12px;color:var(--sp-muted);margin-top:8px; }
 .ap-availability-note button { text-decoration:underline;color:var(--sp-accent); }
 /* The loading state mirrors the time grid's geometry so the step body keeps the
@@ -166,8 +177,10 @@
 .ap-service-list { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px 10px; }
 /* Each service is a bordered card; the selected one gets a maroon border. */
 .ap-service-list label { display:flex;align-items:center;gap:8px;padding:8px 10px;min-height:48px;border:1px solid var(--sp-border);border-radius:8px;background:var(--sp-surface);min-width:0;cursor:pointer;transition:border-color .12s ease,background-color .12s ease; }
-.ap-service-list label:hover { border-color:#c67c8a; }
-.ap-service-list label.is-selected { background:var(--sp-soft);border-color:var(--color-maroon-800); }
+.ap-service-list label:hover:not(.is-selected) { background:var(--color-gray-50);border-color:var(--color-gray-300); }
+.dark .ap-service-list label:hover:not(.is-selected) { background:color-mix(in oklab,var(--color-gray-900) 30%,transparent); }
+.ap-service-list label.is-selected { background:var(--color-gray-50);border-color:var(--color-maroon-800); }
+.dark .ap-service-list label.is-selected { background:color-mix(in oklab,var(--color-gray-900) 30%,transparent); }
 .ap-service-list input { width:11px;height:11px;flex-shrink:0;accent-color:var(--color-maroon-800); }
 .ap-service-list svg { width:13px;height:13px;flex-shrink:0;color:var(--sp-accent); }
 .ap-service-list strong { display:block;font-size:12px;line-height:1.2; }
@@ -204,7 +217,8 @@
    row (--sp-bg), a plain gray border and a soft shadow; no pink tint. */
 .ap-history-item:hover { background:var(--sp-bg);border-color:#d6d3d1;box-shadow:0 3px 10px #0000000f; }
 .dark .ap-history-item:hover { border-color:#4b4650;box-shadow:0 3px 10px #00000033; }
-.ap-history-item .ap-date-tile { flex-shrink:0;min-width:60px; }
+.ap-history-item .ap-date-tile { flex-shrink:0;min-width:60px;background:var(--color-gray-100);border-color:var(--color-gray-200);color:#111827; }
+.dark .ap-history-item .ap-date-tile { background:var(--color-gray-700);border-color:var(--color-gray-600);color:#fff; }
 .ap-history-item .ap-date-tile span { font-size:12px; }
 .ap-history-item .ap-date-tile strong { font-size:22px; }
 .ap-history-item .ap-date-tile small { font-size:12px; }
@@ -214,9 +228,10 @@
 .ap-history-concern { white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:italic; }
 .ap-history-side { flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:6px; }
 .ap-history-actions { display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px 12px; }
-.ap-history-actions button,.ap-history-actions a { display:inline-flex;align-items:center;gap:5px;min-height:26px;font-size:12px;font-weight:600;color:var(--sp-accent);white-space:nowrap;cursor:pointer; }
+.ap-history-actions button,.ap-history-actions a { display:inline-flex;align-items:center;gap:5px;min-height:26px;font-size:12px;font-weight:600;color:#111827;white-space:nowrap;cursor:pointer; }
 .ap-history-actions button:hover,.ap-history-actions a:hover { text-decoration:underline; }
-.ap-history-actions svg { width:13px;height:13px; }
+.ap-history-actions svg { width:13px;height:13px;color:var(--sp-accent); }
+.dark .ap-history-actions button,.dark .ap-history-actions a { color:#fff; }
 /* History heading controls: filter select + layout (cards / list) menu. The
    card stays overflow-visible so the layout dropdown is never clipped. */
 .ap-card.ap-history { overflow:visible; }

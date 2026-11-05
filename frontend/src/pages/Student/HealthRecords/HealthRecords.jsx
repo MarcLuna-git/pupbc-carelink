@@ -106,7 +106,7 @@ const StatCard = ({ icon: Icon, label, value, hint }) => (
     </div>
     <div className="min-w-0">
       <p className="truncate text-sm font-medium text-gray-700 dark:text-gray-300">{label}</p>
-      <p className="truncate text-2xl font-bold text-maroon-800 dark:text-maroon-300">{value}</p>
+      <p className="truncate text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
       <p className="truncate text-xs text-gray-500 dark:text-gray-400">{hint}</p>
     </div>
   </div>
@@ -444,7 +444,7 @@ const HealthRecords = () => {
 
       {/* Search and filter */}
       <section aria-labelledby="records-search-title" className={`${CARD} p-4 lg:p-6`}>
-        <h2 id="records-search-title" className="text-lg font-bold text-maroon-800 dark:text-maroon-300">
+        <h2 id="records-search-title" className="text-lg font-bold text-gray-900 dark:text-white">
           Search and Filter
         </h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -496,9 +496,15 @@ const HealthRecords = () => {
 
       {/* My Records */}
       <div className={`${CARD} p-4 lg:p-6`}>
-        <h2 className="mb-5 flex items-center gap-2.5 text-lg font-bold text-maroon-800 dark:text-maroon-300">
-          <ClipboardList className="h-6 w-6" /> My Records
-        </h2>
+        <div className="mb-5 flex items-start gap-2.5">
+          <ClipboardList className="mt-0.5 h-6 w-6 shrink-0 text-maroon-800 dark:text-maroon-300" />
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">My Records</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Browse your past clinic visits and issued medical certificates, then view or print any record.
+            </p>
+          </div>
+        </div>
 
         <div className="mb-4">
           <div role="tablist" aria-label="Record type" className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -554,7 +560,7 @@ const HealthRecords = () => {
             {/* Scrolls sideways instead of wrapping when the screen is narrow. */}
             <div className="hidden overflow-x-auto rounded-xl border border-[var(--sp-border)] lg:block">
               <table className="w-full min-w-[960px] text-left text-sm">
-                <thead className="whitespace-nowrap bg-gray-50 text-xs font-medium text-gray-500 dark:bg-gray-900/30 dark:text-gray-400">
+                <thead className="whitespace-nowrap bg-gray-100 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">
                   <tr>
                     <th className="rounded-tl-xl px-4 py-3 font-medium">{tab === 'certificates' ? 'Visit Date' : 'Date & Time'}</th>
                     <th className="px-4 py-3 font-medium">{tab === 'certificates' ? 'Reason for Visit' : 'Chief Complaint'}</th>

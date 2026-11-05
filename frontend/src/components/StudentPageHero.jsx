@@ -24,7 +24,7 @@ const StudentPageHero = ({
       <div className="min-w-0">
         <h1
           id={id}
-          className="break-words text-3xl font-bold leading-tight tracking-tight text-maroon-800 dark:text-maroon-300 sm:text-4xl"
+          className="break-words text-3xl font-bold leading-tight tracking-tight text-gray-900 dark:text-white sm:text-4xl"
         >
           {title}
         </h1>

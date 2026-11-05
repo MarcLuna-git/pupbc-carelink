@@ -144,3 +144,56 @@ The chatbot returns "The clinic assistant is not set up yet" when `OLLAMA_API_KE
 - Fallback: `gemma4:31b`
 - Timeout: 30s
 - Max tokens: 1024
+
+---
+
+## November 5, 2026 - Student Portal UI Refresh
+
+Lahat ng nasa ibaba ay **hindi pa naka-commit**. Ang huling naka-commit at naka-push ay `ba94978` (breadcrumbs at refresh ng student pages).
+
+### Header at breadcrumbs
+- Breadcrumb sa header bar ("Dashboard / Page"), nasa ibabang gilid ng header.
+- Inner tabs nagdadagdag ng pangatlong crumb: Records / Consultation Records, Settings / Privacy, Profile / Health Profile, Profile / Edit Profile.
+- Itim ang text ng breadcrumb; bold ang kasalukuyang page.
+- Files: `frontend/src/utils/studentBreadcrumb.js` (bago), `StudentLayout-for-Tablet-View.jsx`, `StudentLayout-for-Tablet-View.css`.
+
+### Hero sections
+- Itim na ang title ng lahat ng student hero (`StudentPageHero.jsx`, pati Appointments sa `appointments.css`).
+
+### Records (Health Records)
+- Search and Filter: sariling card sa ilalim ng stat cards, may title at paragraph, at nasa nested na abong container ang mga field.
+- Hiwalay at may label ang mga filter: Search, Record Type, Year, Sort By. May custom chevron ang dropdowns, may layo sa kanan.
+- Tinanggal ang sobrang search icon sa title.
+- Itim na text: "Search and Filter", "My Records" (maroon pa rin ang icon), at ang mga numero sa apat na stat card.
+- May bagong paragraph sa ilalim ng "My Records".
+- Column header ng table: `bg-gray-100`.
+- Hindi na pink ang hover: View Details, Print, at ang hindi pa napiling tab (`gray-50`).
+
+### Profile (Overview)
+- Edit mode: editable ang lahat maliban sa Personal Information. Read-only ang email (dumadaan sa Settings na may OTP).
+- Dropdown ang single-choice fields; multi-select dropdown (walang checkbox, check icon lang) ang Known Conditions at Family History.
+- Validation kapareho ng Health Profile form; `PUT /student/health-profile` ang nagse-save.
+- Abo na ang "Confidential" pill.
+- Itim ang mga title at pangalan; maroon pa rin ang mga icon.
+- Summary card icons: tinanggal tapos ibinalik (walang pagbabago).
+
+### QR Code
+- Skeleton in-update para tumugma sa layout sa desktop at mobile.
+- Itim na text: card titles (maroon icon), tip titles, at link na "Book an appointment".
+- Check-in Information boxes: kapareho ng abo ng "Keep Your QR Private" (`bg-gray-50`).
+- "View Appointment Details" button: kapareho na ng hitsura ng "Medical Certificates" tab, at ↗ (`ArrowUpRight`) na ang arrow.
+
+### Appointments
+- Booking form: walang naka-select na petsa sa simula at walang check ang steps; lalabas lang ang check kapag may na-click na petsa.
+- Itim na section titles: Your Upcoming Appointment, Book a New Appointment, Appointment History.
+- Appointment History: 3 row bawat page (`HISTORY_PAGE_SIZE` sa `ApprovedAppointmentsView.jsx`).
+- Skeleton: tinanggal ang ekstrang block sa kanan ng Upcoming Appointment header.
+- Tatlong booking column: kapareho ng abo ng Records column header (`gray-100`; `gray-700` sa dark mode).
+- Hindi na pink ang hover ng mga petsa sa kalendaryo at ng mga time slot.
+- Araw ngayon sa kalendaryo: abo na ang border.
+
+### Mga natitirang tanong
+- Email: link papunta sa Settings, o inline editor na may OTP?
+- Pink pa rin ang hover: border ng Select Service options, at pagination arrows sa Records.
+- Hindi pa nasusubukan: dark mode ng lahat, at aktwal na pag-save ng Profile edit.
+- Mas luma: ang hindi malinaw na "medicine" item, at ang forgot-password fix para hindi malaman kung naka-register ang isang email.
