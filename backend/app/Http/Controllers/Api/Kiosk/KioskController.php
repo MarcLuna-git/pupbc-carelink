@@ -139,6 +139,8 @@ class KioskController extends Controller
                 ->leftJoin('triage_assessments as t', 't.appointment_checkin_id', '=', 'c.id')
                 ->where('c.created_at', '>=', today())->where('c.created_at', '<', today()->addDay())
                 ->where('c.is_walk_in', false)->whereIn('c.status', ['waiting', 'serving', 'called', 'skipped', 'no_show'])
+                // The Developer tools demo patient stays on the nurse queue list only.
+                ->when(\App\Support\DemoQueue::userIds(), fn ($q, $demoIds) => $q->whereNotIn('c.user_id', $demoIds))
                 ->select(['c.id', 'c.queue_number', 'c.queue_type', 'c.status', 'c.check_in_time', 'c.called_at'])
                 ->selectRaw("COALESCE(t.priority, 'LOW') AS priority")
                 ->orderByRaw("CASE t.priority WHEN 'HIGH' THEN 0 WHEN 'MEDIUM' THEN 1 ELSE 2 END")
@@ -156,6 +158,8 @@ class KioskController extends Controller
                 'total_waiting' => $queue->whereIn('status', ['waiting', 'called'])->count(),
             ]]);
         }
+        // Developer tools demo patient: back in line once their last visit ended.
+        if ($nurse) \App\Support\DemoQueue::ensure();
         $query = ClinicQueue::ordered();
         // Kiosk tickets only need triage priority; skip two unused relation queries.
         if (!$nurse) $query->without(['user', 'appointment']);

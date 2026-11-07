@@ -14,9 +14,10 @@ export const nurseGreeting = (user, date = new Date()) =>
 // have no title card of their own. The dashboard's title is the greeting instead of a fixed name.
 export const NURSE_PAGE_HEADERS = {
   '/nurse/dashboard': { title: null, note: 'PUP Biñan Campus Clinic — here is what is happening in the clinic today.' },
-  '/nurse/appointments': { title: 'Appointments', note: 'Review booking requests and approve or decline them. Check-ins and consultations are on the Consultation page.' },
-  '/nurse/consultation': { title: 'Queue & Consultation', note: 'Manage the clinic queue, call the next student, and record their consultation.' },
-  '/nurse/records': { title: 'Records', note: 'Completed consultations and emergency encounters of every student. To see one student’s full record, open Students.' },
+  '/nurse/appointments': { title: 'Appointments', note: 'Review booking requests and approve or decline them. Checked-in students are on the Queue page.' },
+  '/nurse/queue': { title: 'Queue', note: 'Today’s clinic queue. Call the next student and confirm when they arrive.' },
+  '/nurse/consultation': { title: 'Consultation', note: 'Record the consultation of a patient who arrived, then print their forms.' },
+  '/nurse/records': { title: 'Patient History', note: 'Completed consultations and emergency encounters of every student. To see one student’s full record, open Students.' },
   '/nurse/students': { title: 'Students', note: 'Registered students. Open one to see their profile, health record, appointments and clinic history.' },
   '/nurse/faculty': { title: 'Faculty', note: 'Keep a directory of faculty, and record the medicines the clinic dispenses to them.' },
   '/nurse/medicines': { title: 'Medicine Inventory', note: 'Manage clinic medicines and supplies.' },

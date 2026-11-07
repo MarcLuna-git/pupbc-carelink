@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import authService from '../../services/authService';
 import { formatPersonName } from '../../utils/studentUser';
+import { isStudentIdYearPrefix, isValidStudentIdYear } from '../../utils/inputFilters';
 import clinicLogo from '../../assets/clinic-logo.webp';
 import campusPhoto from '../../assets/pup-binan-hero.jpg';
 import clinicPhoto from '../../assets/clinic-waiting-area.jpg';
@@ -55,7 +56,9 @@ function formatStudentId(value) {
 
   for (const char of input) {
     if (/\d/.test(char)) {
-      if (digits.length < 9) digits += char;
+      if (digits.length < 4) {
+        if (isStudentIdYearPrefix(digits + char)) digits += char;
+      } else if (digits.length < 9) digits += char;
       else if (suffix === 'BN' && /^[01]$/.test(char)) finalDigit = char;
     } else if (digits.length === 9 && /^[BN]$/.test(char) && suffix.length < 2) {
       const expected = suffix.length === 0 ? 'B' : 'N';
@@ -236,6 +239,7 @@ export default function Register() {
       next.middle_name = 'Enter a valid middle name.';
     }
     if (!/^\d{4}-\d{5}-BN-[01]$/.test(form.student_id)) next.student_id = 'Use the format 2023-00000-BN-0.';
+    else if (!isValidStudentIdYear(form.student_id.slice(0, 4))) next.student_id = `The year must be from 2000 to ${new Date().getFullYear()}.`;
     if (!form.dobMonth || !form.dobDay || !form.dobYear) next.birthday = 'Birthday is required.';
     else if (!isValidBirthday(form.dobYear, form.dobMonth, form.dobDay)) next.birthday = 'Enter a valid birthday.';
     else {

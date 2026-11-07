@@ -31,7 +31,7 @@ import api from '../../services/api';
 import clinicLogo from '../../assets/clinic-logo.webp';
 import campusPhoto from '../../assets/pup-binan-hero.jpg';
 import clinicScene from '../../assets/clinic-waiting-area.jpg';
-import pupStatue from '../../assets/pupstatue.webp';
+import clinicVaccination from '../../assets/clinic-vaccination.jpg';
 
 const HERO_SLIDES = [
   {
@@ -39,12 +39,6 @@ const HERO_SLIDES = [
     alt: 'Polytechnic University of the Philippines Biñan Campus building',
     position: 'object-[60%_center] lg:object-center',
     caption: 'PUP Biñan Campus',
-  },
-  {
-    src: pupStatue,
-    alt: 'PUP statue at the Biñan Campus',
-    position: 'object-[65%_center] lg:object-[center_35%]',
-    caption: 'Iskolar ng Bayan',
   },
   {
     src: clinicScene,
@@ -758,10 +752,10 @@ export default function Landing() {
           {/* A HEALTHIER YOU — ACTUAL CLINIC PHOTO */}
           <div className="relative isolate min-h-[320px] overflow-hidden rounded-3xl border border-slate-200/80 bg-maroon-950 text-white shadow-sm sm:min-h-[360px]">
             <img
-              src={clinicScene}
-              alt="Students waiting and completing forms inside a clinic"
+              src={clinicVaccination}
+              alt="Clinic nurse giving a vaccination to a PUP Biñan student"
               loading="lazy"
-              className="absolute inset-0 -z-20 h-full w-full object-cover object-center"
+              className="absolute inset-0 -z-20 h-full w-full object-cover object-[center_35%]"
             />
 
             <div className="absolute inset-0 -z-10 bg-gradient-to-r from-maroon-950/95 via-maroon-800/65 to-maroon-950/5" />

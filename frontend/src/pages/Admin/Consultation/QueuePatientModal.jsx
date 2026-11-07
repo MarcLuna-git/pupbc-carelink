@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { BellRing, Check, Loader2, X } from 'lucide-react';
+import { BellRing, CalendarX, Check, Loader2, X } from 'lucide-react';
 import { useNurseTimeGuardBypass } from '../../../services/devTools';
 
 /*
- * Consultation → queue: one popup per patient, opened from its row's step button.
- * It walks the visit through three steps instead of separate buttons on the row:
- *   Call → Arriving → Serve. "Patient arrived" stops on the Serve step with "Serve patient".
- * The patient's details are on the visit page (ConsultationVisit) once they are served.
+ * Queue: the patient popup. Call next on the row calls the student and opens this popup on the
+ * arrival timer; "Patient arrived" confirms them (no redirect): the form is on the Consultation page.
+ * When the timer runs out the visit is closed as No Show and the popup tells the nurse to have
+ * the student book a new appointment (no Recall / On hold).
  */
 export const PRIORITY = {
   HIGH: { label: 'Priority', className: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/30' },
@@ -16,27 +16,18 @@ export const PRIORITY = {
   LOW: { label: 'Regular', className: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/30' },
 };
 
-// A skipped or on-hold patient's first step is calling them back, so it reads "Recall" like its button.
-const stepsFor = (status) => [['skipped', 'on_hold'].includes(status) ? 'Recall' : 'Call', 'Arriving', 'Serve'];
-
-const stepOf = (status) => {
-  if (status === 'serving') return 2;
-  if (status === 'called') return 1;
-  return 0;
-};
-
 const TITLE = {
   waiting: 'Ready to call',
   called: 'Now calling',
   serving: 'Patient arrived',
-  skipped: 'Skipped',
-  on_hold: 'On hold',
-  no_show: 'No show',
+  skipped: 'Did not arrive',
+  on_hold: 'Did not arrive',
+  no_show: 'Did not arrive',
 };
 
 const QueuePatientModal = ({
   student, isNext, deskBusy, nextName, loading, timeLeft,
-  onClose, onCall, onArrived, onRecall, onServe, onHold, onNoShow, onOpenVisit,
+  onClose, onCall, onArrived, onServe, onNoShow,
 }) => {
   // With Remove time Guard on, the server does not skip called patients who run out of time.
   const timeGuardOff = useNurseTimeGuardBypass();
@@ -57,9 +48,8 @@ const QueuePatientModal = ({
     }
   };
 
-  const current = student ? stepOf(student.status) : 0;
-  const steps = stepsFor(student?.status);
   const priority = student ? (PRIORITY[student.priority] || PRIORITY.LOW) : PRIORITY.LOW;
+  const missed = ['no_show', 'skipped', 'on_hold'].includes(student?.status);
   const primary = 'mx-auto flex h-11 w-full max-w-[16rem] items-center justify-center gap-2 rounded-full text-[15px] font-semibold text-white transition-colors disabled:opacity-50';
   const secondary = 'mx-auto flex h-10 w-full max-w-[16rem] items-center justify-center gap-2 rounded-full border border-gray-200 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700/50';
 
@@ -84,24 +74,14 @@ const QueuePatientModal = ({
             {/* Scrolls inside the rounded card, with a thin scrollbar, only when the screen is short. */}
             <div className="overflow-y-auto p-6 sm:p-7" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent' }}>
 
-            {/* Steps of this flow */}
-            <ol className="mb-5 flex items-center justify-center gap-2 text-[11px] font-semibold" aria-label="Visit steps">
-              {steps.map((label, index) => (
-                <li key={label} className="flex items-center gap-2">
-                  <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${
-                    index === current ? 'bg-maroon-800 text-white'
-                      : index < current ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                        : 'bg-gray-100 text-gray-400 dark:bg-gray-700'}`}>
-                    {index < current ? <Check className="h-3 w-3" /> : <span>{index + 1}</span>}{label}
-                  </span>
-                  {index < steps.length - 1 && <span className="h-px w-4 bg-gray-200 dark:bg-gray-600" />}
-                </li>
-              ))}
-            </ol>
-
             <div className="text-center">
               {/* While the patient is called, the arrival countdown sits to the right of the bell. */}
               <div className="flex items-center justify-center gap-4">
+                {missed ? (
+                  <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                    <CalendarX className="h-8 w-8" />
+                  </span>
+                ) : (
                 <motion.span
                   key={called ? 'ringing' : 'still'}
                   animate={called || student.status === 'called' ? { rotate: [0, -18, 16, -12, 10, -6, 0] } : { rotate: 0 }}
@@ -111,16 +91,16 @@ const QueuePatientModal = ({
                 >
                   <BellRing className="h-8 w-8" />
                 </motion.span>
+                )}
 
                 {student.status === 'called' && (
                   <div className="min-w-0 max-w-[13rem] text-left">
                     <p className="font-mono text-3xl font-bold leading-tight tabular-nums text-amber-600 dark:text-amber-300" aria-live="polite">
                       {timeLeft === 0 ? 'Time is up' : `${Math.floor(timeLeft / 60)}:${String(timeLeft % 60).padStart(2, '0')}`}
                     </p>
-                    {timeLeft === 0 && (
+                    {timeLeft === 0 && timeGuardOff && (
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {timeGuardOff ? 'Not here yet. Remove time Guard is on (Settings → Developer Tools), so they are not moved to Skipped automatically.'
-                          : 'Not here yet: they move to Skipped shortly, where you can recall them.'}
+                        Remove time Guard is on (Settings → Developer Tools), so the visit is not closed automatically.
                       </p>
                     )}
                   </div>
@@ -137,7 +117,7 @@ const QueuePatientModal = ({
             </div>
 
 
-            <div className="mt-6 space-y-2">
+            <div className={`${missed || student.status === 'serving' ? 'mt-3' : 'mt-6'} space-y-2`}>
               {student.status === 'waiting' && (isNext ? (
                 <>
                   <button type="button" onClick={handleCall} disabled={loading || deskBusy || called}
@@ -159,51 +139,37 @@ const QueuePatientModal = ({
                 </>
               ))}
 
-              {/* Recall lives on the Skipped popup (Call step), so Arriving only confirms the arrival. */}
+              {/* Called: the arrival timer and one button, nothing else. */}
               {student.status === 'called' && (
                 <button type="button" onClick={onArrived} disabled={loading} className={`${primary} bg-green-700 hover:bg-green-800`}>
                   {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Patient arrived'}
                 </button>
               )}
 
+              {/* Arrived: the queue's part is done; the form is filled in on the Consultation page. */}
               {student.status === 'serving' && (
-                <button type="button" onClick={onOpenVisit} disabled={loading} className={`${primary} bg-maroon-800 hover:bg-maroon-900`}>
-                  {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Serve patient'}
-                </button>
-              )}
-
-              {/* Skipped: recall now, or set aside on hold (not a No Show) while the desk calls others. */}
-              {student.status === 'skipped' && (
                 <>
-                  <button type="button" onClick={onRecall} disabled={loading || deskBusy} className={`${primary} bg-maroon-800 hover:bg-maroon-900`}>
-                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Recall patient'}
-                  </button>
-                  <button type="button" onClick={onHold} disabled={loading} className={secondary}
-                    title="Not here yet: set aside without marking No Show, and recall them when they arrive">
-                    Put on hold
-                  </button>
-                  {deskBusy && <p className="text-center text-xs text-gray-500 dark:text-gray-400">Finish the patient who is called or in consultation first.</p>}
+                  <p className="pb-2 text-center text-sm text-gray-600 dark:text-gray-300">
+                    {student.name.trim() || 'The student'} arrived and is in consultation. Their form is on the <span className="font-semibold">Consultation</span> page.
+                  </p>
+                  <button type="button" onClick={onClose} className={`${primary} bg-maroon-800 hover:bg-maroon-900`}>OK</button>
                 </>
               )}
 
-              {/* On hold: still recallable if they arrive; No Show only when the nurse closes it. */}
-              {student.status === 'on_hold' && (
+              {/* Did not arrive in time: no Recall / On hold, the student books again. */}
+              {missed && (
                 <>
-                  <button type="button" onClick={onRecall} disabled={loading || deskBusy} className={`${primary} bg-maroon-800 hover:bg-maroon-900`}>
-                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Recall patient'}
-                  </button>
-                  <button type="button" onClick={onNoShow} disabled={loading} className={secondary}
-                    title="They are not coming: close this visit as No Show">
-                    Close as No show
-                  </button>
-                  {deskBusy && <p className="text-center text-xs text-gray-500 dark:text-gray-400">Finish the patient who is called or in consultation first.</p>}
+                  <p className="pb-2 text-center text-sm text-gray-600 dark:text-gray-300">
+                    {student.name.trim() || 'The student'} did not arrive in time. Tell them to <span className="font-semibold">book a new appointment</span> in the CareLink portal.
+                  </p>
+                  {student.status === 'no_show' ? (
+                    <button type="button" onClick={onClose} className={`${primary} bg-maroon-800 hover:bg-maroon-900`}>OK</button>
+                  ) : (
+                    <button type="button" onClick={onNoShow} disabled={loading} className={`${primary} bg-maroon-800 hover:bg-maroon-900`}>
+                      {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Close visit'}
+                    </button>
+                  )}
                 </>
-              )}
-
-              {student.status === 'no_show' && (
-                <p className="rounded-xl bg-gray-50 p-3 text-center text-sm text-gray-500 dark:bg-gray-700/50 dark:text-gray-300">
-                  This patient did not arrive. The visit is closed as No Show.
-                </p>
               )}
             </div>
             </div>

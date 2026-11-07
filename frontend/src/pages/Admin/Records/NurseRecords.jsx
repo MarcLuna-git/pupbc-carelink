@@ -74,7 +74,7 @@ export default function NurseRecords() {
       aria-label="Clinic history directory"
       aria-busy={loading}
       icon={ClipboardList}
-      title={<>Clinic records<CountChip>{loading ? '…' : error ? '—' : filtered.length.toLocaleString()}</CountChip></>}
+      title={<>Past visits<CountChip>{loading ? '…' : error ? '—' : filtered.length.toLocaleString()}</CountChip></>}
       description={`${active ? 'Records matching your filters, newest' : 'Completed consultations and emergency encounters, newest'} first.`}
       toolbar={<StudentFilters embedded filters={filters} onChange={changeFilter} onClear={clearFilters} filterDefinitions={definitions} label="Clinic record filters" searchLabel="Search clinic records" searchPlaceholder="Search student, ID, or complaint" dateLabel="Visit date" />}
     >

@@ -133,6 +133,13 @@ const certificateData = (record) => ({
   rest_days: '',
 });
 
+// The form is dated on the visit, when the nurse released it.
+const liabilityData = (record) => ({
+  issued_date: formatDay(record.date),
+  visit_date: formatDay(record.date),
+  activity: record.liabilityActivity,
+});
+
 const consultationData = (record) => {
   const isEmergency = record.recordType === 'emergency';
   const vitals = record.vitals || {};
@@ -216,6 +223,7 @@ export const DOCUMENTS = {
   // Both documents print every row; fields with no value are left blank instead of "Not recorded".
   certificate: { label: 'Medical Certificate', file: 'Medical-Certificate', template: 'medical-certificate.html', data: certificateData, empty: '' },
   consultation: { label: 'Consultation Form', file: 'Consultation-Form', template: 'consultation-form.html', data: consultationData, empty: '' },
+  liability: { label: 'Medical Liability Form', file: 'Medical-Liability-Form', template: 'medical-liability-form.html', data: liabilityData, empty: '' },
 };
 
 /*
@@ -227,7 +235,7 @@ export const DOCUMENTS = {
 export const buildRecordDocument = async (kind, record, student = null) => {
   const doc = DOCUMENTS[kind];
   if (!doc) throw new Error('Unknown document');
-  const reference = record.medicalCertificateRef || record.id;
+  const reference = (kind !== 'liability' && record.medicalCertificateRef) || record.id;
   const [layout, body, info] = await Promise.all([loadTemplate('layout.html'), loadTemplate(doc.template), student || loadOwnDetails()]);
   const data = {
     clinic_name: CLINIC_NAME,

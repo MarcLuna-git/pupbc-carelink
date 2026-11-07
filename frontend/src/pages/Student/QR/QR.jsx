@@ -601,9 +601,10 @@ const QR = () => {
 
   const fullName = `${formatPersonName(user.first_name)} ${formatPersonName(user.last_name)}`.trim();
   const courseLine = [user.course, user.year, user.section].filter(Boolean).join(' • ');
-  // Today's visit stays on the tracker until the day ends; once finished, all four steps are done.
-  const trackedAppointment = todayAppointment;
-  const currentStep = visitCompleted ? 3 : trackedAppointment ? checkinStepIndex(queue, trackedAppointment) : 0;
+  // Once today's visit is finished the QR is gone too, so the tracker starts over at
+  // "Not yet checked in" (the finished visit is under View Records below).
+  const trackedAppointment = visitCompleted ? null : todayAppointment;
+  const currentStep = trackedAppointment ? checkinStepIndex(queue, trackedAppointment) : 0;
   const statusNote = !visitCompleted && QUEUE_STATUS_NOTES[queue?.status];
   const isNoShow = queue?.status === 'no_show';
   const opensLabel = formatTime(checkinOpensAt);
@@ -832,7 +833,8 @@ const QR = () => {
           <div className={CARD}>
             <CardTitle icon={Clock}>Check-in Information</CardTitle>
 
-            {opensLabel && deadlineLabel ? (
+            {/* Only while a visit is in progress: once it is completed (or there is none) it goes back to the default note. */}
+            {trackedAppointment && opensLabel && deadlineLabel ? (
               <div className="grid gap-4 rounded-xl bg-gray-50 p-5 dark:bg-gray-900/30 sm:grid-cols-2 sm:divide-x sm:divide-gray-200 dark:sm:divide-gray-700">
                 <div className="flex items-start gap-3.5">
                   <LogIn className="mt-1 h-7 w-7 shrink-0 text-maroon-700 dark:text-maroon-300" />
@@ -900,31 +902,32 @@ const QR = () => {
               Appointment Summary
             </CardTitle>
 
-            {todayAppointment ? (
+            {/* A completed visit's appointment is done: back to the default empty state, like the QR. */}
+            {trackedAppointment ? (
               <div className="grid flex-1 content-center gap-5 rounded-xl border border-gray-100 p-5 dark:border-gray-700 sm:grid-cols-2 sm:divide-x sm:divide-gray-100 dark:sm:divide-gray-700">
                 <div className="space-y-5">
                   <DetailRow
                     icon={CalendarDays}
                     label="Date"
-                    value={formatDateWithWeekday(todayAppointment.appointment_date)}
+                    value={formatDateWithWeekday(trackedAppointment.appointment_date)}
                   />
                   <DetailRow
                     icon={Clock}
                     label="Time"
-                    value={todayAppointment.time_slot || 'N/A'}
+                    value={trackedAppointment.time_slot || 'N/A'}
                   />
                 </div>
                 <div className="space-y-5 sm:pl-5">
                   <DetailRow
                     icon={FileText}
                     label="Appointment Type"
-                    value={todayAppointment.service || 'Appointment'}
-                    hint={todayAppointment.concern}
+                    value={trackedAppointment.service || 'Appointment'}
+                    hint={trackedAppointment.concern}
                   />
                   <DetailRow
                     icon={Hash}
                     label="Reference"
-                    value={<span className="font-mono">{todayAppointment.reference_number || 'N/A'}</span>}
+                    value={<span className="font-mono">{trackedAppointment.reference_number || 'N/A'}</span>}
                   />
                 </div>
               </div>

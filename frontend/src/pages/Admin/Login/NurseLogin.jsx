@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import authService from '../../../services/authService';
-import clinicPhoto from '../../../assets/clinic-waiting-area.jpg';
+import clinicPhoto from '../../../assets/clinic-lab-test.jpg';
 
 /*
  * Hero photo for the brand panel. Drop a `nurse-login-hero.(jpg|png|webp)`
@@ -116,7 +116,7 @@ const NurseLogin = () => {
           src={heroPhoto}
           alt=""
           aria-hidden="true"
-          className="absolute inset-y-0 right-0 h-full w-[62%] object-cover object-center"
+          className="absolute inset-y-0 right-0 h-full w-[62%] object-cover object-[center_30%]"
         />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#660000_0%,#660000_36%,rgba(102,0,0,0.78)_58%,rgba(128,0,0,0.35)_100%)]" />
         <div className="absolute inset-0 bg-gradient-to-t from-maroon-950/80 via-transparent to-maroon-950/30" />

@@ -260,6 +260,9 @@ class MedicineController extends Controller
             'student_id' => 'required_if:movement_type,dispensed|nullable|string|exists:users,student_id',
         ]);
 
+        // The Developer tools demo patient never takes real clinic stock.
+        abort_if(\App\Support\DemoQueue::isDemoStudentId($data['student_id'] ?? null), 422, 'Demo patient: medicine is not dispensed from clinic stock.');
+
         return DB::transaction(function () use ($data, $id) {
             $medicine = Medicine::lockForUpdate()->findOrFail($id);
             $student = null;

@@ -1,5 +1,9 @@
 # SKILLS.md - PUPBC CareLink
 
+## 🤖 Maintenance Protocol
+- **MY RULE::** update SKILLS.md if compact summary made.
+- **MY RULE::** make a summary for all of this conversation then add the summary to SKILLS.md with new date sort labels, if already have date, make a session something like session 1 or session 2 or session 3.
+
 ## How to Run (Local) - READ THIS FIRST
 
 Order matters: database first, then backend, then frontend.
@@ -287,3 +291,101 @@ Kasunod ng "November 5, 2026 (Part 2)" sa itaas. Naka-commit na ang karamihan sa
 ### Mga natitirang tanong
 - Hindi pa nasusubukan sa dark mode ang mga bagong modal at ang running count.
 - Ang pagsubok sa maling password ay ginawa gamit ang pekeng Student ID, para hindi maubos ang attempts ng totoong account.
+
+---
+
+## November 7–8, 2026 - Session 1: Homepage, Demo Queue, Queue/Consultation Split, Medical Liability Form at Sidebar
+
+Kasunod ng "November 6, 2026" sa itaas. Nagsimula noong gabi ng Nov 7 at natapos noong madaling-araw ng Nov 8. **Wala pang naka-commit** sa session na ito.
+
+### Homepage at Login images
+- Homepage hero: tinanggal ang PUP statue slide. Dalawa na lang ang slide: PUP Biñan Campus at ang Campus Clinic (`clinic-waiting-area.jpg`).
+- "A healthier you" section: ang bagong larawan ng nurse na nagba-bakuna (`clinic-vaccination.jpg`, `object-[center_35%]`).
+- Nurse Login: ang bagong larawan ng finger-prick test (`clinic-lab-test.jpg`, `object-[center_30%]`) sa right-side photo. Hindi ginalaw ang Student Login.
+- Hindi binura ang mga napalitang larawan (`pupstatue.webp`, `pup-binan-hero.jpg`, `clinic-waiting-area.jpg`).
+
+### Student ID (Register)
+- Ang taon sa Student ID ay 2000 hanggang sa kasalukuyang taon na lang, habang nagta-type at pag-submit ("The year must be from 2000 to 2026.").
+- Binago ang `formatStudentId` sa `inputFilters.js` (gamit din ng Medicine dispensing) at sa `Register.jsx`.
+- Hindi ginalaw ang Login, Kiosk at backend regex (`\d{4}` pa rin).
+
+### Nurse Dashboard at Appointments
+- Upcoming Schedule: wala nang skeleton rows. May empty state na "No upcoming visits."
+- Appointment requests: **Table** na ang default view, at nasa kaliwa na ito ng List. Hindi na tinatandaan ng browser ang List.
+- Queue list: tinanggal ang **Start** (auto-queue) button at ang arrow icon sa action button. "Options" na lang sa header.
+
+### XAMPP MySQL
+- Port 3306 conflict: ang Windows service na **MySQL80** ang sumasakop. Ni-stop ito at ginawang **Manual**.
+- Pangalawang sira: crashed ang `mysql.db` (Aria). Ni-repair gamit ang `aria_chk -r`.
+- May backup sa `C:\xampp\mysql\backups\2026-11-07` at `...\2026-11-07-datadir-before-aria-repair`.
+- Paalala: sa XAMPP Control Panel lang i-Start at i-Stop ang MySQL, at i-Stop muna bago i-shutdown ang PC.
+
+### Demo patients (Queue → Options → Developer tools)
+- Toggle na may developer password (`admin` ang default, pareho ng Settings → Developer Tools).
+- Tatlong demo patient para makita ang priority: **Demo Priority** (HIGH, P-), **Demo Medium** (MEDIUM, R-) at **Demo Patient** (LOW, R-). Laging nauuna ang Priority, sunod ang Medium, tapos Regular.
+- Totoong queue counter ang gamit nila, kaya may "Demo" badge para makilala.
+- Pagka-save ng consultation, bumabalik sila sa Waiting, kaya paulit-ulit na loop. May **Reset demo patients**. Pag-off ng toggle, buburahin sila at lahat ng record nila.
+- Hindi sila lumalabas sa kiosk/TV display, at hindi nababawasan ang totoong stock ng gamot.
+- Backend: `DemoQueue.php` at `DemoQueueController.php` (bago), at mga route sa `api.php`.
+- Ang priority ay galing sa triage ng kiosk. HIGH: warning sign o pain 7–10. MEDIUM: pain 4–6 o may tugmang sakit sa health profile. LOW: pain 1–3, o hindi Consultation na serbisyo.
+
+### Queue popup (arrival lang)
+- **Call next** sa row: tinatawag agad ang pasyente at bubukas ang popup na may **arrival timer**, pangalan at **Patient arrived** lang. Wala nang step indicator.
+- **Kapag hindi dumating sa oras:** isinasara ng server ang visit bilang **No show**. Wala nang Recall at Put on hold, para sa lahat ng pasyente, hindi lang sa demo.
+- Ang popup ay "Did not arrive", may paliwanag na mag-**book a new appointment**, at OK button. May notification din ang estudyante.
+- Kapag naka-on ang Remove time Guard, hindi isinasara ang visit ("Time is up" lang).
+
+### Queue at Consultation (hiwalay na page na)
+- Ang dating "Queue & Consultation" ay dalawang page na:
+  - **Queue** (`/nurse/queue`, `NurseQueue.jsx`): pagtawag at pag-validate ng pagdating.
+  - **Consultation** (`/nurse/consultation`, `NurseConsultation.jsx`): ang consultation form.
+- Bagong helper na `queueRows.js` (`toQueueRow`, `queueRowsFrom`, `consultationPath`).
+- **Patient arrived**: validation lang, wala nang auto-redirect. May toast na "{name} arrived. Their consultation form is on the Consultation page."
+- Ang popup ng pasyenteng nasa consultation ay may paliwanag at OK button na lang.
+- Queue list: nawawala na ang totoong student na "In consultation" (lumipat na sa Consultation page). Ang **demo** patients ay nananatili pa rin sa listahan.
+- Consultation page na walang `?visit`:
+  - Sa itaas, card na **"Clinic Queue"** na may maikling paliwanag at button na "Go to Queue".
+  - Sa ilalim, table na "In consultation" na may button na **Consult** (dating "Open visit").
+- Sa form: "Back to Consultation" na ang link sa itaas. Ang huling button ay **"View in Patient History"**.
+- Mas maliit na ang agwat ng student ID at paragraph sa popup na "Did not arrive".
+- Queue Options: hindi na nag-fold/unfold ang demo box. May cache at prefetch na sa `QueueOptionsModal.jsx`.
+
+### Medical Liability Form (bagong optional na dokumento)
+- Ang step 3 ng consultation ay **"Additional Documents"** na (saglit itong naging "Release Documents"). May sarili na itong header at maikling paliwanag.
+- Dalawang optional na checkbox sa step 3:
+  - Medical certificate.
+  - **Medical liability form**. Kapag naka-check, required ang **Activity** (hal. "Sports Fest 2026").
+- Review (step 4): may toggle sa itaas ng preview, `1 Consultation Form · 2 Medical Certificate · 3 Medical Liability Form`. May "Page X of Y" at mga arrow na ‹ ›. Lalabas lang ang mga dokumentong naka-check.
+- Pagka-save, may button na "Print Medical Liability Form".
+- Backend:
+  - Migration `2026_11_08_000001_add_liability_form_to_consultations_table.php` (`liability_form` boolean, `liability_activity` string). **Na-run na sa local MySQL.** Hindi pa na-run sa Supabase.
+  - `Consultation` model, ang validation ng `ConsultationController` store/update, at ang `ClinicHistory::forStudent`.
+- Print template: `frontend/public/templates/print/medical-liability-form.html`, batay sa papel na form ng clinic. Gitnang bahagi lang ito ng dokumento, kaya kapag direktang binuksan ay walang style, walang logo, at `{{...}}` ang lumalabas. Normal iyon, kasi isinisingit ito sa `layout.html`. Naka-dokumento ang mga placeholder sa `README.md`.
+- `recordDocuments.js`: may bagong document kind na `liability`.
+- Student Health Records: may bagong tab na **"Medical Liability"** (may Activity column, Preview at Print). Sa View Details, may "Print liability form".
+- Nurse Patient History (`ClinicRecordList.jsx`): may row na "Medical liability form: Issued · [activity]".
+
+### Student QR page
+- Kapag tapos na ang visit, bumabalik sa default ang lahat:
+  - Step tracker, sa "Not yet checked in".
+  - Check-in Information, sa default note.
+  - Appointment Summary, sa "No approved appointment scheduled for today."
+- Nananatili ang View Records card.
+
+### Nurse sidebar
+- "Records" page ay **"Patient History"** na, at nasa **Management** na, sa ilalim ng Consultation.
+- Ayos ngayon: Dashboard / MANAGEMENT: Appointments, Queue, Consultation, Patient History / RECORDS: Students, Faculty, Medicines, Courses / ADMIN: Announcements, Settings.
+- Queue icon: **QR code** na (`QrCode`), dating `ListOrdered`.
+- Section labels: maliit na, kapareho ng student portal (10px, bold, 50% na puti). Mas malaki ang agwat ng bawat grupo (18px).
+- Mga button na hindi naka-select: **85% na puti** na (dating 60%), para hindi kamukha ng mga label. Sa dark mode, `#d1d5db`.
+- Page titles sa `nurseGreeting.js`: may Queue at Consultation na. "Patient History" na rin ang title ng records.
+
+### Files
+- Binago: `QueuePatientModal.jsx`, `NurseConsultation.jsx`, `ConsultationVisit.jsx`, `QueueOptionsModal.jsx`, `NurseRecords.jsx`, `ClinicRecordList.jsx`, `nurseNavigation.js`, `NurseLayout-for-Desktop-View.css`, `nurseGreeting.js` (at test), `App.jsx`, `QR.jsx`, `HealthRecords.jsx`, `recordDocuments.js`, `print/README.md`, `Consultation.php`, `ConsultationController.php`, `ClinicHistory.php`, `Landing.jsx`, `NurseLogin.jsx`, `Register.jsx`, `inputFilters.js`, `NurseDashboard.jsx`, `NurseAppointments.jsx`, `KioskController.php`, `CheckinController.php`, `MedicineController.php`, `SkippedQueueExpiry.php`, `api.php`.
+- Bago (untracked): `NurseQueue.jsx`, `queueRows.js`, `medical-liability-form.html`, ang migration ng liability form, `DemoQueue.php`, `DemoQueueController.php`, `clinic-vaccination.jpg`, `clinic-lab-test.jpg`.
+
+### Mga natitirang tanong
+- Hindi pa nasusubukan nang buo ang pag-save ng consultation na may liability form, pati ang pag-print nito mula sa Health Records ng student.
+- Hindi pa nasusubukan ang "Patient arrived" na walang redirect gamit ang totoong pasyente.
+- Lumang list icon pa rin ang Queue sa title card ng Queue page at sa "Clinic Queue" card.
+- Hindi pa na-run ang liability migration sa Supabase.

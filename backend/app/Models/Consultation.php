@@ -29,13 +29,14 @@ class Consultation extends Model
         'appointment_id', 'appointment_checkin_id', 'user_id', 'nurse_id',
         'chief_complaint', 'vital_signs', 'general_remarks',
         'history_present_illness', 'nursing_assessment', 'nursing_interventions', 'treatment_plan',
-        'medical_certificate', 'medical_certificate_ref',
+        'medical_certificate', 'medical_certificate_ref', 'liability_form', 'liability_activity',
         'follow_up_required', 'follow_up_date', 'status',
     ];
 
     protected $casts = [
         'vital_signs' => \App\Casts\NormalizedArray::class,
         'medical_certificate' => 'boolean',
+        'liability_form' => 'boolean',
         'follow_up_required' => 'boolean',
         'follow_up_date' => 'date:Y-m-d',
     ];

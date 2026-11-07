@@ -1042,6 +1042,11 @@ Route::middleware([
                 Route::get('/queue-settings', [QueueSettingsController::class, 'show']);
                 Route::put('/queue-settings', [QueueSettingsController::class, 'update']);
 
+                // Queue list → Options → Developer tools: one looping demo patient.
+                Route::get('/demo-queue', [\App\Http\Controllers\Api\Nurse\DemoQueueController::class, 'show']);
+                Route::put('/demo-queue', [\App\Http\Controllers\Api\Nurse\DemoQueueController::class, 'update']);
+                Route::post('/demo-queue/reset', [\App\Http\Controllers\Api\Nurse\DemoQueueController::class, 'reset']);
+
                 Route::get(
                     '/consultations',
                     [NurseConsultationController::class, 'index']

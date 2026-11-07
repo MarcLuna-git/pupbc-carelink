@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, Stethoscope, ClipboardPenLine, CalendarClock, MessageSquareText, ClipboardList, UserRound, Phone, Mail, GraduationCap, CalendarRange, Users, CircleUserRound, IdCard,
-  Heart, FileBadge, FileText, Pill, Search, Save, Loader2, CheckCircle, ArrowRight, Printer, Eye, Activity, Plus, Trash2, XCircle, AlertTriangle, Check,
+  Heart, FileBadge, FileSignature, FileText, Pill, Search, Save, Loader2, CheckCircle, ArrowRight, Printer, Eye, Activity, Plus, Trash2, XCircle, AlertTriangle, Check, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import api from '../../../services/api';
 import { getUser } from '../../../services/session';
@@ -22,6 +22,7 @@ const EMPTY_FORM = {
   nursing_assessment: '', nursing_interventions: '', treatment_plan: '',
   follow_up: false, follow_up_date: '', general_remarks: '',
   medical_certificate: false, medical_certificate_ref: '',
+  liability_form: false, liability_activity: '',
 };
 // These parts of the clinic's consultation form cannot be left blank; everything else is optional.
 const REQUIRED_FIELDS = {
@@ -35,7 +36,7 @@ const missingRequired = form => Object.fromEntries(Object.entries(REQUIRED_FIELD
 const TABS = [
   { key: 'form', label: 'Consult Form', icon: ClipboardPenLine },
   { key: 'dispensing', label: 'Prescribe Medicine', icon: Pill },
-  { key: 'certificate', label: 'Release Medical Certificate', icon: FileBadge },
+  { key: 'certificate', label: 'Additional Documents', icon: FileBadge },
   { key: 'review', label: 'Review and Confirm', icon: Eye },
 ];
 const MEDICINE_MODES = [
@@ -83,7 +84,7 @@ const Counter = ({ value }) => <span className="mt-1 block text-right text-xs te
 
 const rxLine = p => [p.name, p.dose, p.duration && `for ${p.duration}`, p.quantity && `×${p.quantity}`].filter(Boolean).join(' · ');
 
-const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
+const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back to Consultation', onSaved, onConflict, notify }) => {
   const draft = useMemo(() => readDraft(visit.checkin_id), [visit.checkin_id]);
   // The kiosk sends ['none'] when no red flag was ticked; that is not a red flag to show.
   const redFlags = (visit.triage?.red_flags || []).filter(flag => flag !== 'none');
@@ -118,6 +119,8 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
   const [touched, setTouched] = useState({});
   const [serverErrors, setServerErrors] = useState({});
   const [preview, setPreview] = useState(null);
+  // Review: which document the preview shows (the consultation form, then each optional one ticked).
+  const [previewDoc, setPreviewDoc] = useState('consultation');
   const [previewHeight, setPreviewHeight] = useState(1100);
   const previewFrame = useRef(null);
   const [savingDraft, setSavingDraft] = useState(false);
@@ -309,6 +312,12 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
       focusSoon(Object.keys(errors)[0]);
       return;
     }
+    if (form.liability_form && !form.liability_activity.trim()) {
+      setTab('certificate'); setShowErrors(true);
+      notify('Enter the activity for the medical liability form, or untick it.', 'error');
+      focusSoon('liability_activity');
+      return;
+    }
     if (mode === 'dispense' && !prescribed.length) { setTab('dispensing'); notify('Add the medicine to dispense, or choose "No medicine".', 'error'); return; }
     if (mode === 'prescription' && !rx.length) { setTab('dispensing'); notify('Add the prescription, or choose "No medicine".', 'error'); return; }
     if (mode === 'dispense' && !allInStock) { setTab('dispensing'); notify('Some medicines are low on stock. Adjust the quantities first.', 'error'); return; }
@@ -333,6 +342,8 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
         ].filter(Boolean).join('\n') || null,
         medical_certificate: form.medical_certificate,
         medical_certificate_ref: form.medical_certificate ? form.medical_certificate_ref || null : null,
+        liability_form: form.liability_form,
+        liability_activity: form.liability_form ? form.liability_activity.trim() : null,
         follow_up_required: form.follow_up,
         follow_up_date: form.follow_up ? form.follow_up_date || null : null,
       });
@@ -389,6 +400,8 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
       followUpDate: form.follow_up_date,
       medicalCertificate: form.medical_certificate,
       medicalCertificateRef: form.medical_certificate_ref,
+      liabilityForm: form.liability_form,
+      liabilityActivity: form.liability_activity,
       appointment: { service: visit.appointment },
       staff: nurseName(nurse),
       staffRole: 'Clinic Nurse',
@@ -404,13 +417,22 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
     if (!ok) notify('Allow pop-ups to print the record.', 'error');
   };
 
-  // Review shows the clinic's own Consultation Form template, filled in, exactly as it will print.
-  const previewKey = tab === 'review' ? JSON.stringify([form, mode, prescribed, rx, attendingId, student?.id, nurses.length]) : '';
+  // Review shows the clinic's own templates, filled in, exactly as they will print: the Consultation
+  // Form first, then each additional document the nurse ticked, one page at a time.
+  const reviewDocs = [
+    { kind: 'consultation', label: 'Consultation Form' },
+    form.medical_certificate && { kind: 'certificate', label: 'Medical Certificate' },
+    form.liability_form && { kind: 'liability', label: 'Medical Liability Form' },
+  ].filter(Boolean);
+  const docIndex = Math.max(0, reviewDocs.findIndex(d => d.kind === previewDoc));
+  const currentDoc = reviewDocs[docIndex];
+  const previewKey = tab === 'review' ? JSON.stringify([currentDoc.kind, form, mode, prescribed, rx, attendingId, student?.id, nurses.length]) : '';
   useEffect(() => {
     if (tab !== 'review') return undefined;
     let active = true;
+    setPreview(null);
     const { record, details } = buildDocument();
-    buildRecordDocument('consultation', record, details)
+    buildRecordDocument(currentDoc.kind, record, details)
       .then(html => { if (active) setPreview(html); })
       .catch(() => { if (active) setPreview(''); });
     return () => { active = false; };
@@ -444,7 +466,7 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
   // A step counts as done once it has something filled in.
   const stepDone = {
     form: Object.keys(errors).length === 0,
-    certificate: form.medical_certificate,
+    certificate: form.medical_certificate || form.liability_form,
     dispensing: mode === 'none' || (mode === 'dispense' && prescribed.length > 0) || (mode === 'prescription' && rx.length > 0),
   };
   const missingCount = Object.keys(errors).length;
@@ -453,7 +475,7 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
         <button type="button" onClick={onBack} className="inline-flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-maroon-800 hover:underline dark:text-maroon-300">
-          <ArrowLeft className="h-4 w-4" /> Back to Queue
+          <ArrowLeft className="h-4 w-4" /> Back to Consultation
         </button>
         <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${saved
           ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-800/30 dark:bg-green-900/20 dark:text-green-400'
@@ -509,7 +531,8 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
           <div className="mt-5 flex flex-wrap justify-center gap-2">
             <button type="button" onClick={() => printRecord('consultation')} className={primary}><Printer className="h-4 w-4" /> Print Consultation Form</button>
             {form.medical_certificate && <button type="button" onClick={() => printRecord('certificate')} className={outline}><FileBadge className="h-4 w-4" /> Print Medical Certificate</button>}
-            <button type="button" onClick={onBack} className={outline}><ArrowLeft className="h-4 w-4" /> Back to Queue</button>
+            {form.liability_form && <button type="button" onClick={() => printRecord('liability')} className={outline}><FileSignature className="h-4 w-4" /> Print Medical Liability Form</button>}
+            <button type="button" onClick={onDone} className={outline}><FileText className="h-4 w-4" /> {doneLabel}</button>
           </div>
         </section>
       ) : (
@@ -603,6 +626,15 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
 
             {tab === 'certificate' && (
               <div className="mx-auto max-w-xl space-y-4">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-maroon-50 text-maroon-700 dark:bg-maroon-900/30 dark:text-maroon-300">
+                    <FileBadge className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Additional Documents</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Optional forms released with this visit. Tick only the ones the student needs; you can check them in Review.</p>
+                  </div>
+                </div>
                 <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
                   <span>
                     <span className="block text-sm font-semibold text-gray-900 dark:text-white">Issue a medical certificate <span className="font-normal text-gray-500 dark:text-gray-400">(optional)</span></span>
@@ -616,6 +648,30 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
                     <input name="medical_certificate_ref" value={form.medical_certificate_ref} onChange={change} className={input} placeholder="MED-2026-001" maxLength={191} />
                   </label>
                 )}
+
+                {/* Medical Liability Form: the student declares they are fit to join an activity and signs it. */}
+                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
+                  <span>
+                    <span className="block text-sm font-semibold text-gray-900 dark:text-white">Issue a medical liability form <span className="font-normal text-gray-500 dark:text-gray-400">(optional)</span></span>
+                    <span className="block text-xs text-gray-600 dark:text-gray-300">For a student joining an activity (field trip, sports fest, OJT). They declare they are fit to join and sign it. It can be printed after saving.</span>
+                  </span>
+                  <input type="checkbox" name="liability_form" checked={form.liability_form} onChange={change} className="h-5 w-5 cursor-pointer accent-maroon-800" />
+                </label>
+                {form.liability_form && (() => {
+                  const missing = (showErrors || touched.liability_activity) && !form.liability_activity.trim();
+                  return (
+                    <div>
+                      <label htmlFor="visit-liability_activity" className={label}>Activity<span className="text-red-600 dark:text-red-400" aria-hidden="true"> *</span></label>
+                      <input id="visit-liability_activity" name="liability_activity" value={form.liability_activity} onChange={change}
+                        onBlur={() => setTouched(current => ({ ...current, liability_activity: true }))}
+                        aria-required="true" aria-invalid={missing || undefined}
+                        className={`${input} ${missing ? inputError : ''}`} placeholder="e.g. Sports Fest 2026, Educational Field Trip" maxLength={191} />
+                      {missing
+                        ? <p role="alert" className="mt-1 flex items-center gap-1 text-xs font-semibold text-red-700 dark:text-red-400"><AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />Enter the activity the student will join.</p>
+                        : <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Printed on the form: “…fit to join the activities on our <em>activity</em>.”</p>}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
@@ -787,7 +843,7 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
             {tab === 'review' && (
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Review Consultation Form</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">{reviewDocs.length > 1 ? 'Review Documents' : 'Review Consultation Form'}</h3>
                   {/* Progress through the visit; each step opens its tab. */}
                   <ol className="flex flex-wrap items-center gap-1.5 text-xs font-semibold">
                     {TABS.map((step, index) => {
@@ -809,16 +865,51 @@ const ConsultationVisit = ({ visit, onBack, onSaved, onConflict, notify }) => {
                   </ol>
                 </div>
 
-                <p className="text-sm text-gray-700 dark:text-gray-300">This is the clinic's Consultation Form as it will print. Check it, then confirm to save the visit.</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {reviewDocs.length > 1
+                    ? `These are the ${reviewDocs.length} documents for this visit, as they will print. Check each one, then confirm to save the visit.`
+                    : "This is the clinic's Consultation Form as it will print. Check it, then confirm to save the visit."}
+                </p>
+
+                {/* More than one document: page through them (Previous / Next, or pick one). */}
+                {reviewDocs.length > 1 && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-2 dark:border-gray-700 dark:bg-gray-900/40">
+                    <div role="tablist" aria-label="Document to preview" className="flex flex-wrap gap-1.5">
+                      {reviewDocs.map((d, i) => {
+                        const active = i === docIndex;
+                        return (
+                          <button key={d.kind} type="button" role="tab" aria-selected={active} onClick={() => setPreviewDoc(d.kind)}
+                            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition ${active
+                              ? 'bg-maroon-800 text-white'
+                              : 'text-gray-700 hover:bg-white dark:text-gray-300 dark:hover:bg-gray-800'}`}>
+                            <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs ${active ? 'bg-white/20' : 'bg-gray-200 dark:bg-gray-700'}`}>{i + 1}</span>
+                            {d.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold tabular-nums text-gray-600 dark:text-gray-300">Page {docIndex + 1} of {reviewDocs.length}</span>
+                      <button type="button" onClick={() => setPreviewDoc(reviewDocs[docIndex - 1].kind)} disabled={docIndex === 0} aria-label="Previous document"
+                        className="cursor-pointer rounded-md border border-gray-200 bg-white p-1.5 text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200">
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <button type="button" onClick={() => setPreviewDoc(reviewDocs[docIndex + 1].kind)} disabled={docIndex === reviewDocs.length - 1} aria-label="Next document"
+                        className="cursor-pointer rounded-md border border-gray-200 bg-white p-1.5 text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200">
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {preview === null ? (
-                  <div role="status" className="flex items-center justify-center gap-2 rounded-lg border border-gray-100 py-16 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300"><Loader2 className="h-4 w-4 animate-spin" /> Preparing the form…</div>
+                  <div role="status" className="flex items-center justify-center gap-2 rounded-lg border border-gray-100 py-16 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300"><Loader2 className="h-4 w-4 animate-spin" /> Preparing the {currentDoc.label}…</div>
                 ) : preview === '' ? (
                   <p role="alert" className="rounded-lg bg-red-50 p-4 text-sm font-medium text-red-800 dark:bg-red-900/20 dark:text-red-300">The form preview could not be loaded. You can still save the visit and print it afterwards.</p>
                 ) : (
                   <iframe
                     ref={previewFrame}
-                    title="Consultation Form preview"
+                    title={`${currentDoc.label} preview`}
                     srcDoc={preview}
                     sandbox="allow-same-origin"
                     onLoad={fitPreview}

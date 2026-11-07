@@ -47,14 +47,11 @@ const STAGE_LABELS = {
 };
 const badgeLabel = stage => STAGE_LABELS[stage] || stage;
 
-// List (cards) or table view, remembered per browser.
-const VIEW_KEY = 'nurse-appointments-view';
-const readView = () => { try { return localStorage.getItem(VIEW_KEY) === 'table' ? 'table' : 'list'; } catch { return 'list'; } };
-
 const NurseAppointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [page, setPage] = useState(1);
-  const [view, setView] = useState(readView);
+  // Table view every time the page opens; List is a switch for this visit only.
+  const [view, setView] = useState('table');
   const [meta, setMeta] = useState({ total: 0, last_page: 1, from: 0, to: 0 });
   const [counts, setCounts] = useState({});
   const [loading, setLoading] = useState(true);
@@ -180,10 +177,7 @@ const NurseAppointments = () => {
 
   const formatDate = (value) => formatAppointmentDate(value, { weekday: 'short' });
 
-  const changeView = next => {
-    setView(next);
-    try { localStorage.setItem(VIEW_KEY, next); } catch { /* view still switches for this visit */ }
-  };
+  const changeView = next => setView(next);
 
   // When the student booked it — the list is ordered newest booking first.
   const formatBooked = (value) => {
@@ -310,7 +304,7 @@ const NurseAppointments = () => {
         description="Newest bookings first. Open one to review it, or approve and decline pending requests right here."
         actions={
           <div role="group" aria-label="Choose how to view appointments" className="flex rounded-lg bg-gray-100 p-1 dark:bg-gray-700/60">
-            {[{ key: 'list', label: 'List', icon: List }, { key: 'table', label: 'Table', icon: Table2 }].map(({ key, label, icon: Icon }) => (
+            {[{ key: 'table', label: 'Table', icon: Table2 }, { key: 'list', label: 'List', icon: List }].map(({ key, label, icon: Icon }) => (
               <button key={key} type="button" aria-pressed={view === key} onClick={() => changeView(key)}
                 className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors ${
                   view === key ? 'bg-white text-maroon-800 shadow-sm dark:bg-gray-800 dark:text-maroon-300' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'

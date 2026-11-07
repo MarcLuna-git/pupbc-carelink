@@ -225,7 +225,15 @@ const NurseDashboard = () => {
             description={upcoming.length ? 'Next approved visits after today.' : 'No approved visits after today yet.'}
             actions={<Link to="/nurse/appointments" className="inline-flex items-center gap-1 text-sm font-semibold text-maroon-700 hover:text-maroon-900 dark:text-maroon-400">View all <ChevronRight className="h-4 w-4" /></Link>}
           >
-            {(
+            {upcoming.length === 0 ? (
+              <div className="py-12 text-center">
+                <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-50 dark:bg-gray-700/50">
+                  <CalendarRange className="h-7 w-7 text-gray-300 dark:text-gray-500" aria-hidden="true" />
+                </span>
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">No upcoming visits.</p>
+                <p className="mt-1 text-xs text-gray-400">Approved appointments after today will show up here.</p>
+              </div>
+            ) : (
               <ul className="divide-y divide-gray-100 dark:divide-gray-700">
                 {upcoming.map((visit) => {
                   const date = new Date(`${String(visit.appointment_date).slice(0, 10)}T00:00:00`);
@@ -245,20 +253,8 @@ const NurseDashboard = () => {
                     </li>
                   );
                 })}
-                {/* Empty slots keep the card at a steady size: gray placeholder rows. */}
-                {Array.from({ length: UPCOMING_ROWS - upcoming.length }, (_, i) => (
-                  <li key={`placeholder-${i}`} className="flex items-center gap-3 px-4 py-2.5" aria-hidden="true">
-                    <span className="h-[42px] w-11 shrink-0 rounded-lg bg-gray-100 dark:bg-gray-700/60" />
-                    <div className="min-w-0 flex-1 space-y-1.5">
-                      <span className="block h-3 w-2/3 rounded bg-gray-100 dark:bg-gray-700/60" />
-                      <span className="block h-2.5 w-1/2 rounded bg-gray-100 dark:bg-gray-700/60" />
-                      <span className="block h-2.5 w-1/3 rounded bg-gray-100 dark:bg-gray-700/60" />
-                    </div>
-                  </li>
-                ))}
               </ul>
             )}
-            {upcoming.length === 0 && <p className="sr-only">No upcoming visits.</p>}
           </NurseListCard>
 
           <NurseListCard

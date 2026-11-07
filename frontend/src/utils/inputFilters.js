@@ -35,13 +35,29 @@ export const bloodPressureOnly = (value) => {
 export const codeOnly = (value) => String(value ?? '').replace(/[^\p{L}\d-]/gu, '');
 
 // Student ID as YYYY-NNNNN-BN-D, built as it is typed (same as the registration form).
+export const STUDENT_ID_MIN_YEAR = 2000;
+
+// True when `prefix` (1-4 digits) can still grow into a year from 2000 up to the current year.
+export const isStudentIdYearPrefix = (prefix) => {
+  const max = new Date().getFullYear();
+  for (let year = STUDENT_ID_MIN_YEAR; year <= max; year += 1) {
+    if (String(year).startsWith(prefix)) return true;
+  }
+  return false;
+};
+
+export const isValidStudentIdYear = (year) => /^\d{4}$/.test(year)
+  && +year >= STUDENT_ID_MIN_YEAR && +year <= new Date().getFullYear();
+
 export const formatStudentId = (value) => {
   let digits = '';
   let suffix = '';
   let finalDigit = '';
   for (const char of String(value ?? '').toUpperCase()) {
     if (/\d/.test(char)) {
-      if (digits.length < 9) digits += char;
+      if (digits.length < 4) {
+        if (isStudentIdYearPrefix(digits + char)) digits += char;
+      } else if (digits.length < 9) digits += char;
       else if (suffix === 'BN' && /^[01]$/.test(char)) finalDigit = char;
     } else if (digits.length === 9 && /^[BN]$/.test(char) && suffix.length < 2) {
       if (char === (suffix.length === 0 ? 'B' : 'N')) suffix += char;

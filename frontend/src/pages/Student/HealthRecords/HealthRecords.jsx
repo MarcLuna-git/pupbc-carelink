@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileText,
+  FileSignature,
   Stethoscope,
   ClipboardList,
   CalendarDays,
@@ -41,7 +42,32 @@ const RECORDS_HERO = {
 const TABS = [
   { id: 'consultations', label: 'Consultation Records', icon: Stethoscope },
   { id: 'certificates', label: 'Medical Certificates', icon: FileText },
+  { id: 'liability', label: 'Medical Liability', icon: FileSignature },
 ];
+
+/* The document tabs: which form a row prints, and what its detail column shows. */
+const DOC_TABS = {
+  certificates: {
+    kind: 'certificate',
+    detailLabel: 'Reference',
+    detail: (r) => r.medicalCertificateRef,
+    mono: true,
+    mobile: (r) => `Ref ${r.medicalCertificateRef || '—'}`,
+    search: 'Search certificates...',
+    emptyTitle: 'No medical certificates yet',
+    emptyText: 'Certificates issued by the clinic will appear here.',
+  },
+  liability: {
+    kind: 'liability',
+    detailLabel: 'Activity',
+    detail: (r) => r.liabilityActivity,
+    mono: false,
+    mobile: (r) => `Activity: ${r.liabilityActivity || '—'}`,
+    search: 'Search liability forms...',
+    emptyTitle: 'No medical liability forms yet',
+    emptyText: 'Liability forms the clinic issues for school activities will appear here.',
+  },
+};
 
 const DEFAULT_FILTERS = { type: 'all', year: 'all' };
 
@@ -53,7 +79,7 @@ const text = (value) => String(value || '').toLowerCase();
 const COLUMN_SORTS = {
   date: (r) => new Date(r.date).getTime() || 0,
   complaint: (r) => text(r.complaint),
-  detail: (r, tab) => text(tab === 'certificates' ? r.medicalCertificateRef : r.diagnosis),
+  detail: (r, tab) => text(DOC_TABS[tab] ? DOC_TABS[tab].detail(r) : r.diagnosis),
   staff: (r) => text(r.staff),
   status: (r) => text(r.status),
 };
@@ -103,6 +129,8 @@ const toRecord = (c, index) => {
     appointment: c.appointment || null,
     medicalCertificate: Boolean(c.medical_certificate),
     medicalCertificateRef: c.medical_certificate_ref || '',
+    liabilityForm: Boolean(c.liability_form),
+    liabilityActivity: c.liability_activity || '',
     followUpRequired: Boolean(c.follow_up_required),
     followUpDate: c.follow_up_date || '',
     staff: nurseName ? `Nurse ${nurseName}` : 'Clinic Staff',
@@ -151,8 +179,13 @@ const TypeTag = ({ record }) =>
 
 /* Row print button: the certificate on the Certificates tab, the consultation form otherwise.
    Styled like View Details; the "Print" label shows only with the desktop table (lg+), icon only below. */
+const PRINT_LABELS = {
+  certificate: 'Print medical certificate',
+  liability: 'Print medical liability form',
+  consultation: 'Print consultation form',
+};
 const PrintButton = ({ record, kind, onDocument }) => {
-  const label = kind === 'certificate' ? 'Print medical certificate' : 'Print consultation form';
+  const label = PRINT_LABELS[kind];
   return (
     <button
       type="button"
@@ -265,6 +298,7 @@ const RecordDialog = ({ record, onClose, onDocument }) => {
             ? `Required${record.followUpDate ? ` — ${formatLongDate(record.followUpDate)}` : ''}`
             : 'Not required')}
           {record.medicalCertificate && field('Medical Certificate', record.medicalCertificateRef || 'Issued')}
+          {record.liabilityForm && field('Medical Liability Form', record.liabilityActivity || 'Issued')}
         </div>
 
         <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-4 dark:border-gray-700">
@@ -275,6 +309,15 @@ const RecordDialog = ({ record, onClose, onDocument }) => {
               className="inline-flex items-center gap-2 rounded-lg border border-maroon-800 px-4 py-2 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 dark:border-maroon-700 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
             >
               <Printer className="h-4 w-4" /> Print certificate
+            </button>
+          )}
+          {record.liabilityForm && (
+            <button
+              type="button"
+              onClick={() => onDocument('liability', record, 'print')}
+              className="inline-flex items-center gap-2 rounded-lg border border-maroon-800 px-4 py-2 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 dark:border-maroon-700 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
+            >
+              <Printer className="h-4 w-4" /> Print liability form
             </button>
           )}
           <button
@@ -348,12 +391,14 @@ const HealthRecords = () => {
   );
 
   const certificates = useMemo(() => records.filter((r) => r.medicalCertificate), [records]);
+  const liabilityForms = useMemo(() => records.filter((r) => r.liabilityForm), [records]);
+  const docTab = DOC_TABS[tab];
 
   const visibleRecords = useMemo(() => {
     const term = search.trim().toLowerCase();
-    const source = tab === 'certificates' ? certificates : records;
+    const source = tab === 'certificates' ? certificates : tab === 'liability' ? liabilityForms : records;
     const matches = source.filter((r) => {
-      const matchesSearch = !term || [r.title, r.complaint, r.diagnosis, r.notesValue, r.staff, r.medicalCertificateRef]
+      const matchesSearch = !term || [r.title, r.complaint, r.diagnosis, r.notesValue, r.staff, r.medicalCertificateRef, r.liabilityActivity]
         .some((value) => value.toLowerCase().includes(term));
       const matchesYear = filters.year === 'all' || clinicYear(r.date) === filters.year;
       const matchesType = filters.type === 'all' || r.recordType === filters.type;
@@ -369,7 +414,7 @@ const HealthRecords = () => {
       });
     }
     return matches.sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, [records, certificates, tab, search, filters, columnSort]);
+  }, [records, certificates, liabilityForms, tab, search, filters, columnSort]);
 
   /* A new tab, search, filter or sort starts again from the first page. */
   useEffect(() => setPage(1), [tab, search, filters, columnSort]);
@@ -491,7 +536,7 @@ const HealthRecords = () => {
             <SearchField
               value={search}
               onChange={setSearch}
-              placeholder={tab === 'certificates' ? 'Search certificates...' : 'Search consultations...'}
+              placeholder={docTab ? docTab.search : 'Search consultations...'}
               label="Search records"
               className="[&_input]:bg-[var(--sp-surface)]"
             />
@@ -537,7 +582,7 @@ const HealthRecords = () => {
           <div className="min-w-0">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">My Records</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Browse your past clinic visits and issued medical certificates, then view or print any record.
+              Browse your past clinic visits, medical certificates, and liability forms, then view or print any record.
             </p>
           </div>
         </div>
@@ -578,13 +623,13 @@ const HealthRecords = () => {
           <div className="rounded-xl border border-dashed border-gray-200 py-14 text-center dark:border-gray-700">
             <ClipboardList className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
             <h3 className="font-semibold text-gray-500 dark:text-gray-400">
-              {isFiltering ? 'No matching records' : tab === 'certificates' ? 'No medical certificates yet' : 'No health records yet'}
+              {isFiltering ? 'No matching records' : docTab ? docTab.emptyTitle : 'No health records yet'}
             </h3>
             <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">
               {isFiltering
                 ? 'Try adjusting your search or filters.'
-                : tab === 'certificates'
-                  ? 'Certificates issued by the clinic will appear here.'
+                : docTab
+                  ? docTab.emptyText
                   : 'Completed clinic encounters will appear here.'}
             </p>
           </div>
@@ -597,10 +642,10 @@ const HealthRecords = () => {
                 <thead className="whitespace-nowrap bg-gray-100 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">
                   <tr>
                     {[
-                      ['date', tab === 'certificates' ? 'Visit Date' : 'Date & Time'],
-                      ['complaint', tab === 'certificates' ? 'Reason for Visit' : 'Chief Complaint'],
-                      ['detail', tab === 'certificates' ? 'Reference' : 'Diagnosis / Findings'],
-                      ['staff', tab === 'certificates' ? 'Issued By' : 'Attending Staff'],
+                      ['date', docTab ? 'Visit Date' : 'Date & Time'],
+                      ['complaint', docTab ? 'Reason for Visit' : 'Chief Complaint'],
+                      ['detail', docTab ? docTab.detailLabel : 'Diagnosis / Findings'],
+                      ['staff', docTab ? 'Issued By' : 'Attending Staff'],
                       ['status', 'Status'],
                     ].map(([key, label], index) => {
                       const active = columnSort?.key === key ? columnSort.dir : null;
@@ -629,8 +674,8 @@ const HealthRecords = () => {
                         <TypeTag record={record} />
                       </td>
                       <td className="max-w-[16rem] px-4 py-3.5 text-gray-800 dark:text-gray-200">
-                        {tab === 'certificates'
-                          ? <span className="font-mono text-xs">{record.medicalCertificateRef || '—'}</span>
+                        {docTab
+                          ? <span className={docTab.mono ? 'font-mono text-xs' : 'line-clamp-2'}>{docTab.detail(record) || '—'}</span>
                           : <span className="line-clamp-2">{record.diagnosis || <span className="text-gray-400">Not recorded</span>}</span>}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3.5">
@@ -640,10 +685,10 @@ const HealthRecords = () => {
                       <td className="px-4 py-3.5"><StatusBadge status={record.status} /></td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2">
-                          {tab === 'certificates' ? (
+                          {docTab ? (
                             <button
                               type="button"
-                              onClick={() => handleDocument('certificate', record, 'preview')}
+                              onClick={() => handleDocument(docTab.kind, record, 'preview')}
                               className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-maroon-800 transition hover:bg-maroon-900 hover:text-white dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-maroon-900 dark:hover:text-white"
                             >
                               <Eye className="h-4 w-4" /> Preview
@@ -651,7 +696,7 @@ const HealthRecords = () => {
                           ) : (
                             <ViewButton onClick={() => setSelectedRecord(record)} />
                           )}
-                          <PrintButton record={record} kind={tab === 'certificates' ? 'certificate' : 'consultation'} onDocument={handleDocument} />
+                          <PrintButton record={record} kind={docTab ? docTab.kind : 'consultation'} onDocument={handleDocument} />
                         </div>
                       </td>
                     </tr>
@@ -677,15 +722,15 @@ const HealthRecords = () => {
                     <StatusBadge status={record.status} />
                   </div>
                   <p className="mt-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-300">
-                    {tab === 'certificates'
-                      ? `Ref ${record.medicalCertificateRef || '—'}`
+                    {docTab
+                      ? docTab.mobile(record)
                       : record.diagnosis || 'No findings recorded'}
                   </p>
                   <div className="mt-3 flex items-center justify-between gap-2">
                     <p className="truncate text-xs text-gray-500 dark:text-gray-400">{record.staff}</p>
                     <div className="flex items-center gap-1">
                       <ViewButton onClick={() => setSelectedRecord(record)} />
-                      <PrintButton record={record} kind={tab === 'certificates' ? 'certificate' : 'consultation'} onDocument={handleDocument} />
+                      <PrintButton record={record} kind={docTab ? docTab.kind : 'consultation'} onDocument={handleDocument} />
                     </div>
                   </div>
                 </div>

@@ -16,7 +16,7 @@ test('the dashboard header is the greeting, other pages keep their fixed title',
   assert.equal(nurseHeaderFor('/nurse/dashboard', { first_name: 'Jane' }, new Date(2026, 9, 28, 10)).title, 'Good Morning, Nurse Jane!');
   assert.equal(nurseHeaderFor('/nurse/dashboard', { first_name: 'Jane' }, new Date(2026, 9, 28, 19)).title, 'Good Evening, Nurse Jane!');
   assert.equal(nurseHeaderFor('/nurse/appointments', null).title, 'Appointments');
-  assert.equal(NURSE_PAGE_HEADERS['/nurse/records'].title, 'Records');
+  assert.equal(NURSE_PAGE_HEADERS['/nurse/records'].title, 'Patient History');
 });
 
 test('a page that is not listed has no header', () => {

@@ -16,12 +16,15 @@ class CheckinController extends Controller
     public function checkin(Request $request) { return response()->json(['message' => 'Use scheduled check-in with triage.'], 410); }
     public function todayCheckins()
     {
+        // Queue list → Options → Developer tools: put the demo patient back in line.
+        \App\Support\DemoQueue::ensure();
         // Today's finished visits leave the live queue, so the summary cards count them separately.
         $today = AppointmentCheckin::where('created_at', '>=', today())->where('created_at', '<', today()->addDay())->where('is_walk_in', false);
         return response()->json(['success' => true, 'data' => ClinicQueue::ordered()->get(), 'stats' => [
             'completed_today' => (clone $today)->where('status', 'completed')->count(),
             'no_show_today' => (clone $today)->where('status', 'no_show')->count(),
-        ], 'server_time' => now()->toIso8601String(), 'call_timeout_seconds' => \App\Support\ClinicSettings::callTimeoutSeconds()]);
+        ], 'server_time' => now()->toIso8601String(), 'call_timeout_seconds' => \App\Support\ClinicSettings::callTimeoutSeconds(),
+            'demo_user_ids' => \App\Support\DemoQueue::enabled() ? \App\Support\DemoQueue::userIds() : []]);
     }
     public function getAppointment($reference)
     {

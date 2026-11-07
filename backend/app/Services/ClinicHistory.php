@@ -16,6 +16,7 @@ class ClinicHistory
                     'status' => 'completed', 'chief_complaint' => $item->chief_complaint,
                     'vital_signs' => $item->vital_signs, 'general_remarks' => $item->general_remarks,
                     'medical_certificate' => $item->medical_certificate, 'medical_certificate_ref' => $item->medical_certificate_ref,
+                    'liability_form' => $item->liability_form, 'liability_activity' => $item->liability_activity,
                     'follow_up_required' => $item->follow_up_required, 'follow_up_date' => $item->follow_up_date,
                     'nurse' => $item->nurse ? $item->nurse->only(['first_name', 'last_name']) : null,
                     'appointment' => $item->appointment ? $item->appointment->only(['id', 'service', 'appointment_date', 'time_slot', 'status']) : null,

@@ -33,6 +33,7 @@ const NurseDashboard = lazy(() => import('./pages/Admin/Dashboard/NurseDashboard
 const NurseAppointments = lazy(() => import('./pages/Admin/Appointments/NurseAppointments'));
 const NurseStudents = lazy(() => import('./pages/Admin/Students/NurseStudents'));
 const NurseConsultation = lazy(() => import('./pages/Admin/Consultation/NurseConsultation'));
+const NurseQueue = lazy(() => import('./pages/Admin/Consultation/NurseQueue'));
 const NurseMedicine = lazy(() => import('./pages/Admin/Medicine/NurseMedicine'));
 const NurseFaculty = lazy(() => import('./pages/Admin/Faculty/NurseFaculty'));
 const NurseRecords = lazy(() => import('./pages/Admin/Records/NurseRecords'));
@@ -380,6 +381,11 @@ function App() {
             <Route
               path="academic"
               element={<CourseManagement />}
+            />
+
+            <Route
+              path="queue"
+              element={<NurseQueue />}
             />
 
             <Route

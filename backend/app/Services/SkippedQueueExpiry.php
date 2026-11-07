@@ -33,9 +33,9 @@ class SkippedQueueExpiry
 
     /*
      * A called student who has not been confirmed as arrived within the clinic's arrival time
-     * (Consultation → Queue list → Options; 1 minute by default) is
-     * skipped. The row stays in the queue as "skipped" until their appointment deadline, and the
-     * nurse can Recall them if they come back. Identity, queue number and priority are unchanged.
+     * (Consultation → Queue list → Options; 1 minute by default) did not arrive: the visit is
+     * closed as No Show right away (no Recall / On hold) and the student is told to book a new
+     * appointment. The nurse's popup shows the same notice.
      */
     public function skipOverdueCalls(): int
     {
@@ -53,8 +53,13 @@ class SkippedQueueExpiry
                             || $checkin->called_at->gt($cutoff) || $checkin->consultation()->exists()) {
                             return;
                         }
-                        $checkin->update(['status' => 'skipped', 'skipped_at' => now(), 'skipped_by' => null]);
+                        $checkin->update(['status' => 'no_show', 'no_show_at' => now(), 'no_show_by' => null]);
+                        Appointment::whereKey($checkin->appointment_id)->first()?->forceFill(['no_show' => true])->save();
                         DB::table('nurse_visit_claims')->where('checkin_id', $checkin->id)->delete();
+                        \App\Models\Notification::create([
+                            'user_id' => $checkin->user_id, 'type' => 'appointment_no_show', 'title' => 'Missed Clinic Call',
+                            'message' => 'You were called at the clinic but did not arrive in time. Please book a new appointment.',
+                        ]);
                         $count++;
                     }, 3);
                 }
