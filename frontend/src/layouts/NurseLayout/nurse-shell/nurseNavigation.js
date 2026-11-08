@@ -19,7 +19,7 @@ import {
  *
  * `group` sorts the sidebar into labelled sections (one-word labels).
  * Management holds the clinic visit flow in order: appointments, then the
- * QR check-in queue, then the consultation form, then Patient History (past visits).
+ * QR check-in queue, then the consultation form (its Individual Release tab also lists the past visits, Patient History).
  * Records holds the registers the clinic keeps: students, faculty, medicines and courses.
  * Dashboard has no group and sits on top.
  */
@@ -34,7 +34,6 @@ export const NURSE_NAV_ITEMS = [
   { path: '/nurse/appointments', icon: Calendar, label: 'Appointments', dock: true, group: 'management' },
   { path: '/nurse/queue', icon: QrCode, label: 'Queue', dock: true, group: 'management' },
   { path: '/nurse/consultation', icon: Stethoscope, label: 'Consultation', group: 'management' },
-  { path: '/nurse/records', icon: FileText, label: 'Patient History', group: 'management' },
   { path: '/nurse/students', icon: Users, label: 'Students', dock: true, group: 'records' },
   { path: '/nurse/faculty', icon: GraduationCap, label: 'Faculty', group: 'records' },
   { path: '/nurse/medicines', icon: Pill, label: 'Medicines', group: 'records' },

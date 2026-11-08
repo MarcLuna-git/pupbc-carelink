@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileText,
+  FileBadge,
   FileSignature,
   Stethoscope,
   ClipboardList,
@@ -42,6 +43,8 @@ const RECORDS_HERO = {
 const TABS = [
   { id: 'consultations', label: 'Consultation Records', icon: Stethoscope },
   { id: 'certificates', label: 'Medical Certificates', icon: FileText },
+  { id: 'sick', label: 'Medical Cert (Sick)', icon: FileBadge },
+  { id: 'ojt', label: 'Medical Cert (OJT)', icon: FileBadge },
   { id: 'liability', label: 'Medical Liability', icon: FileSignature },
 ];
 
@@ -56,6 +59,26 @@ const DOC_TABS = {
     search: 'Search certificates...',
     emptyTitle: 'No medical certificates yet',
     emptyText: 'Certificates issued by the clinic will appear here.',
+  },
+  sick: {
+    kind: 'sick',
+    detailLabel: 'Days of Attendance',
+    detail: (r) => (r.sickRestDays ? `${r.sickRestDays} day/s` : ''),
+    mono: false,
+    mobile: (r) => `Ref ${r.sickCertificateRef || '—'}${r.sickRestDays ? ` · ${r.sickRestDays} day/s` : ''}`,
+    search: 'Search sick certificates...',
+    emptyTitle: 'No sick medical certificates yet',
+    emptyText: 'Medical certificates for an illness that the clinic issues will appear here.',
+  },
+  ojt: {
+    kind: 'ojt',
+    detailLabel: 'OJT Company',
+    detail: (r) => r.ojtCompany,
+    mono: false,
+    mobile: (r) => `OJT at ${r.ojtCompany || '—'}`,
+    search: 'Search OJT certificates...',
+    emptyTitle: 'No OJT medical certificates yet',
+    emptyText: 'Medical certificates for On the Job Training that the clinic issues will appear here.',
   },
   liability: {
     kind: 'liability',
@@ -129,6 +152,12 @@ const toRecord = (c, index) => {
     appointment: c.appointment || null,
     medicalCertificate: Boolean(c.medical_certificate),
     medicalCertificateRef: c.medical_certificate_ref || '',
+    sickCertificate: Boolean(c.sick_certificate),
+    sickCertificateRef: c.sick_certificate_ref || '',
+    sickRestDays: c.sick_rest_days || '',
+    ojtCertificate: Boolean(c.ojt_certificate),
+    ojtCertificateRef: c.ojt_certificate_ref || '',
+    ojtCompany: c.ojt_company || '',
     liabilityForm: Boolean(c.liability_form),
     liabilityActivity: c.liability_activity || '',
     followUpRequired: Boolean(c.follow_up_required),
@@ -181,6 +210,8 @@ const TypeTag = ({ record }) =>
    Styled like View Details; the "Print" label shows only with the desktop table (lg+), icon only below. */
 const PRINT_LABELS = {
   certificate: 'Print medical certificate',
+  sick: 'Print medical certificate (sick)',
+  ojt: 'Print medical certificate (OJT)',
   liability: 'Print medical liability form',
   consultation: 'Print consultation form',
 };
@@ -298,6 +329,8 @@ const RecordDialog = ({ record, onClose, onDocument }) => {
             ? `Required${record.followUpDate ? ` — ${formatLongDate(record.followUpDate)}` : ''}`
             : 'Not required')}
           {record.medicalCertificate && field('Medical Certificate', record.medicalCertificateRef || 'Issued')}
+          {record.sickCertificate && field('Medical Certificate (Sick)', [record.sickCertificateRef, record.sickRestDays && `${record.sickRestDays} day/s`].filter(Boolean).join(' · ') || 'Issued')}
+          {record.ojtCertificate && field('Medical Certificate (OJT)', [record.ojtCertificateRef, record.ojtCompany].filter(Boolean).join(' · ') || 'Issued')}
           {record.liabilityForm && field('Medical Liability Form', record.liabilityActivity || 'Issued')}
         </div>
 
@@ -309,6 +342,24 @@ const RecordDialog = ({ record, onClose, onDocument }) => {
               className="inline-flex items-center gap-2 rounded-lg border border-maroon-800 px-4 py-2 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 dark:border-maroon-700 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
             >
               <Printer className="h-4 w-4" /> Print certificate
+            </button>
+          )}
+          {record.sickCertificate && (
+            <button
+              type="button"
+              onClick={() => onDocument('sick', record, 'print')}
+              className="inline-flex items-center gap-2 rounded-lg border border-maroon-800 px-4 py-2 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 dark:border-maroon-700 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
+            >
+              <Printer className="h-4 w-4" /> Print sick certificate
+            </button>
+          )}
+          {record.ojtCertificate && (
+            <button
+              type="button"
+              onClick={() => onDocument('ojt', record, 'print')}
+              className="inline-flex items-center gap-2 rounded-lg border border-maroon-800 px-4 py-2 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 dark:border-maroon-700 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
+            >
+              <Printer className="h-4 w-4" /> Print OJT certificate
             </button>
           )}
           {record.liabilityForm && (
@@ -391,14 +442,16 @@ const HealthRecords = () => {
   );
 
   const certificates = useMemo(() => records.filter((r) => r.medicalCertificate), [records]);
+  const sickCertificates = useMemo(() => records.filter((r) => r.sickCertificate), [records]);
+  const ojtCertificates = useMemo(() => records.filter((r) => r.ojtCertificate), [records]);
   const liabilityForms = useMemo(() => records.filter((r) => r.liabilityForm), [records]);
   const docTab = DOC_TABS[tab];
 
   const visibleRecords = useMemo(() => {
     const term = search.trim().toLowerCase();
-    const source = tab === 'certificates' ? certificates : tab === 'liability' ? liabilityForms : records;
+    const source = tab === 'certificates' ? certificates : tab === 'sick' ? sickCertificates : tab === 'ojt' ? ojtCertificates : tab === 'liability' ? liabilityForms : records;
     const matches = source.filter((r) => {
-      const matchesSearch = !term || [r.title, r.complaint, r.diagnosis, r.notesValue, r.staff, r.medicalCertificateRef, r.liabilityActivity]
+      const matchesSearch = !term || [r.title, r.complaint, r.diagnosis, r.notesValue, r.staff, r.medicalCertificateRef, r.ojtCompany, r.ojtCertificateRef, r.sickCertificateRef, r.liabilityActivity]
         .some((value) => value.toLowerCase().includes(term));
       const matchesYear = filters.year === 'all' || clinicYear(r.date) === filters.year;
       const matchesType = filters.type === 'all' || r.recordType === filters.type;
@@ -414,7 +467,7 @@ const HealthRecords = () => {
       });
     }
     return matches.sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, [records, certificates, liabilityForms, tab, search, filters, columnSort]);
+  }, [records, certificates, sickCertificates, ojtCertificates, liabilityForms, tab, search, filters, columnSort]);
 
   /* A new tab, search, filter or sort starts again from the first page. */
   useEffect(() => setPage(1), [tab, search, filters, columnSort]);
@@ -582,7 +635,7 @@ const HealthRecords = () => {
           <div className="min-w-0">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">My Records</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Browse your past clinic visits, medical certificates, and liability forms, then view or print any record.
+              Browse your past clinic visits, medical certificates (sick and OJT), and liability forms, then view or print any record.
             </p>
           </div>
         </div>

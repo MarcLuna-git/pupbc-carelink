@@ -1,0 +1,33 @@
+<!-- Medical Certificate (Sick). Printed inside layout.html. Placeholders are listed in README.md.
+     Follows the clinic's MEDCERT-SICK.xlsx: examined on a date, the impression, and the days of medical attendance
+     the illness needs. A field with no value keeps its blank line so it can be written by hand. -->
+<h1>Medical Certificate</h1>
+
+<div class="row">
+  <div class="field"><span class="label">Control No.:</span><span class="value">{{certificate_ref}}</span></div>
+  <div class="field short"><span class="label">Date:</span><span class="value">{{issued_date}}</span></div>
+</div>
+<div class="gap"></div>
+
+<div class="plain">
+  <div class="row">
+    <div class="field"><span class="label">This is to certify that</span><span class="value"><strong>{{student_name}}</strong></span></div>
+    <div class="field short"><span class="label">,</span><span class="value">{{student_age}}</span><span class="label">years old.</span></div>
+  </div>
+  <div class="field"><span class="label">Residing at</span><span class="value">{{student_address}}</span></div>
+  <div class="field"><span class="label">was examined in this Health Clinic on</span><span class="value">{{visit_date}}</span></div>
+  <div class="block"><span class="label">With the following impression:</span><div class="value">{{findings}}</div></div>
+  <p class="statement">
+    The above illness would require medical attendance for the duration of
+    <span class="fill days">{{rest_days}}</span> day/s if without complications.
+  </p>
+  <div class="block"><span class="label">Other remarks:</span><div class="value">{{recommendation}}</div></div>
+  <div class="gap"></div>
+  <p class="statement">This is issued upon request for whatever purposes it may serve.</p>
+</div>
+
+<div class="sign right"><div class="signed"><img class="esign" src="{{template_dir}}signature-prieto.jpeg" alt="" /><strong>Angelo Tristan Prieto, M.D.</strong><small>Lic. No. 0124173</small></div></div>
+<p class="note">
+  System-generated copy of a certificate issued by the {{clinic_name}} on {{visit_date}}.
+  Verify the control number with the clinic.
+</p>

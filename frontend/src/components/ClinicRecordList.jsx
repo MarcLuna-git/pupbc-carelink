@@ -68,6 +68,8 @@ export function ClinicRecordSheet({ record }) {
     <Row label="Treatment / plan">{text(record.treatment_plan)}</Row>
     <Row label="General remarks">{text(record.general_remarks)}</Row>
     <Row label="Medical certificate">{record.medical_certificate ? `Issued${has(record.medical_certificate_ref) ? ` · ${record.medical_certificate_ref}` : ''}` : null}</Row>
+    <Row label="Medical certificate (sick)">{record.sick_certificate ? `Issued${has(record.sick_certificate_ref) ? ` · ${record.sick_certificate_ref}` : ''}${record.sick_rest_days ? ` · ${record.sick_rest_days} day/s` : ''}` : null}</Row>
+    <Row label="Medical certificate (OJT)">{record.ojt_certificate ? `Issued${has(record.ojt_certificate_ref) ? ` · ${record.ojt_certificate_ref}` : ''}${has(record.ojt_company) ? ` · ${record.ojt_company}` : ''}` : null}</Row>
     <Row label="Medical liability form">{record.liability_form ? `Issued${has(record.liability_activity) ? ` · ${record.liability_activity}` : ''}` : null}</Row>
     <Row label="Follow-up">{record.follow_up_required ? `Needed${record.follow_up_date ? ` on ${day(record.follow_up_date)}` : ''}` : null}</Row>
     <Row label="Appointment">{appointment ? [appointment.service, day(appointment.appointment_date), appointment.time_slot].filter(Boolean).join(' · ') : null}</Row>

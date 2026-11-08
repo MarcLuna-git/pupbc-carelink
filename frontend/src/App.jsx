@@ -36,7 +36,6 @@ const NurseConsultation = lazy(() => import('./pages/Admin/Consultation/NurseCon
 const NurseQueue = lazy(() => import('./pages/Admin/Consultation/NurseQueue'));
 const NurseMedicine = lazy(() => import('./pages/Admin/Medicine/NurseMedicine'));
 const NurseFaculty = lazy(() => import('./pages/Admin/Faculty/NurseFaculty'));
-const NurseRecords = lazy(() => import('./pages/Admin/Records/NurseRecords'));
 const NurseAnnouncements = lazy(() => import('./pages/Admin/Announcements/NurseAnnouncements'));
 const NurseSettings = lazy(() => import('./pages/Admin/Settings/NurseSettings'));
 const CourseManagement = lazy(() => import('./pages/Admin/Academic/CourseManagement'));
@@ -405,7 +404,7 @@ function App() {
 
             <Route
               path="records"
-              element={<NurseRecords />}
+              element={<Navigate to="/nurse/consultation" replace />}
             />
 
             {/* Notifications moved to the header bell's drop-down; old links land on the dashboard. */}

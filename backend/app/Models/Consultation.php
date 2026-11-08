@@ -30,6 +30,8 @@ class Consultation extends Model
         'chief_complaint', 'vital_signs', 'general_remarks',
         'history_present_illness', 'nursing_assessment', 'nursing_interventions', 'treatment_plan',
         'medical_certificate', 'medical_certificate_ref', 'liability_form', 'liability_activity',
+        'ojt_certificate', 'ojt_certificate_ref', 'ojt_company',
+        'sick_certificate', 'sick_certificate_ref', 'sick_rest_days',
         'follow_up_required', 'follow_up_date', 'status',
     ];
 
@@ -37,6 +39,8 @@ class Consultation extends Model
         'vital_signs' => \App\Casts\NormalizedArray::class,
         'medical_certificate' => 'boolean',
         'liability_form' => 'boolean',
+        'ojt_certificate' => 'boolean',
+        'sick_certificate' => 'boolean',
         'follow_up_required' => 'boolean',
         'follow_up_date' => 'date:Y-m-d',
     ];

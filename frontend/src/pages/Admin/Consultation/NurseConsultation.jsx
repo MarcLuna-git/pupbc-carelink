@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { ClipboardList, ListOrdered, Stethoscope } from 'lucide-react';
+import { ClipboardList, ListOrdered, Stethoscope, Users } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import NursePageTitle from '../../../components/NursePageTitle';
@@ -8,6 +8,8 @@ import NurseListCard, { CountChip } from '../../../components/NurseListCard';
 import useNurseSync from '../../../hooks/useNurseSync';
 import { NurseNoticeModal, NurseToast } from '../../../components/NurseFeedback';
 import ConsultationVisit from './ConsultationVisit';
+import BatchRelease from './BatchRelease';
+import NurseRecords from '../Records/NurseRecords';
 import { PRIORITY } from './QueuePatientModal';
 import { queueRowsFrom, consultationPath } from './queueRows';
 
@@ -19,8 +21,11 @@ import { queueRowsFrom, consultationPath } from './queueRows';
 const NurseConsultation = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const visitId = params.get('visit');
+  // Inner tabs of the consultation page: Individual Release (the patients being seen) and Batch Release (a Medical Clearance for a group).
+  const tab = params.get('tab') === 'batch' ? 'batch' : 'individual';
+  const chooseTab = id => setParams(id === 'batch' ? { tab: 'batch' } : {}, { replace: true });
 
   const [rows, setRows] = useState([]);
   const [pageLoading, setPageLoading] = useState(true);
@@ -121,7 +126,7 @@ const NurseConsultation = () => {
           visit={visit}
           onBack={() => navigate('/nurse/consultation')}
           // Saved: the record now lives in Patient History (every completed consultation).
-          onDone={() => navigate('/nurse/records')}
+          onDone={() => navigate('/nurse/consultation')}
           doneLabel="View in Patient History"
           onSaved={() => { savedRef.current = true; setSaved(true); }}
           onConflict={setConflict}
@@ -160,6 +165,35 @@ const NurseConsultation = () => {
         </Link>
       </section>
 
+
+      {/* Inner tabs: Individual Release is the consultation of a patient being seen; Batch Release is a Medical Clearance for a group. */}
+      <section aria-label="Release type" className="rounded-lg border border-gray-100 bg-white p-3 dark:border-gray-700 dark:bg-gray-800 lg:px-4">
+      <div role="tablist" aria-label="Release type" className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        {[['individual', 'Individual Release', Stethoscope], ['batch', 'Batch Release', Users]].map(([id, title, Icon]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            id={`consultation-tab-${id}`}
+            aria-selected={tab === id}
+            aria-controls={`consultation-panel-${id}`}
+            onClick={() => chooseTab(id)}
+            className={`flex w-full items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition sm:inline-flex sm:w-auto ${
+              tab === id
+                ? 'border-maroon-800 bg-maroon-800 text-white'
+                : 'border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-900/30'}`}
+          >
+            <Icon className="h-4 w-4" aria-hidden="true" />
+            {title}
+          </button>
+        ))}
+      </div>
+      </section>
+
+      {tab === 'batch' ? (
+        <div role="tabpanel" id="consultation-panel-batch" aria-labelledby="consultation-tab-batch"><BatchRelease /></div>
+      ) : (
+      <div role="tabpanel" id="consultation-panel-individual" aria-labelledby="consultation-tab-individual" className="space-y-5">
       <NurseListCard
         aria-label="Patients in consultation"
         icon={Stethoscope}
@@ -213,6 +247,11 @@ const NurseConsultation = () => {
           </div>
         )}
       </NurseListCard>
+
+      {/* Patient History: the completed consultations and emergency encounters, at the bottom of Individual Release. */}
+      <NurseRecords embedded />
+      </div>
+      )}
     </div>
   );
 };

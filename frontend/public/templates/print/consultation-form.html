@@ -1,12 +1,9 @@
 <!-- Consultation Form (also used for emergency encounters). Printed inside layout.html. Placeholders are listed in README.md.
-     Laid out like the clinic's paper Consultation Form: labels with the answer on a line. Every field is always
-     printed; a field with no value keeps its blank line so it can be filled in by hand. -->
+     Follows the clinic's CONSULTATION-FORM.docx: labels with the answer on a line. Every field is always printed;
+     a field with no value keeps its blank line so it can be filled in by hand. -->
 <h1>{{document_title}}</h1>
 
-<div class="row">
-  <div class="field"><span class="label">Date:</span><span class="value">{{visit_datetime}}</span></div>
-  <div class="field short"><span class="label">Student ID:</span><span class="value">{{student_id}}</span></div>
-</div>
+<div class="field"><span class="label">Date:</span><span class="value">{{visit_datetime}}</span></div>
 <div class="row">
   <div class="field"><span class="label">Name:</span><span class="value">{{student_name}}</span></div>
   <div class="field short"><span class="label">Age:</span><span class="value">{{student_age}}</span></div>
@@ -17,18 +14,14 @@
   <div class="field short"><span class="label">Contact #:</span><span class="value">{{student_contact}}</span></div>
 </div>
 <div class="row">
-  <div class="field"><span class="label">Contact person in case of emergency:</span><span class="value">{{emergency_name}}</span></div>
-  <div class="field short"><span class="label">Contact #:</span><span class="value">{{emergency_contact}}</span></div>
+  <div class="field"><span class="label">Contact person in case of emergency:</span><span class="value">{{emergency_person}}</span></div>
+  <div class="field short"><span class="label">Relationship:</span><span class="value">{{emergency_relationship}}</span></div>
 </div>
+<div class="field"><span class="label">Emergency Contact #:</span><span class="value">{{emergency_contact}}</span></div>
 
 <div class="gap"></div>
-<div class="row">
-  <div class="field"><span class="label">{{^is_emergency}}Chief Complaint:{{/is_emergency}}{{#is_emergency}}Reason:{{/is_emergency}}</span><span class="value">{{complaint}}</span></div>
-  <div class="field short"><span class="label">Service:</span><span class="value">{{service}}</span></div>
-</div>
-<div class="field"><span class="label">{{^is_emergency}}History / Present Illness:{{/is_emergency}}{{#is_emergency}}Present Illness:{{/is_emergency}}</span><span class="value">{{history}}</span></div>
-{{#is_emergency}}<div class="field"><span class="label">Symptoms:</span><span class="value">{{symptoms}}</span></div>{{/is_emergency}}
-<div class="field"><span class="label">{{^is_emergency}}Diagnosis:{{/is_emergency}}{{#is_emergency}}Assessment:{{/is_emergency}}</span><span class="value">{{diagnosis}}</span></div>
+<div class="field"><span class="label">{{^is_emergency}}CHIEF COMPLAINT:{{/is_emergency}}{{#is_emergency}}REASON:{{/is_emergency}}</span><span class="value">{{complaint}}</span></div>
+<div class="field"><span class="label">{{^is_emergency}}DIAGNOSIS:{{/is_emergency}}{{#is_emergency}}ASSESSMENT:{{/is_emergency}}</span><span class="value">{{diagnosis}}</span></div>
 
 <h2>Vital Signs:</h2>
 <div class="row">
@@ -44,24 +37,8 @@
   <div class="field"></div>
 </div>
 
-<div class="block"><span class="label">Nursing Assessment:</span><div class="value">{{assessment}}</div></div>
-<div class="block"><span class="label">Nursing Interventions:</span><div class="value">{{interventions}}</div></div>
-<div class="field"><span class="label">Treatment / Plan:</span><span class="value">{{treatment}}</span></div>
-<div class="field"><span class="label">Medicines:</span><span class="value">{{medicines}}</span></div>
-{{#is_emergency}}<div class="field"><span class="label">Intervention:</span><span class="value">{{intervention}}</span></div>
-<div class="field"><span class="label">Disposition:</span><span class="value">{{disposition}}</span></div>{{/is_emergency}}
-<div class="row">
-  <div class="field"><span class="label">Follow-up:</span><span class="value">{{follow_up}}</span></div>
-  <div class="field"><span class="label">Medical Certificate:</span><span class="value">{{medical_certificate}}</span></div>
-</div>
+<div class="gap"></div>
+<div class="block"><span class="label">ASSESSMENT:</span><div class="value">{{assessment}}</div></div>
+<div class="block"><span class="label">NURSING INTERVENTIONS:</span><div class="value">{{interventions}}</div></div>
 
-<div class="sign"><div><strong>{{staff_name}}</strong><small>{{staff_role}}</small><small class="lic">Lic. No. <span class="fill"></span></small></div></div>
-
-<div class="privacy">
-  <strong>Data Privacy Notice</strong>
-  We respect and value your rights as a data subject under the Data Privacy Act (DPA). PUP Biñan Campus is committed to
-  protecting the personal data you provide in accordance with the requirements of the DPA and its IRR. In this regard,
-  PUP implements reasonable and appropriate security measures to maintain the confidentiality, integrity and
-  availability of your personal data.
-</div>
-<p class="note">System-generated copy from the {{clinic_name}} records.</p>
+<div class="sign right"><div class="signed"><img class="esign" src="{{template_dir}}signature-prieto.jpeg" alt="" /><strong>Angelo Tristan B. Prieto, M.D.</strong><small>Lic. No. 0124173</small></div></div>

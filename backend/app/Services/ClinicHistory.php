@@ -17,6 +17,8 @@ class ClinicHistory
                     'vital_signs' => $item->vital_signs, 'general_remarks' => $item->general_remarks,
                     'medical_certificate' => $item->medical_certificate, 'medical_certificate_ref' => $item->medical_certificate_ref,
                     'liability_form' => $item->liability_form, 'liability_activity' => $item->liability_activity,
+                    'ojt_certificate' => $item->ojt_certificate, 'ojt_certificate_ref' => $item->ojt_certificate_ref, 'ojt_company' => $item->ojt_company,
+                    'sick_certificate' => $item->sick_certificate, 'sick_certificate_ref' => $item->sick_certificate_ref, 'sick_rest_days' => $item->sick_rest_days,
                     'follow_up_required' => $item->follow_up_required, 'follow_up_date' => $item->follow_up_date,
                     'nurse' => $item->nurse ? $item->nurse->only(['first_name', 'last_name']) : null,
                     'appointment' => $item->appointment ? $item->appointment->only(['id', 'service', 'appointment_date', 'time_slot', 'status']) : null,

@@ -29,12 +29,14 @@ class DemoQueue
     public const PATIENTS = [
         [
             'email' => 'demo.patient@carelink.dev', 'student_id' => '2025-09003-BN-0',
+            'profile' => ['birthday' => '2006-03-14', 'address' => 'Blk 5 Lot 12, Sampaguita St., Brgy. Zapote, Biñan City, Laguna', 'mobile_number' => '09171230003', 'guardian_name' => 'Maria Patient', 'guardian_relationship' => 'Mother', 'guardian_contact' => '09181230003'],
             'first_name' => 'Demo', 'last_name' => 'Patient',
             'queue_type' => 'regular', 'priority' => 'LOW',
             'complaint' => 'Headache (demo)', 'severity' => 'mild', 'pain_level' => 3, 'red_flags' => ['none'],
         ],
         [
             'email' => 'demo.priority@carelink.dev', 'student_id' => '2025-09001-BN-0',
+            'profile' => ['birthday' => '2005-09-21', 'address' => 'Blk 2 Lot 8, Rosal St., Brgy. Canlalay, Biñan City, Laguna', 'mobile_number' => '09171230001', 'guardian_name' => 'Rosa Priority', 'guardian_relationship' => 'Mother', 'guardian_contact' => '09181230001'],
             'first_name' => 'Demo', 'last_name' => 'Priority',
             'queue_type' => 'priority', 'priority' => 'HIGH',
             'complaint' => 'Chest pain and difficulty breathing (demo)', 'severity' => 'severe', 'pain_level' => 8,
@@ -42,6 +44,7 @@ class DemoQueue
         ],
         [
             'email' => 'demo.medium@carelink.dev', 'student_id' => '2025-09002-BN-0',
+            'profile' => ['birthday' => '2006-01-30', 'address' => 'Blk 9 Lot 3, Orchid St., Brgy. San Antonio, Biñan City, Laguna', 'mobile_number' => '09171230002', 'guardian_name' => 'Jose Medium', 'guardian_relationship' => 'Father', 'guardian_contact' => '09181230002'],
             'first_name' => 'Demo', 'last_name' => 'Medium',
             'queue_type' => 'regular', 'priority' => 'MEDIUM',
             'complaint' => 'Fever and body pain (demo)', 'severity' => 'moderate', 'pain_level' => 5,
@@ -142,6 +145,7 @@ class DemoQueue
         $user = User::withTrashed()->where('email', $patient['email'])->first();
         if ($user) {
             if ($user->trashed()) $user->restore();
+            self::fillProfile($user, $patient);
             // Demo students made before the IDs changed get the current one.
             if ($user->student_id !== $patient['student_id']) $user->forceFill(['student_id' => $patient['student_id']])->save();
             return $user;
@@ -160,8 +164,14 @@ class DemoQueue
             'section' => '1',
             'email_verified_at' => now(),
         ]);
-        $user->studentProfile()->firstOrCreate([], ['course' => 'BSIT', 'year' => '1st Year', 'section' => '1', 'gender' => 'other']);
+        self::fillProfile($user, $patient);
         return $user;
+    }
+
+    /* Details a real student gives when registering (birthday, address, contacts), so the consultation form prefills. */
+    private static function fillProfile(User $user, array $patient): void
+    {
+        $user->studentProfile()->updateOrCreate([], ['course' => 'BSIT', 'year' => '1st Year', 'section' => '1', 'gender' => 'other'] + $patient['profile']);
     }
 
     private static function purge(string $userId): void

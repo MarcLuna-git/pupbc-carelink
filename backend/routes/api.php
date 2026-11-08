@@ -1161,6 +1161,15 @@ Route::middleware([
                 | Faculty: directory and the medicines dispensed to faculty
                 |--------------------------------------------------------------------------
                 */
+                /*
+                |--------------------------------------------------------------------------
+                | Documents: batch Medical Clearance certifications
+                |--------------------------------------------------------------------------
+                */
+                Route::get('/medical-clearances', [\App\Http\Controllers\Api\Nurse\MedicalClearanceController::class, 'index']);
+                Route::post('/medical-clearances', [\App\Http\Controllers\Api\Nurse\MedicalClearanceController::class, 'store']);
+                Route::delete('/medical-clearances/{id}', [\App\Http\Controllers\Api\Nurse\MedicalClearanceController::class, 'destroy']);
+
                 Route::get('/faculty', [\App\Http\Controllers\Api\Nurse\FacultyController::class, 'index']);
                 Route::post('/faculty', [\App\Http\Controllers\Api\Nurse\FacultyController::class, 'store']);
                 Route::get('/faculty/{id}', [\App\Http\Controllers\Api\Nurse\FacultyController::class, 'show']);

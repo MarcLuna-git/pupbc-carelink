@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { getToken } from '../../../services/session';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ClipboardList, CheckCircle, Stethoscope, ListOrdered, Users, UserX, Star, SlidersHorizontal, Square } from 'lucide-react';
@@ -56,6 +57,7 @@ const readAuto = () => { try { return sessionStorage.getItem(AUTO_KEY) === '1'; 
  * arrived (validated here, no redirect) their form waits on the Consultation page.
  */
 const NurseQueue = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [message, setMessage] = useState('');
@@ -404,6 +406,7 @@ const NurseQueue = () => {
         onArrived={() => handleArrived(viewed)}
         onServe={() => queueAction(viewed, 'serve')}
         onNoShow={() => queueAction(viewed, 'no-show')}
+        onGoToConsultation={() => { closeView(); navigate('/nurse/consultation'); }}
       />
     </div>
   );

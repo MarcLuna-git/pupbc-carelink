@@ -6,7 +6,7 @@ import { useNurseTimeGuardBypass } from '../../../services/devTools';
 
 /*
  * Queue: the patient popup. Call next on the row calls the student and opens this popup on the
- * arrival timer; "Patient arrived" confirms them (no redirect): the form is on the Consultation page.
+ * arrival timer; "Patient arrived" confirms them (no redirect): the form is on the Consultation page, and "Go to Consultation" opens it.
  * When the timer runs out the visit is closed as No Show and the popup tells the nurse to have
  * the student book a new appointment (no Recall / On hold).
  */
@@ -27,7 +27,7 @@ const TITLE = {
 
 const QueuePatientModal = ({
   student, isNext, deskBusy, nextName, loading, timeLeft,
-  onClose, onCall, onArrived, onServe, onNoShow,
+  onClose, onCall, onArrived, onServe, onNoShow, onGoToConsultation,
 }) => {
   // With Remove time Guard on, the server does not skip called patients who run out of time.
   const timeGuardOff = useNurseTimeGuardBypass();
@@ -66,7 +66,7 @@ const QueuePatientModal = ({
             initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
-            className="relative flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-gray-800"
+            className="relative flex max-h-[90vh] w-full max-w-sm flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-gray-800"
           >
             <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 z-10 rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700">
               <X className="h-5 w-5" />
@@ -150,9 +150,9 @@ const QueuePatientModal = ({
               {student.status === 'serving' && (
                 <>
                   <p className="pb-2 text-center text-sm text-gray-600 dark:text-gray-300">
-                    {student.name.trim() || 'The student'} arrived and is in consultation. Their form is on the <span className="font-semibold">Consultation</span> page.
+                    {student.name.trim() || 'The student'} arrived and is in consultation. Their form is on the <span className="font-semibold">Consultation</span> page, so go there to fill it in.
                   </p>
-                  <button type="button" onClick={onClose} className={`${primary} bg-maroon-800 hover:bg-maroon-900`}>OK</button>
+                  <button type="button" onClick={onGoToConsultation} className={`${primary} bg-maroon-800 hover:bg-maroon-900`}>Go to Consultation</button>
                 </>
               )}
 

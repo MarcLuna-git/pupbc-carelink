@@ -74,6 +74,14 @@ class ConsultationController extends Controller
             // Optional Medical Liability Form: the activity the student declares they are fit to join.
             'liability_form' => 'sometimes|boolean',
             'liability_activity' => 'nullable|required_if:liability_form,true|string|max:191',
+            // Optional Medical Certificate (OJT): the company where the student will do On the Job Training.
+            'ojt_certificate' => 'sometimes|boolean',
+            'ojt_certificate_ref' => 'nullable|string|max:191',
+            'ojt_company' => 'nullable|required_if:ojt_certificate,true|string|max:191',
+            // Optional Medical Certificate (Sick): days of medical attendance the illness needs.
+            'sick_certificate' => 'sometimes|boolean',
+            'sick_certificate_ref' => 'nullable|string|max:191',
+            'sick_rest_days' => 'nullable|integer|min:1|max:365',
             'follow_up_required' => 'sometimes|boolean',
             'follow_up_date' => 'nullable|required_if:follow_up_required,true|date' . (TimeGuard::nursePortalBypassed() ? '' : '|after_or_equal:today'),
         ], [
@@ -82,6 +90,7 @@ class ConsultationController extends Controller
             'nursing_assessment.required' => 'Enter the nursing assessment.',
             'nursing_interventions.required' => 'Enter the nursing interventions.',
             'liability_activity.required_if' => 'Enter the activity for the medical liability form.',
+            'ojt_company.required_if' => 'Enter the company for the OJT medical certificate.',
         ], self::VITAL_MESSAGES);
         $attendingNurseId = $data['attending_nurse_id'] ?? null;
         unset($data['attending_nurse_id']);
@@ -135,6 +144,8 @@ class ConsultationController extends Controller
             'chief_complaint' => 'sometimes|required|string|max:2000', 'vital_signs' => 'nullable|array:bp,hr,rr,temp,o2_sat', 'vital_signs.bp' => ['nullable', 'regex:/^\d{2,3}\/\d{2,3}$/'], 'vital_signs.hr' => 'nullable|digits_between:1,3', 'vital_signs.rr' => 'nullable|digits_between:1,3', 'vital_signs.o2_sat' => 'nullable|digits_between:1,3', 'vital_signs.temp' => ['nullable', 'regex:/^\d{2}(\.\d)?$/'],
             'general_remarks' => 'nullable|string|max:5000', 'medical_certificate' => 'sometimes|boolean', 'medical_certificate_ref' => 'nullable|string|max:191',
             'liability_form' => 'sometimes|boolean', 'liability_activity' => 'nullable|string|max:191',
+            'ojt_certificate' => 'sometimes|boolean', 'ojt_certificate_ref' => 'nullable|string|max:191', 'ojt_company' => 'nullable|string|max:191',
+            'sick_certificate' => 'sometimes|boolean', 'sick_certificate_ref' => 'nullable|string|max:191', 'sick_rest_days' => 'nullable|integer|min:1|max:365',
             'history_present_illness' => 'sometimes|required|string|max:2000', 'nursing_assessment' => 'sometimes|required|string|max:2000',
             'nursing_interventions' => 'sometimes|required|string|max:2000', 'treatment_plan' => 'nullable|string|max:2000',
             'follow_up_required' => 'sometimes|boolean', 'follow_up_date' => 'nullable|date',

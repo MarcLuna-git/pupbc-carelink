@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ArrowLeft, Stethoscope, ClipboardPenLine, CalendarClock, MessageSquareText, ClipboardList, UserRound, Phone, Mail, GraduationCap, CalendarRange, Users, CircleUserRound, IdCard,
-  Heart, FileBadge, FileSignature, FileText, Pill, Search, Save, Loader2, CheckCircle, ArrowRight, Printer, Eye, Activity, Plus, Trash2, XCircle, AlertTriangle, Check, ChevronLeft, ChevronRight,
+  ArrowLeft, Stethoscope, ClipboardPenLine, CalendarClock, MessageSquareText, ClipboardList, UserRound, Phone, Mail, GraduationCap, CalendarRange, Users, CircleUserRound, IdCard, MapPin,
+  Heart, FileBadge, FileSignature, FileText, Pill, Search, Save, Loader2, CheckCircle, ArrowRight, Printer, Eye, Activity, Plus, Trash2, XCircle, AlertTriangle, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import api from '../../../services/api';
 import { getUser } from '../../../services/session';
@@ -16,6 +16,8 @@ import { buildRecordDocument, openRecordDocument, studentDetails } from '../../S
  * and the printable records once it is saved.
  */
 
+// Certificate reference: MED + this year + today's month and day, e.g. MED-2026-1108 on November 8, 2026.
+const certificateRef = (date = new Date()) => `MED-${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
 const EMPTY_FORM = {
   chief_complaint: '', history_present_illness: '',
   bp: '', hr: '', rr: '', temp: '', o2_sat: '',
@@ -23,6 +25,10 @@ const EMPTY_FORM = {
   follow_up: false, follow_up_date: '', general_remarks: '',
   medical_certificate: false, medical_certificate_ref: '',
   liability_form: false, liability_activity: '',
+  ojt_certificate: false, ojt_certificate_ref: '', ojt_company: '',
+  sick_certificate: false, sick_certificate_ref: '', sick_rest_days: '',
+  // Patient information on the printed form. null = not edited, so the student's profile value is shown.
+  patient_age: null, patient_address: null, patient_contact: null, patient_emergency_name: null, patient_emergency_relationship: null, patient_emergency_contact: null,
 };
 // These parts of the clinic's consultation form cannot be left blank; everything else is optional.
 const REQUIRED_FIELDS = {
@@ -201,7 +207,14 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
     const filter = VITALS.find(v => v.name === name)?.filter;
     const value = filter ? filter(e.target.value) : e.target.value;
     edited.current = true;
-    setForm(current => ({ ...current, [name]: type === 'checkbox' ? checked : value }));
+    setForm(current => ({
+      ...current,
+      [name]: type === 'checkbox' ? checked : value,
+      // Ticking Medical Certificate fills in the reference; the nurse can still change it.
+      ...(name === 'medical_certificate' && checked && !current.medical_certificate_ref ? { medical_certificate_ref: certificateRef() } : {}),
+      ...(name === 'ojt_certificate' && checked && !current.ojt_certificate_ref ? { ojt_certificate_ref: certificateRef() } : {}),
+      ...(name === 'sick_certificate' && checked && !current.sick_certificate_ref ? { sick_certificate_ref: certificateRef() } : {}),
+    }));
     if (serverErrors[name]) setServerErrors(current => ({ ...current, [name]: undefined }));
   };
 
@@ -318,6 +331,12 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
       focusSoon('liability_activity');
       return;
     }
+    if (form.ojt_certificate && !form.ojt_company.trim()) {
+      setTab('certificate'); setShowErrors(true);
+      notify('Enter the company for the OJT medical certificate, or untick it.', 'error');
+      focusSoon('ojt_company');
+      return;
+    }
     if (mode === 'dispense' && !prescribed.length) { setTab('dispensing'); notify('Add the medicine to dispense, or choose "No medicine".', 'error'); return; }
     if (mode === 'prescription' && !rx.length) { setTab('dispensing'); notify('Add the prescription, or choose "No medicine".', 'error'); return; }
     if (mode === 'dispense' && !allInStock) { setTab('dispensing'); notify('Some medicines are low on stock. Adjust the quantities first.', 'error'); return; }
@@ -344,6 +363,12 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
         medical_certificate_ref: form.medical_certificate ? form.medical_certificate_ref || null : null,
         liability_form: form.liability_form,
         liability_activity: form.liability_form ? form.liability_activity.trim() : null,
+        ojt_certificate: form.ojt_certificate,
+        ojt_certificate_ref: form.ojt_certificate ? form.ojt_certificate_ref || null : null,
+        ojt_company: form.ojt_certificate ? form.ojt_company.trim() : null,
+        sick_certificate: form.sick_certificate,
+        sick_certificate_ref: form.sick_certificate ? form.sick_certificate_ref || null : null,
+        sick_rest_days: form.sick_certificate && form.sick_rest_days ? Number(form.sick_rest_days) : null,
         follow_up_required: form.follow_up,
         follow_up_date: form.follow_up ? form.follow_up_date || null : null,
       });
@@ -374,6 +399,33 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
   // One line for the printed consultation form and certificate.
   const program = [profile.course, yearLevel, profile.section && `Section ${profile.section}`].filter(Boolean).join(' · ');
 
+  // Patient details for the printed form: the student's profile, unless the nurse typed something else in Step 1.
+  const health = student?.health_profile;
+  const profileInfo = studentDetails(student, profile, health && { name: health.emergency_name, relationship: health.emergency_relationship, phone: health.emergency_phone });
+  // The emergency contact is typed as two fields (name, relationship) and printed as "Name — Relationship".
+  const emergencyName = form.patient_emergency_name ?? (health?.emergency_name || profile.guardian_name || '');
+  const emergencyRelationship = form.patient_emergency_relationship ?? (health?.emergency_relationship || profile.guardian_relationship || '');
+  const patientInfo = {
+    ...profileInfo,
+    age: form.patient_age ?? profileInfo.age,
+    address: form.patient_address ?? profileInfo.address,
+    contact: form.patient_contact ?? profileInfo.contact,
+    emergencyName,
+    emergencyRelationship,
+    emergencyContact: form.patient_emergency_contact ?? profileInfo.emergencyContact,
+  };
+
+  // An editable Patient Details field: starts from the student's profile; whatever the nurse types is what prints on the form.
+  const patientField = (name, title, { span = '', ...props }) => {
+    const key = { patient_age: 'age', patient_contact: 'contact', patient_address: 'address', patient_emergency_name: 'emergencyName', patient_emergency_relationship: 'emergencyRelationship', patient_emergency_contact: 'emergencyContact' }[name];
+    return (
+      <div className={`min-w-0 ${span}`}>
+        <label htmlFor={`visit-${name}`} className="mb-1 block text-xs text-gray-500 dark:text-gray-400">{title}</label>
+        <input id={`visit-${name}`} name={name} value={patientInfo[key]} onChange={change} disabled={!!saved} className={`${input} disabled:opacity-70`} {...props} />
+      </div>
+    );
+  };
+
   const attendingNurse = nurses.find(n => n.id === attendingId);
   const nurseName = n => `Nurse ${[n?.first_name, n?.last_name].filter(Boolean).join(' ')}`.trim();
 
@@ -402,13 +454,17 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
       medicalCertificateRef: form.medical_certificate_ref,
       liabilityForm: form.liability_form,
       liabilityActivity: form.liability_activity,
+      ojtCertificate: form.ojt_certificate,
+      ojtCertificateRef: form.ojt_certificate_ref,
+      ojtCompany: form.ojt_company,
+      sickCertificate: form.sick_certificate,
+      sickCertificateRef: form.sick_certificate_ref,
+      sickRestDays: form.sick_rest_days,
       appointment: { service: visit.appointment },
       staff: nurseName(nurse),
       staffRole: 'Clinic Nurse',
     };
-    const health = student?.health_profile;
-    const details = studentDetails(student, profile, health && { name: health.emergency_name, relationship: health.emergency_relationship, phone: health.emergency_phone });
-    return { record, details: { ...details, name: visit.name.trim(), studentId: visit.id, program } };
+    return { record, details: { ...patientInfo, emergencyName: [emergencyName, emergencyRelationship].filter(Boolean).join(' — '), emergencyPerson: emergencyName, name: visit.name.trim(), studentId: visit.id, program } };
   };
 
   const printRecord = kind => {
@@ -422,6 +478,8 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
   const reviewDocs = [
     { kind: 'consultation', label: 'Consultation Form' },
     form.medical_certificate && { kind: 'certificate', label: 'Medical Certificate' },
+    form.sick_certificate && { kind: 'sick', label: 'Medical Certificate (Sick)' },
+    form.ojt_certificate && { kind: 'ojt', label: 'Medical Certificate (OJT)' },
     form.liability_form && { kind: 'liability', label: 'Medical Liability Form' },
   ].filter(Boolean);
   const docIndex = Math.max(0, reviewDocs.findIndex(d => d.kind === previewDoc));
@@ -463,12 +521,6 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
     );
   };
 
-  // A step counts as done once it has something filled in.
-  const stepDone = {
-    form: Object.keys(errors).length === 0,
-    certificate: form.medical_certificate || form.liability_form,
-    dispensing: mode === 'none' || (mode === 'dispense' && prescribed.length > 0) || (mode === 'prescription' && rx.length > 0),
-  };
   const missingCount = Object.keys(errors).length;
 
   return (
@@ -485,20 +537,35 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
       </div>
 
       {/* Student and appointment */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-[13fr_7fr]">
         {/* Laid out like Appointment Details: a titled card of labelled fields. */}
         <section aria-label="Patient details" className={card}>
           <h2 className="font-bold text-gray-900 dark:text-white">Patient Details</h2>
-          <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+          {/* From registration: read-only. */}
+          <dl className="mt-3 grid gap-x-4 gap-y-3 text-sm sm:grid-cols-3">
             <div className="flex items-start gap-2"><CircleUserRound className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div className="min-w-0"><dt className="text-xs text-gray-500 dark:text-gray-400">Name</dt><dd className="font-semibold text-gray-900 dark:text-white">{visit.name}</dd></div></div>
             <div className="flex items-start gap-2"><IdCard className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div className="min-w-0"><dt className="text-xs text-gray-500 dark:text-gray-400">Student ID</dt><dd className="font-mono text-gray-900 dark:text-white">{visit.id}</dd></div></div>
-            <div className="flex items-start gap-2 sm:col-span-2"><GraduationCap className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div className="min-w-0"><dt className="text-xs text-gray-500 dark:text-gray-400">Program</dt><dd className="text-gray-900 dark:text-white">{profile.course || '—'}</dd></div></div>
-            <div className="flex items-start gap-2"><CalendarRange className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-500 dark:text-gray-400">Year Level</dt><dd className="text-gray-900 dark:text-white">{yearLevel || '—'}</dd></div></div>
-            <div className="flex items-start gap-2"><Users className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-500 dark:text-gray-400">Section</dt><dd className="text-gray-900 dark:text-white">{profile.section || '—'}</dd></div></div>
-            <div className="flex items-start gap-2"><UserRound className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div><dt className="text-xs text-gray-500 dark:text-gray-400">Age · Sex</dt><dd className="text-gray-900 dark:text-white">{age ?? '—'} · {capitalize(profile.gender || student?.gender) || '—'}</dd></div></div>
-            <div className="flex items-start gap-2"><Phone className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div className="min-w-0"><dt className="text-xs text-gray-500 dark:text-gray-400">Mobile</dt><dd className="truncate text-gray-900 dark:text-white">{profile.mobile_number || '—'}</dd></div></div>
-            <div className="flex items-start gap-2 sm:col-span-2"><Mail className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div className="min-w-0"><dt className="text-xs text-gray-500 dark:text-gray-400">Email</dt><dd className="truncate text-gray-900 dark:text-white">{student?.email || '—'}</dd></div></div>
+            <div className="flex items-start gap-2"><UserRound className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div className="min-w-0"><dt className="text-xs text-gray-500 dark:text-gray-400">Sex</dt><dd className="text-gray-900 dark:text-white">{capitalize(profile.gender || student?.gender) || '—'}</dd></div></div>
+            <div className="flex items-start gap-2"><GraduationCap className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div className="min-w-0"><dt className="text-xs text-gray-500 dark:text-gray-400">Program</dt><dd className="text-gray-900 dark:text-white">{profile.course || '—'}</dd></div></div>
+            <div className="flex items-start gap-2"><CalendarRange className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div className="min-w-0"><dt className="text-xs text-gray-500 dark:text-gray-400">Year Level</dt><dd className="text-gray-900 dark:text-white">{yearLevel || '—'}</dd></div></div>
+            <div className="flex items-start gap-2"><Users className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div className="min-w-0"><dt className="text-xs text-gray-500 dark:text-gray-400">Section</dt><dd className="text-gray-900 dark:text-white">{profile.section || '—'}</dd></div></div>
+            <div className="flex items-start gap-2 sm:col-span-3"><Mail className="mt-0.5 h-4 w-4 shrink-0 text-maroon-700 dark:text-maroon-300" /><div className="min-w-0"><dt className="text-xs text-gray-500 dark:text-gray-400">Email</dt><dd className="break-all text-gray-900 dark:text-white">{student?.email || '—'}</dd></div></div>
           </dl>
+
+          {/* Additional information: filled in from the profile; the nurse can correct or complete it, and it prints on the Consultation Form. */}
+          <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-700">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Additional Information</h3>
+            <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">Printed on the Consultation Form.</p>
+            <div className="grid gap-3 sm:grid-cols-12">
+              {patientField('patient_age', 'Age', { inputMode: 'numeric', maxLength: 3, placeholder: 'e.g. 19', span: 'sm:col-span-2' })}
+              {patientField('patient_contact', 'Contact #', { inputMode: 'tel', maxLength: 30, placeholder: '09XX XXX XXXX', span: 'sm:col-span-3' })}
+              {patientField('patient_address', 'Address', { maxLength: 255, placeholder: 'House no., street, barangay, city', span: 'sm:col-span-7' })}
+              {/* Emergency contact: the guardian's name, relationship and number sit together on one row. */}
+              {patientField('patient_emergency_name', 'Contact person in case of emergency', { maxLength: 191, placeholder: 'Full name', span: 'sm:col-span-4' })}
+              {patientField('patient_emergency_relationship', 'Relationship', { maxLength: 60, placeholder: 'e.g. Mother', span: 'sm:col-span-4' })}
+              {patientField('patient_emergency_contact', 'Emergency contact #', { inputMode: 'tel', maxLength: 30, placeholder: '09XX XXX XXXX', span: 'sm:col-span-4' })}
+            </div>
+          </div>
         </section>
 
         <section aria-label="Appointment details" className={card}>
@@ -531,6 +598,8 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
           <div className="mt-5 flex flex-wrap justify-center gap-2">
             <button type="button" onClick={() => printRecord('consultation')} className={primary}><Printer className="h-4 w-4" /> Print Consultation Form</button>
             {form.medical_certificate && <button type="button" onClick={() => printRecord('certificate')} className={outline}><FileBadge className="h-4 w-4" /> Print Medical Certificate</button>}
+            {form.sick_certificate && <button type="button" onClick={() => printRecord('sick')} className={outline}><FileBadge className="h-4 w-4" /> Print Medical Certificate (Sick)</button>}
+            {form.ojt_certificate && <button type="button" onClick={() => printRecord('ojt')} className={outline}><FileBadge className="h-4 w-4" /> Print Medical Certificate (OJT)</button>}
             {form.liability_form && <button type="button" onClick={() => printRecord('liability')} className={outline}><FileSignature className="h-4 w-4" /> Print Medical Liability Form</button>}
             <button type="button" onClick={onDone} className={outline}><FileText className="h-4 w-4" /> {doneLabel}</button>
           </div>
@@ -625,34 +694,89 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
             )}
 
             {tab === 'certificate' && (
-              <div className="mx-auto max-w-xl space-y-4">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-maroon-50 text-maroon-700 dark:bg-maroon-900/30 dark:text-maroon-300">
-                    <FileBadge className="h-5 w-5" aria-hidden="true" />
-                  </span>
-                  <div className="min-w-0">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Additional Documents</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Optional forms released with this visit. Tick only the ones the student needs; you can check them in Review.</p>
-                  </div>
+              <div className="space-y-4">
+                <div className="min-w-0">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Additional Documents</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Optional forms released with this visit. Tick only the ones the student needs; you can check them in Review.</p>
                 </div>
+                <div className="mx-auto max-w-xl space-y-4">
+                {/* Default choice: shown as selected while no extra document is ticked; ticking it clears the others. */}
                 <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
                   <span>
-                    <span className="block text-sm font-semibold text-gray-900 dark:text-white">Issue a medical certificate <span className="font-normal text-gray-500 dark:text-gray-400">(optional)</span></span>
+                    <span className="block text-sm font-semibold text-gray-900 dark:text-white">Issue a Consultation Form Only <span className="font-normal text-gray-500 dark:text-gray-400">(default)</span></span>
+                    <span className="block text-xs text-gray-600 dark:text-gray-300">No additional documents. Only the consultation form is released with this visit.</span>
+                  </span>
+                  <input type="checkbox" checked={!form.medical_certificate && !form.sick_certificate && !form.ojt_certificate && !form.liability_form}
+                    onChange={e => { if (e.target.checked) setForm(current => ({ ...current, medical_certificate: false, sick_certificate: false, ojt_certificate: false, liability_form: false })); }}
+                    className="h-5 w-5 cursor-pointer accent-maroon-800" />
+                </label>
+                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
+                  <span>
+                    <span className="block text-sm font-semibold text-gray-900 dark:text-white">Issue a Medical Certificate <span className="font-normal text-gray-500 dark:text-gray-400">(optional)</span></span>
                     <span className="block text-xs text-gray-600 dark:text-gray-300">Only when the student needs one. It uses the complaint and assessment from the consultation form and can be printed after saving.</span>
                   </span>
                   <input type="checkbox" name="medical_certificate" checked={form.medical_certificate} onChange={change} className="h-5 w-5 cursor-pointer accent-maroon-800" />
                 </label>
                 {form.medical_certificate && (
                   <label className="block">
-                    <span className={label}>Certificate Reference (optional)</span>
-                    <input name="medical_certificate_ref" value={form.medical_certificate_ref} onChange={change} className={input} placeholder="MED-2026-001" maxLength={191} />
+                    <span className={label}>Certificate Reference</span>
+                    <input name="medical_certificate_ref" value={form.medical_certificate_ref} onChange={change} className={input} placeholder={certificateRef()} maxLength={191} />
                   </label>
+                )}
+
+                {/* Medical Certificate (OJT): the student is essentially normal and may undergo On the Job Training at a company. */}
+                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
+                  <span>
+                    <span className="block text-sm font-semibold text-gray-900 dark:text-white">Issue a Medical Certificate (OJT) <span className="font-normal text-gray-500 dark:text-gray-400">(optional)</span></span>
+                    <span className="block text-xs text-gray-600 dark:text-gray-300">For a student going on On the Job Training. It certifies they are essentially normal at the time of examination and can be printed after saving.</span>
+                  </span>
+                  <input type="checkbox" name="ojt_certificate" checked={form.ojt_certificate} onChange={change} className="h-5 w-5 cursor-pointer accent-maroon-800" />
+                </label>
+                {form.ojt_certificate && (() => {
+                  const missing = (showErrors || touched.ojt_company) && !form.ojt_company.trim();
+                  return (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="block">
+                        <span className={label}>Certificate Reference</span>
+                        <input name="ojt_certificate_ref" value={form.ojt_certificate_ref} onChange={change} className={input} placeholder={certificateRef()} maxLength={191} />
+                      </label>
+                      <div>
+                        <label htmlFor="visit-ojt_company" className={label}>OJT Company<span className="text-red-600 dark:text-red-400" aria-hidden="true"> *</span></label>
+                        <input id="visit-ojt_company" name="ojt_company" value={form.ojt_company} onChange={change}
+                          onBlur={() => setTouched(current => ({ ...current, ojt_company: true }))}
+                          aria-required="true" aria-invalid={missing || undefined}
+                          className={`${input} ${missing ? inputError : ''}`} placeholder="Company or establishment name" maxLength={191} />
+                        {missing && <p role="alert" className="mt-1 flex items-center gap-1 text-xs font-semibold text-red-700 dark:text-red-400"><AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />Enter where the student will do the OJT.</p>}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Medical Certificate (Sick): examined for an illness that needs medical attendance for a number of days. */}
+                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
+                  <span>
+                    <span className="block text-sm font-semibold text-gray-900 dark:text-white">Issue a Medical Certificate (Sick) <span className="font-normal text-gray-500 dark:text-gray-400">(optional)</span></span>
+                    <span className="block text-xs text-gray-600 dark:text-gray-300">For a student who needs rest because of an illness. It uses the impression from the consultation form and the days of medical attendance, and can be printed after saving.</span>
+                  </span>
+                  <input type="checkbox" name="sick_certificate" checked={form.sick_certificate} onChange={change} className="h-5 w-5 cursor-pointer accent-maroon-800" />
+                </label>
+                {form.sick_certificate && (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="block">
+                      <span className={label}>Certificate Reference</span>
+                      <input name="sick_certificate_ref" value={form.sick_certificate_ref} onChange={change} className={input} placeholder={certificateRef()} maxLength={191} />
+                    </label>
+                    <label className="block">
+                      <span className={label}>Days of Medical Attendance</span>
+                      <input name="sick_rest_days" value={form.sick_rest_days} onChange={e => change({ target: { name: 'sick_rest_days', type: 'text', value: e.target.value.replace(/\D/g, '').slice(0, 3) } })} className={input} inputMode="numeric" placeholder="e.g. 3" maxLength={3} />
+                    </label>
+                  </div>
                 )}
 
                 {/* Medical Liability Form: the student declares they are fit to join an activity and signs it. */}
                 <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
                   <span>
-                    <span className="block text-sm font-semibold text-gray-900 dark:text-white">Issue a medical liability form <span className="font-normal text-gray-500 dark:text-gray-400">(optional)</span></span>
+                    <span className="block text-sm font-semibold text-gray-900 dark:text-white">Issue a Medical Liability Form <span className="font-normal text-gray-500 dark:text-gray-400">(optional)</span></span>
                     <span className="block text-xs text-gray-600 dark:text-gray-300">For a student joining an activity (field trip, sports fest, OJT). They declare they are fit to join and sign it. It can be printed after saving.</span>
                   </span>
                   <input type="checkbox" name="liability_form" checked={form.liability_form} onChange={change} className="h-5 w-5 cursor-pointer accent-maroon-800" />
@@ -672,6 +796,7 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
                     </div>
                   );
                 })()}
+                </div>
               </div>
             )}
 
@@ -842,28 +967,7 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
 
             {tab === 'review' && (
               <div className="space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">{reviewDocs.length > 1 ? 'Review Documents' : 'Review Consultation Form'}</h3>
-                  {/* Progress through the visit; each step opens its tab. */}
-                  <ol className="flex flex-wrap items-center gap-1.5 text-xs font-semibold">
-                    {TABS.map((step, index) => {
-                      const current = step.key === 'review';
-                      const done = stepDone[step.key];
-                      return (
-                        <li key={step.key} className="flex items-center gap-1.5">
-                          {index > 0 && <ArrowRight className="h-3.5 w-3.5 text-gray-400" aria-hidden="true" />}
-                          <button type="button" onClick={() => goTo(step.key)} aria-current={current ? 'step' : undefined}
-                            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5 ${current ? 'bg-maroon-50 text-maroon-800 dark:bg-maroon-900/30 dark:text-maroon-300' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700/50'}`}>
-                            <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs ${current ? 'bg-maroon-800 text-white' : done ? 'bg-green-700 text-white' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200'}`}>
-                              {done && !current ? <Check className="h-3 w-3" /> : index + 1}
-                            </span>
-                            {step.label.replace(' and Confirm', '')}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                </div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{reviewDocs.length > 1 ? 'Review Documents' : 'Review Consultation Form'}</h3>
 
                 <p className="text-sm text-gray-700 dark:text-gray-300">
                   {reviewDocs.length > 1

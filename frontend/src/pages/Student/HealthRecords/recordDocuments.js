@@ -67,8 +67,13 @@ export const studentDetails = (user = {}, profile = {}, emergency = {}) => {
     studentId: user.student_id || '',
     program: [profile.course || user.course, profile.year || user.year, profile.section || user.section].filter(Boolean).join(' • '),
     age: ageFrom(profile.birthday || user.birthday),
+    // M / F for the OJT certificate ("(M/F)"); blank when the profile says something else.
+    sexInitial: { male: 'M', female: 'F' }[String(profile.gender || user.gender || '').toLowerCase()] || '',
     address: profile.address || '',
     contact: profile.mobile_number || '',
+    // Name and relationship apart (Consultation Form) and together (Student Profile).
+    emergencyPerson: emergency.name || profile.guardian_name || '',
+    emergencyRelationship: emergency.relationship || profile.guardian_relationship || '',
     emergencyName: [emergency.name || profile.guardian_name, emergency.relationship || profile.guardian_relationship]
       .filter(Boolean).join(' — '),
     emergencyContact: emergency.phone || profile.guardian_contact || '',
@@ -131,6 +136,26 @@ const certificateData = (record) => ({
   certificate_ref: record.medicalCertificateRef,
   // Not recorded by the system yet; the nurse writes the number of days by hand.
   rest_days: '',
+});
+
+// Medical Certificate (Sick): examined on the visit date, the impression, and the days of attendance the illness needs.
+const sickCertificateData = (record) => ({
+  issued_date: formatDay(record.date),
+  visit_date: formatDay(record.date),
+  certificate_ref: record.sickCertificateRef,
+  findings: record.diagnosis,
+  rest_days: record.sickRestDays ? String(record.sickRestDays) : '',
+  recommendation: record.followUpRequired
+    ? `Follow-up visit${record.followUpDate ? ` on ${formatDay(record.followUpDate)}` : ''}`
+    : '',
+});
+
+// Medical Certificate (OJT): essentially normal, may undergo On the Job Training at the company.
+const ojtCertificateData = (record) => ({
+  issued_date: formatDay(record.date),
+  visit_date: formatDay(record.date),
+  certificate_ref: record.ojtCertificateRef,
+  ojt_company: record.ojtCompany,
 });
 
 // The form is dated on the visit, when the nurse released it.
@@ -218,12 +243,30 @@ const profileData = (record) => ({
   health_sections: healthSections(record.health),
 });
 
+// Medical Clearance: one certification for a batch of students whose names the nurse typed in.
+// The names go in as ready-made HTML (escaped), because the template engine has no loop.
+const clearanceData = (record) => {
+  const students = record.students || [];
+  return {
+    issued_date: formatDay(record.certifiedDate || record.date),
+    activity: record.activity,
+    venue: record.venue,
+    activity_date: formatDay(record.activityDate),
+    group: record.groupLabel,
+    student_count: String(students.length),
+    student_list: `<ol class="clearance-list${students.length > 12 ? ' two' : ''}">${students.map((name) => `<li>${escapeHtml(name)}</li>`).join('')}</ol>`,
+  };
+};
+
 export const DOCUMENTS = {
+  clearance: { label: 'Medical Clearance', file: 'Medical-Clearance', template: 'medical-clearance.html', data: clearanceData, empty: '' },
   profile: { label: 'Student Profile', file: 'Student-Profile', template: 'student-profile.html', data: profileData, empty: '' },
   // Both documents print every row; fields with no value are left blank instead of "Not recorded".
   certificate: { label: 'Medical Certificate', file: 'Medical-Certificate', template: 'medical-certificate.html', data: certificateData, empty: '' },
+  sick: { label: 'Medical Certificate (Sick)', file: 'Medical-Certificate-Sick', template: 'medical-certificate-sick.html', data: sickCertificateData, empty: '', rightLogo: 'cho-logo.jpeg' },
+  ojt: { label: 'Medical Certificate (OJT)', file: 'Medical-Certificate-OJT', template: 'medical-certificate-ojt.html', data: ojtCertificateData, empty: '', rightLogo: 'cho-logo.jpeg' },
   consultation: { label: 'Consultation Form', file: 'Consultation-Form', template: 'consultation-form.html', data: consultationData, empty: '' },
-  liability: { label: 'Medical Liability Form', file: 'Medical-Liability-Form', template: 'medical-liability-form.html', data: liabilityData, empty: '' },
+  liability: { label: 'Medical Liability Form', file: 'Medical-Liability-Form', template: 'medical-liability-form.html', data: liabilityData, empty: '', rightLogo: 'bagong-pilipinas-logo.png' },
 };
 
 /*
@@ -235,7 +278,7 @@ export const DOCUMENTS = {
 export const buildRecordDocument = async (kind, record, student = null) => {
   const doc = DOCUMENTS[kind];
   if (!doc) throw new Error('Unknown document');
-  const reference = (kind !== 'liability' && record.medicalCertificateRef) || record.id;
+  const reference = (kind === 'ojt' ? record.ojtCertificateRef : kind === 'sick' ? record.sickCertificateRef : kind !== 'liability' && record.medicalCertificateRef) || record.id;
   const [layout, body, info] = await Promise.all([loadTemplate('layout.html'), loadTemplate(doc.template), student || loadOwnDetails()]);
   const data = {
     clinic_name: CLINIC_NAME,
@@ -249,10 +292,15 @@ export const buildRecordDocument = async (kind, record, student = null) => {
     student_id: info.studentId,
     student_program: info.program,
     student_age: info.age,
+    student_sex: info.sexInitial,
     student_address: info.address,
     student_contact: info.contact,
     emergency_name: info.emergencyName,
+    emergency_person: info.emergencyPerson,
+    emergency_relationship: info.emergencyRelationship,
     emergency_contact: info.emergencyContact,
+    // Letterhead logo on the right (City Health Office logo on the OJT certificate, Bagong Pilipinas on the Medical Liability Form).
+    right_logo: doc.rightLogo ? new URL(doc.rightLogo, new URL(TEMPLATE_DIR, window.location.origin)).href : '',
     staff_name: record.staff,
     staff_role: record.staffRole,
     ...doc.data(record),

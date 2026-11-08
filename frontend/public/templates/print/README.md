@@ -6,8 +6,14 @@ These files are the printouts made by **Print / Preview** in the nurse Consultat
 |---|---|
 | `layout.html` | The page around every document: the `<style>` block, the PUP letterhead (logo, university and campus names, clinic name), the issue date and reference, and the page box. The document goes where `{{{content}}}` is. |
 | `pup-logo.png` | The logo in the letterhead. Replace it with an image of the same name to change it. |
+| `cho-logo.jpeg` | The City Health Office (Lungsod ng Biñan) logo, shown on the right of the letterhead of the OJT certificate. |
+| `bagong-pilipinas-logo.png` | The Bagong Pilipinas logo, shown on the right of the letterhead of the Medical Liability Form. |
+| `signature-prieto.jpeg` | The physician's signature, printed above the name on the Consultation Form and the OJT certificate. |
 | `consultation-form.html` | The Consultation Form (also used for emergency encounter records). |
 | `medical-certificate.html` | The Medical Certificate. |
+| `medical-certificate-sick.html` | The Medical Certificate (Sick), the optional illness certificate with the days of medical attendance, released from a consultation. |
+| `medical-clearance.html` | The Medical Clearance, one certification for a batch of students (nurse portal → Consultation → Batch Release). |
+| `medical-certificate-ojt.html` | The Medical Certificate (OJT), the optional OJT fitness certificate released from a consultation. |
 | `medical-liability-form.html` | The Medical Liability Form (optional, released from a consultation). |
 | `student-profile.html` | The Student Health Profile, printed from the nurse Students page (a student's record > Print profile). |
 
@@ -24,11 +30,23 @@ Both documents always print every row and leave a field with no value blank. In 
 
 ### Every document
 
-`clinic_name`, `template_dir` (full address of this folder, for images), `issued_date`, `reference`, `file_title` (the default file name in "Save as PDF"), `student_name`, `student_id`, `student_program`, `student_age`, `student_address`, `student_contact`, `emergency_name` (contact person in case of emergency, with relationship), `emergency_contact`, `staff_name`, `staff_role`
+`clinic_name`, `template_dir` (full address of this folder, for images), `issued_date`, `reference`, `file_title` (the default file name in "Save as PDF"), `student_name`, `student_id`, `student_program`, `student_age`, `student_address`, `student_contact`, `emergency_name` (contact person in case of emergency, with relationship), `emergency_person` (the contact person's name only), `emergency_relationship`, `emergency_contact`, `staff_name`, `staff_role`
 
 ### `medical-certificate.html`
 
 `visit_date`, `complaint`, `findings` (the impression), `recommendation` (other remarks: follow-up advice, empty when none), `certificate_ref` (Control No.), `rest_days` (always empty for now; written by hand), `clinic_address`, `clinic_email`
+
+### `medical-certificate-sick.html`
+
+`certificate_ref` (Control No.), `visit_date`, `findings` (the impression), `rest_days` (days of medical attendance, empty when not entered), `recommendation` (other remarks: follow-up advice), `student_age`; `issued_date` is the visit date here
+
+### `medical-clearance.html`
+
+`issued_date` (date of the certification), `activity`, `venue`, `activity_date`, `group` (for example BSCPE, may be empty), `student_count`, and `{{{student_list}}}` (three braces: a ready-made numbered list of the students' names, escaped). No student placeholders apply, since the names are typed in.
+
+### `medical-certificate-ojt.html`
+
+`certificate_ref` (Control No.), `ojt_company` (where the student will do On the Job Training), `student_sex` (M or F), `visit_date`; `issued_date` is the visit date here
 
 ### `medical-liability-form.html`
 
