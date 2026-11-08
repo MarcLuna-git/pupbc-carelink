@@ -389,3 +389,61 @@ Kasunod ng "November 6, 2026" sa itaas. Nagsimula noong gabi ng Nov 7 at natapos
 - Hindi pa nasusubukan ang "Patient arrived" na walang redirect gamit ang totoong pasyente.
 - Lumang list icon pa rin ang Queue sa title card ng Queue page at sa "Clinic Queue" card.
 - Hindi pa na-run ang liability migration sa Supabase.
+
+
+---
+
+## November 8, 2026 - Session 2: Consultation Step 1/3 at Review, Mga Bagong Certificate, Batch Release at Patient History sa loob ng Consultation
+
+Kasunod ng "Session 1" sa itaas, sa parehong araw (Nov 8). Walang naka-commit sa session na ito. Hindi nasubukan sa browser ang karamihan (nag-build at syntax check lang). Hindi na-run ang `php artisan test` (nag-hang sa test database sa port 3307).
+
+### 1. Queue modal
+- Ang "Now calling" modal ay mas makitid na: `max-w-md` → `max-w-sm` (`QueuePatientModal.jsx`).
+- Sa "Patient arrived" na modal, ang **OK** ay naging **Go to Consultation**. Dinadala nito ang nurse sa **listahan** ng Consultation page (`/nurse/consultation`), hindi diretso sa form; ang nurse mismo ang pipindot sa consult action. Bagong prop: `onGoToConsultation` (`NurseQueue.jsx`).
+
+### 2. Consultation Step 1: Patient Details
+- Ang **Patient Details** card ay may read-only na mga field (Name, Student ID, Sex, Program, Year Level, Section, Email) at editable na seksyong **Additional Information**: Age, Contact #, Address, Contact person in case of emergency, Relationship, Emergency contact #.
+- Naka-prefill ang mga ito mula sa student profile (`studentDetails`). Ang mga edit ay nasa form state at draft, at ginagamit sa print. **Hindi** nagsa-save sa student profile (kailangan ng backend para doon).
+- Layout: 65/35 (`lg:grid-cols-[13fr_7fr]`) ng Patient Details at Appointment Details. Additional Information sa 12-column grid: Age (2), Contact # (3), Address (7); pangalawang row: Contact person, Relationship, Emergency contact # (tig-4).
+- Ang demo patients (`DemoQueue.php`) ay may birthday, address, mobile at guardian na, para may laman ang prefill. Na-apply na rin sa tatlong umiiral na demo student.
+
+### 3. Step 3: Additional Documents
+- Inalis ang icon sa heading. Ang header at paragraph ay nasa kaliwang gilid ng panel; ang mga choice ay naka-center.
+- Mga option (ayos): **Issue a Consultation Form Only (default)** (naka-check kapag walang ibang naka-tick; ang pag-tick nito ay nag-uuncheck sa iba), **Medical Certificate**, **Medical Certificate (Sick)**, **Medical Certificate (OJT)**, **Medical Liability Form**. Naka-Title Case ang mga label.
+- **Certificate Reference** ay auto-generated pagka-tick: `MED-YYYY-MMDD` (hal. `MED-2026-1108`), editable (`certificateRef()`). Hindi ito nag-a-auto update kapag may laman na.
+- Sick: may **Days of Medical Attendance** (optional). OJT: may Certificate Reference at **OJT Company** (required).
+- Inalis ang maliit na step progress sa Review Documents (at ang hindi na ginagamit na `stepDone` at `Check` icon).
+
+### 4. Mga printable template (`frontend/public/templates/print/`)
+- `consultation-form.html` ay tumutugma sa `CONSULTATION-FORM.docx`: Date, Name, Age, Address, Course & Year, Contact #, Contact person + Relationship (hiwalay), Emergency Contact #, Chief Complaint, Diagnosis, Vital Signs, Assessment, Nursing Interventions, pirma ni Dr. Prieto (may larawan ng pirma).
+- Bago: `medical-certificate-ojt.html` (galing sa `MEDCERT-OJT.xlsx`), `medical-certificate-sick.html` (galing sa `MEDCERT-SICK.xlsx`), `medical-clearance.html` (batch, galing sa BSCPE docx).
+- `layout.html`: may opsyonal na logo sa kanan (`right_logo`) at CSS ng pirma (`.signed`, `.esign`). Mga logo: `cho-logo.jpeg` (OJT at Sick), `bagong-pilipinas-logo.png` (Medical Liability Form), `signature-prieto.jpeg`. Ang kaliwang PUP Biñan logo ay hindi nagbago.
+- `recordDocuments.js`: mga bagong entry sa `DOCUMENTS` (`sick`, `ojt`, `clearance`); `studentDetails` ay may `sexInitial`, `emergencyPerson`, `emergencyRelationship`; may `rightLogo` bawat dokumento. Naka-document ang mga placeholder sa `print/README.md`.
+
+### 5. Backend
+- Migrations: `2026_11_08_000002_add_ojt_certificate_to_consultations_table` (`ojt_certificate`, `ojt_certificate_ref`, `ojt_company`), `..._000003_add_sick_certificate_...` (`sick_certificate`, `sick_certificate_ref`, `sick_rest_days`), `..._000004_create_medical_clearances_table`. Na-migrate sa lokal na MySQL.
+- `ConsultationController` (validation, `ojt_company` required kapag naka-tick ang OJT), `Consultation` model, `ClinicHistory` (may bagong fields).
+- Batch Medical Clearance: `MedicalClearance` model, `MedicalClearanceController` (`index`, `store`, `destroy`, may audit log, nililinis ang mga pangalan: trim, walang duplicate, A-Z), mga ruta `GET/POST /nurse/medical-clearances` at `DELETE /nurse/medical-clearances/{id}`.
+
+### 6. Student Health Records
+- Mga bagong inner tab: **Medical Cert (Sick)** (may Days of Attendance) at **Medical Cert (OJT)** (may OJT Company); may print. Lumalabas din sa detalye ng record at sa `ClinicRecordList`.
+
+### 7. Consultation page: inner tabs
+- Sa `NurseConsultation.jsx`: Clinic Queue card, tapos ang tab bar (sariling container) na **Individual Release** | **Batch Release** (`?tab=batch`).
+- **Individual Release**: ang dating laman ng Consultation page (In consultation na listahan), at sa pinakababa ang **Past visits** (ang dating Patient History, `NurseRecords` na may prop na `embedded`). Walang search at filter; 4 na row bawat page; sortable na column headers (Student, Student ID, Course, Year, Section, Record type, Date; desc → asc → default); pagination na naka-center na may running count (`4 of 22`) gamit ang bagong `centered` na prop ng shared na `Pagination`; walang bilang sa pamagat.
+- **Batch Release** (`BatchRelease.jsx`): form para sa Medical Clearance (Activity, Group/Section, Venue, petsa ng activity at certification, mga pangalan ng student na isa bawat linya o paste), live na numbered list, **Document Preview** na container (empty state hanggang i-click ang Preview; nasa loob ng page, hindi pop-up), at **Issued Medical Clearances** (View, Print, Delete na may kumpirmasyon). Ang mga pangalan ay mano-mano dahil wala pang master list.
+- Ang hiwalay na **Documents** page ay ginawa muna at pagkatapos ay inalis (pinagsama dito). Inalis ang **Patient History** sa sidebar; ang `/nurse/records` ay nire-redirect na sa `/nurse/consultation`. Pagkatapos mag-save ng consultation, ang "View in Patient History" ay papunta sa Consultation page.
+
+### 7b. Mga source file (inilipat sa `docs/templates/`)
+- `CONSULTATION-FORM.docx`, `MEDCERT-OJT.xlsx`, `MEDCERT-SICK.xlsx`, `MEDICAL-LIABILITY-FORM.docx`, `BSCPE-Activity-at-Trimex-and-Lyceum-2026.docx`. Ang `MEDCERT-SICK.xlsx` ay may ikaapat na sheet na RX/prescription form na hindi pa nagagawa.
+
+### 8. Files
+- Binago: `QueuePatientModal.jsx`, `NurseQueue.jsx`, `ConsultationVisit.jsx`, `NurseConsultation.jsx`, `NurseRecords.jsx`, `RecordDirectory.jsx`, `StudentDirectory.jsx` (`Pagination` `centered`), `ClinicRecordList.jsx`, `HealthRecords.jsx`, `recordDocuments.js`, `App.jsx`, `nurseNavigation.js`, `nurseGreeting.js` (at test), `consultation-form.html`, `layout.html`, `print/README.md`, `DemoQueue.php`, `ConsultationController.php`, `Consultation.php`, `ClinicHistory.php`, `api.php`.
+- Bago (untracked): `BatchRelease.jsx`, `medical-certificate-ojt.html`, `medical-certificate-sick.html`, `medical-clearance.html`, `cho-logo.jpeg`, `bagong-pilipinas-logo.png`, `signature-prieto.jpeg`, `MedicalClearance.php`, `MedicalClearanceController.php`, ang tatlong migration sa itaas, at `docs/templates/`.
+
+### 9. Mga natitirang tanong
+- Hindi pa nasusubukan sa browser: Step 1 Additional Information, ang bagong mga certificate (save, review, print), Batch Release, ang bagong tab sa Health Records, at ang sort at pagination ng Past visits.
+- Hindi pa na-run ang tatlong bagong migration sa Supabase.
+- Ang mga edit sa Additional Information ay hindi nagsa-save sa student profile.
+- Ang Medical Clearance ay gumagamit ng pirma ng nurse na naka-login at ng system letterhead, hindi ng header ng BSCPE docx.
+- Ang RX/prescription na sheet ng `MEDCERT-SICK.xlsx` at ang filter ng course/section (kapag nagkaroon na ng master list) ay hindi pa nagagawa.
