@@ -447,3 +447,45 @@ Kasunod ng "Session 1" sa itaas, sa parehong araw (Nov 8). Walang naka-commit sa
 - Ang mga edit sa Additional Information ay hindi nagsa-save sa student profile.
 - Ang Medical Clearance ay gumagamit ng pirma ng nurse na naka-login at ng system letterhead, hindi ng header ng BSCPE docx.
 - Ang RX/prescription na sheet ng `MEDCERT-SICK.xlsx` at ang filter ng course/section (kapag nagkaroon na ng master list) ay hindi pa nagagawa.
+
+## November 9, 2026 - Session 1: Batch Release para sa Maraming Document (Registry, Wizard at Issued History)
+
+Kasunod ng "November 8 - Session 2". Ang tanong: paano kung dumami ang batch documents (hindi lang Medical Clearance)? Walang naka-commit sa session na ito. Nag-build (`npx vite build`) at sinubukan ang backend gamit ang tinker; **hindi pa nasusubukan sa browser**.
+
+### 1. Mga desisyon ng user
+- Layout: listahan/pagpili ng document + form (hindi modal). Pagkatapos ay ginawang **wizard** ang paggawa, at ang **Issued** ay hiwalay na history tab (hindi kasama sa wizard).
+- Students: **type/paste + search** ng registered student (naka-link sa account kapag pinili).
+- Mga document: **flexible muna** (config-driven registry); Medical Clearance lang ang laman sa ngayon.
+
+### 2. Backend
+- Bagong table `batch_documents` (migration `2026_11_09_000001_create_batch_documents_table`, na-migrate sa lokal na MySQL): `id` uuid, `type` (index), `title`, `fields` json, `students` json (`[{name, student_id|null}]`), `issued_date` (index), `issued_by`, timestamps, softDeletes. Kinokopya ng migration ang mga lumang `medical_clearances` row (`type='clearance'`); wala pang laman ang luma kaya walang nakopya. Hindi tinanggal ang lumang table at routes (`/nurse/medical-clearances`), pero hindi na ginagamit ng frontend.
+- `App\Models\BatchDocument`, `Nurse\BatchDocumentController` (`index` na may `?type` at `?q`, `store`, `destroy`, may audit log `batch_document_created/deleted`).
+- `config/batch_documents.php`: bawat type ay may `label`, `title_field`, `date_field`, `rules`, `messages`. Ang `store` ay tumatanggi sa hindi kilalang type ("Choose a document."), nagva-validate ng `fields.*` ayon sa config, tinatapon ang hindi kilalang field, nililinis ang mga pangalan (trim, walang duplicate kahit iba ang case, A-Z), at tinatanggal ang `student_id` na hindi totoong student.
+- Mga ruta: `GET/POST /nurse/batch-documents`, `DELETE /nurse/batch-documents/{id}`.
+
+### 3. Frontend (`frontend/src/pages/Admin/Consultation/`)
+- `batchDocuments.js`: ang **registry** (`BATCH_DOCUMENTS`: key, category, label, description, template, titleField, fields, `toRecord`, `summary`) at mga helper (`emptyFields`, `validateFields`, `trimFields`, `nurseLabel`, `formatDay`, `savedStudents`, `savedRecord`).
+- `BatchRelease.jsx`: container na may dalawang **inner tab** (underline style): **New Document** | **Issued (n)**. Parehong naka-mount (`hidden`), kaya hindi nawawala ang laman ng wizard kapag tiningnan ang history. URL: `?tab=batch&view=issued`, `&doc=<key>`.
+- `BatchWizard.jsx`: 4 na step na may stepper: **① Document → ② Details → ③ Students → ④ Preview**. Chine-check ang step bago mag-Next; puwedeng i-click ang stepper pabalik sa mga napuntahang step. Kapag nagpalit ng document, nare-reset ang fields pero naiiwan ang students. Sa Preview: buod (document, para saan, bilang ng students) + preview + **Save and Print**; pagka-save: **Print again**, **View issued**, **New document**.
+- `BatchDocumentPicker.jsx`: mga card na naka-group by category; lalabas ang search kapag 6+ na ang documents; pag-click ay diretso sa Details.
+- `BatchFieldsForm.jsx`: generic na form mula sa `fields` (text, date, textarea, select; required/optional, `span`).
+- `BatchStudentList.jsx`: search (`GET /nurse/students/search`, debounced, "Last, First M.") + textarea; pinagsasama (`mergeStudents`), may "Linked" na badge.
+- `BatchPreview.jsx`: iframe ng document (auto-fit ng height, `autoPrint`, `ref.print()`).
+- `BatchHistory.jsx`: Issued table (Issued, Document, Details, Students; View, Print, Delete na may kumpirmasyon), search at type filter (lumalabas kapag 2+ type); preview sa ilalim ng table.
+- `print/README.md`: bagong seksyong **"Adding a batch document"**.
+
+### 4. Paano magdagdag ng batch document (walang DB change)
+1. Template HTML sa `public/templates/print/` + entry sa `DOCUMENTS` (`recordDocuments.js`).
+2. Entry sa `batchDocuments.js` (key, category, label, fields, `toRecord`, `titleField`).
+3. Parehong key at rules sa `backend/config/batch_documents.php` (`title_field` = `titleField`).
+
+### 5. Files
+- Binago: `BatchRelease.jsx`, `backend/routes/api.php`, `frontend/public/templates/print/README.md`.
+- Bago (untracked): `BatchWizard.jsx`, `BatchHistory.jsx`, `BatchPreview.jsx`, `BatchDocumentPicker.jsx`, `BatchFieldsForm.jsx`, `BatchStudentList.jsx`, `batchDocuments.js`, `BatchDocument.php`, `BatchDocumentController.php`, `config/batch_documents.php`, ang migration sa itaas.
+
+### 6. Mga natitirang tanong
+- Subukan sa browser: wizard (lahat ng step, mobile stepper), student search at Linked badge, Save and Print, Issued tab (filter, View/Print, Delete).
+- Hindi pa na-run ang bagong migration sa Supabase.
+- Kailan tatanggalin ang lumang `medical_clearances` table, model, controller at routes.
+- Wala pang ESLint config ang frontend (`eslint.config.*`), kaya hindi ma-lint.
+- Ang ibang batch documents (wala pang listahan); subukan ang grouping at search kapag may pangalawa na.

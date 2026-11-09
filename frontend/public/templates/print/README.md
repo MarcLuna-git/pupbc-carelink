@@ -17,6 +17,16 @@ These files are the printouts made by **Print / Preview** in the nurse Consultat
 | `medical-liability-form.html` | The Medical Liability Form (optional, released from a consultation). |
 | `student-profile.html` | The Student Health Profile, printed from the nurse Students page (a student's record > Print profile). |
 
+## Adding a batch document
+
+Batch Release (nurse portal → Consultation → Batch Release) lists every document issued for a group of students. To add one:
+
+1. Add the template here (for example `sports-clearance.html`) and an entry in `DOCUMENTS` in `src/pages/Student/HealthRecords/recordDocuments.js` that turns a record into its placeholders.
+2. Add an entry to `src/pages/Admin/Consultation/batchDocuments.js`: its key, category, label, fields, and `toRecord`. The wizard's document cards and the details form are drawn from it.
+3. Add the same key with its validation rules to `backend/config/batch_documents.php`.
+
+No database change is needed: the details are saved as JSON in `batch_documents.fields`.
+
 To use your own design, replace the HTML and keep the placeholders you need. Images can go in this folder and be linked as `{{template_dir}}your-image.png` (the print window needs the full address, which `template_dir` gives).
 
 ## Placeholders
@@ -42,7 +52,7 @@ Both documents always print every row and leave a field with no value blank. In 
 
 ### `medical-clearance.html`
 
-`issued_date` (date of the certification), `activity`, `venue`, `activity_date`, `group` (for example BSCPE, may be empty), `student_count`, and `{{{student_list}}}` (three braces: a ready-made numbered list of the students' names, escaped). No student placeholders apply, since the names are typed in.
+A batch document (see "Adding a batch document"). `issued_date` (date of the certification), `activity`, `venue`, `activity_date`, `group` (for example BSCPE, may be empty), `student_count`, and `{{{student_list}}}` (three braces: a ready-made numbered list of the students' names, escaped). No student placeholders apply, since the names are typed in.
 
 ### `medical-certificate-ojt.html`
 

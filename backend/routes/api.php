@@ -1170,6 +1170,15 @@ Route::middleware([
                 Route::post('/medical-clearances', [\App\Http\Controllers\Api\Nurse\MedicalClearanceController::class, 'store']);
                 Route::delete('/medical-clearances/{id}', [\App\Http\Controllers\Api\Nurse\MedicalClearanceController::class, 'destroy']);
 
+                /*
+                |--------------------------------------------------------------------------
+                | Consultation → Batch Release: documents for a group of students (types in config/batch_documents.php)
+                |--------------------------------------------------------------------------
+                */
+                Route::get('/batch-documents', [\App\Http\Controllers\Api\Nurse\BatchDocumentController::class, 'index']);
+                Route::post('/batch-documents', [\App\Http\Controllers\Api\Nurse\BatchDocumentController::class, 'store']);
+                Route::delete('/batch-documents/{id}', [\App\Http\Controllers\Api\Nurse\BatchDocumentController::class, 'destroy']);
+
                 Route::get('/faculty', [\App\Http\Controllers\Api\Nurse\FacultyController::class, 'index']);
                 Route::post('/faculty', [\App\Http\Controllers\Api\Nurse\FacultyController::class, 'store']);
                 Route::get('/faculty/{id}', [\App\Http\Controllers\Api\Nurse\FacultyController::class, 'show']);
