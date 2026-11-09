@@ -29,12 +29,13 @@ desktop.ini
 *.txt
 # ...except the crawler rules that ship with the frontend build
 !frontend/public/robots.txt
-# cPanel settings template: real values live only on the server
-carelink.env
-reference-for-deploying-in-file-manager-of-cpanel-in-z.com/
-.claude
 # Local audit and performance reports (generated; keep them on disk, not in Git)
 backend/postgres-audit.txt
 docs/bundle-*.json
 docs/performance-*.json
-nursedocs/
+
+.claude
+
+mydocs - reference-for-deploying-in-file-manager-of-cpanel-in-z.com/
+mydocs - discussions/
+mydocs - transcriber/
