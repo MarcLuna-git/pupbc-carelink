@@ -1,4 +1,4 @@
-import { getToken, getUser, setUser } from '../../../services/session';
+import { getUser, setUser } from '../../../services/session';
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -293,14 +293,13 @@ const HealthProfile = ({ onBack }) => {
     setLoading(true); setMessage('');
 
     try {
-      const token = getToken('student');
       let payload = { ...form, consent_date: getManilaDateString() };
 
       if (!isFemale) {
         ['last_menstrual_period','has_children','number_of_children','age_first_pregnancy','gravidity','term','premature','abortion','living_children'].forEach(f => delete payload[f]);
       }
 
-      const response = await api[profileExists ? 'put' : 'post']('/student/health-profile', payload, { headers: { Authorization: `Bearer ${token}` } });
+      const response = await api[profileExists ? 'put' : 'post']('/student/health-profile', payload);
       if (!response.data.success) throw new Error('Profile could not be saved');
 
       if (response.data.success) {

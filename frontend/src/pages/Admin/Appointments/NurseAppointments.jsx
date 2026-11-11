@@ -1,4 +1,3 @@
-import { getToken } from '../../../services/session';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, CheckCircle, XCircle, Search, User, X, FileText, Stethoscope, ListChecks, Inbox, List, Table2 } from 'lucide-react';
@@ -75,10 +74,8 @@ const NurseAppointments = () => {
     if (document.visibilityState === 'hidden') return;
     const request = ++requestId.current;
     try {
-      const token = getToken('nurse');
       const res = await api.get('/nurse/appointments', {
         signal: signal instanceof AbortSignal ? signal : undefined,
-        headers: { Authorization: `Bearer ${token}` },
         params: {
           status: filter !== 'all' ? filter : undefined,
           search: searchTerm || undefined,
@@ -116,10 +113,7 @@ const NurseAppointments = () => {
   const handleApprove = async (id) => {
     const loadingId = ++actionLoadingRef.current;
     try {
-      const token = getToken('nurse');
-      await api.patch(`/nurse/appointments/${id}/approve`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.patch(`/nurse/appointments/${id}/approve`, {});
       if (loadingId !== actionLoadingRef.current) return;
       showMessage('Appointment approved successfully!', 'success');
       setSelectedAppointment(null);
@@ -134,11 +128,8 @@ const NurseAppointments = () => {
     if (!rejectReason.trim()) return;
     const loadingId = ++actionLoadingRef.current;
     try {
-      const token = getToken('nurse');
       await api.patch(`/nurse/appointments/${rejectModal}/reject`,
-        { reason: rejectReason },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+        { reason: rejectReason });
       if (loadingId !== actionLoadingRef.current) return;
       showMessage('Appointment declined.', 'success');
       setRejectModal(null);
@@ -155,8 +146,7 @@ const NurseAppointments = () => {
     if (!cancelReason.trim()) return;
     const loadingId = ++actionLoadingRef.current;
     try {
-      const token = getToken('nurse');
-      await api.patch(`/nurse/appointments/${cancelModal}/cancel`, { reason: cancelReason }, { headers: { Authorization: `Bearer ${token}` } });
+      await api.patch(`/nurse/appointments/${cancelModal}/cancel`, { reason: cancelReason });
       if (loadingId !== actionLoadingRef.current) return;
       showMessage('Appointment cancelled.', 'success');
       setCancelModal(null);

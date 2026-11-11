@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import useSignatoryVersion from '../../../hooks/useSignatoryVersion';
 import { Eye, FileCheck, Printer, Search, Trash2, X } from 'lucide-react';
 import api from '../../../services/api';
 import { getUser } from '../../../services/session';
@@ -46,6 +47,19 @@ export default function BatchHistory({ issued, loading, loadError, onReload, onN
       setMessage({ type: 'error', text: 'The document could not be prepared.' });
     }
   };
+
+  // The signatory was switched (account menu) while a document is on screen: redraw it, without printing again.
+  const signatoryVersion = useSignatoryVersion();
+  const drawnVersion = useRef(signatoryVersion);
+  useEffect(() => {
+    if (drawnVersion.current === signatoryVersion) return;
+    drawnVersion.current = signatoryVersion;
+    const item = preview?.html && issued.find((entry) => entry.id === preview.id);
+    if (!item) return;
+    buildRecordDocument(findBatchDocument(item.type).template, savedRecord(item, nurseLabel(me)), {})
+      .then((html) => setPreview((current) => (current?.id === item.id ? { ...current, html, autoPrint: false } : current)))
+      .catch(() => {});
+  }, [signatoryVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const remove = async (item) => {
     try {

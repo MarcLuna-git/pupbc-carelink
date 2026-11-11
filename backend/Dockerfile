@@ -1,6 +1,9 @@
 # Build context: backend/.
 
-FROM php:8.1-cli
+# PHP 8.2: tapos na ang security support ng 8.1 (Dec 2025). Ang tag na "8.2-cli" ay laging
+# kumukuha ng pinakabagong 8.2.x patch sa bawat build. Pansamantala ito: matatapos ang 8.2 sa
+# Dec 31, 2026, at ang susunod na hakbang ay Laravel 12/13 + PHP 8.4 (hindi kaya ng Laravel 8).
+FROM php:8.2-cli
 
 RUN apt-get update && apt-get install -y \
     git \
@@ -35,6 +38,10 @@ RUN { \
     echo 'upload_max_filesize=12M'; \
     echo 'post_max_size=14M'; \
     } > /usr/local/etc/php/conf.d/uploads.ini
+
+# Huwag ipakita ang PHP version sa "X-Powered-By" header (dagdag na proteksyon; ang tunay na
+# ayos ay ang napapanahong PHP sa itaas).
+RUN echo 'expose_php=Off' > /usr/local/etc/php/conf.d/security.ini
 
 # Maraming worker para hindi maharangan ng mabagal na request (hal. SMTP) ang health check.
 ENV PHP_CLI_SERVER_WORKERS=4

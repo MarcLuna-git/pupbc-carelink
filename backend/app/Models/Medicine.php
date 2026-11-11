@@ -96,6 +96,20 @@ class Medicine extends Model
         return $this->whereEffectiveExpiry($query, '<', today()->toDateString());
     }
 
+    /** The expiry date is today: still usable today, expired from tomorrow. */
+    public function scopeExpiresToday($query)
+    {
+        return $this->whereEffectiveExpiry($query, '=', today()->toDateString());
+    }
+
+    /*
+     * The same expiry rule as one SQL expression, for sorting the inventory by expiry date.
+     * Plain SQL that MySQL/MariaDB and PostgreSQL both accept.
+     */
+    public const EFFECTIVE_EXPIRY_SQL = 'COALESCE((SELECT MIN(mb.expiry_date) FROM medicine_batches mb'
+        . ' WHERE mb.medicine_id = medicines.id AND mb.quantity > 0 AND mb.expiry_date IS NOT NULL AND mb.deleted_at IS NULL),'
+        . ' medicines.expiry_date)';
+
     /** Earliest expiry that matters for this medicine (see the rule above). */
     public function nearestExpiry(): ?Carbon
     {

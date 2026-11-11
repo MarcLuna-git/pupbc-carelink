@@ -1,4 +1,3 @@
-import { getToken } from '../../../services/session';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,10 +20,7 @@ const Notifications = () => {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const token = getToken('student');
-      const response = await api.get('/student/notifications?limit=50', { 
-        headers: { Authorization: `Bearer ${token}` } 
-      });
+      const response = await api.get('/student/notifications?limit=50');
       if (response.data.success) {
         const data = response.data.data;
         const items = Array.isArray(data) ? data : (data?.data || []);
@@ -81,10 +77,7 @@ const Notifications = () => {
   const markAsRead = async (id) => {
     setActionLoading(id);
     try {
-      const token = getToken('student');
-      await api.patch(`/student/notifications/${id}/read`, {}, { 
-        headers: { Authorization: `Bearer ${token}` } 
-      });
+      await api.patch(`/student/notifications/${id}/read`, {});
       setNotifications(current => current.map(n => n.id === id ? { ...n, read: true } : n));
       showMessage('Marked as read');
     } catch (err) {
@@ -98,10 +91,7 @@ const Notifications = () => {
   const markAllAsRead = async () => {
     setActionLoading('all');
     try {
-      const token = getToken('student');
-      await api.patch('/student/notifications/read-all', {}, { 
-        headers: { Authorization: `Bearer ${token}` } 
-      });
+      await api.patch('/student/notifications/read-all', {});
       setNotifications(current => current.map(n => ({ ...n, read: true })));
       showMessage('All marked as read');
     } catch (err) {

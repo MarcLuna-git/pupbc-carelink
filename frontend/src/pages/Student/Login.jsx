@@ -1,4 +1,4 @@
-import { getToken } from '../../services/session';
+import { hasSession } from '../../services/session';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -365,7 +365,7 @@ const Login = () => {
 
       if (
         response?.success &&
-        getToken('student')
+        hasSession('student')
       ) {
         setAttemptsRemaining(null);
         setLockUntil(0);

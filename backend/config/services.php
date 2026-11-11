@@ -46,4 +46,29 @@ return [
         'max_output_tokens' => (int) env('OLLAMA_MAX_OUTPUT_TOKENS', 1024),
     ],
 
+    // Gemini: the clinic assistant's fallback when Ollama cannot answer (no
+    // credits, rate limit, outage). Leave GEMINI_API_KEY empty to run with
+    // Ollama only. Server-side only, never a VITE_ variable.
+    'gemini' => [
+        'key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-3.5-flash-lite'),
+
+        // Ordered model chain inside Gemini (rate limited / missing / 5xx models are skipped).
+        'fallback_models' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env(
+                'GEMINI_FALLBACK_MODELS',
+                'gemini-3.1-flash-lite,gemma-4-26b-a4b-it,gemma-4-31b-it'
+            ))
+        ))),
+
+        'rate_limit_cooldown' => (int) env('GEMINI_RATE_LIMIT_COOLDOWN', 60),
+
+        // Ollama (up to OLLAMA_TIMEOUT) plus this stay under the frontend's
+        // 60s chatbot request timeout.
+        'timeout' => (int) env('GEMINI_TIMEOUT', 20),
+
+        'max_output_tokens' => (int) env('GEMINI_MAX_OUTPUT_TOKENS', 1024),
+    ],
+
 ];

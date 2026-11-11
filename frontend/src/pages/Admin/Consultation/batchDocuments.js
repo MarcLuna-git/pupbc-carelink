@@ -7,7 +7,7 @@
  *   3. Add its print template to public/templates/print/ and an entry in DOCUMENTS (recordDocuments.js),
  *      then point `template` at that DOCUMENTS key.
  *
- * Field options: name, label, type ('text' | 'date' | 'textarea' | 'select'), required, max, placeholder,
+ * Field options: name, label, type ('text' | 'date' | 'textarea' | 'select' | 'section'), required, max, placeholder,
  * span (2 = full width), options (for select: [[value, label]]), default ('today' or a value).
  * The student list is shared by every document, so it is not a field.
  */
@@ -23,7 +23,7 @@ export const BATCH_DOCUMENTS = [
     titleField: 'activity', // must match title_field in backend/config/batch_documents.php
     fields: [
       { name: 'activity', label: 'Activity', required: true, max: 191, placeholder: 'e.g. Trimex' },
-      { name: 'group_label', label: 'Group / Section', max: 100, placeholder: 'e.g. BSCPE' },
+      { name: 'group_label', label: 'Group / Section', type: 'section', max: 100, placeholder: 'Search or choose, e.g. BSCPE 3-1' },
       { name: 'venue', label: 'Venue', required: true, max: 191, span: 2, placeholder: 'e.g. Lyceum of the Philippines University-Cavite' },
       { name: 'activity_date', label: 'Date of the activity', type: 'date', required: true },
       { name: 'certified_date', label: 'Date of the certification', type: 'date', required: true, default: 'today' },

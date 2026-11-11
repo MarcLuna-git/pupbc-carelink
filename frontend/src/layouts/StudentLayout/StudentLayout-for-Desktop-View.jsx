@@ -28,7 +28,7 @@ import authService from '../../services/authService';
 import { StudentConfirmModal } from '../../components/StudentFeedback';
 import api from '../../services/api';
 import { fetchDevTools } from '../../services/devTools';
-import { getToken } from '../../services/session';
+import { sessionId } from '../../services/session';
 import ChatWidget from '../../pages/Student/Chatbot-for-Student-Dashboard/ChatWidget';
 import { STUDENT_LOGOUT_REQUEST_EVENT, STUDENT_PRIMARY_LINKS, isStudentNavActive, studentPageTitle } from '../../utils/studentPortalNavigation';
 
@@ -127,7 +127,7 @@ const StudentLayoutForDesktopView = ({ children }) => {
       unreadRequestPending.current = true;
       try {
         const token =
-          getToken('student');
+          sessionId('student');
 
         if (!token) {
           setUnreadCount(0);

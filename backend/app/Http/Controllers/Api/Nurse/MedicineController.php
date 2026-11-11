@@ -52,6 +52,23 @@ class MedicineController extends Controller
             $this->whereStatus($query, (string) $request->status);
         }
 
+        // The inventory page filters stock and expiry apart, so a medicine that is low on stock
+        // and also expiring shows up under both (the older `status` above gives each row one state only).
+        if ($request->stock) {
+            $this->whereStock($query, (string) $request->stock);
+        }
+        if ($request->expiry) {
+            $this->whereExpiry($query, (string) $request->expiry);
+        }
+
+        // sort: name (default), expiry (soonest first, medicines without a date last) or stock (lowest first).
+        if ($request->sort === 'expiry') {
+            $query->orderByRaw('CASE WHEN ' . Medicine::EFFECTIVE_EXPIRY_SQL . ' IS NULL THEN 1 ELSE 0 END')
+                ->orderByRaw(Medicine::EFFECTIVE_EXPIRY_SQL);
+        } elseif ($request->sort === 'stock') {
+            $query->orderBy('quantity');
+        }
+
         $perPage = min(max((int) $request->input('per_page', 20), 1), 100);
         /** @var LengthAwarePaginator $medicines */
         $medicines = $query->orderBy('name')->paginate($perPage);
@@ -80,6 +97,14 @@ class MedicineController extends Controller
                 : ($medicine->is_out_of_stock ? 'out_of_stock'
                 : ($medicine->is_low_stock ? 'low_stock'
                 : ($medicine->is_expiring_soon ? 'expiring_soon' : 'ok')));
+            // Stock and expiry apart, for the two badges on the inventory page.
+            $medicine->stock_status = $medicine->is_out_of_stock ? 'out_of_stock' : ($medicine->is_low_stock ? 'low_stock' : 'in_stock');
+            $medicine->days_to_expiry = $expiry ? (int) round(today()->diffInDays($expiry->copy()->startOfDay(), false)) : null;
+            // expired: the date has passed; today: it is the expiry date; soon: within three months.
+            $medicine->expiry_status = !$expiry ? null
+                : ($medicine->days_to_expiry < 0 ? 'expired'
+                : ($medicine->days_to_expiry === 0 ? 'today'
+                : ($medicine->is_expiring_soon ? 'soon' : 'ok')));
             return $medicine;
         });
 
@@ -119,6 +144,40 @@ class MedicineController extends Controller
                 $wellStocked($query);
                 $notExpired($query);
                 $query->whereNotIn('medicines.id', Medicine::query()->expiringSoon()->select('medicines.id'));
+                break;
+        }
+    }
+
+    /* The Stock filter: stock only, whatever the expiry date. */
+    private function whereStock($query, string $stock): void
+    {
+        switch ($stock) {
+            case 'in_stock':
+                $query->whereColumn('medicines.quantity', '>', 'medicines.minimum_stock')->where('medicines.quantity', '>', 0);
+                break;
+            case 'low_stock':
+                $query->where('medicines.quantity', '>', 0)->whereColumn('medicines.quantity', '<=', 'medicines.minimum_stock');
+                break;
+            case 'out_of_stock':
+                $query->where('medicines.quantity', '<=', 0);
+                break;
+        }
+    }
+
+    /* The Expiry filter: expired (date passed), today (expires today) or soon (after today, within three months). */
+    private function whereExpiry($query, string $expiry): void
+    {
+        switch ($expiry) {
+            case 'expired':
+                $query->expired();
+                break;
+            case 'today':
+                $query->expiresToday();
+                break;
+            case 'soon':
+                $query->expiringSoon()
+                    ->whereNotIn('medicines.id', Medicine::query()->expired()->select('medicines.id'))
+                    ->whereNotIn('medicines.id', Medicine::query()->expiresToday()->select('medicines.id'));
                 break;
         }
     }

@@ -9,6 +9,7 @@ import BatchDocumentPicker from './BatchDocumentPicker';
 import BatchFieldsForm from './BatchFieldsForm';
 import BatchStudentList, { mergeStudents } from './BatchStudentList';
 import BatchPreview from './BatchPreview';
+import useSignatoryVersion from '../../../hooks/useSignatoryVersion';
 
 /*
  * Batch Release → New Document: a wizard in four steps — choose the document, fill in its details, list the
@@ -69,6 +70,19 @@ export default function BatchWizard({ docKey, onDocChange, onSaved, onShowIssued
       setPreview('error');
     }
   };
+
+  // The signatory was switched (account menu) while the preview is open: redraw it, without printing again.
+  const signatoryVersion = useSignatoryVersion();
+  const drawnVersion = useRef(signatoryVersion);
+  useEffect(() => {
+    if (drawnVersion.current === signatoryVersion) return;
+    drawnVersion.current = signatoryVersion;
+    if (step !== 3 || !preview?.html) return;
+    if (!saved) { buildDraft(); return; }
+    buildRecordDocument(doc.template, savedRecord(saved, nurseLabel(me)), {})
+      .then((html) => setPreview({ html }))
+      .catch(() => {});
+  }, [signatoryVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Moving forward checks the step being left; the preview is built on arriving at the last step.
   const next = () => {

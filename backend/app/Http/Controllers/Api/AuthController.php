@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\AuthService;
+use App\Support\AuthCookie;
 use App\Support\RegistrationAcademics;
 use App\Support\TimeGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+
 
 class AuthController extends Controller
 {
@@ -439,15 +441,15 @@ public function login(Request $request): JsonResponse
         // Correct login resets previous failed attempts.
         $limiter->clear($attemptKey);
 
+        // The token goes in an httpOnly cookie, never in the JSON, so page
+        // scripts cannot read it (see App\Support\AuthCookie).
         return response()->json([
             'success' => true,
             'message' => 'Login successful.',
             'user' => $result['user'],
-            'token' => $result['token'],
-            'token_type' => $result['token_type'],
             'expires_in' => $result['expires_in'],
             'role' => $result['role'],
-        ], 200);
+        ], 200)->withCookie(AuthCookie::make($result['token'], 'student'));
 
     } catch (ValidationException $e) {
         // Missing or malformed form fields are validation errors,
@@ -551,15 +553,14 @@ public function login(Request $request): JsonResponse
             // Developer Tools → Remove time Guard is always OFF after signing in.
             TimeGuard::resetFor($result['user']);
 
+            // Token in an httpOnly cookie only (see App\Support\AuthCookie).
             return response()->json([
                 'success' => true,
                 'message' => 'Login successful.',
                 'user' => $result['user'],
-                'token' => $result['token'],
-                'token_type' => $result['token_type'],
                 'expires_in' => $result['expires_in'],
                 'role' => $result['role'],
-            ], 200);
+            ], 200)->withCookie(AuthCookie::make($result['token'], 'nurse'));
 
         } catch (ValidationException $e) {
             return response()->json([
@@ -804,24 +805,29 @@ public function login(Request $request): JsonResponse
         }
     }
 
-    public function logout(): JsonResponse
+    // Open to signed-out requests too, so an expired or invalid session can
+    // still clear its cookie. The portal comes from X-Portal, else the user.
+    public function logout(Request $request): JsonResponse
     {
+        $portal = AuthCookie::requestedPortal($request);
+
         try {
-            // Developer Tools → Remove time Guard never stays on after signing out.
-            TimeGuard::resetFor(auth()->user());
-            $this->authService->logout();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Logged out successfully.',
-            ], 200);
-
+            if ($user = auth('api')->user()) {
+                $portal ??= AuthCookie::portalFor($user);
+                // Developer Tools → Remove time Guard never stays on after signing out.
+                TimeGuard::resetFor($user);
+                $this->authService->logout();
+            }
         } catch (\Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unable to logout.',
-            ], 400);
+            // Already invalid: clearing the cookie below is all that is left.
         }
+
+        $response = response()->json([
+            'success' => true,
+            'message' => 'Logged out successfully.',
+        ], 200);
+
+        return $portal ? $response->withCookie(AuthCookie::forget($portal)) : $response;
     }
 
     public function refresh(): JsonResponse
@@ -832,10 +838,8 @@ public function login(Request $request): JsonResponse
 
             return response()->json([
                 'success' => true,
-                'token' => $result['token'],
-                'token_type' => $result['token_type'],
                 'expires_in' => $result['expires_in'],
-            ], 200);
+            ], 200)->withCookie(AuthCookie::make($result['token'], AuthCookie::portalFor(auth('api')->user())));
 
         } catch (\Throwable $e) {
             return response()->json([

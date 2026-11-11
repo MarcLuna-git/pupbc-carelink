@@ -23,6 +23,8 @@ class NurseEmailNotifier
         'medicine_low_stock',
         'medicine_out_of_stock',
         'medicine_expiring_soon',
+        'medicine_expires_today',
+        'medicine_expired',
     ];
 
     public function afterCreate(Notification $notification): void

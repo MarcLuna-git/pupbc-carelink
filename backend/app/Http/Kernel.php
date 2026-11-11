@@ -11,8 +11,10 @@ class Kernel extends HttpKernel
         \App\Http\Middleware\SetContentLength::class,
         // Inside SetContentLength so the length it sets is the compressed one.
         \App\Http\Middleware\CompressResponse::class,
+        \App\Http\Middleware\SecurityHeaders::class,
         \App\Http\Middleware\TrustProxies::class,
         \Fruitcake\Cors\HandleCors::class,
+        \App\Http\Middleware\AuthenticateFromCookie::class,
         \App\Http\Middleware\RequireJwtSecret::class,
         \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,

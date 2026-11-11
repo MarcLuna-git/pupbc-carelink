@@ -62,6 +62,8 @@ return [
         'X-CSRF-TOKEN',
         'X-Socket-Id',
         'X-Kiosk-Token',
+        // Which portal's session cookie a request uses (AuthenticateFromCookie).
+        'X-Portal',
         'If-Match',
         'Idempotency-Key',
     ],

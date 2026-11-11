@@ -11,7 +11,7 @@ class NotifyExpiringMedicines extends Command
 {
     protected $signature = 'medicines:notify-expiring';
 
-    protected $description = 'Notify nurses about medicines expiring within three months.';
+    protected $description = 'Notify nurses about medicines expiring within three months, expiring today, or already expired.';
 
     public function handle(): int
     {
@@ -50,6 +50,11 @@ class NotifyExpiringMedicines extends Command
                 ]);
                 $created++;
             }
+        }
+
+        // "Expires today" and "Expired", once per medicine and expiry date.
+        foreach ($nurses as $nurse) {
+            $created += \App\Services\MedicineExpiryAlerts::generateFor($nurse);
         }
 
         $this->info("Created {$created} medicine expiry notification(s).");

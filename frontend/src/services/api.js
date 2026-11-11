@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { createRequestPool } from './requestPool.js';
-import { clearSession, currentPortal, getToken } from './session.js';
+import { clearSession, currentPortal, sessionId } from './session.js';
 
 const getApiUrl = () => {
   const configuredUrl = import.meta.env.VITE_API_URL
@@ -31,11 +31,15 @@ const api = axios.create({
   },
 
   timeout: import.meta.env.PROD ? 20000 : 15000,
+
+  // The session is an httpOnly cookie (see session.js); send it to an API on
+  // another origin too (Render: www → apex). Same-origin hosts send it anyway.
+  withCredentials: true,
 });
 
 const transportGet = api.get.bind(api);
 const reads = createRequestPool(transportGet,
-  () => JSON.stringify([currentPortal(), getToken(), sessionStorage.getItem('carelink.kiosk.token')]),
+  () => JSON.stringify([currentPortal(), sessionId(), sessionStorage.getItem('carelink.kiosk.token')]),
   (url, config) => {
     const target = new URL(api.getUri({ ...config, url }), window.location.origin);
     target.searchParams.sort();
@@ -57,18 +61,21 @@ api.interceptors.request.use(
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type'];
     }
-    // The kiosk authenticates the device only; never send a portal user's token with it.
-    const isKioskRequest = config.url?.startsWith('/kiosk/');
-    const token = isKioskRequest ? null : getToken();
+    // The sign-in token is an httpOnly cookie, never a header from here; drop
+    // any Authorization a caller still sets so the cookie is what counts.
+    delete config.headers.Authorization;
 
-    if (isKioskRequest) {
-      delete config.headers.Authorization;
-    } else if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // X-Portal tells the server which portal's session cookie to use (and,
+    // being a custom header, keeps other sites from using the cookie). The
+    // kiosk authenticates the device only, so it never names a portal.
+    const isKioskRequest = config.url?.startsWith('/kiosk/');
+    if (!isKioskRequest && !config.headers['X-Portal']) {
+      const portal = currentPortal();
+      if (portal !== 'kiosk') config.headers['X-Portal'] = portal;
     }
 
     if (nurseWrite(config)) {
-      const fingerprint = JSON.stringify([token, config.method, config.url, config.data, config.headers['If-Match']]);
+      const fingerprint = JSON.stringify([sessionId('nurse'), config.method, config.url, config.data, config.headers['If-Match']]);
       if (!operations.has(fingerprint)) {
         const bytes = crypto.getRandomValues(new Uint8Array(16));
         operations.set(fingerprint, Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join(''));
@@ -113,7 +120,8 @@ api.interceptors.response.use(
     if (error.response && error.response.status < 500 && error.response.status !== 429) {
       operations.delete(error.config?.operationFingerprint);
     }
-    if (error.response?.status === 401) {
+    // restoreSession() asks "still signed in?"; a 401 there is an answer, not an expired session.
+    if (error.response?.status === 401 && !error.config?.skipAuthRedirect) {
       reads.invalidate();
       const pathname = window.location.pathname;
 

@@ -244,6 +244,31 @@ class StudentModuleTest extends TestCase
             ->assertJsonPath('data.qr_code_hash', 'student-module-active-hash');
     }
 
+    public function test_qr_page_shows_the_new_booking_after_a_no_show_the_same_day(): void
+    {
+        $student = $this->student();
+        $this->completeHealthProfile($student);
+        $today = Carbon::now('Asia/Manila')->toDateString();
+
+        // First visit today was closed as No Show (it stays "approved" with the flag set).
+        $missed = $this->appointment($student, $today);
+        $missed->forceFill(['no_show' => true, 'created_at' => now()->subHour()])->save();
+
+        // With only the closed visit today, the page still shows that visit.
+        $this->actingAs($student, 'api')
+            ->getJson('/api/student/qr')
+            ->assertOk()
+            ->assertJsonPath('data.appointment.id', $missed->id);
+
+        // The student books again for the same day and the nurse approves it.
+        $rebooked = $this->appointment($student, $today);
+
+        $this->getJson('/api/student/qr')
+            ->assertOk()
+            ->assertJsonPath('data.available', true)
+            ->assertJsonPath('data.appointment.id', $rebooked->id);
+    }
+
     public function test_notification_actions_are_scoped_and_delete_persists(): void
     {
         $student = $this->student();

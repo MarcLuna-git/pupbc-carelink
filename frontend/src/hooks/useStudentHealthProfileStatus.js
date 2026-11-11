@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import api from '../services/api';
-import { getToken, getUser, setUser } from '../services/session';
+import { sessionId, getUser, setUser } from '../services/session';
 
 /*
  * ============================================================
@@ -57,7 +57,7 @@ let completedHealthProfileCache = {
 };
 
 const COMPLETED_STATUS_CACHE_MS = 60 * 1000;
-const hasCompletedStatusCache = () => completedHealthProfileCache.token === getToken('student') &&
+const hasCompletedStatusCache = () => completedHealthProfileCache.token === sessionId('student') &&
   completedHealthProfileCache.completed && Date.now() - completedHealthProfileCache.fetchedAt < COMPLETED_STATUS_CACHE_MS;
 window.addEventListener('carelink:health-profile-saved', () => {
   completedHealthProfileCache = { token: null, completed: false, fetchedAt: 0 };
@@ -135,7 +135,7 @@ const syncStoredHealthProfileStatus = (completed) => {
  * Fetch authoritative completion state.
  */
 const fetchHealthProfileStatus = async () => {
-  const token = getToken('student');
+  const token = sessionId('student');
 
   if (!token) {
     throw new Error('No authenticated Student session.');
@@ -159,7 +159,7 @@ const fetchHealthProfileStatus = async () => {
   const response = await api.get(
     '/student/health-profile/status'
   );
-  if (getToken('student') !== token) throw new Error('Session changed.');
+  if (sessionId('student') !== token) throw new Error('Session changed.');
 
   const data = response.data?.data || {};
 

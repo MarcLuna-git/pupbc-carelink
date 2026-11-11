@@ -29,6 +29,9 @@
         <server name="DB_DATABASE" value="carelink_stability_testing" force="true"/>
         <server name="JWT_SECRET" value="isolated-test-secret-never-use-outside-tests-2026" force="true"/>
         <server name="KIOSK_DEVICE_TOKEN" value="isolated-test-device-token-never-use-outside-tests" force="true"/>
+        <!-- Never let a test call the real AI provider (it spends the account's paid credits). -->
+        <server name="OLLAMA_API_KEY" value="" force="true"/>
+        <server name="GEMINI_API_KEY" value="" force="true"/>
         <server name="MAIL_MAILER" value="array"/>
         <server name="EMAIL_TEST_MODE" value="false" force="true"/>
         <server name="QUEUE_CONNECTION" value="sync"/>

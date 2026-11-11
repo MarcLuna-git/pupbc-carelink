@@ -1,11 +1,13 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { BriefcaseMedical, LogOut, Moon, Palette, Settings, Sun } from 'lucide-react';
+import { BriefcaseMedical, LogOut, Moon, Palette, PenLine, Settings, Sun } from 'lucide-react';
 
 import { getAvatar } from '../../../utils/studentUser';
+import { currentSignatory } from '../../../services/documentSignatory';
 import { nurseDisplayName, nurseInitials } from './nurseNavigation';
+import NurseSignatoryDialog from './NurseSignatoryDialog';
 
 /*
  * Nurse account button + dropdown.
@@ -37,6 +39,7 @@ const NurseAccountMenu = ({
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState(null);
   const [avatarFailed, setAvatarFailed] = useState(false);
+  const [showSignatory, setShowSignatory] = useState(false);
 
   const displayName = nurseDisplayName(user);
   const avatar = getAvatar(user);
@@ -99,6 +102,9 @@ const NurseAccountMenu = ({
   }, [open]);
 
   const closeMenu = () => setOpen(false);
+  const closeSignatory = useCallback(() => setShowSignatory(false), []);
+  // Read when the menu draws, so it shows the latest pick after the dialog closes.
+  const signatory = open ? currentSignatory(user) : null;
 
   const signOut = () => {
     setOpen(false);
@@ -154,6 +160,16 @@ const NurseAccountMenu = ({
                 <span className="block text-xs text-gray-500 dark:text-gray-400">Manage account preferences</span>
               </span>
             </Link>
+
+            <button type="button" role="menuitem" onClick={() => { setOpen(false); setShowSignatory(true); }} className={`mt-1 ${itemClass}`}>
+              <span className={iconBox}><PenLine className="h-4 w-4" /></span>
+              <span className="min-w-0">
+                <span className="block font-semibold">Document signatory</span>
+                <span className="block truncate text-xs text-gray-500 dark:text-gray-400">
+                  {signatory ? `Signing as ${signatory.name}` : 'Usual signatory on each document'}
+                </span>
+              </span>
+            </button>
 
             <div className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200">
               <span className={iconBox}><BriefcaseMedical className="h-4 w-4" /></span>
@@ -247,6 +263,7 @@ const NurseAccountMenu = ({
       </button>
 
       {createPortal(menu, document.body)}
+      {showSignatory && <NurseSignatoryDialog user={user} onClose={closeSignatory} />}
     </>
   );
 };

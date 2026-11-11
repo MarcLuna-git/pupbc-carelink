@@ -4,7 +4,8 @@ These files are the printouts made by **Print / Preview** in the nurse Consultat
 
 | File | What it is |
 |---|---|
-| `layout.html` | The page around every document: the `<style>` block, the PUP letterhead (logo, university and campus names, clinic name), the issue date and reference, and the page box. The document goes where `{{{content}}}` is. |
+| `print.css` | The styles for `layout.html` and every document template. Put new styles here, scoped to the document's wrapper class (for example `.ojt`): the site's Content-Security-Policy blocks `<style>` blocks and `style=""` attributes in the templates. |
+| `layout.html` | The page around every document: the link to `print.css`, the PUP letterhead (logo, university and campus names, clinic name), the issue date and reference, and the page box. The document goes where `{{{content}}}` is. |
 | `pup-logo.png` | The logo in the letterhead. Replace it with an image of the same name to change it. |
 | `cho-logo.jpeg` | The City Health Office (Lungsod ng Biñan) logo, shown on the right of the letterhead of the OJT certificate. |
 | `bagong-pilipinas-logo.png` | The Bagong Pilipinas logo, shown on the right of the letterhead of the Medical Liability Form. |

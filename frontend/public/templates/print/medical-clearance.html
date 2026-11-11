@@ -1,15 +1,6 @@
 <!-- Medical Clearance (certification) for a batch of students. Printed inside layout.html. Placeholders are listed in README.md.
      Follows the clinic's batch certification: the listed students were assessed and are physically fit to join an activity.
      The student names are typed by the nurse and arrive ready-made in student_list. -->
-<style>
-  .clearance .date { margin: 8px 0 14px; }
-  .clearance .statement { line-height: 1.7; text-align: justify; }
-  /* Names are numbered, sorted A to Z by the page; long lists run in two columns. */
-  .clearance .clearance-list { margin: 10px 0 14px; padding-left: 1.6em; line-height: 1.55; }
-  .clearance .clearance-list li { break-inside: avoid; }
-  .clearance .clearance-list.two { columns: 2; column-gap: 0.5in; }
-  .clearance .fill { display: inline-block; min-width: 1.2in; padding: 0 4px; border-bottom: 1px solid #000; text-align: center; }
-</style>
 <div class="clearance">
   <p class="date">{{issued_date}}</p>
 
@@ -24,7 +15,7 @@
   <p class="statement">Thank you!</p>
 </div>
 
-<div class="sign right"><div><strong>{{staff_name}}</strong><small>{{staff_role}}</small></div></div>
+<div class="sign right">{{#signature_block}}{{{signature_block}}}{{/signature_block}}{{^signature_block}}<div><strong>{{staff_name}}</strong><small>{{staff_role}}</small></div>{{/signature_block}}</div>
 <p class="note">
   System-generated copy of a certification issued by the {{clinic_name}} on {{issued_date}} for {{student_count}} student/s.
 </p>

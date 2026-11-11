@@ -1,4 +1,4 @@
-import { getToken, getUser, setUser } from '../../../services/session';
+import { getUser, setUser } from '../../../services/session';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -201,13 +201,12 @@ const Settings = () => {
 
     setLoading(true); setMessage('');
     try {
-      const token = getToken('student');
       await api.post('/auth/change-password', {
         email: user.email,
         current_password: passwordForm.current_password,
         new_password: passwordForm.new_password,
         new_password_confirmation: passwordForm.new_password_confirmation,
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      });
 
       setMessageType('success');
       setMessage('Password updated successfully!');

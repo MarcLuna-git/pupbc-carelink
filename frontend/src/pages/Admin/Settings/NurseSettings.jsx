@@ -1,4 +1,4 @@
-import { clearSession, getToken, getUser, setUser } from '../../../services/session';
+import { clearSession, getUser, setUser } from '../../../services/session';
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -227,14 +227,11 @@ const NurseSettings = () => {
     setMessage('');
 
     try {
-      const token = getToken('nurse');
       await api.post('/nurse/change-password', {
         email: user.email,
         current_password: passwordForm.current_password,
         new_password: passwordForm.new_password,
         new_password_confirmation: passwordForm.new_password_confirmation,
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
 
       setMessageType('success');
@@ -264,9 +261,8 @@ const NurseSettings = () => {
     setMessage('');
 
     try {
-      const token = getToken('nurse');
       const response = await api.put('/nurse/profile', profile, {
-        headers: { Authorization: `Bearer ${token}`, 'If-Match': baseline.current.sync_version }
+        headers: { 'If-Match': baseline.current.sync_version }
       });
 
       const updatedUser = response.data.data;

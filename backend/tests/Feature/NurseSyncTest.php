@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Support\AuthCookie;
 use App\Models\Medicine;
 use App\Models\User;
 use App\Services\NurseSync;
@@ -138,8 +139,9 @@ class NurseSyncTest extends TestCase
     {
         $nurse = $this->person();
         $credentials = ['email' => $nurse->email, 'password' => 'TestPassword123!'];
-        $first = $this->postJson('/api/auth/nurse-login', $credentials)->assertOk()->json('token');
-        $second = $this->postJson('/api/auth/nurse-login', $credentials)->assertOk()->json('token');
+        // The token is only in the httpOnly session cookie (App\Support\AuthCookie).
+        $first = $this->postJson('/api/auth/nurse-login', $credentials)->assertOk()->getCookie(AuthCookie::name('nurse'), false)->getValue();
+        $second = $this->postJson('/api/auth/nurse-login', $credentials)->assertOk()->getCookie(AuthCookie::name('nurse'), false)->getValue();
         $this->assertNotEmpty($first);
         $this->assertNotSame($first, $second);
         foreach ([$first, $second, $first] as $token) {

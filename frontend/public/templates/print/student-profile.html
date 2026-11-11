@@ -1,6 +1,6 @@
-<!-- Student Health Profile, printed from the nurse portal (Students > a student > Print profile). Printed inside layout.html.
+<!-- Student Health Profile, printed in the nurse portal (Students > a student > Print profile). Printed inside layout.html.
      Placeholders are listed in README.md. The personal details are always printed (a blank keeps its line); the health
-     sections come from the student's health profile and only list what was filled in. -->
+     sections are the student's health profile and only list what was filled in. -->
 <h1>{{document_title}}</h1>
 
 <div class="row">
@@ -25,7 +25,7 @@
 
 {{{health_sections}}}
 
-<div class="sign"><div><strong>{{staff_name}}</strong><small>{{staff_role}}</small><small class="lic">Lic. No. <span class="fill"></span></small></div></div>
+<div class="sign">{{#signature_block}}{{{signature_block}}}{{/signature_block}}{{^signature_block}}<div><strong>{{staff_name}}</strong><small>{{staff_role}}</small><small class="lic">Lic. No. <span class="fill"></span></small></div>{{/signature_block}}</div>
 
 <div class="privacy">
   <strong>Data Privacy Notice</strong>

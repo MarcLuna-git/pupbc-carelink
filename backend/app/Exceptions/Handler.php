@@ -24,14 +24,26 @@ class Handler extends ExceptionHandler
     public function register()
     {
         $this->reportable(function (Throwable $e) {
+            // Looking up the signed-in user queries the database. When the
+            // database is the thing that failed, that lookup throws again from
+            // inside the reporter, and the response then leaves through PHP's
+            // fallback handler without any of the security headers.
+            try {
+                $userId = auth()->id() ?? 'guest';
+                $userType = auth()->check() ? (auth()->user()->role ?? 'unknown') : 'guest';
+            } catch (Throwable $lookupFailure) {
+                $userId = 'unavailable';
+                $userType = 'unavailable';
+            }
+
             Log::channel('daily')->error($e->getMessage(), [
                 'exception' => get_class($e),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'url' => request()->url(),
                 'method' => request()->method(),
-                'user_id' => auth()->id() ?? 'guest',
-                'user_type' => auth()->check() ? (auth()->user()->role ?? 'unknown') : 'guest',
+                'user_id' => $userId,
+                'user_type' => $userType,
                 'ip' => request()->ip(),
                 'user_agent' => request()->userAgent(),
                 'input' => $this->sanitizeInput(request()->except(['password', 'password_confirmation', 'token'])),
@@ -81,6 +93,54 @@ class Handler extends ExceptionHandler
                 ], 429, $e->getHeaders());
             }
         });
+
+        // Database failures must never reach the client with their SQL, file
+        // paths or stack trace, even when APP_DEBUG is on. The full error is
+        // already written to the daily log by the reportable callback above.
+        $this->renderable(function (\PDOException $e, $request) {
+            if ($this->isDatabaseUnavailable($e)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Service temporarily unavailable. Please try again shortly.',
+                    'error_code' => 'SERVICE_UNAVAILABLE',
+                ], 503, ['Retry-After' => 30]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong. Please try again.',
+                'error_code' => 'SERVER_ERROR',
+            ], 500);
+        });
+    }
+
+    /** True when the database server itself cannot be reached (outage, not a query bug). */
+    private function isDatabaseUnavailable(\PDOException $e): bool
+    {
+        $message = strtolower($e->getMessage());
+
+        $markers = [
+            'sqlstate[hy000] [2002]',
+            'sqlstate[hy000] [2003]',
+            'sqlstate[hy000] [2006]',
+            'sqlstate[hy000] [1040]',
+            'sqlstate[hy000] [1130]',
+            'sqlstate[08',
+            'connection refused',
+            'actively refused',
+            'could not connect',
+            'server has gone away',
+            'connection timed out',
+            'too many connections',
+        ];
+
+        foreach ($markers as $marker) {
+            if (strpos($message, $marker) !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function sanitizeInput(array $input): array

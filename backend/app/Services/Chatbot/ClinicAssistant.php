@@ -16,13 +16,14 @@ namespace App\Services\Chatbot;
  */
 class ClinicAssistant
 {
-    private OllamaClient $client;
+    // Ollama first, Gemini when Ollama cannot answer (see FallbackChatClient).
+    private FallbackChatClient $client;
 
     private StudentContext $context;
 
     private SymptomTriage $triage;
 
-    public function __construct(OllamaClient $client, StudentContext $context, SymptomTriage $triage)
+    public function __construct(FallbackChatClient $client, StudentContext $context, SymptomTriage $triage)
     {
         $this->client = $client;
         $this->context = $context;

@@ -1,5 +1,8 @@
 import api from './api';
-import { clearSession, currentPortal, getToken, getUser, setToken, setUser } from './session';
+import { clearSession, currentPortal, getUser, hasSession, startSession } from './session';
+
+// One /auth/me check per portal at a time (several guards can ask at once).
+const restoring = {};
 
 const getPayload = (responseData) => {
   // Tanggap ang token/user sa data object o sa root response.
@@ -18,12 +21,9 @@ const authService = {
     const body = response.data;
     const payload = getPayload(body);
 
-    if (body.success && payload?.token) {
-      setToken(payload.token, 'nurse');
-
-      if (payload.user) {
-        setUser(payload.user, 'nurse');
-      }
+    // The server set the session cookie; only the user is kept, in memory.
+    if (body.success && payload?.user) {
+      startSession(payload.user, 'nurse');
     }
 
     return body;
@@ -40,12 +40,9 @@ const authService = {
     const body = response.data;
     const payload = getPayload(body);
 
-    if (body.success && payload?.token) {
-      setToken(payload.token, 'student');
-
-      if (payload.user) {
-        setUser(payload.user, 'student');
-      }
+    // The server set the session cookie; only the user is kept, in memory.
+    if (body.success && payload?.user) {
+      startSession(payload.user, 'student');
     }
 
     return body;
@@ -150,7 +147,8 @@ const authService = {
   // Signs out of the current portal only; the other portal's session stays.
   async logout(portal = currentPortal()) {
     try {
-      await api.post('/auth/logout');
+      // The server clears this portal's httpOnly cookie (even if the session already expired).
+      await api.post('/auth/logout', {}, { headers: { 'X-Portal': portal } });
     } catch (e) {
       // I-clear ang local session kahit invalid na ang token.
     }
@@ -184,7 +182,7 @@ const authService = {
   },
 
   isAuthenticated() {
-    return !!getToken();
+    return hasSession();
   },
 
   isNurse() {
@@ -199,24 +197,34 @@ const authService = {
     return user?.role === 'student';
   },
 
-  getToken() {
-    return getToken();
-  },
-
-
+  // The server renews the session cookie; nothing to store here.
   async refreshToken() {
     const response = await api.post(
       '/auth/refresh'
     );
 
-    const body = response.data;
-    const payload = getPayload(body);
+    return response.data;
+  },
 
-    if (body.success && payload?.token) {
-      setToken(payload.token);
-    }
-
-    return body;
+  /*
+   * After a reload the in-memory session is empty: ask the server whether this
+   * portal's session cookie is still signed in. Resolves true (and remembers
+   * the user) or false. Never redirects by itself.
+   */
+  restoreSession(portal = currentPortal()) {
+    if (hasSession(portal)) return Promise.resolve(true);
+    restoring[portal] ||= api.get('/auth/me', { headers: { 'X-Portal': portal }, skipAuthRedirect: true })
+      .then((response) => {
+        const user = response.data?.user;
+        if (response.data?.success && user?.role === portal) {
+          startSession(user, portal);
+          return true;
+        }
+        return false;
+      })
+      .catch(() => false)
+      .finally(() => { delete restoring[portal]; });
+    return restoring[portal];
   },
 
   async getMe() {
@@ -226,4 +234,4 @@ const authService = {
   },
 };
 
-export default authService;
+export default authService;

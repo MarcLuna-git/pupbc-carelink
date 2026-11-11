@@ -1,13 +1,6 @@
 <!-- Medical Certificate (OJT). Printed inside layout.html. Placeholders are listed in README.md.
      Follows the clinic's MEDCERT-OJT.xlsx: the student is essentially normal and may undergo On the Job Training
      at a company. A field with no value keeps its blank line so it can be written by hand. -->
-<style>
-  /* Filled-in blanks keep their underline, like writing on the paper form's lines. */
-  .ojt .fill { display: inline-block; min-width: 1.6in; padding: 0 6px; border-bottom: 1px solid #000; text-align: center; line-height: 1.3; }
-  .ojt .fill.short { min-width: 0.6in; }
-  .ojt .fill.wide { min-width: 4in; }
-  .ojt .statement { line-height: 2.2; }
-</style>
 <h1>Medical Certificate</h1>
 
 <div class="row">
@@ -28,7 +21,7 @@
   </p>
 </div>
 
-<div class="sign right"><div class="signed"><img class="esign" src="{{template_dir}}signature-prieto.jpeg" alt="" /><strong>Angelo Tristan Prieto, M.D.</strong><small>Lic. No. 0124173</small></div></div>
+<div class="sign right">{{#signature_block}}{{{signature_block}}}{{/signature_block}}{{^signature_block}}<div class="signed"><img class="esign" src="{{template_dir}}signature-prieto.jpeg" alt="" /><strong>Angelo Tristan Prieto, M.D.</strong><small>Lic. No. 0124173</small></div>{{/signature_block}}</div>
 <p class="note">
   System-generated copy of a certificate issued by the {{clinic_name}} on {{visit_date}}.
   Verify the control number with the clinic.

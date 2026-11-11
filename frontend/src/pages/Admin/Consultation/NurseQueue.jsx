@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { getToken } from '../../../services/session';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ClipboardList, CheckCircle, Stethoscope, ListOrdered, Users, UserX, Star, SlidersHorizontal, Square } from 'lucide-react';
 import api from '../../../services/api';
@@ -173,10 +172,7 @@ const NurseQueue = () => {
     const request = ++queueRequest.current;
     try {
       if (!silent) setPageLoading(true);
-      const token = getToken('nurse');
-      const response = await api.get('/nurse/queue/checkins', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/nurse/queue/checkins');
       if (request !== queueRequest.current) return;
       if (response.data.success) {
         const formatted = queueRowsFrom(response);

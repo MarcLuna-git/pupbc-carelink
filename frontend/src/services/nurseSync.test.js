@@ -7,7 +7,10 @@ documentTarget.hidden = false;
 globalThis.window = windowTarget;
 globalThis.document = documentTarget;
 Object.defineProperty(globalThis, 'navigator', { value: { onLine: true }, configurable: true });
-globalThis.localStorage = { getItem: () => 'test-token' };
+globalThis.localStorage = { getItem: () => null, removeItem: () => {} };
+// A signed-in nurse (the session lives in memory; the token is an httpOnly cookie).
+const { startSession } = await import('./session.js');
+startSession({ id: 'nurse-1', role: 'nurse' }, 'nurse');
 let revisions = { medicines: 1, appointments: 1, day: '2026-10-09' };
 let failure = false;
 const get = mock.fn(async () => {

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Calendar, ClipboardList, FileText, Clock, Bell, ChevronRight, Activity, Heart, QrCode, User, AlertCircle, CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
 import api from '../../../services/api';
-import { getToken, getUser, setUser } from '../../../services/session';
+import { getUser, setUser } from '../../../services/session';
 import { groupAppointments, formatAppointmentDate } from '../../../utils/appointmentDate';
 
 const Skeleton = ({ className = '' }) => (
@@ -38,13 +38,11 @@ const Dashboard = () => {
 
   const fetchDashboardData = useCallback(async () => {
     try {
-      const token = getToken('student');
-      const headers = { headers: { Authorization: `Bearer ${token}` } };
 
       const [healthResult, statsResult, appointmentsResult] = await Promise.allSettled([
-        api.get('/student/health-profile/status', headers),
-        api.get('/student/dashboard-stats', headers),
-        api.get('/student/upcoming-appointments', headers),
+        api.get('/student/health-profile/status'),
+        api.get('/student/dashboard-stats'),
+        api.get('/student/upcoming-appointments'),
       ]);
       if (appointmentsResult.status === 'fulfilled' && appointmentsResult.value.data.success) {
         setAppointments(appointmentsResult.value.data.data || []);
@@ -90,8 +88,7 @@ const Dashboard = () => {
 
   const fetchAnnouncements = useCallback(async () => {
     try {
-      const token = getToken('student');
-      const response = await api.get('/announcements?limit=3', { headers: { Authorization: `Bearer ${token}` } });
+      const response = await api.get('/announcements?limit=3');
       if (response.data.success) {
         const data = response.data.data;
         const items = Array.isArray(data) ? data : (data?.data || []);
@@ -106,8 +103,7 @@ const Dashboard = () => {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const token = getToken('student');
-      const response = await api.get('/notifications?limit=5', { headers: { Authorization: `Bearer ${token}` } });
+      const response = await api.get('/notifications?limit=5');
       if (response.data.success) {
         const data = response.data.data;
         const items = Array.isArray(data) ? data : (data?.data || []);

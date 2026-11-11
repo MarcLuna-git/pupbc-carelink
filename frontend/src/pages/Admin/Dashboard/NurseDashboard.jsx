@@ -1,4 +1,4 @@
-import { getToken, getUser } from '../../../services/session';
+import { getUser } from '../../../services/session';
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, Calendar, Clock, ClipboardList, Activity, CalendarClock, CalendarCheck, CalendarRange, ChevronRight } from 'lucide-react';
@@ -43,10 +43,7 @@ const NurseDashboard = () => {
     const request = ++requests.current.stats;
     try {
       if (!silent) setLoading(true);
-      const token = getToken('nurse');
-      const response = await api.get('/nurse/dashboard-stats', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/nurse/dashboard-stats');
       if (request !== requests.current.stats) return;
       if (response.data.success) {
         setError('');
@@ -75,10 +72,7 @@ const NurseDashboard = () => {
   const fetchTodaySchedule = async () => {
     const request = ++requests.current.schedule;
     try {
-      const token = getToken('nurse');
-      const response = await api.get('/nurse/dashboard/appointments-today', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/nurse/dashboard/appointments-today');
       if (request !== requests.current.schedule) return;
       if (response.data.success) {
         const data = response.data.data;
@@ -99,10 +93,7 @@ const NurseDashboard = () => {
   const fetchRecentActivity = async () => {
     const request = ++requests.current.activity;
     try {
-      const token = getToken('nurse');
-      const response = await api.get('/nurse/dashboard/recent-activity', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/nurse/dashboard/recent-activity');
       if (request !== requests.current.activity) return;
       if (response.data.success) {
         const data = response.data.data;

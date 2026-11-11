@@ -136,4 +136,82 @@ class MedicineInventoryTest extends TestCase
         $paged = $this->getJson("/api/nurse/medicines?search=$tag&per_page=2")->assertOk();
         $paged->assertJsonPath('data.per_page', 2)->assertJsonPath('data.total', 6)->assertJsonPath('data.last_page', 3);
     }
+
+    public function test_a_nurse_is_told_once_when_a_medicine_expires_today_or_has_expired(): void
+    {
+        $nurse = $this->person('nurse');
+        $this->actingAs($nurse, 'api');
+        $tag = 'ALR' . Str::upper(Str::random(6));
+        $make = fn (string $label, int $quantity, string $expiry) => Medicine::create([
+            'name' => "$tag $label", 'quantity' => $quantity, 'minimum_stock' => 1, 'unit' => 'tablet', 'expiry_date' => $expiry,
+        ]);
+        $make('Today', 20, today()->toDateString());
+        $past = $make('Past', 20, now()->subDays(3)->toDateString());
+        $make('PastEmpty', 0, now()->subDays(3)->toDateString()); // nothing on the shelf: no alert
+        $make('Fine', 20, now()->addYear()->toDateString());
+
+        $alerts = fn () => \App\Models\Notification::where('user_id', $nurse->id)
+            ->whereIn('type', ['medicine_expires_today', 'medicine_expired'])->where('message', 'like', "$tag %")->orderBy('type')->get();
+
+        // Loading the notifications creates them; loading again does not repeat them.
+        $this->getJson('/api/notifications')->assertOk();
+        $this->getJson('/api/notifications')->assertOk();
+        $this->assertSame(['medicine_expired', 'medicine_expires_today'], $alerts()->pluck('type')->all());
+        $this->assertSame("$tag Today expires today (" . today()->format('M j, Y') . ').', $alerts()[1]->message);
+
+        // A dismissed alert is kept (hidden), so it does not come back.
+        $expired = $alerts()[0];
+        $this->deleteJson('/api/notifications/' . $expired->id)->assertOk();
+        $this->assertTrue($expired->fresh()->data['dismissed']);
+        $this->getJson('/api/notifications')->assertOk()->assertJsonMissing(['id' => $expired->id]);
+        $this->assertCount(2, $alerts());
+
+        // A new expiry date on the same medicine alerts again when it passes.
+        $past->update(['expiry_date' => now()->subDay()->toDateString()]);
+        $this->getJson('/api/notifications')->assertOk();
+        $this->assertCount(3, $alerts());
+    }
+
+    public function test_stock_and_expiry_are_reported_filtered_and_sorted_apart(): void
+    {
+        $this->actingAs($this->person('nurse'), 'api');
+        $tag = 'EXP' . Str::upper(Str::random(6));
+        $make = fn (string $label, int $quantity, ?string $expiry) => Medicine::create([
+            'name' => "$tag $label", 'quantity' => $quantity, 'minimum_stock' => 10, 'unit' => 'tablet', 'expiry_date' => $expiry,
+        ]);
+        $make('Fine', 100, now()->addYear()->toDateString());
+        $make('NoDate', 100, null);
+        $make('Past', 50, now()->subDay()->toDateString());
+        $make('Today', 50, today()->toDateString());
+        $make('TodayLow', 5, today()->toDateString());
+        $make('Soon', 0, now()->addMonth()->toDateString());
+        // A stocked batch's date beats the medicine's own: this one expires today, not next year.
+        $batched = $make('Batch', 100, now()->addYear()->toDateString());
+        $batched->batches()->create(['lot_number' => 'L1', 'quantity' => 100, 'expiry_date' => today()->toDateString()]);
+
+        $rows = fn (string $query) => collect($this->getJson("/api/nurse/medicines?search=$tag$query")->assertOk()->json('data.data'))
+            ->map(fn ($row) => array_merge($row, ['label' => str_replace("$tag ", '', $row['name'])]));
+        $names = fn (string $query) => $rows($query)->pluck('label')->sort()->values()->all();
+
+        // Every row says its stock and its expiry apart, so low stock no longer hides an expiry.
+        $all = $rows('')->keyBy('label');
+        $this->assertSame(['low_stock', 'today', 0], [$all['TodayLow']['stock_status'], $all['TodayLow']['expiry_status'], $all['TodayLow']['days_to_expiry']]);
+        $this->assertSame(['in_stock', 'expired', -1], [$all['Past']['stock_status'], $all['Past']['expiry_status'], $all['Past']['days_to_expiry']]);
+        $this->assertSame(['out_of_stock', 'soon'], [$all['Soon']['stock_status'], $all['Soon']['expiry_status']]);
+        $this->assertSame(['in_stock', 'ok'], [$all['Fine']['stock_status'], $all['Fine']['expiry_status']]);
+        $this->assertSame([null, null], [$all['NoDate']['expiry_status'], $all['NoDate']['days_to_expiry']]);
+        $this->assertSame('today', $all['Batch']['expiry_status']);
+
+        $this->assertSame(['Past'], $names('&expiry=expired'));
+        $this->assertSame(['Batch', 'Today', 'TodayLow'], $names('&expiry=today'));
+        $this->assertSame(['Soon'], $names('&expiry=soon'));
+        $this->assertSame(['TodayLow'], $names('&stock=low_stock'));
+        $this->assertSame(['Soon'], $names('&stock=out_of_stock'));
+        $this->assertSame(['TodayLow'], $names('&stock=low_stock&expiry=today'));
+        $this->assertCount(7, $names('&stock=nonsense&expiry=nonsense'));
+
+        // Soonest expiry first (same day: by name), medicines without a date last.
+        $this->assertSame(['Past', 'Batch', 'Today', 'TodayLow', 'Soon', 'Fine', 'NoDate'], $rows('&sort=expiry')->pluck('label')->all());
+        $this->assertSame(['Soon', 'TodayLow'], $rows('&sort=stock')->pluck('label')->take(2)->all());
+    }
 }

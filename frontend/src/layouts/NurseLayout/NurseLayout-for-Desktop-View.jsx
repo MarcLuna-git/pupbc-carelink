@@ -2,7 +2,7 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 
-import { getUser, setUser as saveSessionUser, sessionKeys } from '../../services/session';
+import { getUser, onSessionChange, setUser as saveSessionUser } from '../../services/session';
 import useAccountTheme from '../../hooks/useAccountTheme';
 import useNurseSync from '../../hooks/useNurseSync';
 import authService from '../../services/authService';
@@ -66,14 +66,10 @@ const NurseLayoutForDesktopView = ({ children }) => {
     saveSessionUser(latest, 'nurse');
   });
 
-  // Settings saves the user to session storage; follow it (other tabs too).
-  useEffect(() => {
-    const onStorage = (event) => {
-      if (event.key === sessionKeys('nurse').user || event.key === null) setUser(getUser('nurse'));
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  // Settings saves the user to the in-memory session; follow it.
+  useEffect(() => onSessionChange((portal) => {
+    if (portal === 'nurse') setUser(getUser('nurse'));
+  }), []);
 
   useEffect(() => {
     setUser(getUser('nurse'));

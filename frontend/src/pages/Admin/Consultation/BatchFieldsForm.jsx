@@ -1,4 +1,5 @@
 import { inputStyle } from '../Students/directoryOptions';
+import BatchSectionField from './BatchSectionField';
 
 /* Batch Release → the selected document's own details, drawn from its `fields` in batchDocuments.js. */
 export const fieldLabel = 'mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-300';
@@ -33,6 +34,8 @@ export default function BatchFieldsForm({ doc, values, errors, onChange }) {
                 <option value="">Select…</option>
                 {(field.options || []).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
               </select>
+            ) : field.type === 'section' ? (
+              <BatchSectionField {...props} onChange={onChange} maxLength={field.max} placeholder={field.placeholder} />
             ) : (
               <input {...props} type={field.type || 'text'} maxLength={field.max} placeholder={field.placeholder} />
             )}

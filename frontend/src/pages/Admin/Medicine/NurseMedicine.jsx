@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronDown, ChevronRight, ClipboardList, Download, EllipsisVertical, FileSpreadsheet, FileText, Filter, History, Package, PackagePlus, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
+import { ArrowUpDown, CalendarClock, ChevronDown, ChevronRight, ClipboardList, Download, EllipsisVertical, FileSpreadsheet, FileText, Filter, History, Package, PackagePlus, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import NursePageTitle from '../../../components/NursePageTitle';
@@ -12,15 +12,19 @@ import { focus } from '../Students/directoryOptions';
 import MedicineFormModal from './MedicineFormModal';
 import { DeleteModal, MovementModal, RestockModal } from './MedicineActionModals';
 import StockHistoryPanel from './StockHistoryPanel';
-import { STANDARD_CATEGORIES, STATUS, STATUS_FILTERS, isoDay, unitIcon, unitLabel } from './medicineOptions';
+import { EXPIRY, EXPIRY_FILTERS, SORTS, STANDARD_CATEGORIES, STOCK, STOCK_FILTERS, expiryNote, expiryStatusOf, isoDay, stockStatusOf, unitIcon, unitLabel } from './medicineOptions';
 import { exportStockHistory } from './stockHistoryExport';
 
 /*
- * Medicine Inventory: search and filters with Add Medicine on one row, the medicines in a table with
- * Restock / Edit / more actions on each row, and the stock history of one medicine below the table.
+ * Medicine Inventory: search, filters (category, stock, expiry), sorting and Add Medicine above the table;
+ * the medicines in a table with Restock / Edit / more actions on each row; and the stock history of one
+ * medicine below the table. Stock and expiry each have their own badge, filter and sort.
  */
 const PER_PAGE = 10;
-const COLUMNS = 'md:grid-cols-[minmax(0,2.2fr)_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.1fr)_15rem]';
+// Medicine, Generic Name, Available Stock, Expiry Date, Expiry Status, Stock Status, Actions.
+const COLUMNS = 'lg:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1.1fr)_15rem]';
+const badge = 'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold';
+const cellLabel = 'block text-xs text-gray-500 lg:hidden';
 const control = 'h-11 w-full rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:ring-maroon-300/30';
 const rowButton = `inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition-colors disabled:opacity-50 ${focus}`;
 const menuItem = `flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700/50 ${focus}`;
@@ -74,7 +78,9 @@ const NurseMedicine = () => {
   const [search, setSearch] = useState('');
   const searchTerm = useDebouncedValue(search, 300);
   const [category, setCategory] = useState('');
-  const [status, setStatus] = useState('');
+  const [stock, setStock] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [sort, setSort] = useState('');
   const [usedCategories, setUsedCategories] = useState([]);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
@@ -94,7 +100,9 @@ const NurseMedicine = () => {
       const params = { page, per_page: PER_PAGE };
       if (searchTerm) params.search = searchTerm;
       if (category) params.category = category;
-      if (status) params.status = status;
+      if (stock) params.stock = stock;
+      if (expiry) params.expiry = expiry;
+      if (sort) params.sort = sort;
       const { data } = await api.get('/nurse/medicines', { params, signal });
       if (signal?.aborted || id !== requestId.current) return;
       const list = data.data;
@@ -112,7 +120,7 @@ const NurseMedicine = () => {
     } finally {
       if (id === requestId.current) { setInitial(false); setRefreshing(false); }
     }
-  }, [page, searchTerm, category, status]);
+  }, [page, searchTerm, category, stock, expiry, sort]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -120,7 +128,7 @@ const NurseMedicine = () => {
     return () => controller.abort();
   }, [fetchMedicines]);
 
-  useNurseSync(['medicines'], signal => fetchMedicines(signal, true), JSON.stringify([page, searchTerm, category, status]));
+  useNurseSync(['medicines'], signal => fetchMedicines(signal, true), JSON.stringify([page, searchTerm, category, stock, expiry, sort]));
 
   const loadCategories = useCallback(() => {
     api.get('/nurse/medicines/categories').then(({ data }) => setUsedCategories([...(data.data || [])].filter(Boolean).sort((a, b) => a.localeCompare(b)))).catch(() => {});
@@ -131,7 +139,7 @@ const NurseMedicine = () => {
   const formCategories = [...STANDARD_CATEGORIES, ...usedCategories.filter(name => !STANDARD_CATEGORIES.includes(name))];
 
   const changeFilter = setter => event => { setter(event.target.value); setPage(1); };
-  const filtered = Boolean(searchTerm || category || status);
+  const filtered = Boolean(searchTerm || category || stock || expiry);
   // After a save, reload the list before the popup closes: the next popup then opens with the new stock and version.
   const done = async text => {
     try { await fetchMedicines(undefined, true); } catch { /* the sync poll will catch up */ }
@@ -158,9 +166,9 @@ const NurseMedicine = () => {
       <NurseToast message={message} type={messageType} onClose={() => setMessage('')} />
 
       <section aria-label="Medicine inventory" aria-busy={refreshing} className="rounded-lg border border-gray-100 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
-        {/* Search, the two filters and Add Medicine share one row and one height. */}
-        <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:flex lg:items-center lg:p-5">
-          <div className="relative min-w-0 sm:col-span-2 lg:flex-1">
+        {/* Search, the filters, sorting and Add Medicine share one height; they wrap to a second row when the page is narrow. */}
+        <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-center lg:p-5">
+          <div className="relative min-w-0 sm:col-span-2 lg:min-w-[16rem] lg:flex-1">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
             <input type="search" aria-label="Search medicines" className={`${control} pl-10 pr-10`} value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} placeholder="Search medicine name or generic name" />
             {search && <button type="button" onClick={() => { setSearch(''); setPage(1); }} aria-label="Clear search" className={`absolute right-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 ${focus}`}><X className="h-4 w-4" /></button>}
@@ -173,10 +181,24 @@ const NurseMedicine = () => {
             </select>
             <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
           </div>
-          <div className="relative lg:w-52">
+          <div className="relative lg:w-48">
             <Filter className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
-            <select aria-label="Filter by stock status" className={`${control} cursor-pointer appearance-none pl-10 pr-9`} value={status} onChange={changeFilter(setStatus)}>
-              {STATUS_FILTERS.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+            <select aria-label="Filter by stock status" className={`${control} cursor-pointer appearance-none pl-10 pr-9`} value={stock} onChange={changeFilter(setStock)}>
+              {STOCK_FILTERS.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+          </div>
+          <div className="relative lg:w-48">
+            <CalendarClock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+            <select aria-label="Filter by expiry status" className={`${control} cursor-pointer appearance-none pl-10 pr-9`} value={expiry} onChange={changeFilter(setExpiry)}>
+              {EXPIRY_FILTERS.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+          </div>
+          <div className="relative lg:w-60">
+            <ArrowUpDown className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+            <select aria-label="Sort medicines" className={`${control} cursor-pointer appearance-none pl-10 pr-9`} value={sort} onChange={changeFilter(setSort)}>
+              {SORTS.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
             </select>
             <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
           </div>
@@ -194,29 +216,37 @@ const NurseMedicine = () => {
           </div>
         ) : (
           <>
-            <div aria-hidden="true" className={`hidden items-center gap-4 border-y border-gray-100 bg-gray-50 px-5 py-3 text-xs font-semibold text-gray-600 md:grid dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-300 ${COLUMNS}`}>
-              <span>Medicine</span><span>Generic Name</span><span>Available Stock</span><span>Expiry Date</span><span>Status</span><span>Actions</span>
+            <div aria-hidden="true" className={`hidden items-center gap-4 border-y border-gray-100 bg-gray-50 px-5 py-3 text-xs font-semibold text-gray-600 lg:grid dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-300 ${COLUMNS}`}>
+              <span>Medicine</span><span>Generic Name</span><span>Available Stock</span><span>Expiry Date</span><span>Expiry Status</span><span>Stock Status</span><span>Actions</span>
             </div>
-            <ul className="divide-y divide-gray-100 border-t border-gray-100 md:border-t-0 dark:divide-gray-700 dark:border-gray-700">
+            <ul className="divide-y divide-gray-100 border-t border-gray-100 lg:border-t-0 dark:divide-gray-700 dark:border-gray-700">
               {medicines.map(medicine => {
-                const state = STATUS[medicine.status] || STATUS.ok;
+                const state = STOCK[stockStatusOf(medicine)] || STOCK.in_stock;
+                const expiryState = EXPIRY[expiryStatusOf(medicine)];
                 const Icon = unitIcon(medicine.unit);
-                const expiry = isoDay(medicine.next_expiry);
+                const expiryDay = isoDay(medicine.next_expiry);
                 const selected = historyMedicine?.id === medicine.id;
                 return (
-                  <li key={medicine.id} className={`grid grid-cols-2 gap-x-4 gap-y-3 px-4 py-3.5 transition-colors md:items-center md:px-5 ${COLUMNS} ${selected ? 'bg-maroon-50/50 dark:bg-maroon-900/10' : 'hover:bg-gray-50/70 dark:hover:bg-gray-700/30'}`}>
-                    <div className="col-span-2 flex min-w-0 items-center gap-3 md:col-span-1">
+                  <li key={medicine.id} className={`grid grid-cols-2 gap-x-4 gap-y-3 px-4 py-3.5 transition-colors lg:items-center lg:px-5 ${COLUMNS} ${selected ? 'bg-maroon-50/50 dark:bg-maroon-900/10' : 'hover:bg-gray-50/70 dark:hover:bg-gray-700/30'}`}>
+                    <div className="col-span-2 flex min-w-0 items-center gap-3 lg:col-span-1">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-maroon-50 text-maroon-800 dark:bg-maroon-900/30 dark:text-maroon-300"><Icon className="h-4 w-4" aria-hidden="true" /></span>
                       <div className="min-w-0">
                         <h3 className="truncate text-sm font-semibold">{medicine.name}</h3>
                         <p className="truncate text-xs text-gray-500 dark:text-gray-400">{[unitLabel(medicine.unit), medicine.dosage].filter(Boolean).join(' · ')}</p>
                       </div>
                     </div>
-                    <div className="min-w-0 text-sm text-gray-700 dark:text-gray-200"><span className="block text-xs text-gray-500 md:hidden">Generic Name</span><span className="break-words">{medicine.generic_name || '—'}</span></div>
-                    <div className="text-sm"><span className="block text-xs text-gray-500 md:hidden">Available Stock</span><span className={`font-semibold tabular-nums ${medicine.is_out_of_stock || medicine.is_low_stock ? 'text-red-600 dark:text-red-400' : ''}`}>{medicine.quantity}</span></div>
-                    <div className="text-sm"><span className="block text-xs text-gray-500 md:hidden">Expiry Date</span><span className={`tabular-nums ${medicine.is_expired ? 'font-semibold text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-200'}`}>{expiry || '—'}</span></div>
-                    <div className="col-span-2 md:col-span-1"><span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${state.pill}`}><span className={`h-1.5 w-1.5 rounded-full ${state.dot}`} aria-hidden="true" />{state.label}</span></div>
-                    <div className="col-span-2 flex items-center gap-2 md:col-span-1">
+                    <div className="min-w-0 text-sm text-gray-700 dark:text-gray-200"><span className={cellLabel}>Generic Name</span><span className="break-words">{medicine.generic_name || '—'}</span></div>
+                    <div className="text-sm"><span className={cellLabel}>Available Stock</span><span className={`font-semibold tabular-nums ${medicine.is_out_of_stock || medicine.is_low_stock ? 'text-red-600 dark:text-red-400' : ''}`}>{medicine.quantity}</span></div>
+                    <div className="text-sm"><span className={cellLabel}>Expiry Date</span><span className={`tabular-nums ${medicine.is_expired ? 'font-semibold text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-200'}`}>{expiryDay || '—'}</span></div>
+                    <div className="text-sm">
+                      <span className={`${cellLabel} mb-1`}>Expiry Status</span>
+                      {expiryState ? <>
+                        <span className={`${badge} ${expiryState.pill}`}><span className={`h-1.5 w-1.5 rounded-full ${expiryState.dot}`} aria-hidden="true" />{expiryState.label}</span>
+                        {expiryNote(medicine.days_to_expiry) && expiryState !== EXPIRY.ok && <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">{expiryNote(medicine.days_to_expiry)}</span>}
+                      </> : <span className="text-xs text-gray-500 dark:text-gray-400">No expiry date</span>}
+                    </div>
+                    <div className="col-span-2 lg:col-span-1"><span className={`${cellLabel} mb-1`}>Stock Status</span><span className={`${badge} ${state.pill}`}><span className={`h-1.5 w-1.5 rounded-full ${state.dot}`} aria-hidden="true" />{state.label}</span></div>
+                    <div className="col-span-2 flex items-center gap-2 lg:col-span-1">
                       <button type="button" onClick={() => setDialog({ kind: 'restock', medicine })} aria-label={`Restock ${medicine.name}`}
                         className={`${rowButton} border-maroon-300 bg-white text-maroon-800 hover:bg-maroon-50 dark:border-maroon-700 dark:bg-transparent dark:text-maroon-300 dark:hover:bg-maroon-900/20`}><PackagePlus className="h-3.5 w-3.5" aria-hidden="true" />Restock</button>
                       <button type="button" onClick={() => setDialog({ kind: 'form', medicine })} aria-label={`Edit ${medicine.name}`}

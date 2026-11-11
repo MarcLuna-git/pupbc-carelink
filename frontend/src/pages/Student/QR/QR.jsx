@@ -34,6 +34,7 @@ import HealthProfileVerifyError from '../../../components/HealthProfileVerifyErr
 import { useStudentHealthProfileStatus } from '../../../hooks/useStudentHealthProfileStatus';
 import { formatPersonName } from '../../../utils/studentUser';
 import { escapeHtml } from '../../../utils/escapeHtml';
+import { whenPrintReady } from '../../../utils/printReady';
 import { StudentToast } from '../../../components/StudentFeedback';
 import { QUEUE_STATUS_NOTES, checkinStepIndex } from './checkinTracker';
 
@@ -351,75 +352,7 @@ const QR = () => {
         <head>
           <meta charset="utf-8" />
           <title>PUPBC CareLink QR Code</title>
-          <style>
-            body {
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              min-height: 100vh;
-              margin: 0;
-              background: #f8f8f8;
-              font-family: Arial, sans-serif;
-            }
-
-            .card {
-              width: 360px;
-              padding: 32px;
-              text-align: center;
-              background: white;
-              border-radius: 20px;
-              border: 1px solid #e5e7eb;
-            }
-
-            .title {
-              color: #5E1224;
-              font-size: 20px;
-              font-weight: 700;
-              margin: 0 0 4px;
-            }
-
-            .subtitle {
-              color: #6b7280;
-              font-size: 13px;
-              margin: 0 0 20px;
-            }
-
-            .qr {
-              width: 250px;
-              height: 250px;
-              padding: 10px;
-              border: 1px solid #e5e7eb;
-              border-radius: 18px;
-            }
-
-            .name {
-              margin: 16px 0 4px;
-              font-size: 18px;
-              font-weight: 700;
-            }
-
-            .meta {
-              margin: 4px 0;
-              color: #6b7280;
-              font-size: 13px;
-            }
-
-            .appointment {
-              margin-top: 18px;
-              padding: 12px;
-              text-align: left;
-              background: #f9fafb;
-              border-radius: 12px;
-              font-size: 12px;
-              line-height: 1.6;
-            }
-
-            .notice {
-              margin-top: 18px;
-              color: #9ca3af;
-              font-size: 10px;
-            }
-          </style>
+          <link rel="stylesheet" href="/templates/print/qr-card.css" />
         </head>
 
         <body>
@@ -450,18 +383,19 @@ const QR = () => {
               Valid for clinic identification and today's approved appointment only.
             </p>
           </div>
-
-          <script>
-            setTimeout(function () {
-              window.print();
-              window.close();
-            }, 500);
-          </script>
         </body>
       </html>
     `);
 
     printWindow.document.close();
+
+    // Printed from here, not from a <script> in the written page: the site's
+    // Content-Security-Policy blocks inline scripts, and the new window
+    // inherits it. Waits for qr-card.css and the QR image first.
+    whenPrintReady(printWindow.document).then(() => printWindow.setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 200));
   };
 
   /*

@@ -8,6 +8,7 @@ import { getUser } from '../../../services/session';
 import { formatAppointmentDate } from '../../../utils/appointmentDate';
 import { bloodPressureOnly, decimalOnly, digitsOnly } from '../../../utils/inputFilters';
 import { buildRecordDocument, openRecordDocument, studentDetails } from '../../Student/HealthRecords/recordDocuments';
+import useSignatoryVersion from '../../../hooks/useSignatoryVersion';
 
 /*
  * One clinic visit, opened from the queue: who the student is, why they came,
@@ -482,9 +483,10 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
     form.ojt_certificate && { kind: 'ojt', label: 'Medical Certificate (OJT)' },
     form.liability_form && { kind: 'liability', label: 'Medical Liability Form' },
   ].filter(Boolean);
+  const signatoryVersion = useSignatoryVersion(); // redraws the preview when the signatory is switched
   const docIndex = Math.max(0, reviewDocs.findIndex(d => d.kind === previewDoc));
   const currentDoc = reviewDocs[docIndex];
-  const previewKey = tab === 'review' ? JSON.stringify([currentDoc.kind, form, mode, prescribed, rx, attendingId, student?.id, nurses.length]) : '';
+  const previewKey = tab === 'review' ? JSON.stringify([currentDoc.kind, form, mode, prescribed, rx, attendingId, student?.id, nurses.length, signatoryVersion]) : '';
   useEffect(() => {
     if (tab !== 'review') return undefined;
     let active = true;

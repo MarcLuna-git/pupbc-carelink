@@ -41,4 +41,4 @@
 <div class="block"><span class="label">ASSESSMENT:</span><div class="value">{{assessment}}</div></div>
 <div class="block"><span class="label">NURSING INTERVENTIONS:</span><div class="value">{{interventions}}</div></div>
 
-<div class="sign right"><div class="signed"><img class="esign" src="{{template_dir}}signature-prieto.jpeg" alt="" /><strong>Angelo Tristan B. Prieto, M.D.</strong><small>Lic. No. 0124173</small></div></div>
+<div class="sign right">{{#signature_block}}{{{signature_block}}}{{/signature_block}}{{^signature_block}}<div class="signed"><img class="esign" src="{{template_dir}}signature-prieto.jpeg" alt="" /><strong>Angelo Tristan B. Prieto, M.D.</strong><small>Lic. No. 0124173</small></div>{{/signature_block}}</div>

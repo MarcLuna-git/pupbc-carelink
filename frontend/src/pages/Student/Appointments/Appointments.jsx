@@ -15,12 +15,26 @@ import {
   Hash,
 } from 'lucide-react';
 import api from '../../../services/api';
-import { getToken } from '../../../services/session';
+import { sessionId } from '../../../services/session';
 import { clinicDate, appointmentDate as normalizeDateValue, appointmentTime as parseAppointmentDateTime, isClinicSunday, formatAppointmentDate as formatDate } from '../../../utils/appointmentDate';
 import { isTimeGuardBypassed, useTimeGuardBypass } from '../../../services/devTools';
 import useVisiblePolling from '../../../hooks/useVisiblePolling';
 import HealthProfileVerifyError from '../../../components/HealthProfileVerifyError';
 import { useStudentHealthProfileStatus } from '../../../hooks/useStudentHealthProfileStatus';
+
+/*
+ * The appointment list is kept in memory for quick page switches, never in
+ * localStorage: it holds health details (concerns) and must not stay on a
+ * shared device. Tied to the signed-in session, so a new sign-in starts empty.
+ */
+let appointmentsCache = { session: null, list: [] };
+const cachedAppointments = () =>
+  appointmentsCache.session && appointmentsCache.session === sessionId('student') ? appointmentsCache.list : [];
+const cacheAppointments = (list) => {
+  appointmentsCache = { session: sessionId('student'), list };
+};
+// Older versions stored the list in localStorage; remove it from this device.
+try { localStorage.removeItem('carelink.student.appointments'); } catch { /* storage blocked */ }
 
 /*
  * ROUTE LOADING — same restored effect as the Settings / Profile / Records /
@@ -147,19 +161,7 @@ const Appointments = () => {
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(false);
 
-  const [pageLoading, setPageLoading] = useState(() => {
-    try {
-      return (
-        JSON.parse(
-          localStorage.getItem(
-            'carelink.student.appointments'
-          ) || '[]'
-        ).length === 0
-      );
-    } catch {
-      return true;
-    }
-  });
+  const [pageLoading, setPageLoading] = useState(() => cachedAppointments().length === 0);
 
   const [confirmCancel, setConfirmCancel] =
     useState(null);
@@ -179,21 +181,7 @@ const Appointments = () => {
     useState('success');
 
   const [appointments, setAppointments] =
-    useState(() => {
-      try {
-        const cached = JSON.parse(
-          localStorage.getItem(
-            'carelink.student.appointments'
-          ) || '[]'
-        );
-
-        return Array.isArray(cached)
-          ? cached
-          : [];
-      } catch {
-        return [];
-      }
-    });
+    useState(cachedAppointments);
 
   const [form, setForm] = useState({
     service: '',
@@ -257,12 +245,7 @@ const Appointments = () => {
             normalized
           );
 
-          localStorage.setItem(
-            'carelink.student.appointments',
-            JSON.stringify(
-              normalized
-            )
-          );
+          cacheAppointments(normalized);
         }
       } catch (err) {
         if (err.name === 'CanceledError') return;
@@ -618,8 +601,6 @@ const Appointments = () => {
       setMessage('');
 
       try {
-        const token =
-          getToken('student');
 
         const payload = {
           service:
@@ -642,12 +623,7 @@ const Appointments = () => {
           response =
             await api.put(
               `/student/appointments/${editingId}`,
-              payload,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
+              payload
             );
 
           setMessageType(
@@ -661,12 +637,7 @@ const Appointments = () => {
           response =
             await api.post(
               '/student/appointments',
-              payload,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
+              payload
             );
 
           setMessageType(

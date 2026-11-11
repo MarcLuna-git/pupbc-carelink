@@ -1,3 +1,8 @@
+# Render = reserbang kopya ng CareLink sa libreng address (onrender.com).
+#   Frontend: https://pupbc-carelink.onrender.com
+#   Backend:  https://pupbc-carelink-api.onrender.com
+# Ang pangunahing site (www.pupbccarelink.org) ay nasa cPanel ng z.com.
+# Parehong Supabase database ang gamit ng dalawa.
 services:
   # Backend: Laravel sa Docker (walang native PHP runtime ang Render).
   - type: web
@@ -20,9 +25,9 @@ services:
         # Format: base64:xxxx (tingnan ang docs/RENDER_DEPLOYMENT.md).
         sync: false # secret: set in the Render dashboard
       - key: APP_URL
-        value: https://pupbccarelink.org
+        value: https://pupbc-carelink-api.onrender.com
       - key: FRONTEND_URL
-        value: https://www.pupbccarelink.org
+        value: https://pupbc-carelink.onrender.com
       - key: LOG_CHANNEL
         value: stderr
 
@@ -92,7 +97,7 @@ services:
         value: local
 
       - key: SANCTUM_STATEFUL_DOMAINS
-        value: pupbccarelink.org,www.pupbccarelink.org
+        value: pupbc-carelink.onrender.com
 
       - key: SEED_NURSE_PASSWORD
         sync: false # secret: set in the Render dashboard
@@ -130,6 +135,15 @@ services:
         value: "30"
       - key: OLLAMA_MAX_OUTPUT_TOKENS
         value: "1024"
+      # Gemini: fallback when Ollama cannot answer (no credits, rate limit, outage).
+      - key: GEMINI_API_KEY
+        sync: false # secret: set in the Render dashboard
+      - key: GEMINI_MODEL
+        value: "gemini-3.5-flash-lite"
+      - key: GEMINI_FALLBACK_MODELS
+        value: "gemini-3.1-flash-lite,gemma-4-26b-a4b-it,gemma-4-31b-it"
+      - key: GEMINI_TIMEOUT
+        value: "20"
       - key: CHATBOT_ENABLED
         value: "true"
       - key: CHATBOT_RATE_LIMIT
@@ -148,11 +162,39 @@ services:
     buildCommand: cd frontend && npm ci && npm run build
     staticPublishPath: ./frontend/dist
     routes:
-      # SPA: lahat ng path ay ibigay sa index.html para gumana ang React Router.
+      # API: ipinapasa sa Render backend. Sa browser, iisang address ang frontend
+      # at ang API (/api), kaya naipapadala ang login cookie (SameSite=Strict).
+      # Dapat mauna ito sa /* sa ibaba.
+      - type: rewrite
+        source: /api/*
+        destination: https://pupbc-carelink-api.onrender.com/api/*
+      # SPA: lahat ng ibang path ay ibigay sa index.html para gumana ang React Router.
       - type: rewrite
         source: /*
         destination: /index.html
     headers:
+      # Security headers (OWASP ZAP). The policy is the one contentSecurityPolicy()
+      # in frontend/vite.config.js puts in index.html as a <meta>, plus
+      # frame-ancestors (header only); keep the two in sync. The API is /api on
+      # this same address. SAMEORIGIN: the print previews frame this site's own pages.
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: Content-Security-Policy
+        value: "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; media-src 'self' blob:; worker-src 'self' blob:; frame-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Strict-Transport-Security
+        value: max-age=31536000
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(self), microphone=(), geolocation=()
       # Build files in /assets are content-hashed, so a changed file gets a new
       # name; browsers can keep the old ones for a year without revalidating.
       - path: /assets/*
@@ -162,9 +204,7 @@ services:
       - key: NODE_VERSION # Vite 8 needs Node 20.19+ / 22.12+
         value: "22"
       - key: VITE_API_URL
-        value: https://pupbccarelink.org/api
+        value: /api
       - key: VITE_APP_NAME
         value: "PUPBC CareLink"
 
-# for z.com = value: https://pupbccarelink.org/api
-# for render = value: https://pupbccarelink.org/api

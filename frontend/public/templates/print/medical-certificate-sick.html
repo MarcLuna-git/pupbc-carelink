@@ -26,7 +26,7 @@
   <p class="statement">This is issued upon request for whatever purposes it may serve.</p>
 </div>
 
-<div class="sign right"><div class="signed"><img class="esign" src="{{template_dir}}signature-prieto.jpeg" alt="" /><strong>Angelo Tristan Prieto, M.D.</strong><small>Lic. No. 0124173</small></div></div>
+<div class="sign right">{{#signature_block}}{{{signature_block}}}{{/signature_block}}{{^signature_block}}<div class="signed"><img class="esign" src="{{template_dir}}signature-prieto.jpeg" alt="" /><strong>Angelo Tristan Prieto, M.D.</strong><small>Lic. No. 0124173</small></div>{{/signature_block}}</div>
 <p class="note">
   System-generated copy of a certificate issued by the {{clinic_name}} on {{visit_date}}.
   Verify the control number with the clinic.

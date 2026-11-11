@@ -1,4 +1,3 @@
-import { getToken } from '../../../services/session';
 import { useState, useEffect, useRef } from 'react';
 import { SquarePen, FilePenLine, Newspaper, ScrollText, Trash2, Edit2, Loader2, X, Send, Search, ChevronDown } from 'lucide-react';
 import api from '../../../services/api';
@@ -27,10 +26,7 @@ const NurseAnnouncements = () => {
   const fetchAnnouncements = async () => {
     const request = ++requestId.current;
     try {
-      const token = getToken('nurse');
-      const res = await api.get('/nurse/announcements', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get('/nurse/announcements');
       if (request !== requestId.current) return;
       if (res.data.success) {
         const data = res.data.data;
@@ -60,10 +56,9 @@ const NurseAnnouncements = () => {
 
     setSaving(true);
     try {
-      const token = getToken('nurse');
       if (editingId) {
         const response = await api.put(`/nurse/announcements/${editingId}`, form, {
-          headers: { Authorization: `Bearer ${token}`, 'If-Match': editVersion },
+          headers: { 'If-Match': editVersion },
           timeout: 120000
         });
         setAnnouncements((current) => current.map((announcement) => announcement.id === editingId
@@ -72,7 +67,6 @@ const NurseAnnouncements = () => {
         setMessage('Announcement updated!');
       } else {
         const response = await api.post('/nurse/announcements', form, {
-          headers: { Authorization: `Bearer ${token}` },
           timeout: 120000
         });
         setAnnouncements((current) => [response.data.data, ...current]);
@@ -104,9 +98,8 @@ const NurseAnnouncements = () => {
     if (!confirm('Delete this announcement?')) return;
     setDeletingId(id);
     try {
-      const token = getToken('nurse');
       await api.delete(`/nurse/announcements/${id}`, {
-        headers: { Authorization: `Bearer ${token}`, 'If-Match': announcements.find(item => item.id === id)?.sync_version }
+        headers: { 'If-Match': announcements.find(item => item.id === id)?.sync_version }
       });
       setAnnouncements((current) => current.filter((announcement) => announcement.id !== id));
       setMessage('Announcement deleted.');

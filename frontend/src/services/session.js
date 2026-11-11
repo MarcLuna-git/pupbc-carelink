@@ -1,16 +1,23 @@
 /*
  * Per-portal login sessions.
  *
- * The Student portal and the Nurse portal keep their own token + user under
- * separate storage keys, so signing in to one never replaces the other — both
- * can stay open side by side in the same browser. The kiosk has no user
- * session (it authenticates the device with its own sessionStorage token).
+ * The sign-in token is an httpOnly cookie that the server sets (one per
+ * portal), so no page script can read it and an injected script (XSS) cannot
+ * steal it. API requests name their portal in the X-Portal header (api.js) and
+ * the server uses that portal's cookie.
+ *
+ * This module only remembers who is signed in, in memory. Nothing about the
+ * session is kept in localStorage/sessionStorage; after a reload the route
+ * guard asks the server again (restoreSession in authService.js). The Student
+ * and Nurse portals keep separate sessions, so both can stay open side by side.
+ * The kiosk has no user session (it authenticates the device with its own token).
  */
 
-const KEYS = {
-  student: { token: 'carelink.session.student.token', user: 'carelink.session.student.user' },
-  nurse: { token: 'carelink.session.nurse.token', user: 'carelink.session.nurse.user' },
-};
+const PORTALS = ['student', 'nurse'];
+const users = { student: null, nurse: null };
+// Bumps on every sign-in / sign-out, so data fetched for a previous session can be dropped.
+const generation = { student: 0, nurse: 0 };
+const listeners = new Set();
 
 // The portal a page belongs to, from its URL.
 export const portalForPath = (pathname = window.location.pathname) => {
@@ -21,64 +28,61 @@ export const portalForPath = (pathname = window.location.pathname) => {
 
 export const currentPortal = () => portalForPath();
 
-export const sessionKeys = (portal = currentPortal()) => KEYS[portal] || null;
+const known = (portal) => PORTALS.includes(portal);
 
-const read = key => {
-  try { return localStorage.getItem(key); } catch { return null; }
+const notify = (portal) => listeners.forEach((listener) => {
+  try { listener(portal); } catch { /* one listener must not break the others */ }
+});
+
+// Called with the portal whenever its signed-in user changes (sign-in, profile save, sign-out).
+export const onSessionChange = (listener) => {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
 };
 
-const write = (key, value) => {
-  try {
-    if (value === null || value === undefined) localStorage.removeItem(key);
-    else localStorage.setItem(key, value);
-  } catch { /* Storage blocked: the in-memory page state still works. */ }
+export const hasSession = (portal = currentPortal()) => known(portal) && !!users[portal];
+
+// Changes whenever someone signs in or out of the portal; null when signed out.
+// Not a secret: it only tells callers that the session changed.
+export const sessionId = (portal = currentPortal()) =>
+  hasSession(portal) ? `${portal}:${users[portal].id ?? ''}:${generation[portal]}` : null;
+
+export const getUser = (portal = currentPortal()) =>
+  hasSession(portal) ? { ...users[portal] } : {};
+
+// A new sign-in (login, or the session restored from the cookie after a reload).
+export const startSession = (user, portal = currentPortal()) => {
+  if (!known(portal) || !user) return;
+  users[portal] = { ...user };
+  generation[portal] += 1;
+  notify(portal);
 };
 
-export const getToken = (portal = currentPortal()) => {
-  const keys = sessionKeys(portal);
-  return keys ? read(keys.token) : null;
-};
-
-export const setToken = (token, portal = currentPortal()) => {
-  const keys = sessionKeys(portal);
-  if (keys) write(keys.token, token);
-};
-
-export const getUser = (portal = currentPortal()) => {
-  const keys = sessionKeys(portal);
-  if (!keys) return {};
-  try { return JSON.parse(read(keys.user) || '{}') || {}; } catch { return {}; }
-};
-
+// Updates the signed-in user's details (profile edits); keeps the same session.
 export const setUser = (user, portal = currentPortal()) => {
-  const keys = sessionKeys(portal);
-  if (keys) write(keys.user, user ? JSON.stringify(user) : null);
+  if (!known(portal)) return;
+  if (!user) {
+    clearSession(portal);
+    return;
+  }
+  users[portal] = { ...user };
+  notify(portal);
 };
 
 export const clearSession = (portal = currentPortal()) => {
-  const keys = sessionKeys(portal);
-  if (!keys) return;
-  write(keys.token, null);
-  write(keys.user, null);
+  if (!known(portal) || !users[portal]) return;
+  users[portal] = null;
+  generation[portal] += 1;
+  notify(portal);
 };
 
 /*
- * One-time move of the old shared `token` / `user` keys into the portal that
- * owns them, so people already signed in are not logged out by this change.
+ * Older versions kept the token and user in localStorage. Remove them so a
+ * token saved before this change does not stay readable on the device.
  */
-const migrateLegacySession = () => {
-  const token = read('token');
-  if (token) {
-    let user = {};
-    try { user = JSON.parse(read('user') || '{}') || {}; } catch { user = {}; }
-    const portal = user.role === 'nurse' ? 'nurse' : 'student';
-    if (!getToken(portal)) {
-      setToken(token, portal);
-      setUser(user, portal);
-    }
-  }
-  write('token', null);
-  write('user', null);
-};
-
-migrateLegacySession();
+const LEGACY_KEYS = [
+  'token', 'user',
+  'carelink.session.student.token', 'carelink.session.student.user',
+  'carelink.session.nurse.token', 'carelink.session.nurse.user',
+];
+try { LEGACY_KEYS.forEach((key) => localStorage.removeItem(key)); } catch { /* storage blocked */ }

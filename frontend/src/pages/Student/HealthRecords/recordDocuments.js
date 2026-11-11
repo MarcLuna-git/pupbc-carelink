@@ -2,6 +2,8 @@ import { escapeHtml } from '../../../utils/escapeHtml';
 import { formatPersonName } from '../../../utils/studentUser';
 import { getUser } from '../../../services/session';
 import api from '../../../services/api';
+import { whenPrintReady } from '../../../utils/printReady';
+import { currentSignatory, signatureBlock } from '../../../services/documentSignatory';
 
 /*
  * Printable clinic documents, filled in the browser from a clinic-history
@@ -280,10 +282,15 @@ export const buildRecordDocument = async (kind, record, student = null) => {
   if (!doc) throw new Error('Unknown document');
   const reference = (kind === 'ojt' ? record.ojtCertificateRef : kind === 'sick' ? record.sickCertificateRef : kind !== 'liability' && record.medicalCertificateRef) || record.id;
   const [layout, body, info] = await Promise.all([loadTemplate('layout.html'), loadTemplate(doc.template), student || loadOwnDetails()]);
+  // Full URL: the print window is about:blank and the preview frame is srcdoc, so relative image paths would not resolve.
+  const templateDir = new URL(TEMPLATE_DIR, window.location.origin).href;
+  // Nurse portal only (it passes `student`): the signatory picked in the account menu replaces the
+  // template's own signature part. The student portal always prints the template's usual signatory.
+  const signatory = student ? currentSignatory(getUser('nurse')) : null;
   const data = {
     clinic_name: CLINIC_NAME,
-    // Full URL: the print window is about:blank and the preview frame is srcdoc, so relative image paths would not resolve.
-    template_dir: new URL(TEMPLATE_DIR, window.location.origin).href,
+    template_dir: templateDir,
+    signature_block: signatory ? signatureBlock(signatory, templateDir) : '',
     issued_date: formatDay(new Date()),
     reference,
     // The title becomes the default file name in "Save as PDF".
@@ -315,7 +322,8 @@ export const openRecordDocument = (kind, record, mode = 'preview', student = nul
   // Opened right away (inside the click) so the browser does not block it; the template fills it in after.
   const printWindow = doc && window.open('', '_blank');
   if (!printWindow) return false;
-  printWindow.document.write('<p style="font-family: Arial, sans-serif; color: #6b7280;">Preparing document…</p>');
+  // Plain text: inline style attributes are blocked by the site's Content-Security-Policy.
+  printWindow.document.write('<p>Preparing document…</p>');
 
   buildRecordDocument(kind, record, student)
     .then((page) => {
@@ -323,15 +331,14 @@ export const openRecordDocument = (kind, record, mode = 'preview', student = nul
       printWindow.document.write(page);
       printWindow.document.close();
       if (mode === 'print') {
-        // Wait for the logo so it is on the printout.
-        const images = [...printWindow.document.images].filter((img) => !img.complete);
-        Promise.all(images.map((img) => new Promise((done) => { img.onload = done; img.onerror = done; })))
+        // Wait for print.css and the logos so they are on the printout.
+        whenPrintReady(printWindow.document)
           .then(() => printWindow.setTimeout(() => printWindow.print(), 200));
       }
     })
     .catch((error) => {
       printWindow.document.open();
-      printWindow.document.write(`<p style="font-family: Arial, sans-serif; color: #b91c1c;">Unable to load the print template: ${escapeHtml(error.message)}.</p>`);
+      printWindow.document.write(`<p>Unable to load the print template: ${escapeHtml(error.message)}.</p>`);
       printWindow.document.close();
     });
   return true;

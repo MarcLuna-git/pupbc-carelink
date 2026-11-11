@@ -175,6 +175,12 @@ Route::prefix('auth')
     });
 
 
+// Sign-out works without a valid session too, so an expired session can still
+// clear its httpOnly cookie (AuthController::logout).
+Route::post('/auth/logout', [AuthController::class, 'logout'])
+    ->middleware(['jwt.configured', 'throttle:30,1,logout:']);
+
+
 Route::middleware('throttle:60,1,announcements:')
     ->group(function () {
 
@@ -199,11 +205,6 @@ Route::middleware([
 
         Route::prefix('auth')
             ->group(function () {
-
-                Route::post(
-                    '/logout',
-                    [AuthController::class, 'logout']
-                );
 
                 Route::post(
                     '/refresh',
@@ -303,6 +304,9 @@ Route::middleware([
                                 ],
                             ]);
                         }
+
+                        // "Expires today" and "Expired", once per medicine and expiry date.
+                        \App\Services\MedicineExpiryAlerts::generateFor($user);
                     }
 
                     $notifications = \App\Models\Notification::where(
@@ -317,7 +321,7 @@ Route::middleware([
                             $query->where('read', false);
                         })
                         ->where(function ($query) {
-                            $query->where('type', '!=', 'medicine_expiring_soon')
+                            $query->whereNotIn('type', \App\Services\MedicineExpiryAlerts::KEPT_WHEN_DISMISSED)
                                 ->orWhereNull('data->dismissed')
                                 ->orWhere('data->dismissed', false);
                         })
@@ -382,7 +386,7 @@ Route::middleware([
                         $notification = \App\Models\Notification::where('id', $id)
                             ->where('user_id', auth()->id())
                             ->firstOrFail();
-                        if ($notification->type === 'medicine_expiring_soon') {
+                        if (in_array($notification->type, \App\Services\MedicineExpiryAlerts::KEPT_WHEN_DISMISSED, true)) {
                             // Keep the row so both expiry generators retain their suppression record.
                             $notification->update([
                                 'data' => array_merge($notification->data ?? [], ['dismissed' => true]),

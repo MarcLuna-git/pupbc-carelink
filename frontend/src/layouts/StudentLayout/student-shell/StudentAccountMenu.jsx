@@ -15,7 +15,7 @@ import {
 import { getAvatar, getCourseSection, getDisplayName, getInitials, getStoredUser } from '../../../utils/studentUser';
 import { preloadForPath } from '../../../utils/preloadStudentPages';
 import { STUDENT_LOGOUT_REQUEST_EVENT } from '../../../utils/studentPortalNavigation';
-import { sessionKeys } from '../../../services/session';
+import { onSessionChange } from '../../../services/session';
 import { darkModeKey, readDarkMode as readPortalDarkMode, saveDarkMode } from '../../../hooks/useAccountTheme';
 
 /*
@@ -56,10 +56,14 @@ const StudentAccountMenu = ({ variant = 'sidebar', collapsed = false }) => {
       setUser(getStoredUser());
       setAvatarFailed(false);
     };
+    // The theme is saved per device; follow changes made in another tab.
     const onStorage = (event) => {
-      if (event.key === sessionKeys('student').user || event.key === null) refreshUser();
       if (event.key === darkModeKey('student') || event.key === null) setDarkMode(readDarkMode());
     };
+    // The signed-in user lives in memory (services/session.js); follow its updates.
+    const stopSession = onSessionChange((portal) => {
+      if (portal === 'student') refreshUser();
+    });
     const onTheme = () => setDarkMode(readDarkMode());
 
     window.addEventListener('studentProfileUpdated', refreshUser);
@@ -71,6 +75,7 @@ const StudentAccountMenu = ({ variant = 'sidebar', collapsed = false }) => {
       window.removeEventListener('carelink:student-user-updated', refreshUser);
       window.removeEventListener('darkModeChange', onTheme);
       window.removeEventListener('storage', onStorage);
+      stopSession();
     };
   }, []);
 

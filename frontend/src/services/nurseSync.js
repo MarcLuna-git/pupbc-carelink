@@ -1,5 +1,5 @@
 import api from './api.js';
-import { getToken } from './session.js';
+import { sessionId } from './session.js';
 
 export const SYNC_INTERVAL = 5000;
 const subscribers = new Set();
@@ -21,7 +21,7 @@ async function check() {
     timer = setTimeout(check, blockedUntil - Date.now());
     return;
   }
-  const currentToken = getToken('nurse');
+  const currentToken = sessionId('nurse');
   if (!currentToken) return;
   if (token !== currentToken) {
     token = currentToken;
@@ -31,7 +31,7 @@ async function check() {
   let delay = SYNC_INTERVAL;
   try {
     const response = await api.get('/nurse/sync');
-    if (getToken('nurse') !== currentToken) return;
+    if (sessionId('nurse') !== currentToken) return;
     const revisions = response.data.data;
     // Also reconcile once a minute: recover individual failed reads and date-based alerts.
     const reconcile = Date.now() - lastReconcile >= 60000;

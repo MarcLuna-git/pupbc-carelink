@@ -517,7 +517,13 @@ class AppointmentController extends Controller
             ->with([
                 'checkins' => fn ($query) => $this->selectStudentCheckinColumns($query),
             ])
-            ->orderByRaw("CASE WHEN status = 'approved' THEN 0 ELSE 1 END")
+            // A visit closed as No Show is over, so a new approved booking for the
+            // same day comes before it (the kiosk checks in that one too:
+            // KioskIdentity::appointment). The closed visit is still shown when
+            // it is the only one today.
+            // "IS NOT TRUE" covers false and NULL on both MySQL and PostgreSQL
+            // (no_show is a real boolean there, so it cannot be compared with 0).
+            ->orderByRaw("CASE WHEN status = 'approved' AND no_show IS NOT TRUE THEN 0 WHEN status = 'approved' THEN 1 ELSE 2 END")
             ->orderBy('created_at')
             ->first();
 
