@@ -1,13 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ClipboardList, CheckCircle, Stethoscope, ListOrdered, Users, UserX, Star, SlidersHorizontal, Square } from 'lucide-react';
+import { ClipboardList, CheckCircle, Stethoscope, ListOrdered, Users, UserX, Star, SlidersHorizontal, Square, Play } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import NursePageTitle from '../../../components/NursePageTitle';
 import NurseListCard, { CountChip } from '../../../components/NurseListCard';
 import useNurseSync from '../../../hooks/useNurseSync';
 import { NurseNoticeModal, NurseToast } from '../../../components/NurseFeedback';
-import { queueRowsFrom } from './queueRows';
+import { queueRowsFrom, consultationPath } from './queueRows';
 import QueuePatientModal, { PRIORITY } from './QueuePatientModal';
 import QueueOptionsModal, { formatDuration } from './QueueOptionsModal';
 import { useNurseTimeGuardBypass } from '../../../services/devTools';
@@ -52,8 +52,8 @@ const AUTO_KEY = 'carelink.nurse.autoQueue';
 const readAuto = () => { try { return sessionStorage.getItem(AUTO_KEY) === '1'; } catch { return false; } };
 
 /*
- * Nurse → Queue: today's clinic queue. Call next opens the arrival timer; once the patient
- * arrived (validated here, no redirect) their form waits on the Consultation page.
+ * Nurse → Queue: today's clinic queue. Call next opens the arrival timer; Patient arrived
+ * confirms the student and opens their consultation form right away (no extra clicks).
  */
 const NurseQueue = () => {
   const navigate = useNavigate();
@@ -133,11 +133,8 @@ const NurseQueue = () => {
     } finally {
       setLoading(false);
     }
-    if (arrived) {
-      setViewId(null);
-      setMessageType('success');
-      setMessage(`${student.name.trim() || 'The student'} arrived. Their consultation form is on the Consultation page.`);
-    }
+    // Straight to the form: the Consultation page loads the visit fresh and takes the claim on it.
+    if (arrived) navigate(consultationPath(student.checkin_id));
   };
 
 
@@ -223,7 +220,8 @@ const NurseQueue = () => {
     if (!autoReady || autoCalling.current) return;
     autoCalling.current = true;
     // A failed call stops the automation (its error shows as a toast) instead of retrying in a loop.
-    callNext().then(ok => { if (!ok) toggleAuto(false); }).finally(() => { autoCalling.current = false; });
+    // The called student's popup opens with the arrival timer, ready for Patient arrived.
+    callNext().then(id => { if (!id) toggleAuto(false); else { setMissed(null); setViewId(id); } }).finally(() => { autoCalling.current = false; });
   }, [autoReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (pageLoading) {
@@ -232,9 +230,8 @@ const NurseQueue = () => {
 
   // The queue is already in call order, so the first waiting student is the one Call Next will call.
   const nextInLine = checkedInStudents.find(s => s.status === 'waiting');
-  // A student who arrived moves on to the Consultation page, so they leave the queue list
-  // (still counted in "In Consultation"). Demo patients stay listed, as before.
-  const queueRows = checkedInStudents.filter(s => s.status !== 'serving' || s.demo);
+  // A patient in consultation stays listed, so a form that was left unsaved can be opened again (Continue).
+  const queueRows = checkedInStudents;
 
   // The popup follows the live queue row, so it moves on as soon as the status changes.
   const viewed = viewId ? checkedInStudents.find(s => s.checkin_id === viewId) || null : null;
@@ -249,6 +246,8 @@ const NurseQueue = () => {
       if (id) setViewId(id);
       return;
     }
+    // In consultation: straight back into their form.
+    if (s.status === 'serving') { navigate(consultationPath(s.checkin_id)); return; }
     setViewId(s.checkin_id);
   };
 
@@ -256,7 +255,7 @@ const NurseQueue = () => {
     const outline = 'border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700/50';
     if (s.status === 'waiting' && s.checkin_id === nextInLine?.checkin_id) return { label: 'Call next', className: 'bg-maroon-800 text-white hover:bg-maroon-900' };
     if (s.status === 'called') return { label: 'Arriving', className: 'bg-green-700 text-white hover:bg-green-800' };
-    if (s.status === 'serving') return { label: 'View', className: outline };
+    if (s.status === 'serving') return { label: 'Continue', className: outline };
     if (['skipped', 'on_hold'].includes(s.status)) return { label: 'Close', className: outline };
     return { label: 'View', className: outline };
   };
@@ -300,11 +299,17 @@ const NurseQueue = () => {
           title={<>Queue list<CountChip>{queueRows.length}</CountChip></>}
           description={`${new Date(now).toLocaleDateString('en-US', { timeZone: 'Asia/Manila', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} · Priority students are called first. A called student has ${formatDuration(callTimeout)} to arrive, otherwise their visit is closed${autoQueue ? ', and the next student is called automatically' : ''}.`}
           actions={<div className="flex items-center gap-2">
-            {/* Start was removed; Stop only shows if auto-calling is still on from before, so it can be turned off. */}
+            {/* Auto call next: on = the next student is called by itself whenever the desk is free (this page open). Off by default. */}
+            {!autoQueue && (
+              <button type="button" onClick={() => toggleAuto(true)} title="Call the next student automatically whenever no one is being called or seen"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:bg-transparent dark:text-gray-200 dark:hover:bg-gray-700/50">
+                <Play className="h-3.5 w-3.5 fill-current" aria-hidden="true" /> Auto call next
+              </button>
+            )}
             {autoQueue && (
               <button type="button" onClick={() => toggleAuto(false)}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-maroon-200 bg-maroon-50 px-3 py-2 text-xs font-semibold text-maroon-800 transition hover:bg-maroon-100 dark:border-maroon-800/40 dark:bg-maroon-900/20 dark:text-maroon-300">
-                <Square className="h-3.5 w-3.5 fill-current" aria-hidden="true" /> {clinicOpen ? 'Stop' : 'Stop (clinic closed)'}
+                <Square className="h-3.5 w-3.5 fill-current" aria-hidden="true" /> {clinicOpen ? 'Stop auto call' : 'Stop auto call (clinic closed)'}
               </button>
             )}
             <button type="button" onClick={() => setOptionsOpen(true)}
@@ -318,10 +323,8 @@ const NurseQueue = () => {
               <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-50 dark:bg-gray-700/50">
                 <ClipboardList className="h-8 w-8 text-gray-300 dark:text-gray-500" />
               </span>
-              <h3 className="text-base font-semibold text-gray-600 dark:text-gray-300">{checkedInStudents.length ? 'No one waiting' : 'No Checked-in Students'}</h3>
-              <p className="mt-1 text-sm text-gray-400">{checkedInStudents.length
-                ? 'Patients in consultation are on the Consultation page.'
-                : 'Students who check in via QR will appear here.'}</p>
+              <h3 className="text-base font-semibold text-gray-600 dark:text-gray-300">No Checked-in Students</h3>
+              <p className="mt-1 text-sm text-gray-400">Students who check in via QR will appear here.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -402,7 +405,7 @@ const NurseQueue = () => {
         onArrived={() => handleArrived(viewed)}
         onServe={() => queueAction(viewed, 'serve')}
         onNoShow={() => queueAction(viewed, 'no-show')}
-        onGoToConsultation={() => { closeView(); navigate('/nurse/consultation'); }}
+        onGoToConsultation={() => navigate(consultationPath(viewed.checkin_id))}
       />
     </div>
   );

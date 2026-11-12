@@ -48,7 +48,7 @@ class ClinicHistory
     }
     private function studentData(\App\Models\User $student): array
     {
-        return array_merge($student->only(['student_id', 'first_name', 'last_name']), [
+        return array_merge($student->only(['id', 'student_id', 'first_name', 'last_name']), [
             'course' => $student->profile->course ?? $student->course,
             'year' => $student->profile->year ?? $student->year,
             'section' => $student->profile->section ?? $student->section,

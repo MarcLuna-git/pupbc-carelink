@@ -267,7 +267,8 @@ export const DOCUMENTS = {
   certificate: { label: 'Medical Certificate', file: 'Medical-Certificate', template: 'medical-certificate.html', data: certificateData, empty: '' },
   sick: { label: 'Medical Certificate (Sick)', file: 'Medical-Certificate-Sick', template: 'medical-certificate-sick.html', data: sickCertificateData, empty: '', rightLogo: 'cho-logo.jpeg' },
   ojt: { label: 'Medical Certificate (OJT)', file: 'Medical-Certificate-OJT', template: 'medical-certificate-ojt.html', data: ojtCertificateData, empty: '', rightLogo: 'cho-logo.jpeg' },
-  consultation: { label: 'Consultation Form', file: 'Consultation-Form', template: 'consultation-form.html', data: consultationData, empty: '' },
+  // `paper: 'a4'` prints on A4 (paper-a4.css); documents without it stay on short bond paper (Letter).
+  consultation: { label: 'Consultation Form', file: 'Consultation-Form', template: 'consultation-form.html', data: consultationData, empty: '', paper: 'a4' },
   liability: { label: 'Medical Liability Form', file: 'Medical-Liability-Form', template: 'medical-liability-form.html', data: liabilityData, empty: '', rightLogo: 'bagong-pilipinas-logo.png' },
 };
 
@@ -290,6 +291,7 @@ export const buildRecordDocument = async (kind, record, student = null) => {
   const data = {
     clinic_name: CLINIC_NAME,
     template_dir: templateDir,
+    paper_css: doc.paper === 'a4' ? 'paper-a4.css' : '',
     signature_block: signatory ? signatureBlock(signatory, templateDir) : '',
     issued_date: formatDay(new Date()),
     reference,

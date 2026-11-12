@@ -1,10 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   FileText,
-  FileBadge,
-  FileSignature,
   Stethoscope,
   ClipboardList,
   CalendarDays,
@@ -15,13 +12,13 @@ import {
   Eye,
   Printer,
   RotateCcw,
-  X,
 } from 'lucide-react';
 import api from '../../../services/api';
 import StudentPageHero from '../../../components/StudentPageHero';
 import { SearchField } from '../../../components/StudentSearchFilter';
 import { useStudentBreadcrumbTab } from '../../../utils/studentBreadcrumb';
-import { openRecordDocument } from './recordDocuments';
+import { buildRecordDocument, openRecordDocument } from './recordDocuments';
+import DocumentViewerModal from '../../../components/DocumentViewerModal';
 import { StudentToast } from '../../../components/StudentFeedback';
 
 /*
@@ -40,15 +37,16 @@ const RECORDS_HERO = {
   description: 'View your consultation records, health documents, and clinic history.',
 };
 
+/* The kinds of record, listed in the Record Type dropdown. */
 const TABS = [
-  { id: 'consultations', label: 'Consultation Records', icon: Stethoscope },
-  { id: 'certificates', label: 'Medical Certificates', icon: FileText },
-  { id: 'sick', label: 'Medical Cert (Sick)', icon: FileBadge },
-  { id: 'ojt', label: 'Medical Cert (OJT)', icon: FileBadge },
-  { id: 'liability', label: 'Medical Liability', icon: FileSignature },
+  { id: 'consultations', label: 'Consultation Records' },
+  { id: 'certificates', label: 'Medical Certificates' },
+  { id: 'sick', label: 'Medical Cert (Sick)' },
+  { id: 'ojt', label: 'Medical Cert (OJT)' },
+  { id: 'liability', label: 'Medical Liability' },
 ];
 
-/* The document tabs: which form a row prints, and what its detail column shows. */
+/* The document kinds: which form a row prints, and what its detail column shows. */
 const DOC_TABS = {
   certificates: {
     kind: 'certificate',
@@ -92,7 +90,8 @@ const DOC_TABS = {
   },
 };
 
-const DEFAULT_FILTERS = { type: 'all', year: 'all' };
+const DEFAULT_FILTERS = { year: 'all' };
+const DEFAULT_TAB = 'consultations';
 
 const PAGE_SIZE = 7;
 
@@ -206,29 +205,12 @@ const TypeTag = ({ record }) =>
     </span>
   ) : null;
 
-/* Row print button: the certificate on the Certificates tab, the consultation form otherwise.
-   Styled like View Details; the "Print" label shows only with the desktop table (lg+), icon only below. */
-const PRINT_LABELS = {
-  certificate: 'Print medical certificate',
-  sick: 'Print medical certificate (sick)',
-  ojt: 'Print medical certificate (OJT)',
-  liability: 'Print medical liability form',
-  consultation: 'Print consultation form',
-};
-const PrintButton = ({ record, kind, onDocument }) => {
-  const label = PRINT_LABELS[kind];
-  return (
-    <button
-      type="button"
-      onClick={() => onDocument(kind, record, 'print')}
-      aria-label={label}
-      title={label}
-      className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 px-2.5 py-2 text-sm font-semibold text-maroon-800 transition hover:bg-maroon-900 hover:text-white dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-maroon-900 dark:hover:text-white lg:px-3"
-    >
-      <Printer className="h-4 w-4" />
-      <span className="hidden lg:inline">Print</span>
-    </button>
-  );
+/* Viewer heading per document kind (the row's View button opens that document in the viewer). */
+const VIEWER_TITLES = {
+  certificate: ['Medical Certificate', 'View and print the medical certificate'],
+  sick: ['Medical Certificate (Sick)', 'View and print the sick medical certificate'],
+  ojt: ['Medical Certificate (OJT)', 'View and print the OJT medical certificate'],
+  liability: ['Medical Liability Form', 'View and print the medical liability form'],
 };
 
 const ViewButton = ({ onClick }) => (
@@ -237,151 +219,54 @@ const ViewButton = ({ onClick }) => (
     onClick={onClick}
     className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-maroon-800 transition hover:bg-maroon-900 hover:text-white dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-maroon-900 dark:hover:text-white"
   >
-    <FileText className="h-4 w-4" /> View Details
+    <Eye className="h-4 w-4" /> View
   </button>
 );
 
-/* Full record in a dialog — portaled because the page wrapper animates
-   `transform`, which would break position:fixed. */
-const RecordDialog = ({ record, onClose, onDocument }) => {
-  useEffect(() => {
-    const onKey = (event) => event.key === 'Escape' && onClose();
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
-  const vitals = [
-    ['BP', record.vitals.bp, 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'],
-    ['HR', record.vitals.hr, 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'],
-    ['Temp', record.vitals.temp, 'bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400'],
-    ['RR', record.vitals.rr, 'bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400'],
-    ['O2', record.vitals.o2, 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400'],
-  ].filter(([, value]) => value);
-
+/* What the record holds besides the Consultation Form (follow-up, issued documents), shown in
+   the viewer's side panel with the buttons that print those documents. */
+const RecordExtras = ({ record, onDocument }) => {
   const field = (label, value) => (
     <div className="rounded-xl bg-gray-50 p-3.5 dark:bg-gray-700/30">
       <p className="mb-1 text-xs uppercase tracking-wider text-gray-400 dark:text-gray-500">{label}</p>
       <p className="whitespace-pre-wrap break-words text-sm font-medium text-gray-800 dark:text-gray-200">{value || 'Not recorded'}</p>
     </div>
   );
-
-  return createPortal(
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
+  const printButton = (kind, label) => (
+    <button
+      key={kind}
+      type="button"
+      onClick={() => onDocument(kind, record, 'print')}
+      className="inline-flex items-center justify-center gap-2 rounded-lg border border-maroon-800 px-4 py-2 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 dark:border-maroon-700 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
     >
-      <motion.div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="record-dialog-title"
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        onClick={(event) => event.stopPropagation()}
-        className="max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-[var(--sp-surface,#fff)] p-5 shadow-2xl dark:bg-gray-800 sm:p-6"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wider text-maroon-700 dark:text-maroon-300">
-              {record.recordType === 'emergency' ? 'Emergency encounter' : 'Consultation record'}
-            </p>
-            <h2 id="record-dialog-title" className="mt-1 text-xl font-bold text-gray-900 dark:text-white">
-              {record.title}
-            </h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {formatLongDate(record.date)} · {formatDayTime(record.date)} · {record.staff}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+      <Printer className="h-4 w-4" /> {label}
+    </button>
+  );
+  const documents = [
+    record.medicalCertificate && printButton('certificate', 'Print certificate'),
+    record.sickCertificate && printButton('sick', 'Print sick certificate'),
+    record.ojtCertificate && printButton('ojt', 'Print OJT certificate'),
+    record.liabilityForm && printButton('liability', 'Print liability form'),
+  ].filter(Boolean);
 
-        {vitals.length > 0 && (
-          <div className="mt-5">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Vital Signs</p>
-            <div className="flex flex-wrap gap-2">
-              {vitals.map(([label, value, tone]) => (
-                <span key={label} className={`rounded-xl px-2.5 py-1.5 text-xs font-medium ${tone}`}>
-                  {label}: {value}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          {field(record.recordType === 'emergency' ? 'Reason' : 'Chief Complaint', record.complaint)}
-          {field(record.recordType === 'emergency' ? 'Assessment' : 'Diagnosis / Findings', record.diagnosis)}
-          {record.recordType === 'emergency' && field(record.notesLabel, record.notesValue)}
-          {record.symptoms && field('Symptoms', record.symptoms)}
-          {record.appointment?.service && field('Appointment Service', record.appointment.service)}
-          {record.disposition && field('Disposition', record.disposition)}
-          {field('Follow-up', record.followUpRequired
-            ? `Required${record.followUpDate ? ` — ${formatLongDate(record.followUpDate)}` : ''}`
-            : 'Not required')}
-          {record.medicalCertificate && field('Medical Certificate', record.medicalCertificateRef || 'Issued')}
-          {record.sickCertificate && field('Medical Certificate (Sick)', [record.sickCertificateRef, record.sickRestDays && `${record.sickRestDays} day/s`].filter(Boolean).join(' · ') || 'Issued')}
-          {record.ojtCertificate && field('Medical Certificate (OJT)', [record.ojtCertificateRef, record.ojtCompany].filter(Boolean).join(' · ') || 'Issued')}
-          {record.liabilityForm && field('Medical Liability Form', record.liabilityActivity || 'Issued')}
-        </div>
-
-        <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-4 dark:border-gray-700">
-          {record.medicalCertificate && (
-            <button
-              type="button"
-              onClick={() => onDocument('certificate', record, 'print')}
-              className="inline-flex items-center gap-2 rounded-lg border border-maroon-800 px-4 py-2 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 dark:border-maroon-700 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
-            >
-              <Printer className="h-4 w-4" /> Print certificate
-            </button>
-          )}
-          {record.sickCertificate && (
-            <button
-              type="button"
-              onClick={() => onDocument('sick', record, 'print')}
-              className="inline-flex items-center gap-2 rounded-lg border border-maroon-800 px-4 py-2 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 dark:border-maroon-700 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
-            >
-              <Printer className="h-4 w-4" /> Print sick certificate
-            </button>
-          )}
-          {record.ojtCertificate && (
-            <button
-              type="button"
-              onClick={() => onDocument('ojt', record, 'print')}
-              className="inline-flex items-center gap-2 rounded-lg border border-maroon-800 px-4 py-2 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 dark:border-maroon-700 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
-            >
-              <Printer className="h-4 w-4" /> Print OJT certificate
-            </button>
-          )}
-          {record.liabilityForm && (
-            <button
-              type="button"
-              onClick={() => onDocument('liability', record, 'print')}
-              className="inline-flex items-center gap-2 rounded-lg border border-maroon-800 px-4 py-2 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 dark:border-maroon-700 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
-            >
-              <Printer className="h-4 w-4" /> Print liability form
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => onDocument('consultation', record, 'print')}
-            className="inline-flex items-center gap-2 rounded-lg bg-maroon-800 px-4 py-2 text-sm font-semibold text-white hover:bg-maroon-900"
-          >
-            <Printer className="h-4 w-4" /> Print consultation form
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>,
-    document.body
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-gray-500 dark:text-gray-400">
+        {formatLongDate(record.date)} · {formatDayTime(record.date)} · {record.staff}
+      </p>
+      {field('Follow-up', record.followUpRequired
+        ? `Required${record.followUpDate ? ` — ${formatLongDate(record.followUpDate)}` : ''}`
+        : 'Not required')}
+      {record.recordType === 'emergency' && field(record.notesLabel, record.notesValue)}
+      {record.symptoms && field('Symptoms', record.symptoms)}
+      {record.disposition && field('Disposition', record.disposition)}
+      {record.appointment?.service && field('Appointment Service', record.appointment.service)}
+      {record.medicalCertificate && field('Medical Certificate', record.medicalCertificateRef || 'Issued')}
+      {record.sickCertificate && field('Medical Certificate (Sick)', [record.sickCertificateRef, record.sickRestDays && `${record.sickRestDays} day/s`].filter(Boolean).join(' · ') || 'Issued')}
+      {record.ojtCertificate && field('Medical Certificate (OJT)', [record.ojtCertificateRef, record.ojtCompany].filter(Boolean).join(' · ') || 'Issued')}
+      {record.liabilityForm && field('Medical Liability Form', record.liabilityActivity || 'Issued')}
+      {documents.length > 0 && <div className="flex flex-col gap-2 border-t border-gray-100 pt-3 dark:border-gray-700">{documents}</div>}
+    </div>
   );
 };
 
@@ -391,10 +276,12 @@ const HealthRecords = () => {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [search, setSearch] = useState('');
-  const [tab, setTab] = useState('consultations');
+  // Which kind of record the list shows; chosen in the Record Type dropdown.
+  const [tab, setTab] = useState(DEFAULT_TAB);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   useStudentBreadcrumbTab(TABS.find(({ id }) => id === tab)?.label);
-  const [selectedRecord, setSelectedRecord] = useState(null);
+  // The record open in the viewer and which of its documents is shown.
+  const [viewing, setViewing] = useState(null);
   const [page, setPage] = useState(1);
   const [columnSort, setColumnSort] = useState(null);
   const cycleSort = (key) => setColumnSort((current) => current?.key !== key ? { key, dir: 'desc' } : current.dir === 'desc' ? { key, dir: 'asc' } : null);
@@ -454,8 +341,7 @@ const HealthRecords = () => {
       const matchesSearch = !term || [r.title, r.complaint, r.diagnosis, r.notesValue, r.staff, r.medicalCertificateRef, r.ojtCompany, r.ojtCertificateRef, r.sickCertificateRef, r.liabilityActivity]
         .some((value) => value.toLowerCase().includes(term));
       const matchesYear = filters.year === 'all' || clinicYear(r.date) === filters.year;
-      const matchesType = filters.type === 'all' || r.recordType === filters.type;
-      return matchesSearch && matchesYear && matchesType;
+      return matchesSearch && matchesYear;
     });
     if (columnSort) {
       const value = COLUMN_SORTS[columnSort.key];
@@ -480,8 +366,8 @@ const HealthRecords = () => {
 
   const activeFilterCount = Object.keys(DEFAULT_FILTERS).filter((key) => filters[key] !== DEFAULT_FILTERS[key]).length;
   const isFiltering = Boolean(search.trim()) || activeFilterCount > 0;
-  const canReset = isFiltering || Boolean(columnSort);
-  const resetFilters = () => { setSearch(''); setFilters(DEFAULT_FILTERS); setColumnSort(null); };
+  const canReset = isFiltering || Boolean(columnSort) || tab !== DEFAULT_TAB;
+  const resetFilters = () => { setSearch(''); setFilters(DEFAULT_FILTERS); setColumnSort(null); setTab(DEFAULT_TAB); };
 
   const consultationCount = records.filter((r) => r.recordType === 'consultation').length;
   const followUpCount = records.filter((r) => r.followUpRequired).length;
@@ -513,11 +399,7 @@ const HealthRecords = () => {
 
         <div className={`${CARD} p-4 lg:p-6`}>
           <Skeleton className="mb-5 h-6 w-32" />
-          <div className="mb-4 flex flex-wrap gap-2">
-            <Skeleton className="h-11 w-52 rounded-xl" />
-            <Skeleton className="h-11 w-48 rounded-xl" />
-            <Skeleton className="ml-auto h-11 w-72 max-w-full rounded-xl" />
-          </div>
+          <Skeleton className="mb-5 h-[4.5rem] w-full rounded-xl" />
           <div className="space-y-px overflow-hidden rounded-xl border border-[var(--sp-border)]">
             <Skeleton className="h-11 w-full rounded-none" />
             {[0, 1, 2, 3, 4].map((key) => (
@@ -574,16 +456,19 @@ const HealthRecords = () => {
         />
       </section>
 
-      {/* Search and filter */}
-      <section aria-labelledby="records-search-title" className={`${CARD} p-4 lg:p-6`}>
-        <h2 id="records-search-title" className="text-lg font-bold text-gray-900 dark:text-white">
-          Search and Filter
-        </h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Find a record by keyword, or narrow the list by type and year.
-        </p>
+      {/* My Records: search, filters and the list in one card */}
+      <section aria-labelledby="records-title" className={`${CARD} p-4 lg:p-6`}>
+        <div className="mb-4 flex items-start gap-2.5">
+          <ClipboardList className="mt-0.5 h-6 w-6 shrink-0 text-maroon-800 dark:text-maroon-300" />
+          <div className="min-w-0">
+            <h2 id="records-title" className="text-lg font-bold text-gray-900 dark:text-white">My Records</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Search by keyword or choose a record type and year, then view or print any record.
+            </p>
+          </div>
+        </div>
 
-        <div className="mt-4 grid gap-3 rounded-xl border border-[var(--sp-border)] bg-gray-50 p-3 dark:bg-gray-900/30 sm:grid-cols-2 sm:p-4 lg:grid-cols-[2fr_1fr_1fr_1fr]">
+        <div className="mb-5 grid gap-3 rounded-xl border border-[var(--sp-border)] bg-gray-50 p-3 dark:bg-gray-900/30 sm:grid-cols-2 sm:p-4 lg:grid-cols-[2fr_1fr_1fr_1fr]">
           <div className="min-w-0 sm:col-span-2 lg:col-span-1">
             <span className={FIELD_LABEL}>Search</span>
             <SearchField
@@ -595,15 +480,15 @@ const HealthRecords = () => {
             />
           </div>
           {[
-            ['type', 'Record Type', [['all', 'All types'], ['consultation', 'Consultations'], ['emergency', 'Emergencies']]],
-            ['year', 'Year', [['all', 'All years'], ...years.map((year) => [year, year])]],
-          ].map(([key, label, options]) => (
+            ['type', 'Record Type', TABS.map(({ id, label }) => [id, label]), tab, setTab],
+            ['year', 'Year', [['all', 'All years'], ...years.map((year) => [year, year])], filters.year, (year) => setFilters((current) => ({ ...current, year }))],
+          ].map(([key, label, options, value, onChange]) => (
             <label key={key} className="block min-w-0">
               <span className={FIELD_LABEL}>{label}</span>
               <span className="relative block">
                 <select
-                  value={filters[key]}
-                  onChange={(e) => setFilters((current) => ({ ...current, [key]: e.target.value }))}
+                  value={value}
+                  onChange={(e) => onChange(e.target.value)}
                   className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)] pl-3 pr-10 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-maroon-500 dark:text-white"
                 >
                   {options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
@@ -623,45 +508,6 @@ const HealthRecords = () => {
               <RotateCcw aria-hidden="true" className="h-4 w-4 text-maroon-700 dark:text-maroon-300" />
               Reset filters
             </button>
-          </div>
-        </div>
-
-      </section>
-
-      {/* My Records */}
-      <div className={`${CARD} p-4 lg:p-6`}>
-        <div className="mb-5 flex items-start gap-2.5">
-          <ClipboardList className="mt-0.5 h-6 w-6 shrink-0 text-maroon-800 dark:text-maroon-300" />
-          <div className="min-w-0">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">My Records</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Browse your past clinic visits, medical certificates (sick and OJT), and liability forms, then view or print any record.
-            </p>
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <div role="tablist" aria-label="Record type" className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-            {TABS.map(({ id, label, icon: Icon }) => {
-              const active = tab === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setTab(id)}
-                  className={`flex w-full items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition sm:inline-flex sm:w-auto ${
-                    active
-                      ? 'border-maroon-800 bg-maroon-800 text-white'
-                      : 'border-[var(--sp-border)] text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-900/30'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </button>
-              );
-            })}
           </div>
         </div>
 
@@ -738,18 +584,7 @@ const HealthRecords = () => {
                       <td className="px-4 py-3.5"><StatusBadge status={record.status} /></td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2">
-                          {docTab ? (
-                            <button
-                              type="button"
-                              onClick={() => handleDocument(docTab.kind, record, 'preview')}
-                              className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-maroon-800 transition hover:bg-maroon-900 hover:text-white dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-maroon-900 dark:hover:text-white"
-                            >
-                              <Eye className="h-4 w-4" /> Preview
-                            </button>
-                          ) : (
-                            <ViewButton onClick={() => setSelectedRecord(record)} />
-                          )}
-                          <PrintButton record={record} kind={docTab ? docTab.kind : 'consultation'} onDocument={handleDocument} />
+                          <ViewButton onClick={() => setViewing({ record, kind: docTab ? docTab.kind : 'consultation' })} />
                         </div>
                       </td>
                     </tr>
@@ -781,10 +616,7 @@ const HealthRecords = () => {
                   </p>
                   <div className="mt-3 flex items-center justify-between gap-2">
                     <p className="truncate text-xs text-gray-500 dark:text-gray-400">{record.staff}</p>
-                    <div className="flex items-center gap-1">
-                      <ViewButton onClick={() => setSelectedRecord(record)} />
-                      <PrintButton record={record} kind={docTab ? docTab.kind : 'consultation'} onDocument={handleDocument} />
-                    </div>
+                    <ViewButton onClick={() => setViewing({ record, kind: docTab ? docTab.kind : 'consultation' })} />
                   </div>
                 </div>
               ))}
@@ -821,17 +653,27 @@ const HealthRecords = () => {
             </span>
           </nav>
         )}
-      </div>
+      </section>
 
-      <AnimatePresence>
-        {selectedRecord && (
-          <RecordDialog
-            record={selectedRecord}
-            onClose={() => setSelectedRecord(null)}
-            onDocument={handleDocument}
+      {/* View: the chosen document of the record in the document viewer (preview, print, PDF). */}
+      {viewing && (() => {
+        const { record, kind } = viewing;
+        const emergency = record.recordType === 'emergency';
+        const [title, subtitle] = VIEWER_TITLES[kind] || [
+          emergency ? 'Emergency Encounter Record' : 'Consultation Record',
+          `View and print ${emergency ? 'emergency encounter' : 'consultation'} details`,
+        ];
+        return (
+          <DocumentViewerModal
+            title={title}
+            subtitle={subtitle}
+            docKey={`${kind}-${record.id}`}
+            load={() => buildRecordDocument(kind, record)}
+            onClose={() => setViewing(null)}
+            details={<RecordExtras record={record} onDocument={handleDocument} />}
           />
-        )}
-      </AnimatePresence>
+        );
+      })()}
     </motion.div>
   );
 };

@@ -6,7 +6,7 @@ import { useNurseTimeGuardBypass } from '../../../services/devTools';
 
 /*
  * Queue: the patient popup. Call next on the row calls the student and opens this popup on the
- * arrival timer; "Patient arrived" confirms them (no redirect): the form is on the Consultation page, and "Go to Consultation" opens it.
+ * arrival timer; "Patient arrived" confirms them and opens their consultation form right away.
  * When the timer runs out the visit is closed as No Show and the popup tells the nurse to have
  * the student book a new appointment (no Recall / On hold).
  */
@@ -146,13 +146,13 @@ const QueuePatientModal = ({
                 </button>
               )}
 
-              {/* Arrived: the queue's part is done; the form is filled in on the Consultation page. */}
+              {/* Already arrived (the form was left before saving): one button back into the form. */}
               {student.status === 'serving' && (
                 <>
                   <p className="pb-2 text-center text-sm text-gray-600 dark:text-gray-300">
-                    {student.name.trim() || 'The student'} arrived and is in consultation. Their form is on the <span className="font-semibold">Consultation</span> page, so go there to fill it in.
+                    {student.name.trim() || 'The student'} arrived and is in consultation. Open their form to continue.
                   </p>
-                  <button type="button" onClick={onGoToConsultation} className={`${primary} bg-maroon-800 hover:bg-maroon-900`}>Go to Consultation</button>
+                  <button type="button" onClick={onGoToConsultation} className={`${primary} bg-maroon-800 hover:bg-maroon-900`}>Open consultation form</button>
                 </>
               )}
 

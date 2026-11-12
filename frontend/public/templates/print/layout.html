@@ -12,6 +12,7 @@
     <!-- External file, not a <style> block: the site's Content-Security-Policy blocks inline styles.
          Root-relative: the print window and the preview frame take the app page's address as their base. -->
     <link rel="stylesheet" href="/templates/print/print.css" />
+    {{#paper_css}}<link rel="stylesheet" href="/templates/print/{{paper_css}}" />{{/paper_css}}
   </head>
   <body>
     <div class="page">

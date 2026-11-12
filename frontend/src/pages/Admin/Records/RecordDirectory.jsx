@@ -1,11 +1,15 @@
-import { useEffect, useRef } from 'react';
-import { Eye, X } from 'lucide-react';
+import { Eye } from 'lucide-react';
+import api from '../../../services/api';
 import { Avatar } from '../Students/StudentDirectory';
-import { focus, fullName, secondary } from '../Students/directoryOptions';
+import { focus, fullName } from '../Students/directoryOptions';
 import { ClinicRecordSheet } from '../../../components/ClinicRecordList';
+import DocumentViewerModal from '../../../components/DocumentViewerModal';
+import { buildRecordDocument, studentDetails } from '../../Student/HealthRecords/recordDocuments';
 import { recordAcademic, yearLabel, yearValue } from '../../../utils/clinicRecordFilters';
 
-const recordType = record => record.record_type === 'emergency' ? 'Emergency' : 'Consultation';
+// Record type: the service the student booked (Consultation, Medical Certificate, Vaccination, ...).
+// A visit without an appointment is a Consultation; an emergency encounter is an Emergency.
+const recordType = record => record.record_type === 'emergency' ? 'Emergency' : record.appointment?.service || 'Consultation';
 const date = record => record.occurred_at ? new Date(record.occurred_at).toLocaleString('en-US', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Not recorded';
 const badge = record => <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${record.record_type === 'emergency' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-300'}`}>{recordType(record)}</span>;
 
@@ -18,7 +22,7 @@ export const RECORD_SORTS = {
   course: record => text(recordAcademic(record, 'course')),
   year: record => text(yearValue(recordAcademic(record, 'year'))),
   section: record => text(recordAcademic(record, 'section')),
-  type: record => text(record.record_type),
+  type: record => text(recordType(record)),
   date: record => new Date(record.occurred_at).getTime() || 0,
 };
 
@@ -45,19 +49,62 @@ export default function RecordDirectory({ records, onView, sort = null, onSort =
   </>;
 }
 
+// A clinic-history row in the shape the Consultation Form template is filled from (recordDocuments.js).
+const toDocumentRecord = record => {
+  const emergency = record.record_type === 'emergency';
+  const vitals = record.vital_signs || {};
+  const nurse = [record.nurse?.first_name, record.nurse?.last_name].filter(Boolean).join(' ');
+  return {
+    id: record.id,
+    date: record.occurred_at,
+    recordType: record.record_type,
+    complaint: emergency ? record.reason : record.chief_complaint,
+    // Same as the form printed when the visit was saved: the diagnosis line carries the nursing assessment.
+    diagnosis: emergency ? record.assessment : record.nursing_assessment || record.general_remarks,
+    assessment: emergency ? '' : record.nursing_assessment,
+    interventions: emergency ? record.intervention : record.nursing_interventions,
+    vitals: { bp: vitals.bp, hr: vitals.hr, temp: vitals.temp, rr: vitals.rr, o2: vitals.o2_sat },
+    medicalCertificateRef: record.medical_certificate_ref,
+    staff: nurse ? `Nurse ${nurse}` : 'Clinic Staff',
+    staffRole: 'Clinic Nurse',
+  };
+};
+
+// The patient block of the form (age, address, contacts) comes from the student's profile;
+// if that cannot be loaded, the form still shows the name and course from the record.
+const patientDetails = async record => {
+  const fallback = studentDetails(record.student);
+  if (!record.student?.id) return fallback;
+  try {
+    const { data } = await api.get(`/nurse/students/${record.student.id}`);
+    const student = data.data;
+    const profile = student.student_profile || {};
+    const health = student.health_profile;
+    return studentDetails(
+      student,
+      { ...profile, mobile_number: profile.mobile_number || student.mobile_number },
+      health && { name: health.emergency_name, relationship: health.emergency_relationship, phone: health.emergency_phone },
+    );
+  } catch {
+    return fallback;
+  }
+};
+
+// View: the record as its Consultation Form in the document viewer (preview, print, PDF).
+// Everything else on the record (history, plan, triage, issued documents) is in the side panel.
 export function RecordDetailsModal({ record, onClose }) {
-  const ref = useRef(null);
-  useEffect(() => {
-    const dialog = ref.current;
-    const previousFocus = document.activeElement;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    dialog.showModal();
-    return () => { dialog.close(); document.body.style.overflow = previousOverflow; if (previousFocus?.isConnected) previousFocus.focus(); };
-  }, []);
-  return <dialog ref={ref} aria-labelledby="clinic-record-title" onCancel={event => { event.preventDefault(); onClose(); }} className="m-auto max-h-[85dvh] w-[calc(100%-1.5rem)] max-w-3xl overflow-y-auto rounded-2xl border border-gray-200 bg-white p-0 text-gray-900 shadow-xl backdrop:bg-gray-950/60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
-    <header className="flex items-start gap-3 border-b border-gray-200 p-5 dark:border-gray-700"><div className="min-w-0 flex-1"><p className="text-xs text-gray-500 dark:text-gray-400">{recordType(record)} · {date(record)}</p><h2 id="clinic-record-title" className="mt-1 break-words text-xl font-semibold">{fullName(record.student || {}) || 'Clinic record'}</h2><p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{record.student?.student_id}</p></div><button type="button" aria-label="Close record details" onClick={onClose} className={`rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700 ${focus}`}><X size={20} /></button></header>
-    <div className="p-5"><ClinicRecordSheet record={record} /></div>
-    <footer className="flex justify-end border-t border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/30"><button type="button" onClick={onClose} className={secondary}>Close</button></footer>
-  </dialog>;
+  const emergency = record.record_type === 'emergency';
+  return <DocumentViewerModal
+    title={emergency ? 'Emergency Encounter Record' : 'Consultation Record'}
+    subtitle={`View and print ${emergency ? 'emergency encounter' : 'consultation'} details`}
+    docKey={`${record.record_type}-${record.id}`}
+    load={async () => buildRecordDocument('consultation', toDocumentRecord(record), await patientDetails(record))}
+    onClose={onClose}
+    detailsLabel="Full record"
+    details={<>
+      <p className="font-semibold">{fullName(record.student || {}) || 'Clinic record'}</p>
+      <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">{[record.student?.student_id, recordType(record), date(record)].filter(Boolean).join(' · ')}</p>
+      <ClinicRecordSheet record={record} />
+    </>}
+  />;
 }

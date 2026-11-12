@@ -5,6 +5,7 @@ These files are the printouts made by **Print / Preview** in the nurse Consultat
 | File | What it is |
 |---|---|
 | `print.css` | The styles for `layout.html` and every document template. Put new styles here, scoped to the document's wrapper class (for example `.ojt`): the site's Content-Security-Policy blocks `<style>` blocks and `style=""` attributes in the templates. |
+| `paper-a4.css` | A4 portrait paper. Linked after `print.css` for the documents marked `paper: 'a4'` in `DOCUMENTS` (`recordDocuments.js`), which is the Consultation Form; the others print on short bond paper (Letter). |
 | `layout.html` | The page around every document: the link to `print.css`, the PUP letterhead (logo, university and campus names, clinic name), the issue date and reference, and the page box. The document goes where `{{{content}}}` is. |
 | `pup-logo.png` | The logo in the letterhead. Replace it with an image of the same name to change it. |
 | `cho-logo.jpeg` | The City Health Office (Lungsod ng Biñan) logo, shown on the right of the letterhead of the OJT certificate. |
@@ -17,6 +18,10 @@ These files are the printouts made by **Print / Preview** in the nurse Consultat
 | `medical-certificate-ojt.html` | The Medical Certificate (OJT), the optional OJT fitness certificate released from a consultation. |
 | `medical-liability-form.html` | The Medical Liability Form (optional, released from a consultation). |
 | `student-profile.html` | The Student Health Profile, printed from the nurse Students page (a student's record > Print profile). |
+
+## The in-app viewer
+
+**View** on a consultation record (nurse Patient History and student Health Records) shows the Consultation Form in a document viewer (`src/components/DocumentViewerModal.jsx`): the same filled-in template, split into paper-sized sheets. Its **Print** prints this template as is, and **Download PDF** redraws the sheets as a PDF (`src/utils/documentPdf.js`). The PDF writer draws text, borders, the ruled lines of `.block .value` and images; a new kind of decoration (a background picture, list numbers) would need to be added there to show in the PDF.
 
 ## Adding a batch document
 

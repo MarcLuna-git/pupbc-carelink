@@ -299,9 +299,10 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
   const serviceOptions = form.service && !services.includes(form.service) ? [...services, form.service] : services;
   const [reviewOpen, setReviewOpen] = useState(false);
   /*
-   * No review button: the summary popup opens by itself when the student's
-   * own pick completes date + time + service. Changes made for the student
-   * (e.g. loading an appointment to edit) don't open it.
+   * The summary popup opens by itself when the student's own pick completes
+   * date + time + service. Changes made for the student (e.g. loading an
+   * appointment to edit) don't open it. A "Review and confirm booking" button
+   * under the services opens it too, for after the reason is typed.
    */
   const pickedRef = useRef(false);
   const onStepChange = event => {
@@ -369,7 +370,13 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
                     <input type="text" name="concern" value={form.concern || ''} onChange={onChange} onBlur={reasonDone} onKeyDown={reasonKey}
                       maxLength={150} placeholder={REASON_PROMPTS[service][1]} required aria-label={REASON_PROMPTS[service][0]} disabled={loading} autoFocus />
                   </span>}</span>}
-            </label>)}</div></div></section>
+            </label>)}</div>
+            {/* Visible next step once a service is picked: typing the reason enables it, so the
+                student never has to click elsewhere to reach the summary. */}
+            {progress === 4 && <button type="button" className="ap-button ap-review-booking" disabled={!canBook} onClick={() => setReviewOpen(true)}>
+              <CheckCircle />{reasonMissing ? 'Fill in the details above to continue' : 'Review and confirm booking'}
+            </button>}
+            </div></section>
           </li>
         </ol>
       </form>

@@ -1,0 +1,5 @@
+/* A4 portrait paper. layout.html links this file after print.css for the documents marked
+   `paper: 'a4'` in DOCUMENTS (src/pages/Student/HealthRecords/recordDocuments.js); the others
+   stay on short bond paper (Letter). */
+@page { size: A4 portrait; margin: 0.5in 0.6in; }
+:root { --paper-w: 210mm; --paper-h: 297mm; }

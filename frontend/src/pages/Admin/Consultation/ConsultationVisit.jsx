@@ -91,7 +91,7 @@ const Counter = ({ value }) => <span className="mt-1 block text-right text-xs te
 
 const rxLine = p => [p.name, p.dose, p.duration && `for ${p.duration}`, p.quantity && `×${p.quantity}`].filter(Boolean).join(' · ');
 
-const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back to Consultation', onSaved, onConflict, notify }) => {
+const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back to Consultation', onQueue, onSaved, onConflict, notify }) => {
   const draft = useMemo(() => readDraft(visit.checkin_id), [visit.checkin_id]);
   // The kiosk sends ['none'] when no red flag was ticked; that is not a red flag to show.
   const redFlags = (visit.triage?.red_flags || []).filter(flag => flag !== 'none');
@@ -604,6 +604,8 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
             {form.ojt_certificate && <button type="button" onClick={() => printRecord('ojt')} className={outline}><FileBadge className="h-4 w-4" /> Print Medical Certificate (OJT)</button>}
             {form.liability_form && <button type="button" onClick={() => printRecord('liability')} className={outline}><FileSignature className="h-4 w-4" /> Print Medical Liability Form</button>}
             <button type="button" onClick={onDone} className={outline}><FileText className="h-4 w-4" /> {doneLabel}</button>
+            {/* Saved: one click back to the Queue for the next student. */}
+            {onQueue && <button type="button" onClick={onQueue} className={primary}><ArrowLeft className="h-4 w-4" /> Back to Queue</button>}
           </div>
         </section>
       ) : (
