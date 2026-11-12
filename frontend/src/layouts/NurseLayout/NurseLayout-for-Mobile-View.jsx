@@ -30,6 +30,8 @@ const NurseLayoutForMobileView = ({
   const dockItems = navItems.filter((item) => item.dock);
   const moreItems = navItems.filter((item) => !item.dock);
   const moreActive = moreItems.some((item) => isActive(item.path));
+  // Live counts of the pages behind "More" (Consultation) show on the More button too.
+  const moreCount = moreItems.reduce((total, item) => total + (item.count || 0), 0);
 
   useEffect(() => setMoreOpen(false), [location.pathname]);
 
@@ -101,13 +103,14 @@ const NurseLayoutForMobileView = ({
               <Link
                 key={item.path}
                 to={item.path}
-                aria-label={item.label}
+                aria-label={item.count > 0 ? `${item.label}, ${item.count} ${item.countLabel}` : item.label}
                 aria-current={active ? 'page' : undefined}
                 className={dockLinkClass(active)}
               >
                 {active && activePill}
                 <Icon className="relative z-10 h-5 w-5" />
                 <span className="relative z-10 max-w-full truncate text-xs font-semibold leading-none">{item.label}</span>
+                {item.count > 0 && <span className="nurse-nav-count" aria-hidden="true">{item.count > 99 ? '99+' : item.count}</span>}
               </Link>
             );
           })}
@@ -122,6 +125,7 @@ const NurseLayoutForMobileView = ({
             {moreActive && activePill}
             <LayoutGrid className="relative z-10 h-5 w-5" />
             <span className="relative z-10 text-xs font-semibold leading-none">More</span>
+            {moreCount > 0 && <span className="nurse-nav-count" aria-hidden="true">{moreCount > 99 ? '99+' : moreCount}</span>}
           </button>
         </div>
       </nav>
@@ -179,6 +183,7 @@ const NurseLayoutForMobileView = ({
                         <Icon className="h-5 w-5" />
                       </span>
                       <span className="text-xs font-medium">{item.label}</span>
+                      {item.count > 0 && <span className="nurse-nav-count" aria-hidden="true">{item.count > 99 ? '99+' : item.count}</span>}
                     </Link>
                   );
                 })}

@@ -208,12 +208,14 @@ const KioskScan = ({
         // Normal lang ang per-frame decode failures habang naghahanap ng QR.
       };
 
-      /* Subukan ang rear camera, tapos front camera, tapos default.
-         Kapag exact ang hinihingi ng configuration, nag-fail ang
-         OverconstrainedError sa mga device na walang "environment" camera. */
+      /* Kiosk ito: nakaharap ang student sa screen at itinatapat ang QR sa
+         harap, kaya front camera muna ("user"), tapos rear camera, tapos default.
+         Sa tablet, kapag rear ang inuna, sa likod ng device nag-i-scan.
+         Hindi exact ang hinihingi para hindi mag-OverconstrainedError sa
+         device na walang ganoong camera. */
       const candidates = [
-        { facingMode: 'environment' },
         { facingMode: 'user' },
+        { facingMode: 'environment' },
         {},
       ];
 
@@ -883,7 +885,7 @@ const KioskScan = ({
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
-                      capture="environment"
+                      capture="user"
                       onChange={handleQrImage}
                       className="hidden"
                     />
@@ -1068,7 +1070,7 @@ const KioskScan = ({
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
-                      capture="environment"
+                      capture="user"
                       onChange={handleQrImage}
                       className="hidden"
                     />

@@ -22,6 +22,10 @@ import {
  * QR check-in queue, then the consultation form (its Individual Release tab also lists the past visits, Patient History).
  * Records holds the registers the clinic keeps: students, faculty, medicines and courses.
  * Dashboard has no group and sits on top.
+ *
+ * `countKey` marks a Management link that shows a live badge (GET /nurse/nav-counts):
+ * requests still pending, patients waiting in today's queue, patients in consultation.
+ * Records and Admin links are registers, not live lists, so they never get one.
  */
 export const NURSE_NAV_GROUPS = [
   { key: 'management', label: 'Management' },
@@ -30,10 +34,10 @@ export const NURSE_NAV_GROUPS = [
 ];
 
 export const NURSE_NAV_ITEMS = [
-  { path: '/nurse/dashboard', icon: LayoutDashboard, label: 'Dashboard', dock: true },
-  { path: '/nurse/appointments', icon: Calendar, label: 'Appointments', dock: true, group: 'management' },
-  { path: '/nurse/queue', icon: QrCode, label: 'Queue', dock: true, group: 'management' },
-  { path: '/nurse/consultation', icon: Stethoscope, label: 'Consultation', group: 'management' },
+  { path: '/nurse/dashboard', icon: LayoutDashboard, label: 'Overview', dock: true },
+  { path: '/nurse/appointments', icon: Calendar, label: 'Appointments', dock: true, group: 'management', countKey: 'appointments', countLabel: 'pending requests' },
+  { path: '/nurse/queue', icon: QrCode, label: 'Queue', dock: true, group: 'management', countKey: 'queue', countLabel: 'waiting in the queue' },
+  { path: '/nurse/consultation', icon: Stethoscope, label: 'Consultation', group: 'management', countKey: 'consultation', countLabel: 'in consultation' },
   { path: '/nurse/students', icon: Users, label: 'Students', dock: true, group: 'records' },
   { path: '/nurse/faculty', icon: GraduationCap, label: 'Faculty', group: 'records' },
   { path: '/nurse/medicines', icon: Pill, label: 'Medicines', group: 'records' },

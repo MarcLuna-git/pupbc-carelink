@@ -11,7 +11,7 @@ import { fetchNurseNotifications } from '../../services/nurseNotifications';
 import { fetchNurseDevTools } from '../../services/devTools';
 import NursePageSkeleton from '../../components/NursePageSkeleton';
 import { NURSE_NAV_ITEMS, isNurseNavActive } from './nurse-shell/nurseNavigation';
-import { nurseHeaderFor } from '../../utils/nurseGreeting';
+import { nurseBreadcrumbFor } from '../../utils/nurseGreeting';
 
 /*
  * Base styles first, then the two shells (each imports its own stylesheet),
@@ -79,6 +79,19 @@ const NurseLayoutForDesktopView = ({ children }) => {
     const response = await fetchNurseNotifications();
     setUnreadCount(Math.max(0, Number(response.data.unread_count) || 0));
   });
+
+  // Live counts shown as badges on the Management links (Appointments, Queue, Consultation).
+  const [navCounts, setNavCounts] = useState({});
+  const loadNavCounts = async (signal) => {
+    const { data } = await api.get('/nurse/nav-counts', { signal });
+    if (!signal?.aborted && data?.success) setNavCounts(data.data || {});
+  };
+  useNurseSync(['appointments', 'queue', 'consultations'], loadNavCounts);
+  useEffect(() => {
+    const controller = new AbortController();
+    loadNavCounts(controller.signal).catch(() => {});
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -181,15 +194,17 @@ const NurseLayoutForDesktopView = ({ children }) => {
   };
 
   const shellProps = {
-    navItems: NURSE_NAV_ITEMS,
+    navItems: NURSE_NAV_ITEMS.map((item) => (item.countKey
+      ? { ...item, count: Math.max(0, Number(navCounts[item.countKey]) || 0) }
+      : item)),
     isActive,
     unreadCount,
     onUnreadCount: setUnreadCount,
     darkMode,
     toggleDarkMode,
     accountMenuProps,
-    // Pages without a title card (dashboard, appointments) show their title and purpose in the header.
-    header: nurseHeaderFor(location.pathname, user),
+    // The header bar shows the breadcrumb; each page's title is in its own hero (NursePageTitle).
+    breadcrumb: nurseBreadcrumbFor(location.pathname),
   };
 
   const pageSlot = (

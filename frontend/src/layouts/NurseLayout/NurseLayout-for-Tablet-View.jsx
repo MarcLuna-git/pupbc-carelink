@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Moon, Sun } from 'lucide-react';
 
 import NurseSidebar from './nurse-shell/NurseSidebar';
@@ -13,7 +14,7 @@ import './NurseLayout-for-Tablet-View.css';
  * with a JS media query, so only one shell is ever mounted. This shell owns:
  *   - the collapsible sidebar (icon rail by default on tablet widths,
  *     full sidebar on desktop)
- *   - the header with the page title, notifications, theme toggle and account button
+ *   - the header with the breadcrumb, notifications, theme toggle and account button
  * The routed page arrives through `children`.
  */
 const TABLET_QUERY = '(max-width: 1099px)';
@@ -27,7 +28,7 @@ const NurseLayoutForTabletView = ({
   darkMode,
   toggleDarkMode,
   accountMenuProps,
-  header = null,
+  breadcrumb = [],
 }) => {
   // Folded rail on tablet widths, full sidebar on desktop; crossing the
   // breakpoint re-applies its default, the toggle changes it otherwise.
@@ -56,12 +57,17 @@ const NurseLayoutForTabletView = ({
       <div className="nurse-shell-body" data-route-scroll>
         <header className="nurse-header">
           <div className="nurse-header-inner">
-            {header && (
-              <div className="nurse-header-greeting">
-                <p className="nurse-header-greeting-title">{header.title}</p>
-                <p className="nurse-header-greeting-note">{header.note}</p>
-              </div>
-            )}
+            {/* Breadcrumb, sitting on the header's bottom edge (same as the student portal). */}
+            <nav className="nurse-breadcrumb" aria-label="Breadcrumb">
+              <ol>
+                {breadcrumb.length === 0
+                  ? <li aria-current="page">Dashboard</li>
+                  : <li><Link to="/nurse/dashboard">Dashboard</Link></li>}
+                {breadcrumb.map((label, index) => (
+                  <li key={label} aria-current={index === breadcrumb.length - 1 ? 'page' : undefined}>{label}</li>
+                ))}
+              </ol>
+            </nav>
             <div className="nurse-header-actions">
               <NurseNotificationsMenu unreadCount={unreadCount} onUnreadCount={onUnreadCount} />
 

@@ -738,6 +738,7 @@ Route::middleware([
             ->middleware(['nurse', \App\Http\Middleware\NurseOperation::class])
             ->group(function () {
 
+                Route::get('/nav-counts', [NurseDashboardController::class, 'navCounts']);
                 Route::get('/sync', function () {
                     return response()->json(['data' => \App\Services\NurseSync::revisions()])
                         ->header('Cache-Control', 'private, no-store');

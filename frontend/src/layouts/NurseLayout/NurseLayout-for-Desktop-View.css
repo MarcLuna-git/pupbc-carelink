@@ -43,7 +43,8 @@
 .nurse-nav-section { margin:4px 0 6px;padding:0 12px;font-size:10px;font-weight:700;letter-spacing:.14em;line-height:1.4;text-transform:uppercase;color:rgb(255 255 255 / .5);white-space:nowrap;overflow:hidden;transition:color .18s ease; }
 /* A clear gap between groups. */
 .nurse-nav-link + .nurse-nav-section { margin-top:18px; }
-.nurse-nav-count { min-width:20px;border-radius:999px;background:#ef4444;padding:2px 6px;text-align:center;font-size:10px;font-weight:700;color:#fff; }
+/* Live count on a Management link: inside the button, top-right corner. */
+.nurse-nav-count { position:absolute;top:4px;right:6px;z-index:11;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#ef4444;text-align:center;font-size:10px;font-weight:700;line-height:16px;color:#fff;pointer-events:none; }
 .nurse-sidebar-campus { position:absolute;bottom:0;left:0;width:100%;height:245px;object-fit:cover;filter:grayscale(1);mix-blend-mode:luminosity;opacity:.14;mask-image:linear-gradient(transparent,#000 35%);pointer-events:none; }
 .dark .nurse-sidebar-campus { opacity:.08; }
 
@@ -74,6 +75,16 @@
 .nurse-header { position:fixed;top:0;left:var(--np-sidebar);right:0;z-index:30;background:color-mix(in srgb,var(--np-surface) 80%,transparent);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid var(--np-border); }
 .nurse-header-inner { height:var(--np-header-height);display:flex;align-items:center;gap:16px;padding:0 24px; }
 .nurse-header-brand { display:none; }
+/* Breadcrumb ("Dashboard / Appointments") on the header's bottom edge, like the student portal. */
+.nurse-breadcrumb { align-self:flex-end;flex:1;min-width:0;padding:0 0 9px;font-size:13px;font-weight:500;color:#111827; }
+.dark .nurse-breadcrumb { color:#fff; }
+.nurse-breadcrumb ol { display:flex;align-items:center;min-width:0;margin:0;padding:0;list-style:none; }
+.nurse-breadcrumb li { min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.nurse-breadcrumb li + li::before { content:'/';margin:0 8px;color:#c9b4b8; }
+.nurse-breadcrumb a { color:inherit;text-decoration:none; }
+.nurse-breadcrumb a:hover { color:var(--color-maroon-800);text-decoration:underline; }
+.dark .nurse-breadcrumb a:hover { color:#efb0bd; }
+.nurse-breadcrumb [aria-current='page'] { font-weight:700; }
 .nurse-header-greeting { min-width:0;line-height:1.25; }
 .nurse-header-greeting-title { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:18px;font-weight:700;color:var(--color-maroon-800); }
 .dark .nurse-header-greeting-title { color:var(--color-maroon-300); }

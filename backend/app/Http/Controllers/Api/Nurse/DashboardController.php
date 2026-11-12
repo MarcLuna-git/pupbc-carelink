@@ -12,6 +12,24 @@ use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends Controller
 {
+    /*
+     * Live counts for the sidebar badges of the Management pages:
+     * appointment requests still waiting for an answer, patients in today's
+     * queue (waiting or being called), and patients now in consultation.
+     */
+    public function navCounts()
+    {
+        $today = \App\Models\AppointmentCheckin::where('is_walk_in', false)
+            ->where('created_at', '>=', today())
+            ->where('created_at', '<', today()->addDay());
+
+        return response()->json(['success' => true, 'data' => [
+            'appointments' => Appointment::where('status', 'pending')->count(),
+            'queue' => (clone $today)->whereIn('status', ['waiting', 'called'])->count(),
+            'consultation' => (clone $today)->where('status', 'serving')->count(),
+        ]])->header('Cache-Control', 'private, no-store');
+    }
+
     public function stats()
     {
         $revisions = \App\Services\NurseSync::revisions();

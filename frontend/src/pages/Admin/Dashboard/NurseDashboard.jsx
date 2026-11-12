@@ -5,6 +5,7 @@ import { Users, Calendar, Clock, ClipboardList, Activity, CalendarClock, Calenda
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import { nurseGreeting } from '../../../utils/nurseGreeting';
+import NursePageTitle from '../../../components/NursePageTitle';
 import NurseListCard, { CountChip } from '../../../components/NurseListCard';
 import ClinicCalendar from './ClinicCalendar';
 import useNurseSync from '../../../hooks/useNurseSync';
@@ -151,8 +152,8 @@ const NurseDashboard = () => {
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-5">
-      {/* On tablet and desktop the greeting is in the header; the mobile header shows the brand, so it is here. */}
-      <h1 className="text-lg font-bold text-maroon-800 dark:text-maroon-300 md:sr-only">{nurseGreeting(user)}</h1>
+      {/* The greeting is the dashboard's hero title; the header bar shows the breadcrumb. */}
+      <NursePageTitle path="/nurse/dashboard" title={nurseGreeting(user)} />
       {error && <p role="alert" className="text-sm font-medium text-red-700 dark:text-red-400">{error}</p>}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Clinic totals">

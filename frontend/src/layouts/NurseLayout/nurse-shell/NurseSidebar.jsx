@@ -73,13 +73,14 @@ const NurseSidebar = ({
               <Link
                 key={item.path}
                 to={item.path}
-                aria-label={item.label}
+                aria-label={item.count > 0 ? `${item.label}, ${item.count} ${item.countLabel}` : item.label}
                 aria-current={active ? 'page' : undefined}
                 title={item.label}
                 className="nurse-nav-link"
               >
                 <Icon aria-hidden="true" className="h-5 w-5 shrink-0" />
                 <span className="nurse-nav-label">{item.label}</span>
+                {item.count > 0 && <span className="nurse-nav-count" aria-hidden="true">{item.count > 99 ? '99+' : item.count}</span>}
               </Link>
             );
           }),
