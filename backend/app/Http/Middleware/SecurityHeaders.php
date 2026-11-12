@@ -40,10 +40,18 @@ class SecurityHeaders
         $headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
         // JSON is never rendered as a document, so it may load nothing at all.
+        // frame-ancestors and form-action are named because default-src does
+        // not stand in for them.
         // Files (avatars, attachments) are left alone so a PDF still opens in
         // the browser's viewer.
-        if (str_contains((string) $headers->get('Content-Type'), 'json')) {
-            $headers->set('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
+        // A response with no body (the 204 answer to a CORS preflight, which
+        // the browser sends before every cross-origin API call) gets the same
+        // policy: there is nothing in it to load either.
+        $bodiless = !$response instanceof StreamedResponse
+            && !$response instanceof BinaryFileResponse
+            && $response->getContent() === '';
+        if ($bodiless || str_contains((string) $headers->get('Content-Type'), 'json')) {
+            $headers->set('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'; form-action 'none'");
         }
 
         // Signed-in responses hold health records: keep them out of the browser

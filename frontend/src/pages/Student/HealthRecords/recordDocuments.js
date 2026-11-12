@@ -291,7 +291,8 @@ export const buildRecordDocument = async (kind, record, student = null) => {
   const data = {
     clinic_name: CLINIC_NAME,
     template_dir: templateDir,
-    paper_css: doc.paper === 'a4' ? 'paper-a4.css' : '',
+    // A plain on/off flag: layout.html holds the full, fixed address of paper-a4.css.
+    paper_a4: doc.paper === 'a4' ? 'yes' : '',
     signature_block: signatory ? signatureBlock(signatory, templateDir) : '',
     issued_date: formatDay(new Date()),
     reference,
