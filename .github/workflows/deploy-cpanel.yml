@@ -1,0 +1,123 @@
+name: Deploy to cPanel
+
+# Every push to main that changes the app is built here and installed on the
+# cPanel server over SSH. Render deploys the same push on its own.
+# From any other branch (manual run), the release goes to a test folder on the
+# server and no migration runs, so the live site is never touched.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - '.github/workflows/deploy-cpanel.yml'
+      - '.github/deploy/**'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-cpanel
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      LIVE: ${{ github.ref == 'refs/heads/main' && '1' || '0' }}
+      DEPLOY_ROOT: ${{ github.ref == 'refs/heads/main' && 'public_html' || 'deploy-test/public_html' }}
+      SITE_URL: https://pupbccarelink.org
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same PHP as the server, and the same Composer flags as backend/Dockerfile.
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+          coverage: none
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --prefer-dist
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # Same origin on cPanel, so the API is /api. The kiosk device token is
+      # never built into the public site.
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          VITE_API_URL: /api
+          VITE_APP_NAME: PUPBC CareLink
+          VITE_KIOSK_DEVICE_TOKEN: ''
+        run: |
+          npm ci
+          npx vite build --outDir "$GITHUB_WORKSPACE/release/site" --emptyOutDir
+
+      - name: Package release
+        run: |
+          if grep -rlF '127.0.0.1:8000' release/site --include='*.js' --include='*.html' --include='*.css'; then
+            echo "The build points at the local API."
+            exit 1
+          fi
+          # Hashed file names, so browsers may keep /assets for a year.
+          printf '%s\n' '<IfModule mod_headers.c>' \
+            '    Header set Cache-Control "public, max-age=31536000, immutable"' \
+            '</IfModule>' > release/site/assets/.htaccess
+
+          rsync -a \
+            --include='/.env.example' --exclude='/.env*' \
+            --exclude='/storage' --exclude='/tests' --exclude='/node_modules' \
+            --exclude='/bootstrap/cache/*.php' --exclude='/public/storage' \
+            --exclude='/.phpunit.result.cache' \
+            backend/ release/backend/
+          tar -czf release.tgz -C release backend site
+          ls -lh release.tgz
+
+      - name: Set up SSH
+        env:
+          SSH_KEY: ${{ secrets.CPANEL_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.CPANEL_KNOWN_HOSTS }}
+          SSH_HOST: ${{ secrets.CPANEL_SSH_HOST }}
+          SSH_PORT: ${{ secrets.CPANEL_SSH_PORT }}
+          SSH_USER: ${{ secrets.CPANEL_SSH_USER }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host cpanel
+            HostName $SSH_HOST
+            Port $SSH_PORT
+            User $SSH_USER
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking yes
+          EOF
+
+      - name: Upload and install
+        run: |
+          ssh cpanel 'mkdir -p ~/deploy && cat > ~/deploy/release.tgz' < release.tgz
+          ssh cpanel "DEPLOY_ROOT='$DEPLOY_ROOT' RUN_MIGRATIONS='$LIVE' bash -s" < .github/deploy/cpanel-remote.sh
+
+      - name: Check the live site
+        id: health
+        if: env.LIVE == '1'
+        run: |
+          curl -fsS --retry 5 --retry-delay 5 --retry-all-errors -o /dev/null "$SITE_URL/api/health"
+          curl -fsS --retry 3 --retry-delay 5 -o /dev/null "$SITE_URL/"
+
+      # Only after a failed check: an install that fails restores itself.
+      - name: Put the previous version back
+        if: failure() && steps.health.conclusion == 'failure'
+        run: ssh cpanel "DEPLOY_ROOT='$DEPLOY_ROOT' bash -s rollback" < .github/deploy/cpanel-remote.sh
