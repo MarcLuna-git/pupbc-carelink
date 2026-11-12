@@ -16,9 +16,9 @@ Lahat ng config ay nasa [`render.yaml`](../render.yaml).
 1. **Palitan ang database password** (na-leak ito sa lumang git history):
    Project Settings → Database → **Reset database password**. I-save ang bagong password.
 2. Pindutin ang **Connect** (itaas ng dashboard) → **Session pooler**. I-check:
-   - Host: `aws-0-ap-southeast-2.pooler.supabase.com` (kung iba, palitan ang `DB_HOST` sa `render.yaml`)
+   - Host: `aws-0-ap-southeast-1.pooler.supabase.com` (kung iba, palitan ang `DB_HOST` sa `render.yaml`)
    - Port: `5432`
-   - User: `postgres.nwfltsdypjmqbsnuoccy`
+   - User: `postgres.vlaudqrruumttsvkdcwe`
 3. **Table Editor** → may `users` at `migrations` table na ba? May row na ba na `role = nurse`?
    - Oo → hindi na kailangang mag-seed (laktawan ang Step 6).
    - Wala → gagawin ng deploy ang tables; mag-seed sa Step 6.
@@ -67,7 +67,7 @@ Sa susunod na update: mag-commit sa `deploy` branch at `git push deploy deploy:m
 | Key | Value |
 |---|---|
 | `APP_KEY` | output ng Step 3 |
-| `DB_USERNAME` | `postgres.nwfltsdypjmqbsnuoccy` |
+| `DB_USERNAME` | `postgres.vlaudqrruumttsvkdcwe` |
 | `DB_PASSWORD` | bagong Supabase password (Step 1) |
 | `MAIL_USERNAME` | Brevo SMTP login |
 | `MAIL_PASSWORD` | Brevo SMTP key |
