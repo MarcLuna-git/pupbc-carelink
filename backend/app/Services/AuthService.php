@@ -67,14 +67,16 @@ class AuthService
             })
             ->delete();
 
-        if (User::where('email', $data['email'])->exists()) {
+        // Archived (soft-deleted) accounts still hold their email and Student ID
+        // in the unique indexes, so they count as registered too.
+        if (User::withTrashed()->where('email', $data['email'])->exists()) {
             throw ValidationException::withMessages([
                 'email' => 'This email is already registered.',
             ]);
         }
 
         if (
-            User::where('student_id', $data['student_id'])->exists() ||
+            User::withTrashed()->where('student_id', $data['student_id'])->exists() ||
             PendingRegistration::where('email', '!=', $data['email'])
                 ->where('student_id', $data['student_id'])
                 ->exists()
@@ -99,15 +101,28 @@ class AuthService
             $data['password_confirmation']
         );
 
-        $pending = PendingRegistration::create(
-            [
-                'email' => $data['email'],
-                'student_id' => $data['student_id'],
-                'payload' => $data,
-                'otp_hash' => Hash::make($otp),
-                'expires_at' => now()->addMinutes(self::OTP_EXPIRY_MINUTES),
-            ]
-        );
+        try {
+            $pending = PendingRegistration::create(
+                [
+                    'email' => $data['email'],
+                    'student_id' => $data['student_id'],
+                    'payload' => $data,
+                    'otp_hash' => Hash::make($otp),
+                    'expires_at' => now()->addMinutes(self::OTP_EXPIRY_MINUTES),
+                ]
+            );
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Two submissions of the same form at the same moment (a double
+            // tap, or a retry on a slow connection): the first one already
+            // saved the registration and sent the code.
+            if (!in_array((string) $e->getCode(), ['23000', '23505'], true)) {
+                throw $e;
+            }
+
+            return [
+                'message' => 'A registration is already pending for this email. Enter your code or use Resend verification code to continue with the original details.',
+            ];
+        }
 
         $mailUser = new User([
             'first_name' => $data['first_name'],
@@ -224,13 +239,13 @@ class AuthService
                 );
             }
 
-            if (User::where('email', $email)->exists()) {
+            if (User::withTrashed()->where('email', $email)->exists()) {
                 throw ValidationException::withMessages([
                     'email' => 'This email is already registered.',
                 ]);
             }
 
-            if (User::where('student_id', $pending->student_id)->exists()) {
+            if (User::withTrashed()->where('student_id', $pending->student_id)->exists()) {
                 throw ValidationException::withMessages([
                     'student_id' => 'This Student ID is already registered.',
                 ]);

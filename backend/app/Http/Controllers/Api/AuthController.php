@@ -23,6 +23,21 @@ class AuthController extends Controller
         $this->authService = $authService;
     }
 
+    /**
+     * The message shown to the person. A database error (SQLSTATE, table and
+     * column names) is logged instead and replaced with a plain sentence.
+     */
+    private function safeMessage(\Throwable $e): string
+    {
+        if ($e instanceof \PDOException) {
+            report($e);
+
+            return 'Something went wrong. Please try again.';
+        }
+
+        return $e->getMessage();
+    }
+
     // Public: the Course, Year level, and Section choices on the registration form.
     public function registrationOptions(): JsonResponse
     {
@@ -247,7 +262,7 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'registration_pending' => true,
-                'message' => $e->getMessage(),
+                'message' => $this->safeMessage($e),
             ], 503);
         } catch (ValidationException $e) {
             return response()->json([
@@ -259,7 +274,7 @@ class AuthController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => $this->safeMessage($e),
             ], 400);
         }
     }
@@ -325,7 +340,7 @@ class AuthController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => $this->safeMessage($e),
             ], 400);
         }
     }
@@ -373,7 +388,7 @@ class AuthController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => $this->safeMessage($e),
             ], 400);
         }
     }
@@ -464,7 +479,7 @@ public function login(Request $request): JsonResponse
         if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface && $e->getStatusCode() === 403) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => $this->safeMessage($e),
             ], 403);
         }
 
@@ -572,7 +587,7 @@ public function login(Request $request): JsonResponse
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => $this->safeMessage($e),
             ], 401);
         }
     }
@@ -622,7 +637,7 @@ public function login(Request $request): JsonResponse
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => $this->safeMessage($e),
             ], 400);
         }
     }
@@ -655,7 +670,7 @@ public function login(Request $request): JsonResponse
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => $this->safeMessage($e),
             ], 400);
         }
     }
@@ -744,7 +759,7 @@ public function login(Request $request): JsonResponse
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => $this->safeMessage($e),
             ], 400);
         }
     }
@@ -800,7 +815,7 @@ public function login(Request $request): JsonResponse
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => $this->safeMessage($e),
             ], 400);
         }
     }

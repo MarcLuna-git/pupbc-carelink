@@ -299,24 +299,17 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
   const serviceOptions = form.service && !services.includes(form.service) ? [...services, form.service] : services;
   const [reviewOpen, setReviewOpen] = useState(false);
   /*
-   * The summary popup opens by itself when the student's own pick completes
-   * date + time + service. Changes made for the student (e.g. loading an
-   * appointment to edit) don't open it. A "Review and confirm booking" button
-   * under the services opens it too, for after the reason is typed.
+   * The summary popup opens only when the student asks for it: the "Review and
+   * confirm booking" button under the services, or Enter in the reason field.
+   * Picking a date, time or another service never opens it, and leaving the
+   * reason field doesn't either: clicking a different service is a change of
+   * mind, not a confirmation. Switching service clears the typed reason.
    */
-  const pickedRef = useRef(false);
   const onStepChange = event => {
-    pickedRef.current = true;
     if (event.target.name === 'service' && event.target.value !== form.service) onChange({ target: { name: 'concern', value: '' } });
     onChange(event);
   };
-  // Typing the reason doesn't pop the review open mid-word; leaving the field or pressing Enter does.
-  const reasonDone = () => { if (canBook) setReviewOpen(true); };
-  const reasonKey = event => { if (event.key === 'Enter') { event.preventDefault(); reasonDone(); } };
-  useEffect(() => {
-    if (canBook && pickedRef.current) setReviewOpen(true);
-    pickedRef.current = false;
-  }, [canBook, form.date, form.time, form.service]);
+  const reasonKey = event => { if (event.key === 'Enter') { event.preventDefault(); if (canBook) setReviewOpen(true); } };
   // Close the summary popup once its submission finishes.
   const wasLoadingRef = useRef(loading);
   useEffect(() => {
@@ -363,11 +356,11 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
             <section className="ap-booking-column"><div className="ap-step-body"><div className="ap-service-list" role="radiogroup" aria-label="Appointment service">{serviceOptions.map((service, index) => <label key={service} className={form.service === service ? 'is-selected' : ''}>
               <input type="radio" name="service" value={service} checked={form.service === service} onChange={onStepChange} onClick={() => { if (form.service === service) toggleOption(onStepChange, 'service', service, true); }} disabled={loading} />
               {index === 0 ? <Stethoscope /> : <FileText />}{service === 'Other'
-                ? <span className="ap-other-service"><strong>Other:</strong><input type="text" name="concern" value={form.service === 'Other' ? form.concern || '' : ''} onChange={onChange} onFocus={() => { if (form.service !== 'Other') onStepChange({ target: { name: 'service', value: 'Other' } }); }} onBlur={reasonDone} onKeyDown={reasonKey} maxLength={150} placeholder="Please specify" required={form.service === 'Other'} aria-label="Please specify the service" disabled={loading} /></span>
+                ? <span className="ap-other-service"><strong>Other:</strong><input type="text" name="concern" value={form.service === 'Other' ? form.concern || '' : ''} onChange={onChange} onFocus={() => { if (form.service !== 'Other') onStepChange({ target: { name: 'service', value: 'Other' } }); }} onKeyDown={reasonKey} maxLength={150} placeholder="Please specify" required={form.service === 'Other'} aria-label="Please specify the service" disabled={loading} /></span>
                 : <span><strong>{serviceTitle(service)}</strong>{SERVICE_NOTES[service] && <small>{SERVICE_NOTES[service]}</small>}
                   {form.service === service && REASON_PROMPTS[service] && <span className="ap-service-reason">
                     <span>{REASON_PROMPTS[service][0]} <em aria-hidden="true">*</em></span>
-                    <input type="text" name="concern" value={form.concern || ''} onChange={onChange} onBlur={reasonDone} onKeyDown={reasonKey}
+                    <input type="text" name="concern" value={form.concern || ''} onChange={onChange} onKeyDown={reasonKey}
                       maxLength={150} placeholder={REASON_PROMPTS[service][1]} required aria-label={REASON_PROMPTS[service][0]} disabled={loading} autoFocus />
                   </span>}</span>}
             </label>)}</div>
