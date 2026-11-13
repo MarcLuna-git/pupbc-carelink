@@ -72,6 +72,37 @@ const decodeQrFromFile = async (file) => {
   });
 };
 
+/* Ginagawang nababasang text ang kahit anong error (minsan string lang ang
+   ibinabato ng html5-qrcode), para makita sa tablet ang totoong sanhi. */
+const describeError = (err) => {
+  if (!err) return 'Unknown error';
+  if (typeof err === 'string') return err;
+
+  const status = err.response?.status;
+  const parts = [];
+
+  if (status) parts.push(`HTTP ${status}`);
+  if (err.code) parts.push(err.code);
+  if (err.name && err.name !== 'Error') parts.push(err.name);
+  if (err.message) parts.push(err.message);
+
+  return parts.join(' | ') || String(err);
+};
+
+const errorHas = (err, word) => describeError(err).includes(word);
+
+const CAMERA_KEY = 'carelink.kiosk.camera';
+
+const savedFacing = () => {
+  try {
+    return localStorage.getItem(CAMERA_KEY) === 'environment'
+      ? 'environment'
+      : 'user';
+  } catch {
+    return 'user';
+  }
+};
+
 // Student ID format: 2001-00123-BN-0 (4 digits, 5 digits, 2 letters, 1 digit).
 // Keeps only characters valid for each segment and inserts dashes as the user types.
 const STUDENT_ID_SEGMENTS = [
@@ -104,6 +135,9 @@ const KioskScan = ({
   const [studentId, setStudentId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [errorTitle, setErrorTitle] = useState('Camera Unavailable');
+  const [errorDetail, setErrorDetail] = useState('');
+  const [cameraInfo, setCameraInfo] = useState('');
   const [success, setSuccess] = useState(false);
 
   const [cameraReady, setCameraReady] = useState(false);
@@ -114,6 +148,15 @@ const KioskScan = ({
   const scannerRef = useRef(null);
   const fileInputRef = useRef(null);
   const timeoutRef = useRef(null);
+  const frameTimerRef = useRef(null);
+  const frameCanvasRef = useRef(null);
+  const facingRef = useRef(savedFacing());
+
+  const showError = (title, message, err) => {
+    setErrorTitle(title);
+    setErrorDetail(err ? describeError(err) : '');
+    setError(message);
+  };
 
   const isScanningRef = useRef(false);
   const scanCooldownRef = useRef(false);
@@ -157,15 +200,11 @@ const KioskScan = ({
     if (!canUseLiveCamera) {
       await stopQrScanner();
 
-      let message =
-        'Live camera scanning is unavailable on this connection. Please take a photo of the QR code instead.';
-
-      // Sa dev, ipakita ang rason kung bakit itinuturing na insecure ang page.
-      if (import.meta.env.DEV) {
-        message += ` [secureContext=${window.isSecureContext}, mediaDevices=${!!navigator.mediaDevices}, protocol=${window.location.protocol}]`;
-      }
-
-      setError(message);
+      showError(
+        'Camera Unavailable',
+        'The camera cannot be used on this page. Please take a photo of the QR code instead.',
+        `secureContext=${window.isSecureContext}, mediaDevices=${!!navigator.mediaDevices}, protocol=${window.location.protocol}`
+      );
 
       return;
     }
@@ -174,8 +213,9 @@ const KioskScan = ({
       await stopQrScanner();
 
       // Ikarga ang decoder habang naghihintay ng scanner container.
-      const [Html5Qrcode] = await Promise.all([
+      const [Html5Qrcode, jsQR] = await Promise.all([
         loadHtml5Qrcode(),
+        loadJsQR().catch(() => null),
         // Hintayin munang ma-render ang scanner container.
         new Promise((resolve) => setTimeout(resolve, 300)),
       ]);
@@ -183,21 +223,20 @@ const KioskScan = ({
       const element = document.getElementById(qrRegionId);
 
       if (!element) {
-        setError(
-          'QR scanner could not be initialized. Please use manual entry.'
+        showError(
+          'Camera Unavailable',
+          'The QR scanner could not start. Please enter your Student ID.',
+          'Scanner container was not found on the page.'
         );
         return;
       }
 
       element.innerHTML = '';
 
-      const config = {
+      /* Walang qrbox: buong larawan ng camera ang binabasa, kaya hindi na
+         kailangang itapat ang QR sa maliit na kahon. */
+      const baseConfig = {
         fps: 10,
-        qrbox: {
-          width: 250,
-          height: 250,
-        },
-        aspectRatio: 1,
       };
 
       const onDecoded = (decodedText) => {
@@ -213,10 +252,19 @@ const KioskScan = ({
          Sa tablet, kapag rear ang inuna, sa likod ng device nag-i-scan.
          Hindi exact ang hinihingi para hindi mag-OverconstrainedError sa
          device na walang ganoong camera. */
+      const preferred = facingRef.current;
+      const other = preferred === 'user' ? 'environment' : 'user';
+
+      /* Mas mataas na resolution para mabasa ang QR kahit malayo nang kaunti. */
+      const sharp = {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      };
+
       const candidates = [
-        { facingMode: 'user' },
-        { facingMode: 'environment' },
-        {},
+        { facingMode: preferred, ...sharp },
+        { facingMode: other, ...sharp },
+        { ...sharp },
       ];
 
       let lastError = null;
@@ -230,8 +278,8 @@ const KioskScan = ({
 
         try {
           await html5QrCode.start(
-            constraints,
-            config,
+            { facingMode: constraints.facingMode || preferred },
+            { ...baseConfig, videoConstraints: constraints },
             onDecoded,
             onFrameError
           );
@@ -259,9 +307,9 @@ const KioskScan = ({
 
           // Huwag nang mag-retry kapag permission o hardware ang problema.
           if (
-            err?.name === 'NotAllowedError' ||
-            err?.name === 'NotFoundError' ||
-            err?.name === 'NotReadableError'
+            errorHas(err, 'NotAllowedError') ||
+            errorHas(err, 'NotFoundError') ||
+            errorHas(err, 'NotReadableError')
           ) {
             throw err;
           }
@@ -274,6 +322,79 @@ const KioskScan = ({
 
       setCameraReady(true);
 
+      /* Ipakita kung aling camera at anong linaw ang gamit. */
+      try {
+        const settings = scannerRef.current?.getRunningTrackSettings?.();
+        const side =
+          settings?.facingMode === 'environment'
+            ? 'Back camera'
+            : settings?.facingMode === 'user'
+              ? 'Front camera'
+              : 'Camera';
+
+        setCameraInfo(
+          settings?.width
+            ? `${side} is on (${settings.width} x ${settings.height})`
+            : `${side} is on`
+        );
+      } catch {
+        setCameraInfo('Camera is on');
+      }
+
+      /* Pangalawang decoder: binabasa ng jsQR ang buong frame ng video sa
+         totoong linaw nito. Ang html5-qrcode ay nagbabasa lang sa laki ng
+         nakikitang video, kaya madalas hindi nito mabasa ang maliit na QR. */
+      if (jsQR) {
+        let busy = false;
+
+        frameTimerRef.current = setInterval(() => {
+          if (busy || isScanningRef.current || scanCooldownRef.current) return;
+
+          const video = document.querySelector(`#${qrRegionId} video`);
+
+          if (!video || video.readyState < 2 || !video.videoWidth) return;
+
+          busy = true;
+
+          try {
+            const scale = Math.min(1, 1024 / video.videoWidth);
+            const width = Math.round(video.videoWidth * scale);
+            const height = Math.round(video.videoHeight * scale);
+
+            const canvas =
+              frameCanvasRef.current ||
+              (frameCanvasRef.current = document.createElement('canvas'));
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const context = canvas.getContext('2d', {
+              willReadFrequently: true,
+            });
+
+            context.drawImage(video, 0, 0, width, height);
+
+            const frame = context.getImageData(0, 0, width, height);
+            const result = jsQR(frame.data, width, height, {
+              inversionAttempts: 'dontInvert',
+            });
+
+            if (result?.data) {
+              handleQRScanned(result.data);
+            }
+          } catch (frameErr) {
+            console.error('QR frame read error:', frameErr);
+            clearInterval(frameTimerRef.current);
+            frameTimerRef.current = null;
+            setCameraInfo(
+              `Camera is on. Frame reader stopped: ${describeError(frameErr)}`
+            );
+          } finally {
+            busy = false;
+          }
+        }, 350);
+      }
+
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -285,36 +406,20 @@ const KioskScan = ({
       console.error('QR Scanner error:', err);
 
       let errorMessage =
-        'Could not access the live camera. You can take a QR photo instead.';
+        'The camera could not be opened. You can take a QR photo instead.';
 
-      if (
-        err?.name === 'NotAllowedError' ||
-        err?.message?.includes('NotAllowed')
-      ) {
+      if (errorHas(err, 'NotAllowed')) {
         errorMessage =
-          'Camera permission was denied. Allow camera access or take/upload a QR photo.';
-      } else if (
-        err?.name === 'NotFoundError' ||
-        err?.message?.includes('NotFound')
-      ) {
+          'The camera is not allowed on this tablet. Allow the camera for this site in the browser settings, then tap Retry Camera.';
+      } else if (errorHas(err, 'NotFound')) {
         errorMessage =
-          'No camera was detected. Please take/upload a QR photo or enter your Student ID.';
-      } else if (
-        err?.name === 'NotReadableError' ||
-        err?.message?.includes('NotReadable')
-      ) {
+          'No camera was found. Please take a QR photo or enter your Student ID.';
+      } else if (errorHas(err, 'NotReadable')) {
         errorMessage =
-          'The camera is currently being used by another application.';
+          'The camera is being used by another app. Close the other app, then tap Retry Camera.';
       }
 
-      // Sa dev, isama ang totoong error para mas madaling i-diagnose.
-      if (import.meta.env.DEV) {
-        errorMessage += ` [${err?.name || 'Error'}: ${
-          err?.message || 'unknown'
-        }]`;
-      }
-
-      setError(errorMessage);
+      showError('Camera Unavailable', errorMessage, err);
       setCameraReady(false);
     }
   };
@@ -323,6 +428,11 @@ const KioskScan = ({
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
+    }
+
+    if (frameTimerRef.current) {
+      clearInterval(frameTimerRef.current);
+      frameTimerRef.current = null;
     }
 
     if (scannerRef.current) {
@@ -413,8 +523,10 @@ const KioskScan = ({
     } catch (err) {
       console.error('QR image scan error:', err);
 
-      setError(
-        'No readable QR code was found. Move closer to the QR code, avoid glare, and try again.'
+      showError(
+        'QR Code Not Read',
+        'The QR code in the photo could not be read. Move closer, avoid glare, and try again.',
+        err
       );
     } finally {
       setFileScanning(false);
@@ -505,10 +617,11 @@ const KioskScan = ({
 
       const errorMessage =
         err.response?.data?.message ||
-        err.message ||
-        'QR code was not recognized. Please enter your Student ID manually.';
+        (err.response
+          ? 'The QR code was not accepted. Please enter your Student ID.'
+          : 'The kiosk could not reach the clinic server. Check the internet connection and try again.');
 
-      setError(errorMessage);
+      showError('QR Code Not Accepted', errorMessage, err);
 
       isScanningRef.current = false;
 
@@ -519,6 +632,19 @@ const KioskScan = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const switchCamera = () => {
+    facingRef.current =
+      facingRef.current === 'user' ? 'environment' : 'user';
+
+    try {
+      localStorage.setItem(CAMERA_KEY, facingRef.current);
+    } catch {
+      // Hindi kailangang matandaan ang pinili kapag bawal ang storage.
+    }
+
+    retryScanner();
   };
 
   const retryScanner = () => {
@@ -554,6 +680,7 @@ const KioskScan = ({
       .toUpperCase();
 
     if (!trimmedStudentId || trimmedStudentId.length < 5) {
+      setErrorDetail('');
       setError(
         'Please enter a valid Student ID.'
       );
@@ -562,6 +689,7 @@ const KioskScan = ({
 
     setLoading(true);
     setError('');
+    setErrorDetail('');
 
     try {
       const payload = {
@@ -597,7 +725,7 @@ const KioskScan = ({
         err.message ||
         'Student was not found. Please verify your Student ID.';
 
-      setError(errorMessage);
+      showError('', errorMessage, err.response?.status === 422 ? null : err);
     } finally {
       setLoading(false);
     }
@@ -789,12 +917,20 @@ const KioskScan = ({
                     />
 
                     <h3 className="text-white font-semibold text-lg mb-2">
-                      Camera Unavailable
+                      {errorTitle}
                     </h3>
 
-                    <p className="text-white/70 text-sm mb-6">
+                    <p className="text-white/70 text-sm mb-3">
                       {error}
                     </p>
+
+                    {errorDetail && (
+                      <p className="text-white/50 text-xs break-words font-mono">
+                        Error details: {errorDetail}
+                      </p>
+                    )}
+
+                    <div className="h-6" />
 
                     <div
                       className="
@@ -982,13 +1118,17 @@ const KioskScan = ({
                         z-10
                       "
                     >
-                      <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center gap-2 mb-1">
                         <Clock className="w-4 h-4 text-yellow-400" />
 
                         <p className="text-white/70 text-sm">
                           Having trouble scanning?
                         </p>
                       </div>
+
+                      <p className="text-white/50 text-xs mb-3">
+                        Hold the QR code still and one hand away from the camera. Make the phone screen brighter.
+                      </p>
 
                       <div className="flex gap-2">
                         <button
@@ -1034,7 +1174,32 @@ const KioskScan = ({
                 </div>
 
                 {cameraReady && (
-                  <div className="flex justify-center">
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={switchCamera}
+                      disabled={fileScanning || loading}
+                      className="
+                        px-4 py-2
+                        bg-white/5
+                        border border-white/10
+                        text-white/70
+                        rounded-xl
+                        text-xs
+                        font-semibold
+                        hover:bg-white/10
+                        transition
+                        flex
+                        items-center
+                        gap-2
+                        disabled:opacity-50
+                      "
+                    >
+                      <RefreshCw className="w-4 h-4" />
+
+                      Switch Camera
+                    </button>
+
                     <button
                       type="button"
                       onClick={() =>
@@ -1096,9 +1261,15 @@ const KioskScan = ({
 
                 <p className="text-white/70 text-xs text-center">
                   {cameraReady
-                    ? 'Point the camera at your CareLink QR code'
+                    ? 'Show your CareLink QR code to the camera'
                     : 'Take a clear photo of your QR code or enter your Student ID'}
                 </p>
+
+                {cameraReady && cameraInfo && (
+                  <p className="text-white/40 text-[11px] text-center">
+                    {cameraInfo}
+                  </p>
+                )}
               </div>
             )}
 
@@ -1190,9 +1361,17 @@ const KioskScan = ({
                       "
                     />
 
-                    <p className="text-red-300 text-sm">
-                      {error}
-                    </p>
+                    <div>
+                      <p className="text-red-300 text-sm">
+                        {error}
+                      </p>
+
+                      {errorDetail && (
+                        <p className="text-red-300/60 text-xs mt-1 break-words font-mono">
+                          Error details: {errorDetail}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
 
