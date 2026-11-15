@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import RouteLoadingBar from '../../../components/RouteLoadingBar';
+import { popRouteLoading, pushRouteLoading } from '../../../components/RouteLoadingBar';
 import { SearchField } from '../../../components/StudentSearchFilter';
 import { AlertCircle, ArrowRight, CalendarDays, Check, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Clock, FileText, HelpCircle, LayoutGrid, List, Loader2, MapPin, RotateCcw, Search, ShieldCheck, Stethoscope, UserRound, X } from 'lucide-react';
 import { appointmentDate, appointmentTime, clinicDate, formatAppointmentDate, isClinicSunday } from '../../../utils/appointmentDate';
@@ -25,13 +25,17 @@ const providerName = appointment => personName(appointment.doctor) || personName
 const roomName = appointment => (typeof appointment.room === 'string' ? appointment.room : appointment.room?.name) || appointment.location || 'Not provided';
 
 export function AppointmentHero({ loading = false }) {
+  // Drives the single top-edge loading bar while the page's first data loads.
+  useEffect(() => {
+    if (!loading) return undefined;
+    pushRouteLoading();
+    return () => popRouteLoading();
+  }, [loading]);
   return <section className="ap-hero" aria-labelledby="appointments-title">
     <div className="ap-hero-copy">
       <h1 id="appointments-title">Appointments</h1>
       <p className="ap-hero-description">Book and manage your clinic visits with ease.</p>
     </div>
-    {/* Route-loading bar — full-width fill/drain loop, hero only. */}
-    {loading && <RouteLoadingBar className="ap-hero-loading-bar" />}
   </section>;
 }
 
@@ -98,6 +102,25 @@ const HISTORY_COLUMNS = [['date', 'Date'], ['service', 'Service'], ['staff', 'St
 const toggleOption = (onChange, name, value, selected) =>
   onChange({ target: { name, value: selected ? '' : value } });
 
+/* Booking progress markers (1 · 2 · 3): the number until the step's click
+   completes it — then a short loading spin that settles into a plain check
+   icon (no circle). Un-picking the step returns the number. */
+function StepMarker({ number, completed }) {
+  const [spinning, setSpinning] = useState(false);
+  const wasCompleted = useRef(completed);
+  useEffect(() => {
+    const justCompleted = completed && !wasCompleted.current;
+    wasCompleted.current = completed;
+    if (!justCompleted) return undefined;
+    setSpinning(true);
+    const timer = setTimeout(() => setSpinning(false), 700);
+    return () => clearTimeout(timer);
+  }, [completed]);
+  if (spinning) return <Loader2 className="animate-spin" />;
+  if (completed) return <Check className="ap-step-check" />;
+  return number;
+}
+
 function CalendarPicker({ value, onChange, disabled }) {
   const today = clinicDate();
   // Developer Tools → Remove time Guard: past dates and Sundays become selectable.
@@ -123,10 +146,12 @@ function CalendarPicker({ value, onChange, disabled }) {
       {Array.from({ length: offset }, (_, i) => <span key={`empty-${i}`} />)}
       {Array.from({ length: count }, (_, i) => {
         const date = `${month}-${String(i + 1).padStart(2, '0')}`;
-        const closed = !bypass && isClinicSunday(date);
-        const unavailable = closed || (!bypass && date < today);
+        // UI-only: Sundays are clickable like any day (the booking stays blocked
+        // later, at the review button) — only past dates stay off without the
+        // Developer Tools time-guard bypass.
+        const unavailable = !bypass && date < today;
         return <button key={date} type="button" aria-label={formatAppointmentDate(date, { month: 'long', weekday: 'long' })}
-          aria-pressed={value === date} disabled={disabled || unavailable} title={closed ? 'Clinic closed on Sundays' : undefined}
+          aria-pressed={value === date} disabled={disabled || unavailable}
           className={`${value === date ? 'is-selected' : ''} ${date === today ? 'is-today' : ''}`}
           onClick={() => toggleOption(onChange, 'date', date, value === date)}>{i + 1}</button>;
       })}
@@ -293,8 +318,14 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
   const selectedInstant = appointmentTime(form.date, form.time);
   // "Other" needs the student to say what the visit is for.
   const reasonMissing = Boolean(form.service) && !(form.concern || '').trim();
+  // The review button is always visible: until the date, time, service and
+  // reason are all filled it reads "Fill in the details above to continue".
+  const detailsIncomplete = !form.date || !form.time || !form.service || reasonMissing;
   const canBook = Boolean(form.service && !reasonMissing && form.date && form.time && selectedSlot && !selectedSlot.isFull && selectedInstant && (bypass || (!selectedSlot.is_past && selectedInstant >= new Date())) && !slotsLoading && !loading);
   const progress = !form.date ? 1 : !form.time ? 2 : !form.service ? 3 : 4;
+  // UI-only: a closed Sunday flows like any other day (slots selectable, last
+  // button visible) but `selectedSlot` never exists, so booking stays blocked.
+  const closedDate = isClinicSunday(form.date);
   // An appointment being edited may use a service that is no longer offered (e.g. "Other").
   const serviceOptions = form.service && !services.includes(form.service) ? [...services, form.service] : services;
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -329,11 +360,11 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
       <form id="appointment-booking-form" className="ap-booking-steps" onSubmit={onSubmit} noValidate>
         <ol className="ap-booking-progress" aria-label="Booking progress">
           <li aria-current={progress === 1 ? 'step' : undefined} className={`ap-booking-step${progress >= 1 ? ' is-active' : ''}`}>
-            <header className="ap-step-heading"><span className="ap-step-marker">{progress > 1 ? <CheckCircle /> : 1}</span><h3 className="ap-step-label">Select Date</h3></header>
+            <header className="ap-step-heading"><span className="ap-step-marker"><StepMarker number={1} completed={progress > 1} /></span><h3 className="ap-step-label">Select Date</h3></header>
             <section className="ap-booking-column"><CalendarPicker value={form.date} onChange={onStepChange} disabled={loading} /></section>
           </li>
           <li aria-current={progress === 2 ? 'step' : undefined} className={`ap-booking-step${progress >= 2 ? ' is-active' : ''}`}>
-            <header className="ap-step-heading"><span className="ap-step-marker">{progress > 2 ? <CheckCircle /> : 2}</span><h3 className="ap-step-label">Available Time Slots</h3></header>
+            <header className="ap-step-heading"><span className="ap-step-marker"><StepMarker number={2} completed={progress > 2} /></span><h3 className="ap-step-label">Available Time Slots</h3></header>
             <section className="ap-booking-column"><div className="ap-step-body"><p className="ap-column-caption">{form.date ? formatAppointmentDate(form.date, { weekday: 'long' }) : 'Select an appointment date'}</p>
             {slotsLoading ? <div className="ap-slots-loading" role="status"><div className="ap-slots-loading-grid" aria-hidden="true">{timeSlots.map(time => <span key={time} />)}</div><span className="ap-slots-loading-label"><Loader2 className="animate-spin" />Loading availability…</span></div> : <div className="ap-time-grid">{timeSlots.map(time => {
               const slot = availableSlots.find(item => item.time === time);
@@ -341,18 +372,18 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
               // The server flags a slot that already occurred with is_past; fall back to client time if absent.
               const isPast = !bypass && Boolean(slot) && (slot.is_past ?? Boolean(instant && instant < new Date()));
               const isFull = Boolean(slot?.isFull) && !isPast;
-              const unavailable = !form.date || !slot || isPast || isFull;
+              const unavailable = !form.date || (!slot && !closedDate) || isPast || isFull;
               const hint = !slot ? 'Availability has not been returned by the clinic' : isPast ? 'This time has already passed.' : `${slot.available} slots available${slot.booked ? ` (${slot.booked} booked)` : ''}`;
               // Default label while no availability data exists (no date picked yet / fresh reload).
-              const countLabel = !slot ? (!bypass && isClinicSunday(clinicDate()) ? '0/0 no available slots' : '10/10 slots') : isPast ? 'Not available' : `${slot.available}/${slot.available + (slot.booked || 0)} slots`;
+              const countLabel = !slot ? '10/10 slots' : isPast ? 'Not available' : `${slot.available}/${slot.available + (slot.booked || 0)} slots`;
               return <button key={time} type="button" disabled={loading || unavailable} aria-pressed={form.time === time} title={hint} className={`${form.time === time ? 'is-selected' : ''} ${isPast ? 'is-past' : ''} ${isFull ? 'is-full' : ''}`} onClick={() => toggleOption(onStepChange, 'time', time, form.time === time)}>{time}<span className={isPast ? 'ap-slot-past-tag' : ''}>{countLabel}</span>{isFull && <span className="ap-slot-full-tag">Full</span>}</button>;
             })}</div>}
-            {form.date && !slotsLoading && availableSlots.length === 0 && <p className="ap-availability-note">No availability returned. <button type="button" onClick={retrySlots}>Retry</button></p>}
+            {form.date && !slotsLoading && !closedDate && availableSlots.length === 0 && <p className="ap-availability-note">No availability returned. <button type="button" onClick={retrySlots}>Retry</button></p>}
             <p className="ap-column-footnote">Availability updates automatically.</p>
             </div></section>
           </li>
           <li aria-current={progress === 3 ? 'step' : undefined} className={`ap-booking-step${progress >= 3 ? ' is-active' : ''}`}>
-            <header className="ap-step-heading"><span className="ap-step-marker">{progress > 3 ? <CheckCircle /> : 3}</span><h3 className="ap-step-label">Select Service</h3></header>
+            <header className="ap-step-heading"><span className="ap-step-marker"><StepMarker number={3} completed={progress > 3} /></span><h3 className="ap-step-label">Select Service</h3></header>
             <section className="ap-booking-column"><div className="ap-step-body"><div className="ap-service-list" role="radiogroup" aria-label="Appointment service">{serviceOptions.map((service, index) => <label key={service} className={form.service === service ? 'is-selected' : ''}>
               <input type="radio" name="service" value={service} checked={form.service === service} onChange={onStepChange} onClick={() => { if (form.service === service) toggleOption(onStepChange, 'service', service, true); }} disabled={loading} />
               {index === 0 ? <Stethoscope /> : <FileText />}{service === 'Other'
@@ -364,11 +395,12 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
                       maxLength={150} placeholder={REASON_PROMPTS[service][1]} required aria-label={REASON_PROMPTS[service][0]} disabled={loading} autoFocus />
                   </span>}</span>}
             </label>)}</div>
-            {/* Visible next step once a service is picked: typing the reason enables it, so the
-                student never has to click elsewhere to reach the summary. */}
-            {progress === 4 && <button type="button" className="ap-button ap-review-booking" disabled={!canBook} onClick={() => setReviewOpen(true)}>
-              <CheckCircle />{reasonMissing ? 'Fill in the details above to continue' : 'Review and confirm booking'}
-            </button>}
+            {/* Always visible: it names the next thing to finish and only turns
+                into the clickable "Review and confirm booking" once every detail
+                is valid; it stays disabled on closed Sundays. */}
+            <button type="button" className="ap-button ap-review-booking" disabled={!canBook} onClick={() => setReviewOpen(true)}>
+              <CheckCircle />{detailsIncomplete ? 'Fill in the details above to continue' : closedDate ? 'Clinic is closed on Sundays' : 'Review and confirm booking'}
+            </button>
             </div></section>
           </li>
         </ol>

@@ -344,7 +344,7 @@ public function test_duplicate_call_next_visit_claim_and_consultation_save()
         config(['checkin.checkin_early_minutes' => $early, 'checkin.checkin_late_minutes' => $late]);
         $student = $this->person('student');
         \App\Models\HealthProfile::create(['user_id' => $student->id, 'emergency_name' => 'Guardian',
-            'emergency_relationship' => 'Parent', 'emergency_phone' => '09123456789',
+            'emergency_relationship' => 'Parent', 'emergency_phone' => '+639123456789',
             'consent_signature' => 'Test Student', 'consent_date' => '2026-10-12',
             'agree_privacy' => true, 'agree_terms' => true]);
         $hash = (string) Str::uuid();

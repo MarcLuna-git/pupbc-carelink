@@ -54,7 +54,7 @@ class AppointmentIntegrationTest extends TestCase
         if ($role === 'student') {
             HealthProfile::create([
                 'user_id' => $user->id, 'emergency_name' => 'Guardian', 'emergency_relationship' => 'Parent',
-                'emergency_phone' => '09123456789', 'consent_signature' => 'Test',
+                'emergency_phone' => '+639123456789', 'consent_signature' => 'Test',
                 'consent_date' => '2026-09-23', 'agree_privacy' => true, 'agree_terms' => true,
             ]);
             $user->qrCode()->create(['qr_code_hash' => Str::uuid(), 'is_active' => true]);

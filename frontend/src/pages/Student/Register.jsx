@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, ArrowRight, CheckCircle2, Eye, EyeOff, FileText,
-  GraduationCap, Loader2, LockKeyhole, Mail, Phone,
-  ShieldCheck, UserRound, X,
+  ArrowRight, CheckCircle2, ChevronDown, Circle, Eye, EyeOff, FileText,
+  GraduationCap, Loader2, LockKeyhole, Mail,
+  ShieldCheck, UserRound, UserRoundX, X, XCircle,
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import authService from '../../services/authService';
 import { formatPersonName } from '../../utils/studentUser';
 import { isStudentIdYearPrefix, isValidStudentIdYear } from '../../utils/inputFilters';
@@ -12,6 +13,8 @@ import clinicLogo from '../../assets/clinic-logo.webp';
 import campusPhoto from '../../assets/pup-binan-hero.jpg';
 import clinicPhoto from '../../assets/clinic-waiting-area.jpg';
 import { StudentNoticeModal, StudentToast } from '../../components/StudentFeedback';
+import PhilippineMobileInput from '../../components/PhilippineMobileInput';
+import { contactPhoneError } from '../../utils/contactValidation';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -24,7 +27,10 @@ const INITIAL = {
   password: '', password_confirmation: '', agree_terms: false,
 };
 const INPUT = 'min-h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-maroon-800 focus:ring-2 focus:ring-maroon-800/15 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:border-rose-300 dark:focus:ring-rose-300/25 disabled:cursor-not-allowed disabled:opacity-60';
-const INVALID = 'border-red-400 focus:border-red-500 focus:ring-red-500/15 dark:border-red-400 dark:focus:border-red-400 dark:focus:ring-red-400/25';
+const STUDENT_ID_PATTERN = /^\d{4}-\d{5}-BN-[01]$/;
+const ID_NOT_FOUND = 'This Student ID is not on the school list. Check it, or visit the clinic for help.';
+const ID_REGISTERED = 'This Student ID already has an account. Sign in instead.';
+const INVALID = 'border-red-400! focus:border-red-500 focus:ring-red-500/15 dark:border-red-400! dark:focus:border-red-400 dark:focus:ring-red-400/25';
 
 function getManilaDate() {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -74,36 +80,7 @@ function formatStudentId(value) {
   if (finalDigit) formatted += `-${finalDigit}`;
   return formatted;
 }
-// Only Philippine mobile prefixes can be entered. Accept both 09... and +639...
-// A typed 639... is displayed as +639... automatically.
-function formatPhilippineMobile(raw) {
-  const value = String(raw).replace(/[\s()-]/g, '');
-  const prefixed = value.startsWith('63') ? `+${value}` : value;
-  const validPartial = /^(?:|0|09\d{0,9}|\+|\+6|\+63|\+639\d{0,9})$/;
-  return validPartial.test(prefixed) ? prefixed : null;
-}
 
-function getPasswordStrength(password) {
-  if (!password) return null;
-  const lengthOk = password.length >= 8;
-  const number = /\d/.test(password);
-  const special = /[^A-Za-z0-9]/.test(password);
-  const mixedCase = /[a-z]/.test(password) && /[A-Z]/.test(password);
-  if (!lengthOk || !(number || special)) {
-    return { label: 'Weak', color: 'bg-red-500', text: 'text-red-600', segments: 1 };
-  }
-  if (!(number && special)) {
-    return { label: 'Moderate', color: 'bg-yellow-400', text: 'text-yellow-700', segments: 2 };
-  }
-  if (password.length >= 12 && mixedCase) {
-    return { label: 'Strong', color: 'bg-green-500', text: 'text-green-700', segments: 4 };
-  }
-  return { label: 'Good', color: 'bg-blue-500', text: 'text-blue-700', segments: 3 };
-}
-
-function normalizePhone(phone) {
-  return /^09\d{9}$/.test(phone) ? `+63${phone.slice(1)}` : phone;
-}
 function apiMessage(error, fallback) {
   const status = error?.response?.status;
   if (status === 429) return 'Too many requests. Please wait and try again.';
@@ -111,6 +88,15 @@ function apiMessage(error, fallback) {
   if (!error?.response) return 'Cannot connect to CareLink. Check your connection and backend server.';
   return error.response.data?.message || fallback;
 }
+// Password Strength list: all four must be met before the student can sign up
+// (the server checks the same rules).
+const PASSWORD_RULES = [
+  { label: 'At least 8 characters', test: (value) => value.length >= 8 },
+  { label: 'A number or a special character', test: (value) => /[\d\W_]/.test(value) },
+  { label: '12 or more characters', test: (value) => value.length >= 12 },
+  { label: 'Both a number and a special character', test: (value) => /\d/.test(value) && /[^A-Za-z0-9]/.test(value) },
+];
+
 function Field({ id, label, error, optional, children }) {
   return (
     <div className="min-w-0">
@@ -125,11 +111,148 @@ function Field({ id, label, error, optional, children }) {
 function SectionTitle({ icon: Icon, children }) {
   return (
     <div className="mb-3 flex items-center gap-2 border-b border-slate-100 pb-2.5">
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-maroon-100 dark:bg-rose-950/40 text-maroon-800 dark:text-rose-300">
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-maroon-800 text-white dark:bg-maroon-700">
         <Icon size={17} />
       </span>
       <h3 className="text-sm font-extrabold text-slate-900">{children}</h3>
     </div>
+  );
+}
+
+// The look of the Student ID field for each live check result: icon, color and the line under it.
+const ID_STATES = {
+  typing: { icon: Loader2, spin: true, tone: 'text-slate-400 dark:text-slate-500', text: '' },
+  // While typing, when the masterlist check is on: tell the student what the ID is checked against.
+  typingRequired: { icon: Loader2, spin: true, tone: 'text-slate-500 dark:text-slate-400', text: 'Your Student ID must be on the school list to sign up...' },
+  checking: { icon: Loader2, spin: true, tone: 'text-maroon-800 dark:text-rose-300', text: 'Checking the school list...' },
+  found: { icon: CheckCircle2, tone: 'text-green-600 dark:text-green-400', text: 'Found on the school list.' },
+  // The masterlist check is off: nothing was verified, so no check mark is shown.
+  format: { icon: null, tone: '', text: '' },
+  // On the list, but the ID already has an account: a different icon than "not found", same red.
+  registered: { icon: UserRoundX, tone: 'text-red-600 dark:text-red-400', text: ID_REGISTERED },
+  not_found: { icon: XCircle, tone: 'text-red-600 dark:text-red-400', text: ID_NOT_FOUND },
+  busy: { icon: XCircle, tone: 'text-amber-600 dark:text-amber-400', text: 'Too many checks. Wait a minute, then type your Student ID again.' },
+  error: { icon: XCircle, tone: 'text-amber-600 dark:text-amber-400', text: 'We could not check the school list right now. You can still continue.' },
+};
+
+function StudentIdField({ value, onChange, disabled, error, check, required }) {
+  // No icon while empty; a spinner while the student types and while the list is checked;
+  // then a check or an X.
+  const result = check.id === value ? ID_STATES[check.status] : null;
+  const current = result || (value ? ID_STATES[required ? 'typingRequired' : 'typing'] : null);
+  const Icon = current?.icon;
+  const taken = result && check.status === 'registered';
+  const bad = !taken && (Boolean(error) || (result && check.status === 'not_found'));
+  const note = (taken || !error) && current?.text;
+  return (
+    <Field id="student_id" label="Student ID" error={taken ? null : error}>
+      <div className="relative">
+        <input
+          id="student_id" name="student_id" type="text" value={value} onChange={onChange}
+          placeholder="2023-00000-BN-0" autoComplete="username" maxLength={17} disabled={disabled}
+          aria-invalid={bad || taken} aria-describedby={note ? 'student-id-check' : undefined}
+          className={`${INPUT} pr-11`}
+        />
+        <span className="pointer-events-none absolute inset-y-0 right-0 flex w-11 items-center justify-center" aria-hidden="true">
+          <AnimatePresence mode="wait" initial={false}>
+            {Icon && <motion.span
+              key={current.spin ? 'spin' : check.status}
+              initial={{ scale: 0.4, opacity: 0, rotate: current?.spin ? 0 : -90 }}
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              exit={{ scale: 0.4, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 22 }}
+              className={`flex ${current.tone}`}
+            >
+              <Icon size={19} className={current.spin ? 'animate-spin' : ''} />
+            </motion.span>}
+          </AnimatePresence>
+        </span>
+      </div>
+      {note && <p id="student-id-check" role="status" aria-live="polite" className={`mt-1 text-xs ${current.tone}`}>
+        {taken ? <>This Student ID already has an account. <Link to="/login" className="font-semibold underline">Sign in</Link> instead.</> : note}
+      </p>}
+    </Field>
+  );
+}
+
+// ── Live check for plain text fields (same look as the Student ID field) ──────────────
+// A short wait after the last key, then a green check or a red X. No server call.
+const CHECK_DELAY_MS = 600;
+
+// Error text for a person's name, or '' when it looks right. `what` is e.g. 'first name'.
+function personNameError(value, what) {
+  const name = String(value ?? '').trim();
+  if (!name) return `Enter your ${what}.`;
+  if (!/^[\p{L}\s\-'.]+$/u.test(name)) return 'Use letters only.';
+  if (name.replace(/[^\p{L}]/gu, '').length < 2) return `Your ${what} is too short.`;
+  if (name.length > 100) return `Your ${what} is too long.`;
+  return '';
+}
+const firstNameError = (value) => personNameError(value, 'first name');
+const lastNameError = (value) => personNameError(value, 'last name');
+
+// Email format only (no server call, so the field cannot be used to find out who is registered).
+function emailError(value) {
+  const email = String(value ?? '').trim();
+  if (!email) return 'Enter your email address.';
+  if (email.length > 255) return 'Your email address is too long.';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return 'Enter a valid email, like name@example.com.';
+  return '';
+}
+
+// idle (empty) | typing | valid | invalid, with the error text when invalid.
+function useTypingCheck(value, check) {
+  const [done, setDone] = useState({ value: '', error: '' });
+  useEffect(() => {
+    if (!value) return undefined;
+    const timer = window.setTimeout(() => setDone({ value, error: check(value) }), CHECK_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [value, check]);
+  if (!value) return { status: 'idle', error: '' };
+  if (done.value !== value) return { status: 'typing', error: '' };
+  return done.error ? { status: 'invalid', error: done.error } : { status: 'valid', error: '' };
+}
+
+const CHECK_LOOKS = {
+  typing: { icon: Loader2, spin: true, tone: 'text-slate-400 dark:text-slate-500' },
+  valid: { icon: CheckCircle2, tone: 'text-green-600 dark:text-green-400' },
+  invalid: { icon: XCircle, tone: 'text-red-600 dark:text-red-400' },
+};
+
+// Text input with the live check icon on the right (the icon shows the result; the border stays
+// plain). A submit error (`error`) wins over the live one.
+function CheckedField({ id, label, value, onChange, check, disabled, error, optional, type = 'text', icon: LeftIcon, ...inputProps }) {
+  const live = useTypingCheck(value, check);
+  const look = CHECK_LOOKS[live.status];
+  const Icon = look?.icon;
+  const shownError = error || live.error;
+  const bad = Boolean(error) || live.status === 'invalid';
+  return (
+    <Field id={id} label={label} optional={optional} error={shownError}>
+      <div className="relative">
+        {LeftIcon && <LeftIcon size={16} className="pointer-events-none absolute left-3 top-3.5 text-slate-400" aria-hidden="true" />}
+        <input
+          {...inputProps}
+          id={id} name={id} type={type} value={value} onChange={onChange} disabled={disabled}
+          aria-invalid={bad}
+          className={`${INPUT} pr-11 ${LeftIcon ? 'pl-9' : ''}`}
+        />
+        <span className="pointer-events-none absolute inset-y-0 right-0 flex w-11 items-center justify-center" aria-hidden="true">
+          <AnimatePresence mode="wait" initial={false}>
+            {Icon && <motion.span
+              key={live.status}
+              initial={{ scale: 0.4, opacity: 0, rotate: look.spin ? 0 : -90 }}
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              exit={{ scale: 0.4, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 22 }}
+              className={`flex ${error ? CHECK_LOOKS.invalid.tone : look.tone}`}
+            >
+              <Icon size={19} className={look.spin ? 'animate-spin' : ''} />
+            </motion.span>}
+          </AnimatePresence>
+        </span>
+      </div>
+    </Field>
   );
 }
 
@@ -152,12 +275,16 @@ export default function Register() {
   const [legalModal, setLegalModal] = useState(null);
   const [courses, setCourses] = useState([]);
   const [catalogStatus, setCatalogStatus] = useState('loading'); // loading | ready | empty | error
+  const [masterlistRequired, setMasterlistRequired] = useState(false);
+  // Live Student ID check: idle | format | checking | found | not_found | error
+  const [idCheck, setIdCheck] = useState({ status: 'idle', id: '' });
 
   const loadCatalog = async () => {
     setCatalogStatus('loading');
     try {
-      const list = await authService.registrationOptions();
+      const { courses: list, masterlistRequired: required } = await authService.registrationSettings();
       setCourses(list);
+      setMasterlistRequired(required);
       setCatalogStatus(list.length ? 'ready' : 'empty');
     } catch {
       setCatalogStatus('error');
@@ -169,13 +296,43 @@ export default function Register() {
     const current = Number(getManilaDate().slice(0, 4));
     return Array.from({ length: 83 }, (_, index) => current - 17 - index);
   }, []);
-  const passwordStrength = getPasswordStrength(form.password);
   const selectedCourse = courses.find((course) => course.code === form.course);
   // The backend sends sections already ordered by year level, then section.
   const availableYears = [...new Set(selectedCourse?.sections.map((entry) => entry.year) || [])];
   const availableSections = selectedCourse?.sections.filter((entry) => entry.year === form.year).map((entry) => entry.section) || [];
   const dayCount = form.dobYear && form.dobMonth
     ? new Date(+form.dobYear, +form.dobMonth, 0).getDate() : 31;
+
+  // Student ID field: once the ID is complete, it is looked up on the school masterlist
+  // (when the clinic turned that check on). The icon spins while it checks, then shows a check or an X.
+  useEffect(() => {
+    const id = form.student_id;
+    if (!STUDENT_ID_PATTERN.test(id) || !isValidStudentIdYear(id.slice(0, 4))) {
+      setIdCheck({ status: 'idle', id: '' });
+      return undefined;
+    }
+    if (!masterlistRequired) {
+      setIdCheck({ status: 'format', id });
+      return undefined;
+    }
+    const controller = new AbortController();
+    setIdCheck({ status: 'checking', id });
+    const timer = window.setTimeout(async () => {
+      const started = Date.now();
+      let status = 'error';
+      try {
+        const result = await authService.checkStudentId(id, controller.signal);
+        status = result === 'unchecked' ? 'format' : result;
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        status = error.response?.status === 429 ? 'busy' : 'error';
+      }
+      // Keep the spinner up a moment so the check is seen.
+      const wait = Math.max(0, 700 - (Date.now() - started));
+      window.setTimeout(() => { if (!controller.signal.aborted) setIdCheck({ status, id }); }, wait);
+    }, 350);
+    return () => { controller.abort(); window.clearTimeout(timer); };
+  }, [form.student_id, masterlistRequired]);
 
   useEffect(() => {
     if (!cooldown) return undefined;
@@ -197,11 +354,6 @@ export default function Register() {
       next = formatPersonName(value.replace(/[^\p{L}\s\-'.]/gu, ''));
     }
     if (name === 'student_id') next = formatStudentId(value);
-    if (name === 'mobile_number') {
-      const formatted = formatPhilippineMobile(value);
-      if (formatted === null) return; // Reject non-PH prefixes and extra digits as typed.
-      next = formatted;
-    }
     setForm((previous) => {
       const updated = { ...previous, [name]: next };
       if (name === 'course') {
@@ -231,30 +383,32 @@ export default function Register() {
   const validate = () => {
     const next = {};
     const validName = /^[\p{L}\s\-'.]+$/u;
-    for (const name of ['first_name', 'last_name']) {
-      if (!form[name].trim()) next[name] = 'This field is required.';
-      else if (!validName.test(form[name].trim()) || form[name].length > 100) next[name] = 'Enter a valid name.';
-    }
+    if (!STUDENT_ID_PATTERN.test(form.student_id)) next.student_id = 'Use the format 2023-00000-BN-0.';
+    else if (!isValidStudentIdYear(form.student_id.slice(0, 4))) next.student_id = `The year must be from 2000 to ${new Date().getFullYear()}.`;
+    else if (idCheck.status === 'not_found' && idCheck.id === form.student_id) next.student_id = ID_NOT_FOUND;
+    else if (idCheck.status === 'registered' && idCheck.id === form.student_id) next.student_id = ID_REGISTERED;
+    const firstError = firstNameError(form.first_name);
+    if (firstError) next.first_name = firstError;
+    const lastError = lastNameError(form.last_name);
+    if (lastError) next.last_name = lastError;
     if (form.middle_name && (!validName.test(form.middle_name) || form.middle_name.length > 100)) {
       next.middle_name = 'Enter a valid middle name.';
     }
-    if (!/^\d{4}-\d{5}-BN-[01]$/.test(form.student_id)) next.student_id = 'Use the format 2023-00000-BN-0.';
-    else if (!isValidStudentIdYear(form.student_id.slice(0, 4))) next.student_id = `The year must be from 2000 to ${new Date().getFullYear()}.`;
+    if (!['male', 'female'].includes(form.gender)) next.gender = 'Select your gender.';
     if (!form.dobMonth || !form.dobDay || !form.dobYear) next.birthday = 'Birthday is required.';
     else if (!isValidBirthday(form.dobYear, form.dobMonth, form.dobDay)) next.birthday = 'Enter a valid birthday.';
     else {
       if (birthdayOf(form) > getMinimumBirthday()) next.birthday = 'You must be at least 17 years old to register.';
     }
-    if (!['male', 'female', 'other'].includes(form.gender)) next.gender = 'Select your gender.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email.trim())) next.email = 'Enter a valid email address.';
-    if (!/^09\d{9}$/.test(form.mobile_number) && !/^\+639\d{9}$/.test(form.mobile_number)) {
-      next.mobile_number = 'Use 09XXXXXXXXX or +639XXXXXXXXX.';
+    const mailError = emailError(form.email);
+    if (mailError) next.email = mailError;
+    if (contactPhoneError(form.mobile_number, true)) {
+      next.mobile_number = 'Enter your mobile number as +639XXXXXXXXX.';
     }
     if (!selectedCourse) next.course = 'Select your course.';
     if (!availableYears.includes(form.year)) next.year = 'Select a valid year level for your course.';
     if (!availableSections.includes(form.section)) next.section = 'Select your section.';
-    if (form.password.length < 8) next.password = 'Password must have at least 8 characters.';
-    else if (!/[\d\W_]/.test(form.password)) next.password = 'Include at least one number or special character.';
+    if (!PASSWORD_RULES.every(({ test }) => test(form.password))) next.password = 'Your password must meet everything in Password Strength.';
     if (!form.password_confirmation.trim()) next.password_confirmation = 'Confirm Password is required.';
     else if (form.password_confirmation !== form.password) next.password_confirmation = 'Passwords must match.';
     if (!form.agree_terms) next.agree_terms = 'Please agree to the Terms of Service and Privacy Policy.';
@@ -312,7 +466,7 @@ export default function Register() {
         birthday: birthdayOf(form),
         gender: form.gender,
         email: form.email.trim().toLowerCase(),
-        mobile_number: normalizePhone(form.mobile_number),
+        mobile_number: form.mobile_number,
         course: form.course,
         year: form.year,
         section: form.section.trim(),
@@ -456,12 +610,10 @@ export default function Register() {
 
       <main className="flex min-w-0 flex-1 justify-center bg-[#f8f4f3] dark:bg-gray-900 px-4 py-7 sm:px-6 lg:px-7 lg:py-10">
         <div className="w-full max-w-md">
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-2xl font-black text-slate-950">{otpStep ? 'Verify your email' : 'Create your account'}</h2>
-              <p className="mt-1.5 text-sm leading-6 text-slate-500">{otpStep ? 'One last step before you can sign in.' : 'Fill in your details to get started.'}</p>
-            </div>
-            <Link to="/login" aria-label="Back to login" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-maroon-800 dark:text-rose-300 hover:bg-maroon-100 dark:hover:bg-rose-950/40"><ArrowLeft size={18} /></Link>
+          {/* Header: clinic logo, then the centered title and short line. Back to sign in is the "Log in" link under the form. */}
+          <div className="mb-5 text-center">
+            <h2 className="text-2xl font-black text-slate-950">{otpStep ? 'Verify your email' : 'Create your account'}</h2>
+            <p className="mt-1.5 text-sm leading-6 text-slate-500">{otpStep ? 'One last step before you can sign in.' : 'Fill in your details to get started.'}</p>
           </div>
 
           <StudentToast message={message} type={messageType} onClose={() => setMessage('')} />
@@ -480,50 +632,59 @@ export default function Register() {
                 <section>
                   <SectionTitle icon={UserRound}>Personal Information</SectionTitle>
                   <div className="space-y-3">
-                    {textField('first_name', 'First name', 'Juan', { autoComplete: 'given-name', maxLength: 100 })}
-                    {textField('middle_name', 'Middle name', 'Optional', { optional: true, autoComplete: 'additional-name', maxLength: 100 })}
-                    {textField('last_name', 'Last name', 'Dela Cruz', { autoComplete: 'family-name', maxLength: 100 })}
-                    {textField('student_id', 'Student ID', '2023-00000-BN-0', { autoComplete: 'username', maxLength: 17 })}
+                    <StudentIdField value={form.student_id} onChange={change} disabled={loading} error={errors.student_id} check={idCheck} required={masterlistRequired} />
+                    {/* Two columns: First name | Middle name, then Last name | Gender (one column on very small phones). */}
+                    <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
+                      <CheckedField id="first_name" label="First name" value={form.first_name} onChange={change} check={firstNameError} disabled={loading} error={errors.first_name} placeholder="Juan" autoComplete="given-name" maxLength={100} />
+                      {textField('middle_name', 'Middle name', 'Optional', { optional: true, autoComplete: 'additional-name', maxLength: 100 })}
+                      <CheckedField id="last_name" label="Last name" value={form.last_name} onChange={change} check={lastNameError} disabled={loading} error={errors.last_name} placeholder="Dela Cruz" autoComplete="family-name" maxLength={100} />
+                      <Field id="gender" label="Gender" error={errors.gender}>
+                        <span className="relative block min-w-0">
+                          <select id="gender" name="gender" value={form.gender} onChange={change} disabled={loading} className={`${INPUT} peer cursor-pointer appearance-none pr-10 ${errors.gender ? INVALID : ''}`}>
+                            <option value="">Select gender</option>
+                            <option value="male">Male</option><option value="female">Female</option>
+                          </select>
+                          <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 peer-disabled:opacity-50 dark:text-slate-500" />
+                        </span>
+                      </Field>
+                    </div>
                     <div>
                       <p className="mb-1.5 text-xs font-semibold text-slate-700">Birthday</p>
                       <div className="grid grid-cols-[1.3fr_0.8fr_1fr] gap-2">
-                        <select id="dobMonth" name="dobMonth" aria-label="Birth month" value={form.dobMonth} onChange={change} disabled={loading} className={`${INPUT} px-2 text-xs sm:text-sm ${errors.birthday ? INVALID : ''}`}>
-                          <option value="">Month</option>
-                          {MONTHS.map((month, index) => <option key={month} value={String(index + 1).padStart(2, '0')}>{month}</option>)}
-                        </select>
-                        <select id="dobDay" name="dobDay" aria-label="Birth day" value={form.dobDay} onChange={change} disabled={loading} className={`${INPUT} px-2 text-xs sm:text-sm ${errors.birthday ? INVALID : ''}`}>
-                          <option value="">Day</option>
-                          {Array.from({ length: dayCount }, (_, i) => String(i + 1).padStart(2, '0')).map((day) => <option key={day} value={day}>{+day}</option>)}
-                        </select>
-                        <select id="dobYear" name="dobYear" aria-label="Birth year" value={form.dobYear} onChange={change} disabled={loading} className={`${INPUT} px-2 text-xs sm:text-sm ${errors.birthday ? INVALID : ''}`}>
-                          <option value="">Year</option>
-                          {years.map((year) => <option key={year} value={year}>{year}</option>)}
-                        </select>
+                        <span className="relative block min-w-0">
+                          <select id="dobMonth" name="dobMonth" aria-label="Birth month" value={form.dobMonth} onChange={change} disabled={loading} className={`${INPUT} peer cursor-pointer appearance-none pl-2 pr-7 text-xs sm:text-sm ${errors.birthday ? INVALID : ''}`}>
+                            <option value="">Month</option>
+                            {MONTHS.map((month, index) => <option key={month} value={String(index + 1).padStart(2, '0')}>{month}</option>)}
+                          </select>
+                          <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 peer-disabled:opacity-50 dark:text-slate-500" />
+                        </span>
+                        <span className="relative block min-w-0">
+                          <select id="dobDay" name="dobDay" aria-label="Birth day" value={form.dobDay} onChange={change} disabled={loading} className={`${INPUT} peer cursor-pointer appearance-none pl-2 pr-7 text-xs sm:text-sm ${errors.birthday ? INVALID : ''}`}>
+                            <option value="">Day</option>
+                            {Array.from({ length: dayCount }, (_, i) => String(i + 1).padStart(2, '0')).map((day) => <option key={day} value={day}>{+day}</option>)}
+                          </select>
+                          <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 peer-disabled:opacity-50 dark:text-slate-500" />
+                        </span>
+                        <span className="relative block min-w-0">
+                          <select id="dobYear" name="dobYear" aria-label="Birth year" value={form.dobYear} onChange={change} disabled={loading} className={`${INPUT} peer cursor-pointer appearance-none pl-2 pr-7 text-xs sm:text-sm ${errors.birthday ? INVALID : ''}`}>
+                            <option value="">Year</option>
+                            {years.map((year) => <option key={year} value={year}>{year}</option>)}
+                          </select>
+                          <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 peer-disabled:opacity-50 dark:text-slate-500" />
+                        </span>
                       </div>
                       {errors.birthday && <p role="alert" className="mt-1 text-xs text-red-600">{errors.birthday}</p>}
                     </div>
-                    <Field id="gender" label="Gender" error={errors.gender}>
-                      <select id="gender" name="gender" value={form.gender} onChange={change} disabled={loading} className={`${INPUT} ${errors.gender ? INVALID : ''}`}>
-                        <option value="">Select gender</option>
-                        <option value="male">Male</option><option value="female">Female</option><option value="other">Other</option>
-                      </select>
-                    </Field>
                   </div>
                 </section>
 
                 <section>
                   <SectionTitle icon={Mail}>Contact Information</SectionTitle>
                   <div className="space-y-3">
-                    <Field id="email" label="Email address" error={errors.email}>
-                      <div className="relative">
-                        <Mail size={16} className="pointer-events-none absolute left-3 top-3.5 text-slate-400" />
-                        <input id="email" name="email" type="email" value={form.email} onChange={change} disabled={loading} placeholder="name@example.com" autoComplete="email" inputMode="email" maxLength={255} className={`${INPUT} pl-9 ${errors.email ? INVALID : ''}`} />
-                      </div>
-                    </Field>
+                    <CheckedField id="email" label="Email address" type="email" icon={Mail} value={form.email} onChange={change} check={emailError} disabled={loading} error={errors.email} placeholder="name@example.com" autoComplete="email" inputMode="email" maxLength={255} />
                     <Field id="mobile_number" label="Mobile number" error={errors.mobile_number}>
                       <div className="relative">
-                        <Phone size={16} className="pointer-events-none absolute left-3 top-3.5 text-slate-400" />
-                        <input id="mobile_number" name="mobile_number" type="tel" value={form.mobile_number} onChange={change} disabled={loading} placeholder="09XXXXXXXXX or +639XXXXXXXXX" autoComplete="tel" inputMode="tel" maxLength={13} aria-describedby="mobile-help" className={`${INPUT} pl-9 ${errors.mobile_number ? INVALID : ''}`} />
+                        <PhilippineMobileInput id="mobile_number" name="mobile_number" value={form.mobile_number} onChange={change} disabled={loading} autoComplete="tel-national" aria-invalid={Boolean(errors.mobile_number)} className={`${INPUT} ${errors.mobile_number ? INVALID : ''}`} />
                       </div>
                     </Field>
                   </div>
@@ -533,10 +694,13 @@ export default function Register() {
                   <SectionTitle icon={GraduationCap}>Academic Information</SectionTitle>
                   <div className="space-y-3">
                     <Field id="course" label="Course" error={errors.course}>
-                      <select id="course" name="course" value={form.course} onChange={change} disabled={loading || catalogStatus !== 'ready'} aria-invalid={Boolean(errors.course)} className={`${INPUT} ${errors.course ? INVALID : ''}`}>
-                        <option value="">{catalogStatus === 'loading' ? 'Loading courses…' : 'Select your course'}</option>
-                        {courses.map((course) => <option key={course.code} value={course.code}>{course.code} — {course.name}</option>)}
-                      </select>
+                      <span className="relative block min-w-0">
+                        <select id="course" name="course" value={form.course} onChange={change} disabled={loading || catalogStatus !== 'ready'} aria-invalid={Boolean(errors.course)} className={`${INPUT} peer cursor-pointer appearance-none pr-10 ${errors.course ? INVALID : ''}`}>
+                          <option value="">{catalogStatus === 'loading' ? 'Loading courses…' : 'Select your course'}</option>
+                          {courses.map((course) => <option key={course.code} value={course.code}>{course.code} ({course.name})</option>)}
+                        </select>
+                        <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 peer-disabled:opacity-50 dark:text-slate-500" />
+                      </span>
                       {catalogStatus === 'error' && (
                         <p role="alert" className="mt-1.5 text-xs text-red-600 dark:text-red-400">
                           Courses could not be loaded.{' '}
@@ -549,18 +713,27 @@ export default function Register() {
                         </p>
                       )}
                     </Field>
-                    <Field id="year" label="Year level" error={errors.year}>
-                      <select id="year" name="year" value={form.year} onChange={change} disabled={loading || !form.course} aria-invalid={Boolean(errors.year)} className={`${INPUT} ${errors.year ? INVALID : ''}`}>
-                        <option value="">{form.course ? 'Select year level' : 'Select your course first'}</option>
-                        {availableYears.map((year) => <option key={year} value={year}>{year}</option>)}
-                      </select>
-                    </Field>
-                    <Field id="section" label="Section" error={errors.section}>
-                      <select id="section" name="section" value={form.section} onChange={change} disabled={loading || !form.course || !form.year} aria-invalid={Boolean(errors.section)} className={`${INPUT} ${errors.section ? INVALID : ''}`}>
-                        <option value="">{form.course && form.year ? 'Select your section' : 'Select course and year level first'}</option>
-                        {availableSections.map((section) => <option key={section} value={section}>{section}</option>)}
-                      </select>
-                    </Field>
+                    {/* Year level | Section side by side; Course stays full width above. */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field id="year" label="Year level" error={errors.year}>
+                        <span className="relative block min-w-0">
+                          <select id="year" name="year" value={form.year} onChange={change} disabled={loading || !form.course} aria-invalid={Boolean(errors.year)} className={`${INPUT} peer cursor-pointer appearance-none pr-10 ${errors.year ? INVALID : ''}`}>
+                            <option value="">Select year</option>
+                            {availableYears.map((year) => <option key={year} value={year}>{year}</option>)}
+                          </select>
+                          <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 peer-disabled:opacity-50 dark:text-slate-500" />
+                        </span>
+                      </Field>
+                      <Field id="section" label="Section" error={errors.section}>
+                        <span className="relative block min-w-0">
+                          <select id="section" name="section" value={form.section} onChange={change} disabled={loading || !form.course || !form.year} aria-invalid={Boolean(errors.section)} className={`${INPUT} peer cursor-pointer appearance-none pr-10 ${errors.section ? INVALID : ''}`}>
+                            <option value="">Select section</option>
+                            {availableSections.map((section) => <option key={section} value={section}>{section}</option>)}
+                          </select>
+                          <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 peer-disabled:opacity-50 dark:text-slate-500" />
+                        </span>
+                      </Field>
+                    </div>
                   </div>
                 </section>
 
@@ -591,28 +764,23 @@ export default function Register() {
                       </div>
                     </Field>
 
-                    {/* Show strength only after the student starts typing a password. */}
-                    {form.password.length > 0 && (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3" aria-live="polite">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-semibold text-slate-600">Password strength</span>
-                        <span className={`text-xs font-bold ${passwordStrength?.text || 'text-slate-400'}`}>
-                          {passwordStrength?.label || 'Not entered'}
-                        </span>
-                      </div>
-                      <div className="mt-2 flex gap-1.5">
-                        {[1, 2, 3, 4].map((level) => (
-                          <span
-                            key={level}
-                            className={`h-1.5 flex-1 rounded-full ${passwordStrength && level <= passwordStrength.segments ? passwordStrength.color : 'bg-slate-200'}`}
-                          />
-                        ))}
-                      </div>
-                      <p className="mt-2 text-xs leading-5 text-slate-500">
-                        At least 8 characters and a number or special character. For a strong password, use 12+ characters, upper/lowercase letters, a number and a symbol.
-                      </p>
+                    {/* Password Strength: always shown. Each circle turns into a green check once that rule is met. */}
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-600 dark:bg-slate-800/60" aria-live="polite">
+                      <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Password Strength</p>
+                      <ul className="mt-1.5 space-y-1.5">
+                        {PASSWORD_RULES.map(({ label, test }) => {
+                          const met = test(form.password);
+                          const Icon = met ? CheckCircle2 : Circle;
+                          return (
+                            <li key={label} className={`flex items-center gap-2 text-xs transition-colors ${met ? 'text-green-700 dark:text-green-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                              <Icon size={16} className={`shrink-0 ${met ? 'text-green-600 dark:text-green-400' : 'text-slate-300 dark:text-slate-500'}`} aria-hidden="true" />
+                              <span>{label}</span>
+                              <span className="sr-only">{met ? '(done)' : '(not yet)'}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
                     </div>
-                    )}
 
                     <Field id="password_confirmation" label="Confirm password" error={errors.password_confirmation}>
                       <div className="relative">
@@ -669,7 +837,7 @@ export default function Register() {
               </div>
             ) : (
               <div className="py-4 text-center">
-                <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-maroon-100 dark:bg-rose-950/40 text-maroon-800 dark:text-rose-300"><Mail size={27} /></span>
+                <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-maroon-800 text-white dark:bg-maroon-700"><Mail size={27} /></span>
                 <h3 className="mt-4 text-xl font-bold">Check your inbox</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-500">Enter the six-digit code sent to <strong className="break-all text-slate-900">{form.email}</strong>. It expires in 10 minutes.</p>
                 <div className="mx-auto mt-5 max-w-[250px] text-left">
@@ -684,7 +852,7 @@ export default function Register() {
                 </div>
               </div>
             )}
-            <button type="submit" disabled={loading || resending || verified} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-maroon-800 px-4 py-3 text-sm font-bold text-white transition hover:bg-maroon-950 disabled:cursor-not-allowed disabled:opacity-60">
+            <button type="submit" disabled={loading || resending || verified} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-maroon-800 px-4 py-3 text-sm font-bold text-white transition-colors hover:text-white/70 disabled:cursor-not-allowed disabled:opacity-60">
               {loading ? <><Loader2 size={17} className="animate-spin" />{otpStep ? 'Verifying...' : 'Sending code...'}</> : otpStep ? <><CheckCircle2 size={17} />Verify & Create Account</> : <>Continue to Email Verification <ArrowRight size={17} /></>}
             </button>
             <p className="mt-4 text-center text-sm text-slate-500">Already have an account? <Link to="/login" className="font-bold text-maroon-800 dark:text-rose-300 hover:underline">Log in</Link></p>
@@ -717,7 +885,7 @@ export default function Register() {
                 </>
               )}
             </div>
-            <div className="border-t border-slate-200 p-4"><button type="button" onClick={() => setLegalModal(null)} className="w-full rounded-xl bg-maroon-800 py-2.5 text-sm font-bold text-white hover:bg-maroon-950">Close</button></div>
+            <div className="border-t border-slate-200 p-4"><button type="button" onClick={() => setLegalModal(null)} className="w-full rounded-xl bg-maroon-800 py-2.5 text-sm font-bold text-white transition-colors hover:text-white/70">Close</button></div>
           </section>
         </div>
       )}

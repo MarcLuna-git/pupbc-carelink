@@ -120,6 +120,11 @@ Route::prefix('kiosk')
 Route::get('/auth/registration-options', [AuthController::class, 'registrationOptions'])
     ->middleware('throttle:60,1,registration-options:');
 
+// Live Student ID check on the registration form (masterlist). Tight limit so the list
+// cannot be read by trying many IDs.
+Route::post('/auth/check-student-id', [AuthController::class, 'checkStudentId'])
+    ->middleware('throttle:20,1,student-id-check:');
+
 Route::prefix('auth')
     ->middleware([
         'jwt.configured',
@@ -985,6 +990,14 @@ Route::middleware([
                 Route::delete('/courses/{id}', [\App\Http\Controllers\Api\Nurse\CourseManagementController::class, 'destroyCourse']);
                 Route::delete('/course-sections/{id}', [\App\Http\Controllers\Api\Nurse\CourseManagementController::class, 'destroySection']);
                 Route::post('/student-enrollments', [\App\Http\Controllers\Api\Nurse\CourseManagementController::class, 'enroll']);
+
+                // Course Management → Masterlist (school list of enrolled students).
+                Route::get('/masterlist', [\App\Http\Controllers\Api\Nurse\MasterlistController::class, 'index']);
+                Route::post('/masterlist/preview', [\App\Http\Controllers\Api\Nurse\MasterlistController::class, 'preview']);
+                Route::post('/masterlist/import', [\App\Http\Controllers\Api\Nurse\MasterlistController::class, 'import']);
+                Route::post('/masterlist/clear', [\App\Http\Controllers\Api\Nurse\MasterlistController::class, 'clear']);
+                Route::put('/masterlist/settings', [\App\Http\Controllers\Api\Nurse\MasterlistController::class, 'updateSettings']);
+                Route::delete('/masterlist/{id}', [\App\Http\Controllers\Api\Nurse\MasterlistController::class, 'destroy'])->whereNumber('id');
 
                 Route::get(
                     '/students/{id}/appointments',

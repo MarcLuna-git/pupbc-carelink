@@ -23,7 +23,7 @@ class FacultyController extends Controller
 {
     private const FORMAT_MESSAGES = [
         'full_name.regex' => 'Name can only contain letters, spaces, periods, hyphens and apostrophes.',
-        'phone.regex' => 'Use 09XXXXXXXXX or +639XXXXXXXXX.',
+        'phone.regex' => 'Use +639XXXXXXXXX.',
     ];
 
     private function rules(bool $creating): array
@@ -36,7 +36,7 @@ class FacultyController extends Controller
             'designation' => 'nullable|string|max:100',
             'department' => 'nullable|string|max:150',
             'email' => 'nullable|email|max:150',
-            'phone' => ['nullable', 'string', 'regex:/^(?:09\d{9}|\+639\d{9})$/'],
+            'phone' => ['nullable', 'string', 'regex:/^\+639\d{9}$/'],
             'notes' => 'nullable|string|max:500',
             'status' => ['sometimes', 'required', Rule::in(FacultyMember::STATUSES)],
         ];

@@ -49,6 +49,7 @@ const KioskPage = lazy(() => import('./pages/Kiosk/KioskPage'));
 const KioskSettings = lazy(() => import('./pages/Kiosk/KioskSettings'));
 import AppErrorBoundary from './components/AppErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
+import RouteLoadingBar, { StudentRouteSuspenseFallback } from './components/RouteLoadingBar';
 
 
 /*
@@ -57,12 +58,16 @@ import ScrollToTop from './components/ScrollToTop';
  * ============================================================
  *
  * Owner decision (updated): each page owns its route-loading
- * phase — a real hero with the looping RouteLoadingBar over 1:1
- * content ghosts — while its first data loads. The clinic-service
- * pages (Appointments, QR) cover the backend Health Profile
- * verification inside that same phase (no separate guard phase).
+ * phase — a real hero with 1:1 content ghosts — while its first
+ * data loads. The looping bar itself is the SINGLE top-edge bar
+ * (components/RouteLoadingBar), shown for student pages only:
+ * heroes push/pop it, and the Suspense fallback covers lazy
+ * student routes (login, register, forgot password, OTP too).
+ * The clinic-service pages (Appointments, QR) cover the backend
+ * Health Profile verification inside that same phase (no separate
+ * guard phase). Nurse and kiosk routes stay bar-free.
  * Lazy routes pop in when their chunk finishes loading
- * (Suspense fallback is null; chunks are preloaded on hover).
+ * (chunks are preloaded on hover).
  */
 
 /*
@@ -139,8 +144,10 @@ function App() {
   return (
     <AppErrorBoundary>
       <BrowserRouter>
+        {/* One loading bar for the whole app, pinned to the top edge. */}
+        <RouteLoadingBar />
         <ScrollToTop />
-        <Suspense fallback={null}>
+        <Suspense fallback={<StudentRouteSuspenseFallback />}>
         <Routes>
           {/* ==================================================
               PUBLIC

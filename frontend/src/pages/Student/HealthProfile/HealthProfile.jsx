@@ -7,6 +7,7 @@ import api from '../../../services/api';
 import { StudentToast } from '../../../components/StudentFeedback';
 import { contactNameError, contactPhoneError, formatContactPhone, ownMobileContactError, signatureNameError } from '../../../utils/contactValidation';
 import { digitsOnly, nameOnly, wordsOnly } from '../../../utils/inputFilters';
+import PhilippineMobileInput from '../../../components/PhilippineMobileInput';
 
 const getManilaDateString = () => {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -524,7 +525,7 @@ const HealthProfile = ({ onBack }) => {
                 </div>
                 <div>
                   <label className={labelClass}>Phone Number <span className="text-red-400">*</span></label>
-                  <input className={inputClass('emergency_phone')} name="emergency_phone" value={form.emergency_phone} onChange={handleChange} placeholder="09XXXXXXXXX or +639XXXXXXXXX" maxLength={13} inputMode="tel" />
+                  <PhilippineMobileInput className={inputClass('emergency_phone')} name="emergency_phone" value={form.emergency_phone} onChange={handleChange} aria-label="Emergency contact mobile number, the 10 digits after +63" />
                   {errors.emergency_phone && <p className={errorClass}>{errors.emergency_phone}</p>}
                 </div>
               </div>

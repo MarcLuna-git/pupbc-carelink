@@ -387,29 +387,11 @@ const Appointments = () => {
       value,
     } = e.target;
 
-    if (
-      name === 'date' &&
-      value &&
-      isSunday(value)
-    ) {
-      setForm((current) => ({
-        ...current,
-        date: '',
-        time: '',
-      }));
-
+    if (name === 'date' && value && isSunday(value)) {
+      // UI-only: Sunday dates stay selectable (no toast, no rejection), but the
+      // clinic returns no slot data for them — clear stale availability so the
+      // placeholder slots show instead of the previous day's real numbers.
       setAvailableSlots([]);
-      setMessageType('error');
-      setMessage(
-        'The clinic is closed on Sundays. Please choose Monday to Saturday.'
-      );
-
-      setTimeout(
-        () => setMessage(''),
-        3000
-      );
-
-      return;
     }
 
     setForm((current) => ({

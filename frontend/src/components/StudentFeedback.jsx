@@ -171,20 +171,20 @@ export const StudentConfirmModal = ({
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-3xl bg-white p-7 text-center shadow-2xl dark:bg-gray-800"
+            className="w-full max-w-[320px] rounded-2xl bg-white p-5 text-center shadow-2xl dark:bg-gray-800"
           >
-            <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-maroon-50 text-maroon-800 dark:bg-maroon-900/30 dark:text-maroon-300">
-              <Icon className="h-8 w-8" />
+            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-maroon-50 text-maroon-800 dark:bg-maroon-900/30 dark:text-maroon-300">
+              <Icon className="h-6 w-6" />
             </span>
-            <h4 id="student-confirm-title" className="mt-5 text-xl font-bold text-gray-900 dark:text-white">{title}</h4>
-            <p className="mt-2 whitespace-pre-line text-[15px] leading-relaxed text-gray-500 dark:text-gray-300">{message}</p>
-            <div className="mt-6 flex gap-3">
+            <h4 id="student-confirm-title" className="mt-4 text-lg font-bold text-gray-900 dark:text-white">{title}</h4>
+            <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-gray-500 dark:text-gray-300">{message}</p>
+            <div className="mt-5 flex gap-2.5">
               <button
                 type="button"
                 autoFocus
                 onClick={onCancel}
                 disabled={busy}
-                className="h-12 flex-1 rounded-full bg-gray-100 text-[15px] font-semibold text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                className="h-10 flex-1 rounded-full bg-gray-100 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               >
                 {cancelLabel}
               </button>
@@ -192,7 +192,7 @@ export const StudentConfirmModal = ({
                 type="button"
                 onClick={onConfirm}
                 disabled={busy}
-                className="h-12 flex-1 rounded-full bg-maroon-800 text-[15px] font-semibold text-white transition-colors hover:bg-maroon-900 disabled:opacity-60"
+                className="h-10 flex-1 rounded-full bg-maroon-800 text-sm font-semibold text-white transition-colors hover:bg-maroon-900 disabled:opacity-60"
               >
                 {busy && busyLabel ? busyLabel : confirmLabel}
               </button>

@@ -37,17 +37,17 @@ class ProfileController extends Controller
         $user = auth()->user()->load('profile', 'healthProfile');
 
         $data = $request->validate([
-            'mobile_number' => ['required', 'string', 'max:20', 'regex:/^(?:09\d{9}|\+639\d{9})$/'],
+            'mobile_number' => ['required', 'string', 'max:20', 'regex:/^\+639\d{9}$/'],
             'address' => 'nullable|string|max:1000',
             'guardian_name' => ['nullable', 'string', 'max:255', 'regex:/^[\pL\s\-\'.]+$/u'],
             'guardian_relationship' => 'nullable|string|max:100',
-            'guardian_contact' => ['nullable', 'string', 'max:20', 'regex:/^(?:09\d{9}|\+639\d{9})$/'],
+            'guardian_contact' => ['nullable', 'string', 'max:20', 'regex:/^\+639\d{9}$/'],
         ], [
             'mobile_number.required' => 'Mobile number is required.',
-            'mobile_number.regex' => 'Use 09XXXXXXXXX or +639XXXXXXXXX for your mobile number.',
+            'mobile_number.regex' => 'Use +639XXXXXXXXX for your mobile number.',
             'guardian_name.string' => 'Enter a valid name.',
             'guardian_name.regex' => 'Enter a valid name.',
-            'guardian_contact.regex' => 'Use 09XXXXXXXXX or +639XXXXXXXXX for the guardian contact.',
+            'guardian_contact.regex' => 'Use +639XXXXXXXXX for the guardian contact.',
         ]);
 
         $mobile = self::canonicalPhone($data['mobile_number'] ?? ($user->profile?->mobile_number ?? $user->mobile_number));
@@ -94,7 +94,6 @@ class ProfileController extends Controller
 
     private static function canonicalPhone(?string $phone): ?string
     {
-        if (preg_match('/^09[0-9]{9}$/', (string) $phone)) return '+63' . substr($phone, 1);
         if (preg_match('/^639[0-9]{9}$/', (string) $phone)) return '+' . $phone;
         return preg_match('/^\+639[0-9]{9}$/', (string) $phone) ? $phone : null;
     }

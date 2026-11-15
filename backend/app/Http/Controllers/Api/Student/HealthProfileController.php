@@ -12,8 +12,8 @@ class HealthProfileController extends Controller
     private const FIELD_MESSAGES = [
         'emergency_name.string' => 'Enter a valid name.',
         'emergency_name.regex' => 'Enter a valid name.',
-        'emergency_phone.string' => 'Use 09XXXXXXXXX or +639XXXXXXXXX.',
-        'emergency_phone.regex' => 'Use 09XXXXXXXXX or +639XXXXXXXXX.',
+        'emergency_phone.string' => 'Use +639XXXXXXXXX.',
+        'emergency_phone.regex' => 'Use +639XXXXXXXXX.',
     ];
 
     public function show() { return response()->json(['success' => true, 'data' => $this->profileData(auth()->user()->healthProfile()->first())]); }
@@ -73,7 +73,6 @@ class HealthProfileController extends Controller
 
     private static function canonicalPhone(?string $phone): ?string
     {
-        if (preg_match('/^09[0-9]{9}$/', (string) $phone)) return '+63' . substr($phone, 1);
         if (preg_match('/^639[0-9]{9}$/', (string) $phone)) return '+' . $phone;
         return preg_match('/^\+639[0-9]{9}$/', (string) $phone) ? $phone : null;
     }

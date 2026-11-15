@@ -10,7 +10,7 @@ import {
   Loader2,
   ArrowRight,
   UserRound,
-  Calendar,
+  ChevronDown,
   Lock,
   ArrowLeft,
   LockKeyhole,
@@ -652,109 +652,78 @@ const Login = () => {
                   Birthday
                 </label>
 
-                <div
-                  className={`rounded-2xl border p-3 transition-all ${
-                    errors.birthday
-                      ? 'border-red-400 bg-white dark:border-red-500 dark:bg-gray-700'
-                      : 'border-slate-200 bg-white hover:border-maroon-300 dark:border-gray-600 dark:bg-gray-700'
-                  }`}
-                >
-                  <div className="mb-2 flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-gray-400" />
+                <div className="grid grid-cols-[1.35fr_0.8fr_1fr] gap-2">
+                  <span className="relative block min-w-0">
+                    <label htmlFor="dob-month" className="sr-only">
+                      Birth month
+                    </label>
 
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-300">
-                      Month / Day / Year
-                    </p>
-                  </div>
+                    <select
+                      id="dob-month"
+                      name="dobMonth"
+                      value={form.dobMonth}
+                      onChange={handleChange}
+                      className="peer w-full min-w-0 cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-2 pr-7 text-sm text-gray-900 focus:border-maroon-800 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      required
+                    >
+                      <option value="">Month</option>
 
-                  <div className="grid grid-cols-[1.35fr_0.8fr_1fr] gap-2">
-                    <div>
-                      <label
-                        htmlFor="dob-month"
-                        className="sr-only"
-                      >
-                        Birth month
-                      </label>
+                      {MONTHS.map((month) => (
+                        <option key={month.value} value={month.value}>
+                          {month.label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 peer-disabled:opacity-50 dark:text-gray-500" />
+                  </span>
 
-                      <select
-                        id="dob-month"
-                        name="dobMonth"
-                        value={form.dobMonth}
-                        onChange={handleChange}
-                        className="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-2 py-2.5 text-sm text-gray-900 focus:border-maroon-800 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                        required
-                      >
-                        <option value="">Month</option>
+                  <span className="relative block min-w-0">
+                    <label htmlFor="dob-day" className="sr-only">
+                      Birth day
+                    </label>
 
-                        {MONTHS.map((month) => (
-                          <option
-                            key={month.value}
-                            value={month.value}
-                          >
-                            {month.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <select
+                      id="dob-day"
+                      name="dobDay"
+                      value={form.dobDay}
+                      onChange={handleChange}
+                      className="peer w-full min-w-0 cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-2 pr-7 text-sm text-gray-900 focus:border-maroon-800 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      required
+                    >
+                      <option value="">Day</option>
 
-                    <div>
-                      <label
-                        htmlFor="dob-day"
-                        className="sr-only"
-                      >
-                        Birth day
-                      </label>
+                      {birthDays.map((day) => (
+                        <option key={day} value={String(day).padStart(2, '0')}>
+                          {day}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 peer-disabled:opacity-50 dark:text-gray-500" />
+                  </span>
 
-                      <select
-                        id="dob-day"
-                        name="dobDay"
-                        value={form.dobDay}
-                        onChange={handleChange}
-                        className="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-2 py-2.5 text-sm text-gray-900 focus:border-maroon-800 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                        required
-                      >
-                        <option value="">Day</option>
+                  <span className="relative block min-w-0">
+                    <label htmlFor="dob-year" className="sr-only">
+                      Birth year
+                    </label>
 
-                        {birthDays.map((day) => (
-                          <option
-                            key={day}
-                            value={String(day).padStart(2, '0')}
-                          >
-                            {day}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <select
+                      id="dob-year"
+                      name="dobYear"
+                      value={form.dobYear}
+                      onChange={handleChange}
+                      className="peer w-full min-w-0 cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-2 pr-7 text-sm text-gray-900 focus:border-maroon-800 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      required
+                    >
+                      <option value="">Year</option>
 
-                    <div>
-                      <label
-                        htmlFor="dob-year"
-                        className="sr-only"
-                      >
-                        Birth year
-                      </label>
-
-                      <select
-                        id="dob-year"
-                        name="dobYear"
-                        value={form.dobYear}
-                        onChange={handleChange}
-                        className="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-2 py-2.5 text-sm text-gray-900 focus:border-maroon-800 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                        required
-                      >
-                        <option value="">Year</option>
-
-                        {birthYears.map((year) => (
-                          <option
-                            key={year}
-                            value={year}
-                          >
-                            {year}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+                      {birthYears.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 peer-disabled:opacity-50 dark:text-gray-500" />
+                  </span>
                 </div>
 
               </div>

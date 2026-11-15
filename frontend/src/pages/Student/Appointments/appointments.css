@@ -5,7 +5,6 @@
 /* The loading bar sits above the hero artwork; isolation keeps that z-index
    local to the hero. */
 .ap-hero { isolation:isolate; }
-.ap-hero-loading-bar { z-index:2; }
 .ap-hero-copy { position:relative;z-index:1;padding:24px; }
 .ap-hero h1 { color:#111827;font-size:36px;font-weight:750;line-height:1.06;letter-spacing:-1.2px; }
 .dark .ap-hero h1 { color:#fff; }
@@ -123,6 +122,9 @@
 .ap-step-heading { display:flex;align-items:center;min-height:28px;margin-bottom:8px; }
 .ap-step-marker { position:absolute;left:0;top:0;z-index:1;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border:2px solid var(--sp-border);border-radius:50%;background:var(--sp-surface);font-size:12px;font-weight:700;color:var(--sp-muted); }
 .ap-step-marker svg { width:14px;height:14px; }
+/* Bare check glyph floats slightly high in the round marker: nudge it to the
+   optical center and let it fill more of the circle. */
+.ap-step-marker .ap-step-check { width:16px;height:16px;transform:translateY(.5px); }
 .ap-booking-progress li.is-active .ap-step-marker { border-color:var(--color-maroon-800);background:var(--color-maroon-800);color:white;box-shadow:0 0 0 3px var(--sp-soft); }
 .ap-booking-progress li .ap-step-marker:has(svg) { border-color:var(--sp-accent);background:var(--sp-surface);color:var(--sp-accent); }
 .ap-step-label { color:var(--sp-text);font-size:14px;line-height:28px;font-weight:700; }
@@ -158,7 +160,7 @@
 .ap-time-grid button { position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:46px;padding:6px 3px;border:1px dashed var(--sp-border);border-radius:5px;font-size:12px;line-height:1.15;color:var(--sp-text);background:var(--sp-surface);white-space:nowrap; }
 .ap-time-grid button:disabled { opacity:.5;cursor:not-allowed; }
 .ap-time-grid button.is-selected { background:var(--color-maroon-800);color:white;border-color:var(--color-maroon-800); }
-.ap-time-grid button>span { font-size:12px;color:inherit;line-height:1; }
+.ap-time-grid button>span { font-size:11px;color:inherit;line-height:1.25;white-space:normal; }
 .ap-time-grid button>span.ap-slot-past-tag { color:var(--sp-muted);font-weight:600; }
 .ap-time-grid button>span.ap-slot-full-tag { color:#a13e51;font-weight:600; }
 .dark .ap-time-grid button>span.ap-slot-full-tag { color:#e7acbc; }
@@ -371,7 +373,7 @@
   .ap-column-caption,.ap-column-footnote { font-size:12px; }
   .ap-time-grid button { min-height:56px;font-size:12px; }
   .ap-slots-loading-grid>span { min-height:56px; }
-  .ap-time-grid button>span { font-size:12px; }
+  .ap-time-grid button>span { font-size:11px; }
   .ap-service-list label { min-height:60px;padding:10px; }
   .ap-service-list input { width:14px;height:14px; }
   .ap-service-list svg { width:16px;height:16px; }

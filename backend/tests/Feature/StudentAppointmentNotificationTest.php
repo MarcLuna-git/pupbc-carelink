@@ -58,7 +58,7 @@ class StudentAppointmentNotificationTest extends TestCase
         if ($complete) {
             HealthProfile::create([
                 'user_id' => $student->id, 'emergency_name' => 'Guardian',
-                'emergency_relationship' => 'Parent', 'emergency_phone' => '09123456789',
+                'emergency_relationship' => 'Parent', 'emergency_phone' => '+639123456789',
                 'consent_signature' => 'Test', 'consent_date' => today()->toDateString(),
                 'agree_privacy' => true, 'agree_terms' => true,
             ]);

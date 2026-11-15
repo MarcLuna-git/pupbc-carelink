@@ -160,7 +160,7 @@ class HealthProfile extends Model
             'emergency_phone' => [
                 'required',
                 'string',
-                'regex:/^(?:09[0-9]{9}|\+639[0-9]{9})$/',
+                'regex:/^\+639[0-9]{9}$/',
             ],
 
             'consent_signature' => [
@@ -381,24 +381,8 @@ class HealthProfile extends Model
             (string) $this->emergency_phone
         );
 
-        /*
-         * Current canonical local format.
-         */
-        if (preg_match('/^09\d{9}$/', $phone)) {
-            return true;
-        }
-
-        /*
-         * Backward/future compatibility for an equivalent Philippine +63
-         * value if an existing record was normalized that way.
-         *
-         * Example:
-         * +639123456789
-         */
-        if (preg_match('/^\+639\d{9}$/', $phone)) {
-            return true;
-        }
-
-        return false;
+        // The one stored format: +639XXXXXXXXX (old 09... numbers were converted by the
+        // 2026_11_15_000002 migration).
+        return (bool) preg_match('/^\+639\d{9}$/', $phone);
     }
 }

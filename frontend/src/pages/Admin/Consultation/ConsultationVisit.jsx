@@ -9,6 +9,7 @@ import { formatAppointmentDate } from '../../../utils/appointmentDate';
 import { bloodPressureOnly, decimalOnly, digitsOnly } from '../../../utils/inputFilters';
 import { buildRecordDocument, openRecordDocument, studentDetails } from '../../Student/HealthRecords/recordDocuments';
 import useSignatoryVersion from '../../../hooks/useSignatoryVersion';
+import PhilippineMobileInput from '../../../components/PhilippineMobileInput';
 
 /*
  * One clinic visit, opened from the queue: who the student is, why they came,
@@ -417,12 +418,14 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
   };
 
   // An editable Patient Details field: starts from the student's profile; whatever the nurse types is what prints on the form.
-  const patientField = (name, title, { span = '', ...props }) => {
+  const patientField = (name, title, { span = '', phone = false, ...props }) => {
     const key = { patient_age: 'age', patient_contact: 'contact', patient_address: 'address', patient_emergency_name: 'emergencyName', patient_emergency_relationship: 'emergencyRelationship', patient_emergency_contact: 'emergencyContact' }[name];
     return (
       <div className={`min-w-0 ${span}`}>
         <label htmlFor={`visit-${name}`} className="mb-1 block text-xs text-gray-500 dark:text-gray-400">{title}</label>
-        <input id={`visit-${name}`} name={name} value={patientInfo[key]} onChange={change} disabled={!!saved} className={`${input} disabled:opacity-70`} {...props} />
+        {phone
+          ? <PhilippineMobileInput id={`visit-${name}`} name={name} value={patientInfo[key] ?? ''} onChange={change} disabled={!!saved} className={`${input} disabled:opacity-70`} />
+          : <input id={`visit-${name}`} name={name} value={patientInfo[key]} onChange={change} disabled={!!saved} className={`${input} disabled:opacity-70`} {...props} />}
       </div>
     );
   };
@@ -560,12 +563,12 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
             <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">Printed on the Consultation Form.</p>
             <div className="grid gap-3 sm:grid-cols-12">
               {patientField('patient_age', 'Age', { inputMode: 'numeric', maxLength: 3, placeholder: 'e.g. 19', span: 'sm:col-span-2' })}
-              {patientField('patient_contact', 'Contact #', { inputMode: 'tel', maxLength: 30, placeholder: '09XX XXX XXXX', span: 'sm:col-span-3' })}
-              {patientField('patient_address', 'Address', { maxLength: 255, placeholder: 'House no., street, barangay, city', span: 'sm:col-span-7' })}
+              {patientField('patient_contact', 'Contact #', { phone: true, span: 'sm:col-span-4' })}
+              {patientField('patient_address', 'Address', { maxLength: 255, placeholder: 'House no., street, barangay, city', span: 'sm:col-span-6' })}
               {/* Emergency contact: the guardian's name, relationship and number sit together on one row. */}
               {patientField('patient_emergency_name', 'Contact person in case of emergency', { maxLength: 191, placeholder: 'Full name', span: 'sm:col-span-4' })}
               {patientField('patient_emergency_relationship', 'Relationship', { maxLength: 60, placeholder: 'e.g. Mother', span: 'sm:col-span-4' })}
-              {patientField('patient_emergency_contact', 'Emergency contact #', { inputMode: 'tel', maxLength: 30, placeholder: '09XX XXX XXXX', span: 'sm:col-span-4' })}
+              {patientField('patient_emergency_contact', 'Emergency contact #', { phone: true, span: 'sm:col-span-4' })}
             </div>
           </div>
         </section>

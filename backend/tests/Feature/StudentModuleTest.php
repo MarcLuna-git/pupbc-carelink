@@ -58,7 +58,7 @@ class StudentModuleTest extends TestCase
             'user_id' => $student->id,
             'emergency_name' => 'Guardian',
             'emergency_relationship' => 'Parent',
-            'emergency_phone' => '09123456789',
+            'emergency_phone' => '+639123456789',
             'consent_signature' => 'Student Test',
             'consent_date' => Carbon::now('Asia/Manila')->toDateString(),
             'agree_privacy' => true,

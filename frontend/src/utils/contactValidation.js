@@ -19,25 +19,44 @@ export const signatureNameError = (signature, user) => {
   return names.some((name) => normalize(name) === signed) ? '' : 'Signature must match your registered name.';
 };
 
-const validPhone = /^(?:09\d{9}|\+639\d{9})$/;
+// Mobile numbers use one format everywhere: +639XXXXXXXXX. The old 09XXXXXXXXX form is no
+// longer used; a pasted or autofilled 09..., 639... or +639... is turned into +639...
+const validPhone = /^\+639\d{9}$/;
+export const PHONE_FORMAT_MESSAGE = 'Use +639XXXXXXXXX.';
 
-// Keep partial-entry behavior in sync with Register.jsx's formatPhilippineMobile.
+// The 10 digits after +63 (9XXXXXXXXX) from whatever was typed or pasted, or null when the
+// text cannot be a Philippine mobile number. Used by PhilippineMobileInput.
+export const philippineMobileDigits = (raw) => {
+  const text = String(raw ?? '').trim();
+  let digits;
+  if (text.startsWith('+63')) {
+    // A stored value, even a partial one while typing ('+639', '+63917').
+    digits = text.slice(3).replace(/\D/g, '');
+  } else {
+    digits = text.replace(/\D/g, '');
+    if (digits.startsWith('63') && digits.length > 10) digits = digits.slice(2);
+  }
+  if (digits.startsWith('0')) digits = digits.slice(1);
+  if (digits && !digits.startsWith('9')) return null;
+  return digits.slice(0, 10);
+};
+
+// Typed or pasted text as the stored value: '+63' plus the digits so far, '' when empty.
 export const formatContactPhone = (raw) => {
-  const value = String(raw).replace(/[\s()-]/g, '');
-  const prefixed = value.startsWith('63') ? `+${value}` : value;
-  const validPartial = /^(?:|0|09\d{0,9}|\+|\+6|\+63|\+639\d{0,9})$/;
-  return validPartial.test(prefixed) ? prefixed : null;
+  const digits = philippineMobileDigits(raw);
+  if (digits === null) return null;
+  return digits ? `+63${digits}` : '';
 };
 
 export const contactPhoneError = (phone, required = false) => {
   const value = String(phone ?? '').trim();
   if (!value) return required ? 'Phone number is required' : '';
-  return validPhone.test(value) ? '' : 'Use 09XXXXXXXXX or +639XXXXXXXXX.';
+  return validPhone.test(value) ? '' : PHONE_FORMAT_MESSAGE;
 };
 
 export const canonicalContactPhone = (phone) => {
-  const value = String(phone ?? '');
-  if (validPhone.test(value)) return value.startsWith('09') ? `+63${value.slice(1)}` : value;
+  const value = String(phone ?? '').trim();
+  if (validPhone.test(value)) return value;
   return /^639\d{9}$/.test(value) ? `+${value}` : null;
 };
 

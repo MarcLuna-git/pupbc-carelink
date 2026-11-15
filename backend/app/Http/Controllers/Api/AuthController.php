@@ -41,7 +41,29 @@ class AuthController extends Controller
     // Public: the Course, Year level, and Section choices on the registration form.
     public function registrationOptions(): JsonResponse
     {
-        return response()->json(['success' => true, 'data' => ['courses' => RegistrationAcademics::courses()]]);
+        return response()->json(['success' => true, 'data' => [
+            'courses' => RegistrationAcademics::courses(),
+            'masterlist_required' => \App\Support\Masterlist::required(),
+        ]]);
+    }
+
+    /*
+     * Public: the live check on the Student ID field of the registration form.
+     * Says whether the ID is on the masterlist of an active period, and whether that ID already
+     * has an account. It never says whose ID it is. Rate limited by its route.
+     */
+    public function checkStudentId(Request $request): JsonResponse
+    {
+        $studentId = strtoupper(trim((string) $request->input('student_id', '')));
+        if (!preg_match(\App\Support\Masterlist::ID_PATTERN, $studentId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed.',
+                'errors' => ['student_id' => ['Student ID must follow the format 2023-00000-BN-0.']],
+            ], 422);
+        }
+
+        return response()->json(['success' => true, 'data' => ['status' => \App\Support\Masterlist::idStatus($studentId)]]);
     }
 
     public function register(Request $request): JsonResponse
@@ -104,10 +126,15 @@ class AuthController extends Controller
                         'max:255',
                     ],
 
+                    // Same four rules as the Password Strength list on the form:
+                    // 8+ and 12+ characters, a number or special character, and both a number
+                    // and a special character.
                     'password' => [
                         'required',
                         'string',
-                        'min:8',
+                        'min:12',
+                        'regex:/\d/',
+                        'regex:/[^A-Za-z0-9]/',
                     ],
 
                     'password_confirmation' => [
@@ -128,7 +155,6 @@ class AuthController extends Controller
                         Rule::in([
                             'male',
                             'female',
-                            'other',
                         ]),
                     ],
 
@@ -201,7 +227,10 @@ class AuthController extends Controller
                         'Password is required.',
 
                     'password.min' =>
-                        'Password must be at least 8 characters.',
+                        'Password must have 12 or more characters.',
+
+                    'password.regex' =>
+                        'Password must have a number and a special character.',
 
                     'password_confirmation.same' =>
                         'Password confirmation does not match.',
@@ -246,7 +275,7 @@ class AuthController extends Controller
                         'Mobile number is required.',
 
                     'mobile_number.regex' =>
-                        'Mobile number must use 09XXXXXXXXX or +639XXXXXXXXX format.',
+                        'Enter the 10 digits after +63, like 9171234567.',
                 ]
             );
 
@@ -897,19 +926,9 @@ public function login(Request $request): JsonResponse
             )
         );
 
+        // Only +639XXXXXXXXX is used. The old 09XXXXXXXXX form is not accepted any more;
+        // a number sent without the plus sign (639...) gets it added.
         if (
-            preg_match(
-                '/^09\d{9}$/',
-                $mobileNumber
-            )
-        ) {
-            $mobileNumber =
-                '+63' .
-                substr(
-                    $mobileNumber,
-                    1
-                );
-        } elseif (
             preg_match(
                 '/^639\d{9}$/',
                 $mobileNumber

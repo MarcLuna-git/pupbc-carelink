@@ -12,10 +12,10 @@ const descriptions = {
   section: 'Connect a section to its course and academic period.',
   period: 'Define the academic year and semester for your sections.',
 };
-const cancelButton = `inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700/50 ${focus}`;
+export const cancelButton = `inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700/50 ${focus}`;
 
 // Centered popup with a dimmed backdrop. Escape or a backdrop click closes it unless `busy`.
-function ModalShell({ labelledBy, onClose, busy, width, children }) {
+export function ModalShell({ labelledBy, onClose, busy, width, children }) {
   useEffect(() => {
     const onKey = event => { if (event.key === 'Escape' && !busy) onClose(); };
     window.addEventListener('keydown', onKey);
@@ -90,7 +90,7 @@ export default function AcademicFormModal({ type, editing, form, onChange, onClo
           <Field name="semester" label="Semester" error={errors.semester} hint="The term of this period."><Select {...props('semester')}>{['1st Semester', '2nd Semester', 'Summer', ...(!['1st Semester', '2nd Semester', 'Summer'].includes(form.semester) ? [form.semester] : [])].map(value => <option key={value}>{value}</option>)}</Select></Field>
         </div>}
         {type === 'section' && <div className="grid gap-4 sm:grid-cols-2">
-          <Field name="course_id" label="Course" error={errors.course_id} hint="The course this section belongs to."><Select {...props('course_id')} autoFocus required><option value="">Select a course</option>{visibleCourses.map(item => <option key={item.id} value={item.id}>{item.code} — {item.name}{!item.is_active ? ' (inactive)' : ''}</option>)}</Select></Field>
+          <Field name="course_id" label="Course" error={errors.course_id} hint="The course this section belongs to."><Select {...props('course_id')} autoFocus required><option value="">Select a course</option>{visibleCourses.map(item => <option key={item.id} value={item.id}>{item.code} ({item.name}){!item.is_active ? ' (inactive)' : ''}</option>)}</Select></Field>
           <Field name="academic_period_id" label="Academic period" error={errors.academic_period_id} hint="The year and semester for this section."><Select {...props('academic_period_id')} required><option value="">Select an academic period</option>{periods.map(item => <option key={item.id} value={item.id}>{periodLabel(item)}{!item.is_active ? ' (inactive)' : ''}</option>)}</Select></Field>
           <Field name="year_level" label="Year level" error={errors.year_level} hint="The student's academic year level."><Select {...props('year_level')}>{['1st Year', '2nd Year', '3rd Year', '4th Year', ...(!['1st Year', '2nd Year', '3rd Year', '4th Year'].includes(form.year_level) ? [form.year_level] : [])].map(value => <option key={value}>{value}</option>)}</Select></Field>
           <Field name="section_code" label="Section code" error={errors.section_code} hint="For example, 1-1 or 4-1."><input {...props('section_code')} required maxLength={10} placeholder="1-1" autoComplete="off" /></Field>

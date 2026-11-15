@@ -36,6 +36,7 @@ import { clinicDate } from '../../../utils/appointmentDate';
 import { StudentToast } from '../../../components/StudentFeedback';
 import { contactNameError, contactPhoneError, formatContactPhone, ownMobileContactError } from '../../../utils/contactValidation';
 import { nameOnly } from '../../../utils/inputFilters';
+import PhilippineMobileInput from '../../../components/PhilippineMobileInput';
 import { useStudentBreadcrumbTab } from '../../../utils/studentBreadcrumb';
 
 /*
@@ -463,11 +464,11 @@ const Overview = () => {
 
   const startEdit = () => {
     setDraft({
-      mobile_number: student?.mobile_number || '',
+      mobile_number: formatContactPhone(student?.mobile_number || '') ?? student?.mobile_number ?? '',
       address: profile.address || '',
       emergency_name: contact.name || hp.emergency_name || '',
       emergency_relationship: contact.relationship || hp.emergency_relationship || '',
-      emergency_phone: contact.phone || hp.emergency_phone || '',
+      emergency_phone: formatContactPhone(contact.phone || hp.emergency_phone || '') ?? (contact.phone || hp.emergency_phone || ''),
       allergy_details: hp.allergy_details || '',
       medications: hp.medications || '',
       medical_history: Array.isArray(hp.medical_history) ? hp.medical_history : [],
@@ -523,9 +524,7 @@ const Overview = () => {
     const { name, value } = event.target;
     if (name === 'emergency_name') setNameError('');
     if (name === 'emergency_phone' || name === 'mobile_number') setPhoneError('');
-    const next = name === 'mobile_number'
-      ? value.replace(/[^\d+]/g, '').slice(0, 13)
-      : name === 'emergency_phone'
+    const next = name === 'mobile_number' || name === 'emergency_phone'
         ? formatContactPhone(value)
         : name === 'emergency_name'
           ? nameOnly(value)
@@ -538,7 +537,7 @@ const Overview = () => {
     if (saving) return;
     const trimmed = Object.fromEntries(Object.entries(draft).map(([key, value]) => [key, typeof value === 'string' ? value.trim() : value]));
     setEditError('');
-    if (!/^(?:09\d{9}|\+639\d{9})$/.test(trimmed.mobile_number)) { setEditError('Use 09XXXXXXXXX or +639XXXXXXXXX for your mobile number.'); return; }
+    if (contactPhoneError(trimmed.mobile_number, true)) { setEditError('Use +639XXXXXXXXX for your mobile number.'); return; }
     const invalidName = contactNameError(trimmed.emergency_name, hasHealthProfile);
     if (invalidName) { setNameError(invalidName); return; }
     if (hasHealthProfile && !trimmed.emergency_relationship) { setEditError('Emergency contact name and relationship are required.'); return; }
@@ -919,7 +918,7 @@ const Overview = () => {
             draft={draft}
             onChange={handleDraftChange}
             rows={[
-              ['Mobile Number', student.mobile_number, { name: 'mobile_number', inputMode: 'tel', maxLength: 13, placeholder: '09XXXXXXXXX' }],
+              ['Mobile Number', student.mobile_number, { name: 'mobile_number', render: () => <PhilippineMobileInput id="profile-mobile_number" name="mobile_number" value={draft.mobile_number} onChange={handleDraftChange} className={FIELD_CLASS} aria-label="Your mobile number, the 10 digits after +63" /> }],
               ['Email Address', student.email],
               ['Home Address', profile.address, { name: 'address', type: 'textarea', maxLength: 1000, placeholder: 'Enter your address' }],
             ]}
@@ -936,7 +935,7 @@ const Overview = () => {
             rows={[
               ['Name', contact.name || hp.emergency_name, { name: 'emergency_name', maxLength: 100, placeholder: 'Juan Dela Cruz' }],
               ['Relationship', contact.relationship || hp.emergency_relationship, { name: 'emergency_relationship', type: 'select', options: EMERGENCY_RELATIONSHIPS }],
-              ['Mobile Number', contact.phone || hp.emergency_phone, { name: 'emergency_phone', inputMode: 'tel', maxLength: 13, placeholder: '09XXXXXXXXX or +639XXXXXXXXX' }],
+              ['Mobile Number', contact.phone || hp.emergency_phone, { name: 'emergency_phone', render: () => <PhilippineMobileInput id="profile-emergency_phone" name="emergency_phone" value={draft.emergency_phone} onChange={handleDraftChange} className={FIELD_CLASS} aria-label="Emergency contact mobile number, the 10 digits after +63" /> }],
             ]}
           />
 

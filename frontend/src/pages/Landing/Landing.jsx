@@ -1,12 +1,12 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   ArrowRight,
   Bell,
   CalendarDays,
   ChevronDown,
-  ChevronRight,
   ClipboardList,
   FileHeart,
   FileText,
@@ -35,20 +35,49 @@ import clinicVaccination from '../../assets/clinic-vaccination.jpg';
 
 const HERO_SLIDES = [
   {
-    src: campusPhoto,
-    alt: 'Polytechnic University of the Philippines Biñan Campus building',
-    position: 'object-[60%_center] lg:object-center',
-    caption: 'PUP Biñan Campus',
-  },
-  {
     src: clinicScene,
     alt: 'PUP Biñan Campus clinic waiting area',
     position: 'object-center',
     caption: 'Campus Clinic',
   },
+  {
+    src: campusPhoto,
+    alt: 'Polytechnic University of the Philippines Biñan Campus building',
+    position: 'object-[60%_center] lg:object-center',
+    caption: 'PUP Biñan Campus',
+  },
 ];
 
-const HERO_INTERVAL_MS = 6000;
+// Auto-advance cadence; the active dot's timer sweep matches this.
+const HERO_INTERVAL_MS = 11000;
+
+/* Slow glide for the header nav tabs: native 'smooth' scrolling finishes in a
+   blink and reads as instant. This animates ~1.1s with an ease-in-out curve so
+   the travel is visible. Works on the inner scroll container (md+) and the
+   window (mobile) — whichever actually scrolls; the other is a harmless no-op.
+   A wheel / touch gesture cancels the glide so it never fights the user. */
+const GLIDE_MS = 1100;
+const glideScroll = (scroller, targetTop) => {
+  if (!scroller) return;
+  if (scroller.__glideRaf) window.cancelAnimationFrame(scroller.__glideRaf);
+  const start = scroller.scrollTop;
+  const distance = targetTop - start;
+  if (Math.abs(distance) < 1) return;
+  const startAt = performance.now();
+  const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const cancel = () => {
+    if (scroller.__glideRaf) window.cancelAnimationFrame(scroller.__glideRaf);
+    scroller.__glideRaf = null;
+  };
+  scroller.addEventListener('wheel', cancel, { once: true, passive: true });
+  scroller.addEventListener('touchmove', cancel, { once: true, passive: true });
+  const step = (now) => {
+    const progress = Math.min(1, (now - startAt) / GLIDE_MS);
+    scroller.scrollTop = start + distance * easeInOutCubic(progress);
+    scroller.__glideRaf = progress < 1 ? window.requestAnimationFrame(step) : null;
+  };
+  scroller.__glideRaf = window.requestAnimationFrame(step);
+};
 
 // lucide-react v1 dropped brand icons, so these are inline lucide-style SVGs.
 // TODO: replace the '#' hrefs with the official PUP Biñan pages.
@@ -240,8 +269,8 @@ function FeatureCard({ feature }) {
 
   const content = (
     <>
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-maroon-100 dark:bg-rose-950/40 text-maroon-800 dark:text-rose-300 sm:h-14 sm:w-14">
-        <Icon size={25} strokeWidth={1.9} />
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 border-maroon-800 bg-white text-maroon-800 transition-colors duration-500 group-hover:duration-700 group-hover:bg-maroon-800 group-hover:text-white sm:h-14 sm:w-14">
+        <Icon size={25} strokeWidth={2.5} />
       </span>
 
       <span className="min-w-0 flex-1">
@@ -254,18 +283,13 @@ function FeatureCard({ feature }) {
         </span>
       </span>
 
-      <ChevronRight
-        size={18}
-        className="shrink-0 text-maroon-800 dark:text-rose-300 transition-transform group-hover:translate-x-1"
-      />
     </>
   );
 
   const classes =
     'group flex min-w-0 items-center gap-3 rounded-2xl ' +
     'border border-slate-200/90 bg-white p-3.5 text-left ' +
-    'shadow-sm transition-all duration-200 hover:-translate-y-0.5 ' +
-    'hover:border-rose-200 hover:shadow-lg sm:p-4';
+    'shadow-sm sm:p-4';
 
   if (feature.href.startsWith('#')) {
     return (
@@ -292,12 +316,10 @@ function HeroCarousel() {
     [total],
   );
 
+  // Owner call: the carousel must animate even when the OS asks for reduced
+  // motion — with the gate on, the slide read as an instant switch.
   useEffect(() => {
-    const reduceMotion = window.matchMedia?.(
-      '(prefers-reduced-motion: reduce)',
-    ).matches;
-
-    if (paused || reduceMotion) return undefined;
+    if (paused) return undefined;
 
     const timer = window.setTimeout(
       () => setActiveIndex((index) => (index + 1) % total),
@@ -322,10 +344,12 @@ function HeroCarousel() {
           src={slide.src}
           alt={index === activeIndex ? slide.alt : ''}
           aria-hidden={index !== activeIndex}
-          className={`absolute inset-0 -z-20 h-full w-full object-cover ${slide.position} transition-[opacity,transform] duration-[1200ms] ease-out motion-reduce:transition-none ${
+          className={`absolute inset-0 -z-20 h-full w-full object-cover ${slide.position} transition-transform duration-[900ms] ease-out ${
             index === activeIndex
-              ? 'scale-100 opacity-100'
-              : 'scale-105 opacity-0'
+              ? 'translate-x-0'
+              : index < activeIndex
+                ? '-translate-x-full'
+                : 'translate-x-full'
           }`}
           fetchPriority={index === 0 ? 'high' : 'low'}
           loading={index === 0 ? 'eager' : 'lazy'}
@@ -350,12 +374,23 @@ function HeroCarousel() {
             onClick={() => goTo(index)}
             aria-label={`Show photo ${index + 1}: ${slide.caption}`}
             aria-current={index === activeIndex}
-            className={`h-2 rounded-full transition-all ${
+            className={`relative h-2 overflow-hidden rounded-full transition-all duration-500 ${
               index === activeIndex
-                ? 'w-6 bg-white'
+                ? 'w-7 bg-white/30'
                 : 'w-2 bg-white/45 hover:bg-white/70'
             }`}
-          />
+          >
+            {/* Timer sweep: the active dot fills over the slide interval. */}
+            {index === activeIndex && (
+              <motion.span
+                key={activeIndex}
+                initial={{ width: '0%' }}
+                animate={{ width: '100%' }}
+                transition={{ duration: HERO_INTERVAL_MS / 1000, ease: 'linear' }}
+                className="absolute inset-y-0 left-0 rounded-full bg-white"
+              />
+            )}
+          </button>
         ))}
       </div>
     </div>
@@ -375,6 +410,30 @@ export default function Landing() {
   const currentYear = new Date().getFullYear();
 
   const closeMenu = () => setMobileMenuOpen(false);
+
+  /* Header nav tabs glide to their section. '#home' targets the page wrapper,
+     which is always in view — native fragment navigation is a no-op there —
+     so glide the actual scrolling container (md+) and the window (mobile) to
+     the top instead. The other tabs glide their section into view. */
+  const scrollToSection = useCallback((event, href) => {
+    event.preventDefault();
+    closeMenu();
+    const container = document.querySelector('.landing-scroll');
+    if (href === '#home') {
+      glideScroll(container, 0);
+      glideScroll(document.scrollingElement, 0);
+      return;
+    }
+    const target = document.getElementById(href.slice(1));
+    if (!target) return;
+    if (container) {
+      const top = target.getBoundingClientRect().top
+        - container.getBoundingClientRect().top
+        + container.scrollTop;
+      glideScroll(container, top);
+    }
+    glideScroll(document.scrollingElement, target.getBoundingClientRect().top + window.scrollY);
+  }, [closeMenu]);
 
   const loadAnnouncements = useCallback(async (signal) => {
     try {
@@ -440,7 +499,7 @@ export default function Landing() {
       className="landing-page min-h-screen overflow-x-hidden md:flex md:h-dvh md:min-h-0 md:flex-col md:overflow-hidden bg-[#f8f9fc] text-slate-900 dark:bg-gray-900 dark:text-gray-100"
     >
       {/* HEADER */}
-      <header className="sticky top-0 z-50 shrink-0 border-b border-slate-100 bg-white/95 dark:bg-gray-900/95 shadow-sm backdrop-blur-xl">
+      <header className="sticky top-0 z-50 shrink-0 border-b border-slate-100 bg-gradient-to-b from-maroon-50 to-white shadow-sm dark:from-maroon-950/30 dark:to-gray-900">
         <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
           <Link
             to="/"
@@ -460,13 +519,14 @@ export default function Landing() {
 
           <nav
             aria-label="Main navigation"
-            className="hidden items-center gap-1 lg:flex"
+            className="ml-4 mr-auto hidden items-center gap-1 lg:flex"
           >
             {NAVIGATION.map((item) => (
               <a
                 key={item.href}
                 href={item.href}
-                className="rounded-xl px-3 py-2 text-[13px] font-semibold text-slate-600 transition-colors hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-maroon-800"
+                onClick={(event) => scrollToSection(event, item.href)}
+                className="rounded-[10px] px-3 py-2 text-[13px] font-semibold text-slate-600 transition-colors hover:bg-maroon-800 hover:text-white dark:hover:bg-maroon-900 dark:hover:text-white"
               >
                 {item.label}
               </a>
@@ -476,7 +536,7 @@ export default function Landing() {
           <div className="hidden items-center gap-2 lg:flex">
             <Link
               to="/register"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-100 bg-rose-50 px-5 text-sm font-bold text-maroon-800 dark:text-rose-300 transition hover:bg-rose-100 dark:hover:bg-rose-950/60"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-[10px] border border-maroon-800 bg-white px-5 text-sm font-bold text-maroon-800 transition-colors duration-500 hover:bg-maroon-800 hover:text-white"
             >
               <UserRoundPlus size={17} />
               Get Started
@@ -484,7 +544,7 @@ export default function Landing() {
 
             <Link
               to="/login"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-maroon-800 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-maroon-950"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-[10px] bg-maroon-800 px-5 text-sm font-bold text-white transition-colors duration-300 hover:text-gray-300"
             >
               <LogIn size={17} />
               Login
@@ -524,8 +584,8 @@ export default function Landing() {
                 <a
                   key={item.href}
                   href={item.href}
-                  onClick={closeMenu}
-                  className="block rounded-xl px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-maroon-800"
+                  onClick={(event) => scrollToSection(event, item.href)}
+                  className="block rounded-xl px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-maroon-800 hover:text-white dark:hover:bg-maroon-900 dark:hover:text-white"
                 >
                   {item.label}
                 </a>
@@ -562,16 +622,14 @@ export default function Landing() {
       >
       {/* HERO */}
       <section
-        className="relative isolate min-h-[540px] overflow-hidden bg-maroon-950 sm:min-h-[570px] lg:min-h-[500px]"
+        className="relative isolate min-h-[calc(100dvh-73px)] overflow-hidden bg-maroon-950"
         aria-labelledby="landing-title"
       >
         <HeroCarousel />
 
-        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-maroon-950/98 via-maroon-900/90 to-maroon-800/35 lg:via-maroon-900/78 lg:to-maroon-950/10" />
+        <div className="absolute inset-0 -z-10 bg-maroon-950/90" />
 
-        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-maroon-950/75 via-transparent to-transparent" />
-
-        <div className="mx-auto flex min-h-[540px] max-w-[1440px] flex-col justify-center px-5 py-14 sm:min-h-[570px] sm:px-8 lg:min-h-[500px] lg:px-14 lg:py-16 max-lg:pb-20">
+        <div className="mx-auto flex min-h-[inherit] max-w-[1440px] flex-col justify-center px-5 py-14 sm:px-8 lg:px-14 lg:py-16 max-lg:pb-20">
           <div className="max-w-[690px]">
             <p className="text-xs font-bold uppercase leading-5 tracking-[0.19em] text-rose-100 sm:text-xs">
               Polytechnic University of the Philippines
@@ -602,20 +660,19 @@ export default function Landing() {
             </p>
 
             <div className="mt-7 flex flex-col gap-3 min-[410px]:flex-row">
-              <Link
-                to="/register"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-maroon-800 px-6 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-maroon-700"
+              <a
+                href="#how-it-works"
+                onClick={(event) => scrollToSection(event, '#how-it-works')}
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[10px] bg-maroon-800 px-6 text-sm font-extrabold text-white transition-colors duration-300 hover:text-gray-300"
               >
-                Get Started
-                <ArrowRight size={17} />
-              </Link>
+                How It Works
+              </a>
 
               <a
                 href="#services"
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/60 bg-white/5 px-6 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/15"
               >
                 View Services
-                <ChevronRight size={17} />
               </a>
             </div>
 
@@ -676,7 +733,7 @@ export default function Landing() {
         aria-label="CareLink features"
         className="relative z-10 mx-auto mt-8 max-w-[1440px] sm:mt-10 px-4 sm:px-6 lg:px-10"
       >
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map((feature) => (
             <FeatureCard
               key={feature.title}
@@ -689,7 +746,7 @@ export default function Landing() {
       {/* HOW CARELINK WORKS + CLINIC PHOTO */}
       <section
         id="about"
-        className="mx-auto max-w-[1440px] scroll-mt-24 md:scroll-mt-4 px-4 pt-12 sm:px-6 lg:px-10 lg:pt-16"
+        className="mx-auto max-w-[1440px] scroll-mt-24 md:scroll-mt-4 px-4 pt-8 sm:px-6 lg:px-10 lg:pt-10"
       >
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.85fr)]">
           <div
@@ -750,7 +807,7 @@ export default function Landing() {
           </div>
 
           {/* A HEALTHIER YOU — ACTUAL CLINIC PHOTO */}
-          <div className="relative isolate min-h-[320px] overflow-hidden rounded-3xl border border-slate-200/80 bg-maroon-950 text-white shadow-sm sm:min-h-[360px]">
+          <div className="group relative isolate min-h-[320px] overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm sm:min-h-[360px]">
             <img
               src={clinicVaccination}
               alt="Clinic nurse giving a vaccination to a PUP Biñan student"
@@ -758,12 +815,13 @@ export default function Landing() {
               className="absolute inset-0 -z-20 h-full w-full object-cover object-[center_35%]"
             />
 
-            <div className="absolute inset-0 -z-10 bg-gradient-to-r from-maroon-950/95 via-maroon-800/65 to-maroon-950/5" />
-
-            <div className="absolute inset-0 -z-10 bg-gradient-to-t from-maroon-950/70 via-transparent to-transparent" />
+            {/* White overlay — fades away on hover to reveal the full photo. */}
+            <div className="absolute inset-0 -z-10 bg-white/70 transition-opacity duration-500 group-hover:opacity-0" />
 
             <div className="flex h-full min-h-[320px] flex-col justify-between p-5 sm:min-h-[360px] sm:p-7">
-              <div className="max-w-[255px]">
+              <div className="relative max-w-[255px]">
+                {/* Frosted panel behind the text — fades in on hover. */}
+                <div className="absolute -inset-4 z-[-1] rounded-2xl bg-white/70 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
                 <span className="inline-flex rounded-lg border border-white/25 bg-maroon-800/85 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider text-white backdrop-blur-sm">
                   A Healthier You
                 </span>
@@ -772,14 +830,18 @@ export default function Landing() {
                  
                 </h2>
 
-                <p className="mt-3 text-sm leading-6 text-white/95">
+                <p className="mt-3 text-sm leading-6 text-slate-700">
                   Quality healthcare support for PUPBC student community.
                 </p>
               </div>
 
-              <p className="max-w-[260px] border-l-2 border-rose-200 pl-3 text-xs font-medium leading-5 text-rose-50 sm:text-sm">
-                We care for you - your health and well-being is our priority
-              </p>
+              <div className="relative max-w-[260px]">
+                {/* Frosted panel behind the quote — fades in on hover. */}
+                <div className="absolute -inset-2 z-[-1] rounded-xl bg-white/70 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                <p className="border-l-2 border-maroon-200 pl-3 text-xs font-medium leading-5 text-maroon-800 sm:text-sm">
+                  We care for you - your health and well-being is our priority
+                </p>
+              </div>
             </div>
           </div>
         </div>

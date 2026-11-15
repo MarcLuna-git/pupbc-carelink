@@ -70,7 +70,7 @@ class StudentDataResetTest extends TestCase
     public function test_reset_requires_the_developer_password(): void
     {
         $student = $this->user('student');
-        $profile = StudentProfile::create(['user_id' => $student->id, 'mobile_number' => '09123456789']);
+        $profile = StudentProfile::create(['user_id' => $student->id, 'mobile_number' => '+639123456789']);
 
         $this->actingAs($student, 'api')
             ->postJson('/api/student/reset-data', ['password' => 'not-the-password'])
@@ -83,12 +83,12 @@ class StudentDataResetTest extends TestCase
             ->assertJsonValidationErrors('password');
 
         // Nothing may be touched when the password does not match.
-        $this->assertSame('09123456789', $profile->fresh()->mobile_number);
+        $this->assertSame('+639123456789', $profile->fresh()->mobile_number);
     }
 
     public function test_reset_clears_student_input_and_keeps_the_account_and_clinic_records(): void
     {
-        $student = $this->user('student', ['mobile_number' => '09987654321']);
+        $student = $this->user('student', ['mobile_number' => '+639987654321']);
         $nurse = $this->user('nurse');
 
         $profile = StudentProfile::create([
@@ -96,11 +96,11 @@ class StudentDataResetTest extends TestCase
             'course' => 'BSIT',
             'year' => '3',
             'section' => 'A',
-            'mobile_number' => '09987654321',
+            'mobile_number' => '+639987654321',
             'address' => 'Old address',
             'guardian_name' => 'Guardian',
             'guardian_relationship' => 'Parent',
-            'guardian_contact' => '09123456789',
+            'guardian_contact' => '+639123456789',
             'profile_picture' => 'student-avatars/legacy.png',
         ]);
 
@@ -108,7 +108,7 @@ class StudentDataResetTest extends TestCase
             'user_id' => $student->id,
             'emergency_name' => 'Guardian',
             'emergency_relationship' => 'Parent',
-            'emergency_phone' => '09123456789',
+            'emergency_phone' => '+639123456789',
         ]);
 
         $appointment = Appointment::create([

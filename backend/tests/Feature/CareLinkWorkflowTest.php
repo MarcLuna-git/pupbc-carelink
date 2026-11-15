@@ -27,7 +27,7 @@ class CareLinkWorkflowTest extends TestCase
     }
     private function healthData()
     {
-        return ['emergency_name' => 'Test Guardian', 'emergency_relationship' => 'Parent', 'emergency_phone' => '09123456789', 'consent_signature' => 'Test Patient', 'consent_date' => today()->toDateString(), 'agree_privacy' => true, 'agree_terms' => true, 'medical_history' => [], 'family_history' => []];
+        return ['emergency_name' => 'Test Guardian', 'emergency_relationship' => 'Parent', 'emergency_phone' => '+639123456789', 'consent_signature' => 'Test Patient', 'consent_date' => today()->toDateString(), 'agree_privacy' => true, 'agree_terms' => true, 'medical_history' => [], 'family_history' => []];
     }
     private function appointment($student, $status = 'approved', $date = null)
     {

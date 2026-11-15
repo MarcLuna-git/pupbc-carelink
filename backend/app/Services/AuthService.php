@@ -67,6 +67,11 @@ class AuthService
             })
             ->delete();
 
+        // When the clinic turns it on, only students on the school masterlist can register.
+        // Checked before the duplicate checks, so "already registered" is only shown to
+        // someone who already gave a matching Student ID and last name.
+        \App\Support\Masterlist::assertCanRegister($data);
+
         // Archived (soft-deleted) accounts still hold their email and Student ID
         // in the unique indexes, so they count as registered too.
         if (User::withTrashed()->where('email', $data['email'])->exists()) {

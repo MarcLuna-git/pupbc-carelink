@@ -55,6 +55,18 @@ const authService = {
     return response.data?.data?.courses || [];
   },
 
+  // Courses plus whether the Student ID must be on the school masterlist.
+  async registrationSettings() {
+    const response = await api.get('/auth/registration-options');
+    return { courses: response.data?.data?.courses || [], masterlistRequired: Boolean(response.data?.data?.masterlist_required) };
+  },
+
+  // "found", "not_found", or "unchecked" (masterlist check is off).
+  async checkStudentId(studentId, signal) {
+    const response = await api.post('/auth/check-student-id', { student_id: studentId }, { signal });
+    return response.data?.data?.status || 'unchecked';
+  },
+
   async register(data) {
     const response = await api.post(
       '/auth/register',

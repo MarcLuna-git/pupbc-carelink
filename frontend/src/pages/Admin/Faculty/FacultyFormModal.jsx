@@ -5,6 +5,7 @@ import { Modal } from '../Students/StudentDetailsModal';
 import { focus } from '../Students/directoryOptions';
 import { nameOnly } from '../../../utils/inputFilters';
 import { formatContactPhone } from '../../../utils/contactValidation';
+import PhilippineMobileInput from '../../../components/PhilippineMobileInput';
 
 /*
  * Add Faculty Member / Edit Faculty Member popup: name, and an optional email and contact number
@@ -59,7 +60,7 @@ export default function FacultyFormModal({ member = null, onClose, onSaved }) {
         <label className="block"><Label required>Full Name</Label><input className={field} value={form.full_name} onChange={set('full_name')} placeholder="e.g. Maria Santos" maxLength={150} required /></label>
         <div className="grid gap-4 sm:grid-cols-2">
           <label><Label>Email <span className="font-normal text-gray-400">(optional)</span></Label><input className={field} type="email" value={form.email} onChange={set('email')} placeholder="e.g. maria.santos@school.edu" maxLength={150} /></label>
-          <label><Label>Contact Number <span className="font-normal text-gray-400">(optional)</span></Label><input className={field} type="tel" value={form.phone} onChange={set('phone')} placeholder="09XXXXXXXXX" inputMode="tel" maxLength={13} /></label>
+          <label><Label>Contact Number <span className="font-normal text-gray-400">(optional)</span></Label><PhilippineMobileInput className={field} name="phone" value={form.phone} onChange={set('phone')} aria-label="Contact number, the 10 digits after +63" /></label>
         </div>
         {editing && <label className="block sm:max-w-xs"><Label required>Status</Label>
           <select className={`${field} cursor-pointer`} value={form.status} onChange={set('status')}><option value="active">Active</option><option value="inactive">Inactive</option></select>

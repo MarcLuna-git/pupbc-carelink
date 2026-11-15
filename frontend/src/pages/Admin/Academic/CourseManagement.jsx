@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
-import { BookMarked, CalendarDays, Layers, Search, X, Pencil, Plus, Trash2, AlertCircle, ChevronDown, TableProperties } from 'lucide-react';
+import { BookMarked, CalendarDays, Layers, Search, X, Pencil, Plus, Trash2, AlertCircle, ChevronDown, TableProperties, ListChecks } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import NursePageTitle from '../../../components/NursePageTitle';
@@ -10,8 +10,10 @@ import AcademicFormModal, { AcademicDeleteModal } from './AcademicFormModal';
 import useNurseSync from '../../../hooks/useNurseSync';
 import { periodLabel, academicNames } from './academicOptions';
 import { NurseToast } from '../../../components/NurseFeedback';
+import MasterlistPanel from './MasterlistPanel';
 
-const tabs = [{ key: 'course', label: 'Courses', icon: BookMarked }, { key: 'section', label: 'Sections', icon: Layers }, { key: 'period', label: 'Academic periods', icon: CalendarDays }];
+const tabs = [{ key: 'course', label: 'Courses', icon: BookMarked }, { key: 'section', label: 'Sections', icon: Layers }, { key: 'period', label: 'Academic periods', icon: CalendarDays }, { key: 'masterlist', label: 'Masterlist', icon: ListChecks }];
+const recordTabs = tabs.filter(item => item.key !== 'masterlist');
 const defaults = {
   period: { academic_year_start: '', academic_year_end: '', semester: '1st Semester', is_active: true },
   course: { code: '', name: '', is_active: true },
@@ -63,7 +65,8 @@ export default function CourseManagement() {
   const sectionCount = (type, id) => sections.filter(section => section[type === 'course' ? 'course_id' : 'academic_period_id'] === id).length;
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return data[tab].filter(item => {
+    // The Masterlist tab loads its own data (MasterlistPanel), so it has no list here.
+    return (data[tab] || []).filter(item => {
       const course = data.course.find(course => course.id === item.course_id) || item.course;
       const period = data.period.find(period => period.id === item.academic_period_id) || item.academic_period;
       const text = tab === 'course' ? `${item.code} ${item.name}` : tab === 'period' ? periodLabel(item) : `${course?.code || ''} ${course?.name || ''} ${item.year_level} ${item.section_code} ${periodLabel(period)}`;
@@ -128,13 +131,13 @@ export default function CourseManagement() {
 
   return <div className="mx-auto max-w-[1440px] space-y-5 text-gray-900 dark:text-gray-100">
     <NursePageTitle path="/nurse/academic" />
-    <div className="grid gap-3 sm:grid-cols-3" aria-label="Academic record totals">{tabs.map(({ key, label, icon: Icon }) => <div key={key} className="flex min-w-0 items-center gap-4 rounded-lg border border-gray-100 bg-white p-4 sm:p-5 dark:border-gray-700 dark:bg-gray-800"><span className="rounded-xl bg-maroon-50 p-3 text-maroon-800 dark:bg-maroon-950/40 dark:text-maroon-300"><Icon size={22} aria-hidden="true" /></span><span className="min-w-0 flex-1"><span className="block text-xs font-medium text-gray-500 dark:text-gray-400">{label}</span>{loading ? <span role="status" className="mt-2 block h-6 w-10 animate-pulse rounded-md bg-gray-200 dark:bg-gray-600"><span className="sr-only">Loading count</span></span> : <span className="mt-1 block text-2xl font-semibold tabular-nums">{data[key].length.toLocaleString()}</span>}</span></div>)}</div>
+    <div className="grid gap-3 sm:grid-cols-3" aria-label="Academic record totals">{recordTabs.map(({ key, label, icon: Icon }) => <div key={key} className="flex min-w-0 items-center gap-4 rounded-lg border border-gray-100 bg-white p-4 sm:p-5 dark:border-gray-700 dark:bg-gray-800"><span className="rounded-xl bg-maroon-50 p-3 text-maroon-800 dark:bg-maroon-950/40 dark:text-maroon-300"><Icon size={22} aria-hidden="true" /></span><span className="min-w-0 flex-1"><span className="block text-xs font-medium text-gray-500 dark:text-gray-400">{label}</span>{loading ? <span role="status" className="mt-2 block h-6 w-10 animate-pulse rounded-md bg-gray-200 dark:bg-gray-600"><span className="sr-only">Loading count</span></span> : <span className="mt-1 block text-2xl font-semibold tabular-nums">{data[key].length.toLocaleString()}</span>}</span></div>)}</div>
     <div role="group" aria-label="Academic records view" className="flex flex-wrap gap-1 rounded-lg border border-gray-100 bg-white p-1.5 dark:border-gray-700 dark:bg-gray-800">{tabs.map(({ key, label, icon: Icon }) => <button key={key} type="button" onClick={() => switchTab(key)} aria-pressed={tab === key} className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors sm:flex-none ${tab === key ? 'bg-maroon-800 text-white' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60 dark:hover:text-gray-200'} ${focus}`}><Icon size={16} aria-hidden="true" /><span>{label}</span></button>)}</div>
     <NurseToast message={message} type="success" onClose={() => setMessage('')} />
     {loadError && <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-300"><AlertCircle size={18} /><p className="min-w-0 flex-1">{loadError}</p><button type="button" onClick={() => load()} disabled={refreshing} className={`${secondary} bg-white dark:bg-gray-800`}>Try again</button></div>}
     {modal && <AcademicFormModal type={modal.type} editing={Boolean(modal.id)} form={form} onChange={changeField} onClose={closeForm} onSubmit={submit} saving={saving} errors={errors} error={formError} courses={courses} periods={periods} disabled={loading || (modal.type === 'section' && !modal.id && !canAddSection)} />}
     {deleteTarget && <AcademicDeleteModal type={deleteTarget.type} label={itemLabel(deleteTarget.item)} onClose={closeDelete} onConfirm={confirmDelete} deleting={deleting} error={deleteError} />}
-    <NurseListCard
+    {tab === 'masterlist' ? <MasterlistPanel /> : <NurseListCard
       aria-label={title}
       aria-busy={loading || refreshing}
       icon={TableProperties}
@@ -144,7 +147,7 @@ export default function CourseManagement() {
       toolbar={
         <>
         <div className="space-y-3"><div className={`grid min-w-0 grid-cols-1 gap-3 ${tab === 'section' ? 'sm:grid-cols-2 xl:grid-cols-[minmax(220px,2fr)_repeat(3,minmax(150px,1fr))]' : 'sm:grid-cols-[minmax(0,1fr)_180px]'}`}><label className="relative block min-w-0"><span className="sr-only">Search {title.toLowerCase()}</span><Search size={17} className="absolute left-3 top-3.5 text-gray-400" aria-hidden="true" /><input type="search" value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} placeholder={tab === 'course' ? 'Search course abbreviation or name…' : tab === 'section' ? 'Search course or section…' : 'Search academic year or semester…'} className={`${inputStyle} min-h-11 pl-10 pr-10`} />{search && <button type="button" onClick={() => { setSearch(''); setPage(1); }} aria-label="Clear search" className={`absolute right-0 top-0 flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 dark:text-gray-300 ${focus}`}><X size={16} /></button>}</label>
-          {tab === 'section' && <><label className="relative block"><span className="sr-only">Filter by course</span><select value={courseId} onChange={event => { setCourseId(event.target.value); setPage(1); }} className={`${inputStyle} min-h-11 cursor-pointer appearance-none pr-10`}><option value="">All courses</option>{courses.map(item => <option key={item.id} value={item.id}>{item.code} — {item.name}</option>)}</select><ChevronDown size={16} aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400" /></label><label className="relative block"><span className="sr-only">Filter by academic period</span><select value={periodId} onChange={event => { setPeriodId(event.target.value); setPage(1); }} className={`${inputStyle} min-h-11 cursor-pointer appearance-none pr-10`}><option value="">All academic periods</option>{periods.map(item => <option key={item.id} value={item.id}>{periodLabel(item)}</option>)}</select><ChevronDown size={16} aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400" /></label></>}
+          {tab === 'section' && <><label className="relative block"><span className="sr-only">Filter by course</span><select value={courseId} onChange={event => { setCourseId(event.target.value); setPage(1); }} className={`${inputStyle} min-h-11 cursor-pointer appearance-none pr-10`}><option value="">All courses</option>{courses.map(item => <option key={item.id} value={item.id}>{item.code} ({item.name})</option>)}</select><ChevronDown size={16} aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400" /></label><label className="relative block"><span className="sr-only">Filter by academic period</span><select value={periodId} onChange={event => { setPeriodId(event.target.value); setPage(1); }} className={`${inputStyle} min-h-11 cursor-pointer appearance-none pr-10`}><option value="">All academic periods</option>{periods.map(item => <option key={item.id} value={item.id}>{periodLabel(item)}</option>)}</select><ChevronDown size={16} aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400" /></label></>}
           <label className="relative block"><span className="sr-only">Filter by status</span><select value={status} onChange={event => { setStatus(event.target.value); setPage(1); }} className={`${inputStyle} min-h-11 cursor-pointer appearance-none pr-10`}><option value="">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select><ChevronDown size={16} aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400" /></label></div>
           <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-gray-500 dark:text-gray-400">{loading ? 'Loading academic records…' : `${filtered.length} ${title.toLowerCase()}${activeFilters ? ' match your filters' : ' available'}`}</p>{activeFilters && <button type="button" onClick={clearFilters} className={`rounded-lg px-2 py-1.5 text-xs font-semibold text-maroon-800 dark:text-maroon-300 ${focus}`}>Clear filters</button>}</div>
         </div>
@@ -160,6 +163,6 @@ export default function CourseManagement() {
           <div className="divide-y divide-gray-100 lg:hidden dark:divide-gray-700">{visible.map(item => <article key={item.id} className="p-4 sm:p-5"><div className="flex items-start justify-between gap-3"><div className="min-w-0 flex-1"><h3 className="break-words font-semibold">{tab === 'course' ? item.code : tab === 'section' ? `${courseFor(item)?.code || 'Course'} ${item.section_code}` : `${item.academic_year_start}–${item.academic_year_end}`}</h3><p className="mt-1 break-words text-sm leading-relaxed text-gray-600 dark:text-gray-300">{tab === 'course' ? item.name : tab === 'section' ? courseFor(item)?.name : item.semester}</p></div>{statusBadge(item.is_active)}</div><div className="mt-3 flex items-center justify-between gap-3"><p className="min-w-0 text-xs leading-relaxed text-gray-500 dark:text-gray-400">{tab === 'section' ? `${item.year_level} · ${periodLabel(periodFor(item))}` : `${sectionCount(tab, item.id)} linked sections`}</p>{edit(item)}</div></article>)}</div>
         </>}
         <Pagination meta={meta} page={currentPage} onPage={setPage} loading={loading} entity={title.toLowerCase()} />
-    </NurseListCard>
+    </NurseListCard>}
   </div>;
 }
