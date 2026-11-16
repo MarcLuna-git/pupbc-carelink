@@ -5,17 +5,12 @@ import {
   Loader2,
   ArrowLeft,
   User,
-  Camera,
-  Keyboard,
-  AlertCircle,
   CheckCircle,
   RefreshCw,
-  Clock,
-  CameraOff,
-  ImageUp,
 } from 'lucide-react';
 import api from '../../services/api';
 import KioskLayout from '../../layouts/KioskLayout';
+import KioskErrorModal from './KioskErrorModal';
 
 /* Ang mga QR decoder ay hiwalay na chunk; ikinakarga lang kapag camera o
    larawan ang gamit, hindi kapag manual na Student ID ang pinili. */
@@ -135,26 +130,21 @@ const KioskScan = ({
   const [studentId, setStudentId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [errorTitle, setErrorTitle] = useState('Camera Unavailable');
-  const [errorDetail, setErrorDetail] = useState('');
-  const [cameraInfo, setCameraInfo] = useState('');
+  const [errorTitle, setErrorTitle] = useState('Check-In Notice');
   const [success, setSuccess] = useState(false);
 
   const [cameraReady, setCameraReady] = useState(false);
-  const [scanTimeout, setScanTimeout] = useState(false);
   const [fileScanning, setFileScanning] = useState(false);
   const [liveCameraSupported, setLiveCameraSupported] = useState(true);
 
   const scannerRef = useRef(null);
   const fileInputRef = useRef(null);
-  const timeoutRef = useRef(null);
   const frameTimerRef = useRef(null);
   const frameCanvasRef = useRef(null);
   const facingRef = useRef(savedFacing());
 
-  const showError = (title, message, err) => {
-    setErrorTitle(title);
-    setErrorDetail(err ? describeError(err) : '');
+  const showError = (title, message) => {
+    setErrorTitle(title || 'Check-In Notice');
     setError(message);
   };
 
@@ -183,7 +173,6 @@ const KioskScan = ({
 
   const startQrScanner = async () => {
     setError('');
-    setScanTimeout(false);
     setCameraReady(false);
 
     isScanningRef.current = false;
@@ -322,25 +311,6 @@ const KioskScan = ({
 
       setCameraReady(true);
 
-      /* Ipakita kung aling camera at anong linaw ang gamit. */
-      try {
-        const settings = scannerRef.current?.getRunningTrackSettings?.();
-        const side =
-          settings?.facingMode === 'environment'
-            ? 'Back camera'
-            : settings?.facingMode === 'user'
-              ? 'Front camera'
-              : 'Camera';
-
-        setCameraInfo(
-          settings?.width
-            ? `${side} is on (${settings.width} x ${settings.height})`
-            : `${side} is on`
-        );
-      } catch {
-        setCameraInfo('Camera is on');
-      }
-
       /* Pangalawang decoder: binabasa ng jsQR ang buong frame ng video sa
          totoong linaw nito. Ang html5-qrcode ay nagbabasa lang sa laki ng
          nakikitang video, kaya madalas hindi nito mabasa ang maliit na QR. */
@@ -386,22 +356,11 @@ const KioskScan = ({
             console.error('QR frame read error:', frameErr);
             clearInterval(frameTimerRef.current);
             frameTimerRef.current = null;
-            setCameraInfo(
-              `Camera is on. Frame reader stopped: ${describeError(frameErr)}`
-            );
           } finally {
             busy = false;
           }
         }, 350);
       }
-
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-
-      timeoutRef.current = setTimeout(() => {
-        setScanTimeout(true);
-      }, 15000);
     } catch (err) {
       console.error('QR Scanner error:', err);
 
@@ -425,11 +384,6 @@ const KioskScan = ({
   };
 
   const stopQrScanner = async () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-
     if (frameTimerRef.current) {
       clearInterval(frameTimerRef.current);
       frameTimerRef.current = null;
@@ -452,7 +406,6 @@ const KioskScan = ({
     }
 
     setCameraReady(false);
-    setScanTimeout(false);
   };
 
   const handleQrImage = async (event) => {
@@ -464,7 +417,6 @@ const KioskScan = ({
 
     setFileScanning(true);
     setError('');
-    setScanTimeout(false);
 
     isScanningRef.current = false;
     scanCooldownRef.current = false;
@@ -621,14 +573,9 @@ const KioskScan = ({
           ? 'The QR code was not accepted. Please enter your Student ID.'
           : 'The kiosk could not reach the clinic server. Check the internet connection and try again.');
 
-      showError('QR Code Not Accepted', errorMessage, err);
+      showError('QR Code Not Accepted', errorMessage);
 
       isScanningRef.current = false;
-
-      /* Mag-offer ng manual entry kapag rejected ng backend ang QR. */
-      setTimeout(() => {
-        setMethodTab('manual');
-      }, 2000);
     } finally {
       setLoading(false);
     }
@@ -651,7 +598,6 @@ const KioskScan = ({
     stopQrScanner();
 
     setError('');
-    setScanTimeout(false);
     setCameraReady(false);
 
     isScanningRef.current = false;
@@ -680,16 +626,13 @@ const KioskScan = ({
       .toUpperCase();
 
     if (!trimmedStudentId || trimmedStudentId.length < 5) {
-      setErrorDetail('');
-      setError(
-        'Please enter a valid Student ID.'
-      );
+      setError('Please enter a valid Student ID.');
+      setErrorTitle('Invalid Student ID');
       return;
     }
 
     setLoading(true);
     setError('');
-    setErrorDetail('');
 
     try {
       const payload = {
@@ -722,10 +665,11 @@ const KioskScan = ({
 
       const errorMessage =
         err.response?.data?.message ||
-        err.message ||
-        'Student was not found. Please verify your Student ID.';
+        (err.response
+          ? 'Student was not found. Please verify your Student ID.'
+          : 'The kiosk could not reach the clinic server. Check the internet connection and try again.');
 
-      showError('', errorMessage, err.response?.status === 422 ? null : err);
+      showError('Check-In Notice', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -807,7 +751,7 @@ const KioskScan = ({
                   p-3
                   bg-white/5
                   hover:bg-white/10
-                  rounded-2xl
+                  rounded-[10px]
                   border border-white/10
                   transition
                 "
@@ -826,365 +770,58 @@ const KioskScan = ({
               </div>
             </div>
 
-            <div
-              className="
-                flex
-                bg-white/5
-                rounded-2xl
-                p-1.5
-                mb-6
-                border border-white/10
-              "
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  setError('');
-                  setMethodTab('qr');
-                }}
-                className={`
-                  flex-1
-                  py-3
-                  rounded-xl
-                  font-semibold
-                  text-sm
-                  transition
-                  flex
-                  items-center
-                  justify-center
-                  gap-2
-                  ${
-                    methodTab === 'qr'
-                      ? 'bg-yellow-400 text-maroon-900 shadow-lg'
-                      : 'text-white/70 hover:text-white/70'
-                  }
-                `}
-              >
-                <Camera className="w-4 h-4" />
-                Scan QR
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  stopQrScanner();
-                  setMethodTab('manual');
-                  setError('');
-                }}
-                className={`
-                  flex-1
-                  py-3
-                  rounded-xl
-                  font-semibold
-                  text-sm
-                  transition
-                  flex
-                  items-center
-                  justify-center
-                  gap-2
-                  ${
-                    methodTab === 'manual'
-                      ? 'bg-yellow-400 text-maroon-900 shadow-lg'
-                      : 'text-white/70 hover:text-white/70'
-                  }
-                `}
-              >
-                <Keyboard className="w-4 h-4" />
-                Enter ID
-              </button>
-            </div>
-
             {methodTab === 'qr' && (
               <div className="space-y-4">
-
-                {error && !cameraReady && (
-                  <div
-                    className="
-                      bg-white/5
-                      backdrop-blur-xl
-                      rounded-3xl
-                      p-8
-                      text-center
-                      border border-white/10
-                    "
-                  >
-                    <CameraOff
-                      className="
-                        w-14 h-14
-                        text-white/70
-                        mx-auto mb-4
-                      "
-                    />
-
-                    <h3 className="text-white font-semibold text-lg mb-2">
-                      {errorTitle}
-                    </h3>
-
-                    <p className="text-white/70 text-sm mb-3">
-                      {error}
-                    </p>
-
-                    {errorDetail && (
-                      <p className="text-white/50 text-xs break-words font-mono">
-                        Error details: {errorDetail}
-                      </p>
-                    )}
-
-                    <div className="h-6" />
-
-                    <div
-                      className="
-                        flex
-                        flex-col
-                        sm:flex-row
-                        gap-3
-                        justify-center
-                      "
-                    >
-                      {liveCameraSupported && (
-                        <button
-                          type="button"
-                          onClick={retryScanner}
-                          className="
-                            px-6 py-3
-                            bg-white/10
-                            text-white
-                            rounded-xl
-                            text-sm
-                            font-semibold
-                            hover:bg-white/20
-                            transition
-                            flex
-                            items-center
-                            justify-center
-                            gap-2
-                          "
-                        >
-                          <RefreshCw className="w-4 h-4" />
-
-                          Retry Camera
-                        </button>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          fileInputRef.current?.click()
-                        }
-                        disabled={fileScanning || loading}
-                        className="
-                          px-6 py-3
-                          bg-yellow-400
-                          text-maroon-900
-                          rounded-xl
-                          text-sm
-                          font-semibold
-                          hover:bg-yellow-300
-                          transition
-                          flex
-                          items-center
-                          justify-center
-                          gap-2
-                          disabled:opacity-50
-                        "
-                      >
-                        {fileScanning ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <ImageUp className="w-4 h-4" />
-                        )}
-
-                        {fileScanning
-                          ? 'Reading QR...'
-                          : 'Take / Upload QR Photo'}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={switchToManual}
-                        className="
-                          px-6 py-3
-                          bg-white/10
-                          text-white
-                          rounded-xl
-                          text-sm
-                          font-semibold
-                          hover:bg-white/20
-                          transition
-                        "
-                      >
-                        Enter ID Instead
-                      </button>
-                    </div>
-
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      capture="user"
-                      onChange={handleQrImage}
-                      className="hidden"
-                    />
-                  </div>
-                )}
-
-                <div className="relative">
+                <div className="relative mx-auto aspect-square w-full max-w-[95%]">
                   <div
                     id={qrRegionId}
-                    className="
-                      rounded-3xl
-                      overflow-hidden
-                      border-2 border-white/10
-                      w-full
-                      bg-black
-                    "
-                    style={{
-                      minHeight: '320px',
-                    }}
+                    className="h-full w-full overflow-hidden rounded-[10px] border-2 border-white/10 bg-black [&>div]:!h-full [&>div]:!w-full [&_video]:!h-full [&_video]:!w-full [&_video]:object-cover"
+                  />
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="user"
+                    onChange={handleQrImage}
+                    className="hidden"
                   />
 
                   {cameraReady && (
-                    <div
-                      className="
-                        absolute
-                        inset-0
-                        pointer-events-none
-                        rounded-3xl
-                        overflow-hidden
-                      "
-                    >
-                      <div
-                        className="
-                          absolute top-6 left-6
-                          w-10 h-10
-                          border-t-4 border-l-4
-                          border-yellow-400/60
-                          rounded-tl-xl
-                        "
-                      />
-
-                      <div
-                        className="
-                          absolute top-6 right-6
-                          w-10 h-10
-                          border-t-4 border-r-4
-                          border-yellow-400/60
-                          rounded-tr-xl
-                        "
-                      />
-
-                      <div
-                        className="
-                          absolute bottom-6 left-6
-                          w-10 h-10
-                          border-b-4 border-l-4
-                          border-yellow-400/60
-                          rounded-bl-xl
-                        "
-                      />
-
-                      <div
-                        className="
-                          absolute bottom-6 right-6
-                          w-10 h-10
-                          border-b-4 border-r-4
-                          border-yellow-400/60
-                          rounded-br-xl
-                        "
-                      />
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-[10px] overflow-hidden">
+                      <div className="relative h-56 w-56 sm:h-64 sm:w-64 rounded-[10px] border border-yellow-400/25 shadow-[0_0_0_9999px_rgba(0,0,0,0.48)]">
+                        {!loading && (
+                          <div className="absolute inset-0 overflow-hidden rounded-[10px]">
+                            <motion.div
+                              aria-hidden="true"
+                              initial={{ top: '8%' }}
+                              animate={{ top: ['8%', '88%', '8%'] }}
+                              transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+                              className="absolute left-3 right-3 h-0.5 bg-gradient-to-r from-transparent via-yellow-400 to-transparent shadow-[0_0_12px_2px_rgba(250,204,21,0.75)]"
+                            />
+                          </div>
+                        )}
+                        <div className="absolute -top-0.5 -left-0.5 h-10 w-10 rounded-tl-[10px] border-t-4 border-l-4 border-yellow-400" />
+                        <div className="absolute -top-0.5 -right-0.5 h-10 w-10 rounded-tr-[10px] border-t-4 border-r-4 border-yellow-400" />
+                        <div className="absolute -bottom-0.5 -left-0.5 h-10 w-10 rounded-bl-[10px] border-b-4 border-l-4 border-yellow-400" />
+                        <div className="absolute -bottom-0.5 -right-0.5 h-10 w-10 rounded-br-[10px] border-b-4 border-r-4 border-yellow-400" />
+                      </div>
                     </div>
-                  )}
-
-                  {scanTimeout && cameraReady && (
-                    <motion.div
-                      initial={{
-                        opacity: 0,
-                        y: 20,
-                      }}
-                      animate={{
-                        opacity: 1,
-                        y: 0,
-                      }}
-                      className="
-                        absolute
-                        bottom-4
-                        left-4
-                        right-4
-                        bg-black/90
-                        backdrop-blur-xl
-                        rounded-2xl
-                        p-4
-                        border border-yellow-400/30
-                        z-10
-                      "
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <Clock className="w-4 h-4 text-yellow-400" />
-
-                        <p className="text-white/70 text-sm">
-                          Having trouble scanning?
-                        </p>
-                      </div>
-
-                      <p className="text-white/50 text-xs mb-3">
-                        Hold the QR code still and one hand away from the camera. Make the phone screen brighter.
-                      </p>
-
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            fileInputRef.current?.click()
-                          }
-                          className="
-                            flex-1
-                            py-3
-                            bg-white/10
-                            text-white
-                            rounded-xl
-                            text-sm
-                            font-semibold
-                            hover:bg-white/20
-                            transition
-                          "
-                        >
-                          Use Photo
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={switchToManual}
-                          className="
-                            flex-1
-                            py-3
-                            bg-yellow-400
-                            text-maroon-900
-                            rounded-xl
-                            text-sm
-                            font-semibold
-                            hover:bg-yellow-300
-                            transition
-                          "
-                        >
-                          Enter ID
-                        </button>
-                      </div>
-                    </motion.div>
                   )}
                 </div>
 
                 {cameraReady && (
-                  <div className="flex flex-wrap justify-center gap-2">
+                  <div className="flex justify-center">
                     <button
                       type="button"
                       onClick={switchCamera}
                       disabled={fileScanning || loading}
                       className="
-                        px-4 py-2
+                        px-5 py-2.5
                         bg-white/5
                         border border-white/10
-                        text-white/70
-                        rounded-xl
+                        text-white/80
+                        rounded-[10px]
                         text-xs
                         font-semibold
                         hover:bg-white/10
@@ -1199,46 +836,6 @@ const KioskScan = ({
 
                       Switch Camera
                     </button>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        fileInputRef.current?.click()
-                      }
-                      disabled={fileScanning || loading}
-                      className="
-                        px-4 py-2
-                        bg-white/5
-                        border border-white/10
-                        text-white/70
-                        rounded-xl
-                        text-xs
-                        font-semibold
-                        hover:bg-white/10
-                        transition
-                        flex
-                        items-center
-                        gap-2
-                        disabled:opacity-50
-                      "
-                    >
-                      {fileScanning ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <ImageUp className="w-4 h-4" />
-                      )}
-
-                      Use QR Photo Instead
-                    </button>
-
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      capture="user"
-                      onChange={handleQrImage}
-                      className="hidden"
-                    />
                   </div>
                 )}
 
@@ -1264,12 +861,6 @@ const KioskScan = ({
                     ? 'Show your CareLink QR code to the camera'
                     : 'Take a clear photo of your QR code or enter your Student ID'}
                 </p>
-
-                {cameraReady && cameraInfo && (
-                  <p className="text-white/40 text-[11px] text-center">
-                    {cameraInfo}
-                  </p>
-                )}
               </div>
             )}
 
@@ -1313,7 +904,7 @@ const KioskScan = ({
                         w-full
                         bg-white/5
                         border-2 border-white/10
-                        rounded-2xl
+                        rounded-[10px]
                         pl-14
                         pr-5
                         py-5
@@ -1339,42 +930,6 @@ const KioskScan = ({
                   </div>
                 </div>
 
-                {error && (
-                  <div
-                    className="
-                      bg-red-500/10
-                      border border-red-500/20
-                      rounded-2xl
-                      p-4
-                      mb-4
-                      flex
-                      items-start
-                      gap-3
-                    "
-                  >
-                    <AlertCircle
-                      className="
-                        w-5 h-5
-                        text-red-400
-                        mt-0.5
-                        flex-shrink-0
-                      "
-                    />
-
-                    <div>
-                      <p className="text-red-300 text-sm">
-                        {error}
-                      </p>
-
-                      {errorDetail && (
-                        <p className="text-red-300/60 text-xs mt-1 break-words font-mono">
-                          Error details: {errorDetail}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
                 <motion.button
                   whileHover={{
                     scale: 1.02,
@@ -1392,7 +947,7 @@ const KioskScan = ({
                     to-yellow-500
                     text-maroon-900
                     font-bold
-                    rounded-2xl
+                    rounded-[10px]
                     text-lg
                     transition
                     flex
@@ -1421,6 +976,20 @@ const KioskScan = ({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <KioskErrorModal
+        open={Boolean(error)}
+        title={errorTitle}
+        message={error}
+        primaryLabel={methodTab === 'qr' && liveCameraSupported ? 'Try Again' : 'OK'}
+        onClose={() => {
+          const shouldRetry = methodTab === 'qr' && liveCameraSupported && !cameraReady;
+          setError('');
+          if (shouldRetry) retryScanner();
+        }}
+        secondaryLabel={methodTab === 'qr' ? 'Enter ID Instead' : undefined}
+        onSecondary={methodTab === 'qr' ? () => { setError(''); switchToManual(); } : undefined}
+      />
     </KioskLayout>
   );
 };

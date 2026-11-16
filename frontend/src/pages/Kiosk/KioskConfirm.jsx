@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, CheckCircle, Loader2, Clock, Info } from 'lucide-react';
 import api from '../../services/api';
 import KioskLayout from '../../layouts/KioskLayout';
+import KioskErrorModal from './KioskErrorModal';
 import { PAIN_LEVELS, SYMPTOM_DURATIONS, needsTriage, painBand } from '../../utils/kioskTriage';
 import { formatAppointmentDate } from '../../utils/appointmentDate';
 
@@ -50,7 +51,7 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
     return () => clearTimeout(timer);
   }, [has_active_checkin, onDone]);
   if (has_active_checkin && active_checkin) {
-    return <KioskLayout><div className="text-center text-white"><CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" /><h1 className="text-2xl font-bold">Already Checked In</h1><p className="text-6xl font-black text-yellow-300 my-6">{active_checkin.queue_number}</p><p>Please wait for your number to be called.</p><button onClick={onDone} className="mt-6 bg-yellow-400 text-slate-900 rounded-xl px-6 py-3 font-bold">Done / Return Home</button><p className="mt-3 text-sm">Returns home automatically after 30 seconds.</p></div></KioskLayout>;
+    return <KioskLayout><div className="text-center text-white"><CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" /><h1 className="text-2xl font-bold">Already Checked In</h1><p className="text-6xl font-black text-yellow-300 my-6">{active_checkin.queue_number}</p><p>Please wait for your number to be called.</p><button onClick={onDone} className="mt-6 bg-yellow-400 text-slate-900 rounded-[10px] px-6 py-3 font-bold">Done / Return Home</button><p className="mt-3 text-sm">Returns home automatically after 30 seconds.</p></div></KioskLayout>;
   }
 
   const toggleFlag = (flag) => setRedFlags((current) => current.includes(flag) ? current.filter((item) => item !== flag) : [...current.filter((item) => item !== 'none'), flag]);
@@ -83,24 +84,24 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
     } finally { setLoading(false); }
   };
 
-  return <KioskLayout><form onSubmit={submit} className="w-full max-w-lg mx-auto space-y-4 text-white">
-    <button type="button" onClick={onBack} className="p-3 bg-white/5 rounded-2xl"><ArrowLeft className="w-5 h-5 text-white/70" /></button>
+  return <KioskLayout><form onSubmit={submit} className="w-full max-w-lg mx-auto space-y-4 pb-10 text-white">
+    <button type="button" onClick={onBack} className="p-3 bg-white/5 rounded-[10px]"><ArrowLeft className="w-5 h-5 text-white/70" /></button>
     <div>
       <h1 className="text-2xl font-bold">Confirm Today&apos;s Appointment</h1>
       <p className="mt-1 text-sm text-white/60">{triage ? 'Review your appointment, then tell us how you are feeling.' : 'Review your appointment, then check in.'}</p>
     </div>
     <h2 className={SECTION_TITLE}>Appointment Details</h2>
-    <div className="rounded-2xl border border-green-400/20 bg-green-500/5 p-4">
+    <div className="rounded-[10px] border border-green-400/20 bg-green-500/5 p-4">
       <p className="font-semibold">{user.first_name} {user.last_name}</p>
       <p className="text-sm text-white/70">{formatAppointmentDate(appointment?.appointment_date)} · {appointment?.time_slot}</p>
       <p className="text-sm text-green-300 mt-2">{appointment?.service === 'Consultation' ? 'General Consultation' : appointment?.service}</p>
       {checkinOpensAt && checkinDeadlineAt && (
         <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
-          <div className="flex items-center gap-1 bg-blue-500/20 border border-blue-500/30 rounded-lg px-2 py-1">
+          <div className="flex items-center gap-1 bg-blue-500/20 border border-blue-500/30 rounded-[10px] px-2 py-1">
             <Clock className="w-3 h-3 text-blue-400" />
             <span className="text-blue-300">Check-in opens: {checkinOpensAt}</span>
           </div>
-          <div className="flex items-center gap-1 bg-yellow-500/20 border border-yellow-500/30 rounded-lg px-2 py-1">
+          <div className="flex items-center gap-1 bg-yellow-500/20 border border-yellow-500/30 rounded-[10px] px-2 py-1">
             <Clock className="w-3 h-3 text-yellow-400" />
             <span className="text-yellow-300">Deadline: {checkinDeadlineAt}</span>
           </div>
@@ -109,13 +110,13 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
     </div>
     {!triage && <>
     <h2 className={SECTION_TITLE}>Reason for Visit</h2>
-    <p className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">{appointment?.concern || appointment?.service}</p>
+    <p className="rounded-[10px] border border-white/10 bg-white/5 p-3 text-sm text-white/80">{appointment?.concern || appointment?.service}</p>
     <p className="text-xs text-white/60">No health check needed. You will get a Regular queue number.</p>
     </>}
     {triage && <>
     <h2 className={SECTION_TITLE}>Symptoms</h2>
     <label className="block text-sm text-white/70">What are your symptoms? *
-      <textarea required rows="3" maxLength={500} value={chiefComplaint} onChange={(e) => { setChiefComplaint(e.target.value); setError(''); }} placeholder="Example: headache and fever" className="mt-2 w-full rounded-xl bg-white/5 border border-white/10 p-3 text-white placeholder:text-white/40" />
+      <textarea required rows="3" maxLength={500} value={chiefComplaint} onChange={(e) => { setChiefComplaint(e.target.value); setError(''); }} placeholder="Example: headache and fever" className="mt-2 w-full rounded-[10px] bg-white/5 border border-white/10 p-3 text-white placeholder:text-white/40" />
     </label>
     <h2 className={SECTION_TITLE}>Duration</h2>
     <fieldset>
@@ -128,7 +129,7 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
             role="radio"
             aria-checked={duration === option}
             onClick={() => { setDuration(option); setError(''); }}
-            className={'min-h-12 cursor-pointer rounded-xl border px-3 font-bold transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ' + (duration === option ? 'border-yellow-400 bg-yellow-400 text-maroon-950' : 'border-white/30 bg-white/5 text-white hover:bg-white/15')}
+            className={'min-h-12 cursor-pointer rounded-[10px] border px-3 font-bold transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ' + (duration === option ? 'border-yellow-400 bg-yellow-400 text-maroon-950' : 'border-white/30 bg-white/5 text-white hover:bg-white/15')}
           >
             {option.replace('-', '–')}
           </button>
@@ -147,7 +148,7 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
             role="radio"
             aria-checked={painLevel === level}
             onClick={() => { setPainLevel(level); setError(''); }}
-            className={'min-h-12 cursor-pointer rounded-xl border text-lg font-bold transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ' + (painLevel === level ? 'border-yellow-400 bg-yellow-400 text-maroon-950' : 'border-white/30 bg-white/5 text-white hover:bg-white/15')}
+            className={'min-h-12 cursor-pointer rounded-[10px] border text-lg font-bold transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ' + (painLevel === level ? 'border-yellow-400 bg-yellow-400 text-maroon-950' : 'border-white/30 bg-white/5 text-white hover:bg-white/15')}
           >
             {level}
           </button>
@@ -160,13 +161,16 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone }) => {
     <fieldset><legend className="text-sm text-white/70 mb-2">Red flags (select any that apply)</legend><div className="grid gap-2">{FLAGS.map(([value, label]) => <label key={value} className="flex gap-2 items-center text-sm text-white/70"><input type="checkbox" checked={redFlags.includes(value)} onChange={() => toggleFlag(value)} />{label}</label>)}
       <label className="flex gap-2 items-center text-sm text-white/70"><input type="checkbox" checked={hasOther} onChange={toggleOther} />Others</label>
       {hasOther && <label className="block text-sm text-white/70">Please describe
-        <textarea rows="2" autoFocus maxLength={1000} value={notes} onChange={(e) => { setNotes(e.target.value); setError(''); }} placeholder="Describe your other concern" className="mt-2 w-full rounded-xl bg-white/5 border border-white/10 p-3 text-white placeholder:text-white/40" />
+        <textarea rows="2" autoFocus maxLength={1000} value={notes} onChange={(e) => { setNotes(e.target.value); setError(''); }} placeholder="Describe your other concern" className="mt-2 w-full rounded-[10px] bg-white/5 border border-white/10 p-3 text-white placeholder:text-white/40" />
       </label>}
     </div></fieldset>
     </>}
-    {error && <p className="rounded-xl bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
-    <button disabled={loading} className="w-full rounded-xl bg-yellow-400 py-3 font-bold text-slate-900 disabled:opacity-50">{loading ? <Loader2 className="mx-auto animate-spin" /> : 'Confirm and Check In'}</button>
-  </form></KioskLayout>;
+    <div className="pt-2 flex justify-center">
+      <button disabled={loading} className="w-full sm:w-auto rounded-[10px] bg-yellow-400 px-8 py-3 font-bold text-slate-900 transition-colors hover:bg-yellow-300 disabled:opacity-50">{loading ? <Loader2 className="mx-auto animate-spin" /> : 'Confirm and Check In'}</button>
+    </div>
+  </form>
+  <KioskErrorModal open={Boolean(error)} title="Check-In Notice" message={error} onClose={() => setError('')} />
+  </KioskLayout>;
 };
 
 export default KioskConfirm;

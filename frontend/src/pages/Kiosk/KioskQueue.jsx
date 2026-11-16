@@ -50,7 +50,7 @@ const KioskQueue = ({ checkin, onDone }) => {
         <motion.div
           initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 200, delay: 0.4 }}
-          className={`rounded-3xl p-8 md:p-10 mb-6 border-2 relative overflow-hidden ${
+          className={`rounded-[10px] p-8 md:p-10 mb-6 border-2 relative overflow-hidden ${
             isPriority ? 'bg-red-500/5 border-red-500/30' : 'bg-yellow-400/5 border-yellow-400/30'
           }`}>
           <div className={`absolute inset-0 opacity-10 ${isPriority ? 'bg-red-500' : 'bg-yellow-400'}`} />
@@ -66,17 +66,17 @@ const KioskQueue = ({ checkin, onDone }) => {
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-          <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-white/10">
+          <div className="bg-white/5 backdrop-blur-xl rounded-[10px] p-4 border border-white/10">
             <User className="w-5 h-5 text-yellow-300 mx-auto mb-1" />
             <p className="text-white/70 text-xs">Patient</p>
             <p className="text-white text-sm font-semibold truncate">Your clinic visit</p>
           </div>
-          <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-white/10">
+          <div className="bg-white/5 backdrop-blur-xl rounded-[10px] p-4 border border-white/10">
             <Users className="w-5 h-5 text-yellow-300 mx-auto mb-1" />
             <p className="text-white/70 text-xs">Ahead</p>
             <p className="text-white text-sm font-semibold">{aheadCount} patient{aheadCount !== 1 ? 's' : ''}</p>
           </div>
-          <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-white/10">
+          <div className="bg-white/5 backdrop-blur-xl rounded-[10px] p-4 border border-white/10">
             <Clock className="w-5 h-5 text-yellow-300 mx-auto mb-1" />
             <p className="text-white/70 text-xs">Est. Wait</p>
             <p className="text-white text-sm font-semibold">~{waitTime} min</p>
@@ -84,7 +84,7 @@ const KioskQueue = ({ checkin, onDone }) => {
         </div>
 
         {queueData?.now_serving && (
-          <div className="bg-green-500/5 backdrop-blur-xl rounded-2xl p-4 mb-6 border border-green-500/20 flex items-center justify-between">
+          <div className="bg-green-500/5 backdrop-blur-xl rounded-[10px] p-4 mb-6 border border-green-500/20 flex items-center justify-between">
             <span className="text-green-400 text-sm font-semibold">NOW SERVING</span>
             <span className="text-green-300 text-xl font-bold">{queueData.now_serving.queue_number}</span>
           </div>
@@ -97,7 +97,7 @@ const KioskQueue = ({ checkin, onDone }) => {
         <motion.button
           whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
           onClick={onDone}
-          className="w-full py-5 bg-gradient-to-r from-yellow-400 to-yellow-500 text-maroon-900 font-bold rounded-2xl text-lg transition flex items-center justify-center gap-3 shadow-xl shadow-yellow-400/10">
+          className="w-full py-5 bg-gradient-to-r from-yellow-400 to-yellow-500 text-maroon-900 font-bold rounded-[10px] text-lg transition flex items-center justify-center gap-3 shadow-xl shadow-yellow-400/10">
           Done
           <ArrowRight className="w-5 h-5" />
         </motion.button>

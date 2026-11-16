@@ -26,6 +26,8 @@ import {
   Hash,
   History,
   ArrowUpRight,
+  ChevronRight,
+  X,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import useVisiblePolling from '../../../hooks/useVisiblePolling';
@@ -132,6 +134,18 @@ const CHECKIN_TIPS = [
   { icon: Info, title: 'Use the clinic kiosk', desc: 'Scan your QR code at the Student Clinic kiosk.' },
 ];
 
+const QR_STATE_BADGES = {
+  active: { label: 'Active Today', tone: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800' },
+  checked_in: { label: 'Checked In', tone: 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-900/30 dark:text-sky-300 dark:border-sky-800' },
+  completed: { label: 'Completed', tone: 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600' },
+  no_show: { label: 'No-Show', tone: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800' },
+  expired: { label: 'Expired', tone: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800' },
+  upcoming: { label: 'Upcoming', tone: 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600' },
+  pending: { label: 'Pending', tone: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800' },
+  cancelled: { label: 'Cancelled', tone: 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600' },
+  rejected: { label: 'Declined', tone: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800' },
+};
+
 const QR = () => {
   const user = useMemo(
     () => getUser('student'),
@@ -157,6 +171,8 @@ const QR = () => {
   const [qrCodeHash, setQrCodeHash] = useState('');
   const [qrUsable, setQrUsable] = useState(false);
   const [appointments, setAppointments] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [selectedActivity, setSelectedActivity] = useState(null);
   const [qrDataUrl, setQrDataUrl] = useState('');
   const hasLoadedRef = useRef(false);
 
@@ -209,6 +225,15 @@ const QR = () => {
   /* Cosmetic hold for the route-loading animation — see ROUTE LOADING note. */
   const [routeReady, setRouteReady] = useState(false);
 
+  useEffect(() => {
+    if (!selectedActivity) return undefined;
+    const handleKey = (event) => {
+      if (event.key === 'Escape') setSelectedActivity(null);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [selectedActivity]);
+
   /* Demo timer: keeps the loading phase on screen long enough to see it. */
   useEffect(() => {
     const timer = setTimeout(() => setRouteReady(true), ROUTE_LOADING_DELAY);
@@ -233,6 +258,7 @@ const QR = () => {
 
       const appointmentPayload = qrData?.appointment;
       setAppointments(appointmentPayload ? [appointmentPayload] : []);
+      setRecentActivity(Array.isArray(qrData?.recent_activity) ? qrData.recent_activity : []);
       // Clear only a previous load failure; keep e.g. the download notice.
       setMessage((current) => (current === LOAD_ERROR ? '' : current));
     } catch (error) {
@@ -903,6 +929,186 @@ const QR = () => {
           </Link>
         </div>
       )}
+
+      {/* Recent QR Activity */}
+      <div className={CARD}>
+        <CardTitle icon={History}>Recent QR Activity</CardTitle>
+
+        {recentActivity.length > 0 ? (() => {
+          const todayItems = recentActivity.filter((item) => item.appointment_date === today);
+          const pastItems = recentActivity.filter((item) => item.appointment_date !== today);
+
+          const renderActivityRow = (item) => {
+            const badge = QR_STATE_BADGES[item.qr_state] || QR_STATE_BADGES.completed;
+            const checkedInTime = formatTime(item.checked_in_at);
+
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setSelectedActivity(item)}
+                className="flex w-full items-center justify-between gap-4 rounded-xl border border-gray-200 bg-gray-50/70 p-4 text-left transition hover:border-gray-300 hover:bg-gray-100/80 dark:border-gray-700 dark:bg-gray-900/30 dark:hover:border-gray-600 dark:hover:bg-gray-800/60"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {item.service === 'Consultation' ? 'General Consultation' : item.service || 'Appointment'}
+                    </p>
+                    <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold ${badge.tone}`}>
+                      {badge.label}
+                    </span>
+                  </div>
+                  <p className="mt-1 truncate text-xs text-gray-500 dark:text-gray-400">
+                    {item.qr_note}
+                    {checkedInTime ? ` · Checked in at ${checkedInTime}` : ''}
+                  </p>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-3">
+                  <div className="text-right text-xs text-gray-500 dark:text-gray-400">
+                    <p className="font-medium text-gray-700 dark:text-gray-300">
+                      {formatDate(item.appointment_date)}
+                    </p>
+                    <p>{item.time_slot || 'N/A'}</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-gray-400" />
+                </div>
+              </button>
+            );
+          };
+
+          return (
+            <div className="space-y-5">
+              {todayItems.length > 0 && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    Today
+                  </p>
+                  <div className="space-y-2.5">
+                    {todayItems.map(renderActivityRow)}
+                  </div>
+                </div>
+              )}
+
+              {pastItems.length > 0 && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    Past &amp; Other Activity
+                  </p>
+                  <div className="space-y-2.5">
+                    {pastItems.map(renderActivityRow)}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })() : (
+          <div className="rounded-xl bg-gray-50 p-5 text-center text-sm text-gray-500 dark:bg-gray-900/30 dark:text-gray-400">
+            No recent QR or check-in activity yet.
+          </div>
+        )}
+      </div>
+
+      {selectedActivity && (() => {
+        const badge = QR_STATE_BADGES[selectedActivity.qr_state] || QR_STATE_BADGES.completed;
+        const checkedInTime = formatTime(selectedActivity.checked_in_at);
+
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setSelectedActivity(null);
+            }}
+          >
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="qr-activity-title"
+              className="relative w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-700 dark:bg-gray-800"
+            >
+              <button
+                type="button"
+                onClick={() => setSelectedActivity(null)}
+                aria-label="Close"
+                className="absolute right-4 top-4 rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="text-center">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-maroon-50 text-maroon-800 dark:bg-maroon-900/30 dark:text-maroon-300">
+                  <QrCode className="h-6 w-6" />
+                </div>
+                <h3 id="qr-activity-title" className="text-lg font-bold text-gray-900 dark:text-white">
+                  QR Activity Details
+                </h3>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  {selectedActivity.qr_note}
+                </p>
+              </div>
+
+              <div className="mt-5 divide-y divide-gray-200 rounded-xl bg-gray-50 px-4 text-sm dark:divide-gray-700 dark:bg-gray-900/40">
+                <div className="flex items-center justify-between gap-4 py-3">
+                  <span className="text-gray-500 dark:text-gray-400">Status</span>
+                  <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold ${badge.tone}`}>
+                    {badge.label}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-4 py-3">
+                  <span className="text-gray-500 dark:text-gray-400">Service</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {selectedActivity.service === 'Consultation' ? 'General Consultation' : selectedActivity.service || 'Appointment'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-4 py-3">
+                  <span className="text-gray-500 dark:text-gray-400">Date</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {formatDateWithWeekday(selectedActivity.appointment_date)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-4 py-3">
+                  <span className="text-gray-500 dark:text-gray-400">Time</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {selectedActivity.time_slot || 'N/A'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-4 py-3">
+                  <span className="text-gray-500 dark:text-gray-400">Reference</span>
+                  <span className="font-mono font-semibold text-gray-900 dark:text-white">
+                    {selectedActivity.reference_number || 'N/A'}
+                  </span>
+                </div>
+                {selectedActivity.queue_number && (
+                  <div className="flex items-center justify-between gap-4 py-3">
+                    <span className="text-gray-500 dark:text-gray-400">Queue Number</span>
+                    <span className="font-mono font-semibold text-gray-900 dark:text-white">
+                      {selectedActivity.queue_number}
+                    </span>
+                  </div>
+                )}
+                {checkedInTime && (
+                  <div className="flex items-center justify-between gap-4 py-3">
+                    <span className="text-gray-500 dark:text-gray-400">Checked In At</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {checkedInTime}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-5 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setSelectedActivity(null)}
+                  className="rounded-xl bg-gray-100 px-6 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                >
+                  Close
+                </button>
+              </div>
+            </section>
+          </div>
+        );
+      })()}
     </motion.div>
   );
 };

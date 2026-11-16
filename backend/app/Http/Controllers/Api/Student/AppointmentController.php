@@ -544,8 +544,76 @@ class AppointmentController extends Controller
                 'appointment' => $appointment
                     ? $this->appointmentData($appointment)
                     : null,
+                'recent_activity' => $this->qrRecentActivity($user->id),
             ],
         ]);
+    }
+
+    private function qrRecentActivity(string|int $userId): array
+    {
+        $today = Carbon::now(self::TIMEZONE)->toDateString();
+
+        return Appointment::where('user_id', $userId)
+            ->with([
+                'checkins' => fn ($query) => $this->selectStudentCheckinColumns($query),
+            ])
+            ->orderByRaw("CASE WHEN appointment_date = ? AND status = 'approved' AND no_show IS NOT TRUE THEN 0 ELSE 1 END", [$today])
+            ->orderByDesc('created_at')
+            ->orderByDesc('appointment_date')
+            ->limit(5)
+            ->get()
+            ->map(function (Appointment $item) use ($today) {
+                $checkin = $item->checkins->first();
+                $date = $item->appointment_date?->toDateString();
+                $noShow = (bool) $item->no_show;
+                $queueStatus = $checkin?->status;
+                $checkedInAt = $checkin?->checked_in_at ?? $checkin?->check_in_time;
+
+                if ($item->status === 'completed' || $queueStatus === 'completed') {
+                    $qrState = 'completed';
+                    $qrNote = 'Checked in and consultation completed.';
+                } elseif ($noShow || $queueStatus === 'no_show') {
+                    $qrState = 'no_show';
+                    $qrNote = 'Marked as no-show (missed check-in or call window).';
+                } elseif ($checkin) {
+                    $qrState = 'checked_in';
+                    $qrNote = $checkin->queue_number
+                        ? "Checked in at kiosk ({$checkin->queue_number})."
+                        : 'Checked in at kiosk.';
+                } elseif ($item->status === 'approved' && $date && $date < $today) {
+                    $qrState = 'expired';
+                    $qrNote = 'Expired (appointment date passed without check-in).';
+                } elseif ($item->status === 'approved' && $date === $today) {
+                    $qrState = 'active';
+                    $qrNote = 'QR active for today\'s check-in.';
+                } elseif ($item->status === 'approved') {
+                    $qrState = 'upcoming';
+                    $qrNote = 'QR will activate on your appointment day.';
+                } elseif ($item->status === 'pending') {
+                    $qrState = 'pending';
+                    $qrNote = 'Waiting for nurse approval before QR activates.';
+                } elseif ($item->status === 'cancelled') {
+                    $qrState = 'cancelled';
+                    $qrNote = 'Appointment cancelled; QR deactivated.';
+                } else {
+                    $qrState = 'rejected';
+                    $qrNote = 'Appointment declined; QR not activated.';
+                }
+
+                return [
+                    'id' => $item->id,
+                    'reference_number' => $item->reference_number,
+                    'service' => $item->service,
+                    'appointment_date' => $date,
+                    'time_slot' => $item->time_slot,
+                    'qr_state' => $qrState,
+                    'qr_note' => $qrNote,
+                    'queue_number' => $checkin?->queue_number,
+                    'checked_in_at' => $checkedInAt?->toIso8601String(),
+                ];
+            })
+            ->values()
+            ->all();
     }
 
     public function checkQRStatus()

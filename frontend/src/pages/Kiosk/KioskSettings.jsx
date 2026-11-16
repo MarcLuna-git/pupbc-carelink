@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Home, Wrench, Clock, Lock, Loader2, ShieldAlert } from 'lucide-react';
 import KioskLayout from '../../layouts/KioskLayout';
+import KioskErrorModal from './KioskErrorModal';
 import { fetchKioskDevTools, updateKioskTimeGuardBypass, useKioskTimeGuardBypass } from '../../services/devTools';
 
 /*
@@ -74,7 +75,7 @@ const KioskSettings = () => {
     <KioskLayout>
       <Link
         to="/kiosk"
-        className="absolute left-6 top-6 z-20 inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20 md:left-10 md:top-8"
+        className="absolute left-6 top-6 z-20 inline-flex items-center gap-2 rounded-[10px] border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20 md:left-10 md:top-8"
       >
         <Home className="h-5 w-5" />
         Home
@@ -90,7 +91,7 @@ const KioskSettings = () => {
           <p className="mt-2 text-sm text-white/70">For clinic staff only.</p>
         </div>
 
-        <section className="rounded-3xl border border-white/10 bg-white/10 p-6 text-white backdrop-blur-md md:p-8">
+        <section className="rounded-[10px] border border-white/10 bg-white/10 p-6 text-white backdrop-blur-md md:p-8">
           <h2 className="mb-1 flex items-center gap-2 text-lg font-bold">
             <Wrench className="h-5 w-5 text-yellow-300" />
             Developer Tools
@@ -98,7 +99,7 @@ const KioskSettings = () => {
           <p className="mb-6 text-xs text-white/70">Testing tools for the clinic flow. Applies to this kiosk.</p>
 
           {!authorized ? (
-            <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-4 text-sm text-white/70">
+            <div className="flex items-start gap-3 rounded-[10px] bg-white/5 p-4 text-sm text-white/70">
               <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-yellow-300" />
               <p>This device is not authorized yet. Go to the kiosk home to authorize it first.</p>
             </div>
@@ -107,10 +108,10 @@ const KioskSettings = () => {
               <Loader2 className="h-5 w-5 animate-spin" /> Loading settings…
             </div>
           ) : !available ? (
-            <p className="rounded-2xl bg-white/5 p-4 text-sm text-white/70">Developer Tools are turned off on this server.</p>
+            <p className="rounded-[10px] bg-white/5 p-4 text-sm text-white/70">Developer Tools are turned off on this server.</p>
           ) : (
             <div className="space-y-4">
-              <div className="flex items-center justify-between gap-4 rounded-2xl bg-white/5 p-4">
+              <div className="flex items-center justify-between gap-4 rounded-[10px] bg-white/5 p-4">
                 <div className="flex min-w-0 items-start gap-3">
                   <Clock className="mt-0.5 h-5 w-5 shrink-0 text-yellow-300" />
                   <div className="min-w-0">
@@ -140,7 +141,7 @@ const KioskSettings = () => {
               </div>
 
               {showPassword && !timeGuardOff && (
-                <form onSubmit={confirm} className="space-y-3 rounded-2xl border border-yellow-300/30 bg-yellow-300/10 p-4">
+                <form onSubmit={confirm} className="space-y-3 rounded-[10px] border border-yellow-300/30 bg-yellow-300/10 p-4">
                   <p className="text-xs font-semibold text-yellow-200">Enter the developer password to remove the time guard.</p>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/70" />
@@ -153,14 +154,14 @@ const KioskSettings = () => {
                       placeholder="Developer password"
                       aria-label="Developer password"
                       required
-                      className="w-full rounded-xl border border-white/15 bg-black/20 py-3 pl-11 pr-4 text-sm text-white placeholder:text-white/70 focus:outline-none focus:ring-2 focus:ring-yellow-300"
+                      className="w-full rounded-[10px] border border-white/15 bg-black/20 py-3 pl-11 pr-4 text-sm text-white placeholder:text-white/70 focus:outline-none focus:ring-2 focus:ring-yellow-300"
                     />
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="submit"
                       disabled={saving || !password}
-                      className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-5 py-3 text-sm font-semibold text-maroon-950 transition hover:bg-yellow-300 disabled:opacity-50"
+                      className="inline-flex items-center gap-2 rounded-[10px] bg-yellow-400 px-5 py-3 text-sm font-semibold text-maroon-950 transition hover:bg-yellow-300 disabled:opacity-50"
                     >
                       {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wrench className="h-4 w-4" />}
                       {saving ? 'Checking…' : 'Remove time guard'}
@@ -169,7 +170,7 @@ const KioskSettings = () => {
                       type="button"
                       disabled={saving}
                       onClick={() => { setShowPassword(false); setPassword(''); setError(''); }}
-                      className="rounded-xl px-5 py-3 text-sm font-semibold text-white/70 transition hover:bg-white/10 disabled:opacity-50"
+                      className="rounded-[10px] px-5 py-3 text-sm font-semibold text-white/70 transition hover:bg-white/10 disabled:opacity-50"
                     >
                       Cancel
                     </button>
@@ -179,10 +180,10 @@ const KioskSettings = () => {
             </div>
           )}
 
-          {error && <p role="alert" className="mt-4 text-sm text-red-300">{error}</p>}
           {message && <p role="status" className="mt-4 text-sm text-green-300">{message}</p>}
         </section>
       </motion.div>
+      <KioskErrorModal open={Boolean(error)} title="Kiosk Settings" message={error} onClose={() => setError('')} />
     </KioskLayout>
   );
 };

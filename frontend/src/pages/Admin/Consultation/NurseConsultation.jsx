@@ -11,7 +11,7 @@ import ConsultationVisit from './ConsultationVisit';
 import BatchRelease from './BatchRelease';
 import NurseRecords from '../Records/NurseRecords';
 import { PRIORITY } from './QueuePatientModal';
-import { queueRowsFrom } from './queueRows';
+import { consultationPath, queueRowsFrom } from './queueRows';
 
 /*
  * Nurse → Consultation: the consultation form, on its own page. The Queue page sends the nurse
@@ -214,7 +214,7 @@ const NurseConsultation = () => {
             <table className="w-full text-left text-sm">
               <caption className="sr-only">Patients in consultation</caption>
               <thead className="border-b border-gray-200 bg-gray-50 text-xs font-medium text-gray-500 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-400">
-                <tr>{['Queue No.', 'Student', 'Priority', 'Reason for Visit'].map(label => <th scope="col" key={label} className="whitespace-nowrap px-3 py-3 sm:px-4">{label}</th>)}</tr>
+                <tr>{['Queue No.', 'Student', 'Priority', 'Reason for Visit', 'Actions'].map(label => <th scope="col" key={label} className="whitespace-nowrap px-3 py-3 sm:px-4">{label}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                 {inConsultation.map(s => {
@@ -233,6 +233,15 @@ const NurseConsultation = () => {
                         <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold ${priority.className}`}>{priority.label}</span>
                       </td>
                       <td className="max-w-xs px-3 py-3 text-gray-600 sm:px-4 dark:text-gray-300"><span className="line-clamp-2">{s.complaint || '—'}</span></td>
+                      <td className="whitespace-nowrap px-3 py-3 sm:px-4">
+                        <button
+                          type="button"
+                          onClick={() => navigate(consultationPath(s.checkin_id))}
+                          className="inline-flex items-center rounded-lg bg-maroon-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-maroon-900"
+                        >
+                          Consulting
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
