@@ -153,6 +153,7 @@ const ForgotPassword = () => {
           onSubmit={
             handleSubmit
           }
+          autoComplete="off"
           className="space-y-5"
         >
 
@@ -176,7 +177,7 @@ const ForgotPassword = () => {
                 )
               }
               placeholder="your@email.com"
-              autoComplete="email"
+              autoComplete="off"
               required
             />
           </div>

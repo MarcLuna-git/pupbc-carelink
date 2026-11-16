@@ -362,7 +362,7 @@ const Settings = () => {
 
     if (id === 'password') {
       return (
-        <form onSubmit={handlePasswordChange} className="space-y-4">
+        <form onSubmit={handlePasswordChange} autoComplete="off" className="space-y-4">
           <h3 className="font-bold text-gray-900 dark:text-white flex items-center space-x-2">
             <Key className="w-5 h-5 text-maroon-800 dark:text-maroon-400" />
             <span>Change Password</span>
@@ -431,7 +431,7 @@ const Settings = () => {
 
     if (id === 'email') {
       return (
-        <form onSubmit={handleEmailChange} className="space-y-4">
+        <form onSubmit={handleEmailChange} autoComplete="off" className="space-y-4">
           <h3 className="font-bold text-gray-900 dark:text-white flex items-center space-x-2">
             <Mail className="w-5 h-5 text-maroon-800 dark:text-maroon-400" />
             <span>Change Email</span>
@@ -464,7 +464,7 @@ const Settings = () => {
             </div>
           </> : <div>
             <label htmlFor="settings-email-otp" className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5">Verification Code</label>
-            <input id="settings-email-otp" type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} pattern="\d{6}" value={emailForm.otp}
+            <input id="settings-email-otp" type="text" inputMode="numeric" autoComplete="off" maxLength={6} pattern="\d{6}" value={emailForm.otp}
               onChange={(e) => setEmailForm({...emailForm, otp: e.target.value.replace(/\D/g, '').slice(0, 6)})} autoFocus placeholder="000000"
               className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 text-center text-lg tracking-[0.4em] focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
             <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">Enter the 6-digit code we sent to <strong className="text-gray-700 dark:text-gray-200">{emailForm.new_email}</strong>. <button type="button" onClick={restartEmailChange} disabled={loading} className="font-semibold text-maroon-800 hover:underline dark:text-maroon-300">Change email or resend code</button></p>

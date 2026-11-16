@@ -608,7 +608,7 @@ const Login = () => {
             <form
               onSubmit={handleSubmit}
               className="space-y-5"
-              autoComplete="on"
+              autoComplete="off"
               noValidate
             >
               {/* Student ID */}
@@ -638,7 +638,7 @@ const Login = () => {
                     onChange={handleChange}
                     placeholder="2016-00000-BN-0"
                     maxLength={17}
-                    autoComplete="username"
+                    autoComplete="off"
                     inputMode="text"
                     required
                   />
@@ -754,7 +754,7 @@ const Login = () => {
                     value={form.password}
                     onChange={handleChange}
                     placeholder="Enter your password"
-                    autoComplete="current-password"
+                    autoComplete="off"
                     required
                   />
 

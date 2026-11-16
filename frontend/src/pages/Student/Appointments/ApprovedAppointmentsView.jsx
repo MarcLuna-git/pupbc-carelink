@@ -357,7 +357,7 @@ export default function ApprovedAppointmentsView({ appointments, filteredAppoint
           columns) on desktop/laptop, a vertical numbered spine on tablet and
           mobile — content left-aligned, never centered. The summary opens as
           a popup once all three are picked. */}
-      <form id="appointment-booking-form" className="ap-booking-steps" onSubmit={onSubmit} noValidate>
+      <form id="appointment-booking-form" className="ap-booking-steps" onSubmit={onSubmit} autoComplete="off" noValidate>
         <ol className="ap-booking-progress" aria-label="Booking progress">
           <li aria-current={progress === 1 ? 'step' : undefined} className={`ap-booking-step${progress >= 1 ? ' is-active' : ''}`}>
             <header className="ap-step-heading"><span className="ap-step-marker"><StepMarker number={1} completed={progress > 1} /></span><h3 className="ap-step-label">Select Date</h3></header>

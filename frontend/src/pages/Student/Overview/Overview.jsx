@@ -214,6 +214,7 @@ const RowEditor = ({ editor, draft, onChange }) => {
     name: editor.name,
     value: draft[editor.name] ?? '',
     onChange,
+    autoComplete: 'off',
     className: FIELD_CLASS,
   };
   if (editor.type === 'textarea') return <textarea {...common} rows={2} maxLength={editor.maxLength} placeholder={editor.placeholder} className={`${FIELD_CLASS} resize-none`} />;
@@ -918,7 +919,7 @@ const Overview = () => {
             draft={draft}
             onChange={handleDraftChange}
             rows={[
-              ['Mobile Number', student.mobile_number, { name: 'mobile_number', render: () => <PhilippineMobileInput id="profile-mobile_number" name="mobile_number" value={draft.mobile_number} onChange={handleDraftChange} className={FIELD_CLASS} aria-label="Your mobile number, the 10 digits after +63" /> }],
+              ['Mobile Number', student.mobile_number, { name: 'mobile_number', render: () => <PhilippineMobileInput id="profile-mobile_number" name="mobile_number" value={draft.mobile_number} onChange={handleDraftChange} autoComplete="off" className={FIELD_CLASS} aria-label="Your mobile number, the 10 digits after +63" /> }],
               ['Email Address', student.email],
               ['Home Address', profile.address, { name: 'address', type: 'textarea', maxLength: 1000, placeholder: 'Enter your address' }],
             ]}
@@ -935,7 +936,7 @@ const Overview = () => {
             rows={[
               ['Name', contact.name || hp.emergency_name, { name: 'emergency_name', maxLength: 100, placeholder: 'Juan Dela Cruz' }],
               ['Relationship', contact.relationship || hp.emergency_relationship, { name: 'emergency_relationship', type: 'select', options: EMERGENCY_RELATIONSHIPS }],
-              ['Mobile Number', contact.phone || hp.emergency_phone, { name: 'emergency_phone', render: () => <PhilippineMobileInput id="profile-emergency_phone" name="emergency_phone" value={draft.emergency_phone} onChange={handleDraftChange} className={FIELD_CLASS} aria-label="Emergency contact mobile number, the 10 digits after +63" /> }],
+              ['Mobile Number', contact.phone || hp.emergency_phone, { name: 'emergency_phone', render: () => <PhilippineMobileInput id="profile-emergency_phone" name="emergency_phone" value={draft.emergency_phone} onChange={handleDraftChange} autoComplete="off" className={FIELD_CLASS} aria-label="Emergency contact mobile number, the 10 digits after +63" /> }],
             ]}
           />
 

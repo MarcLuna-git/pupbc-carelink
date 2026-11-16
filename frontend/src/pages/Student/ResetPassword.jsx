@@ -465,6 +465,7 @@ const ResetPassword = () => {
           onSubmit={
             handleSubmit
           }
+          autoComplete="off"
           className="space-y-4"
         >
 
@@ -484,7 +485,7 @@ const ResetPassword = () => {
                   form.email
                 }
                 readOnly
-                autoComplete="email"
+                autoComplete="off"
               />
             </div>
 
@@ -512,7 +513,7 @@ const ResetPassword = () => {
               pattern="[0-9]*"
               maxLength={6}
               placeholder="000000"
-              autoComplete="one-time-code"
+              autoComplete="off"
               required
             />
 
@@ -574,7 +575,7 @@ const ResetPassword = () => {
                   handleChange
                 }
                 placeholder="Enter new password"
-                autoComplete="new-password"
+                autoComplete="off"
                 required
               />
 
@@ -625,7 +626,7 @@ const ResetPassword = () => {
                   handleChange
                 }
                 placeholder="Confirm new password"
-                autoComplete="new-password"
+                autoComplete="off"
                 required
               />
 

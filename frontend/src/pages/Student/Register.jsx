@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  ArrowRight, CheckCircle2, ChevronDown, Circle, Eye, EyeOff, FileText,
+  CheckCircle2, ChevronDown, Circle, Eye, EyeOff, FileText,
   GraduationCap, Loader2, LockKeyhole, Mail,
   ShieldCheck, UserRound, UserRoundX, X, XCircle,
 } from 'lucide-react';
@@ -149,7 +149,7 @@ function StudentIdField({ value, onChange, disabled, error, check, required }) {
       <div className="relative">
         <input
           id="student_id" name="student_id" type="text" value={value} onChange={onChange}
-          placeholder="2023-00000-BN-0" autoComplete="username" maxLength={17} disabled={disabled}
+          placeholder="2023-00000-BN-0" autoComplete="off" maxLength={17} disabled={disabled}
           aria-invalid={bad || taken} aria-describedby={note ? 'student-id-check' : undefined}
           className={`${INPUT} pr-11`}
         />
@@ -626,7 +626,7 @@ export default function Register() {
             onClose={() => navigate('/login', { replace: true })}
           />
 
-          <form onSubmit={handleSubmit} noValidate autoComplete="on" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_50px_rgba(25,32,51,0.07)] sm:p-6">
+          <form onSubmit={handleSubmit} noValidate autoComplete="off" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_50px_rgba(25,32,51,0.07)] sm:p-6">
             {!otpStep ? (
               <div className="space-y-5">
                 <section>
@@ -635,9 +635,9 @@ export default function Register() {
                     <StudentIdField value={form.student_id} onChange={change} disabled={loading} error={errors.student_id} check={idCheck} required={masterlistRequired} />
                     {/* Two columns: First name | Middle name, then Last name | Gender (one column on very small phones). */}
                     <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
-                      <CheckedField id="first_name" label="First name" value={form.first_name} onChange={change} check={firstNameError} disabled={loading} error={errors.first_name} placeholder="Juan" autoComplete="given-name" maxLength={100} />
-                      {textField('middle_name', 'Middle name', 'Optional', { optional: true, autoComplete: 'additional-name', maxLength: 100 })}
-                      <CheckedField id="last_name" label="Last name" value={form.last_name} onChange={change} check={lastNameError} disabled={loading} error={errors.last_name} placeholder="Dela Cruz" autoComplete="family-name" maxLength={100} />
+                      <CheckedField id="first_name" label="First name" value={form.first_name} onChange={change} check={firstNameError} disabled={loading} error={errors.first_name} placeholder="Juan" autoComplete="off" maxLength={100} />
+                      {textField('middle_name', 'Middle name', 'Optional', { optional: true, autoComplete: 'off', maxLength: 100 })}
+                      <CheckedField id="last_name" label="Last name" value={form.last_name} onChange={change} check={lastNameError} disabled={loading} error={errors.last_name} placeholder="Dela Cruz" autoComplete="off" maxLength={100} />
                       <Field id="gender" label="Gender" error={errors.gender}>
                         <span className="relative block min-w-0">
                           <select id="gender" name="gender" value={form.gender} onChange={change} disabled={loading} className={`${INPUT} peer cursor-pointer appearance-none pr-10 ${errors.gender ? INVALID : ''}`}>
@@ -681,10 +681,10 @@ export default function Register() {
                 <section>
                   <SectionTitle icon={Mail}>Contact Information</SectionTitle>
                   <div className="space-y-3">
-                    <CheckedField id="email" label="Email address" type="email" icon={Mail} value={form.email} onChange={change} check={emailError} disabled={loading} error={errors.email} placeholder="name@example.com" autoComplete="email" inputMode="email" maxLength={255} />
+                    <CheckedField id="email" label="Email address" type="email" icon={Mail} value={form.email} onChange={change} check={emailError} disabled={loading} error={errors.email} placeholder="name@example.com" autoComplete="off" inputMode="email" maxLength={255} />
                     <Field id="mobile_number" label="Mobile number" error={errors.mobile_number}>
                       <div className="relative">
-                        <PhilippineMobileInput id="mobile_number" name="mobile_number" value={form.mobile_number} onChange={change} disabled={loading} autoComplete="tel-national" aria-invalid={Boolean(errors.mobile_number)} className={`${INPUT} ${errors.mobile_number ? INVALID : ''}`} />
+                        <PhilippineMobileInput id="mobile_number" name="mobile_number" value={form.mobile_number} onChange={change} disabled={loading} autoComplete="off" aria-invalid={Boolean(errors.mobile_number)} className={`${INPUT} ${errors.mobile_number ? INVALID : ''}`} />
                       </div>
                     </Field>
                   </div>
@@ -750,7 +750,7 @@ export default function Register() {
                           onChange={change}
                           disabled={loading}
                           placeholder="Password"
-                          autoComplete="new-password"
+                          autoComplete="off"
                           className={`${INPUT} pr-11 ${errors.password ? INVALID : ''}`}
                         />
                         <button
@@ -792,7 +792,7 @@ export default function Register() {
                           onChange={change}
                           disabled={loading}
                           placeholder="Confirm password"
-                          autoComplete="new-password"
+                          autoComplete="off"
                           className={`${INPUT} pr-11 ${errors.password_confirmation ? INVALID : ''}`}
                         />
                         <button
@@ -842,7 +842,7 @@ export default function Register() {
                 <p className="mt-2 text-sm leading-6 text-slate-500">Enter the six-digit code sent to <strong className="break-all text-slate-900">{form.email}</strong>. It expires in 10 minutes.</p>
                 <div className="mx-auto mt-5 max-w-[250px] text-left">
                   <Field id="otp" label="Verification code" error={errors.otp}>
-                    <input id="otp" name="otp" type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={otp} onChange={(event) => { setOtp(event.target.value.replace(/\D/g, '').slice(0, 6)); setErrors((previous) => ({ ...previous, otp: '' })); }} disabled={loading || verified} placeholder="000000" className={`${INPUT} text-center text-xl font-black tracking-[0.3em] ${errors.otp ? INVALID : ''}`} />
+                    <input id="otp" name="otp" type="text" inputMode="numeric" autoComplete="off" maxLength={6} value={otp} onChange={(event) => { setOtp(event.target.value.replace(/\D/g, '').slice(0, 6)); setErrors((previous) => ({ ...previous, otp: '' })); }} disabled={loading || verified} placeholder="000000" className={`${INPUT} text-center text-xl font-black tracking-[0.3em] ${errors.otp ? INVALID : ''}`} />
                   </Field>
                 </div>
                 <div className="mt-4 text-xs text-slate-500">
@@ -853,7 +853,7 @@ export default function Register() {
               </div>
             )}
             <button type="submit" disabled={loading || resending || verified} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-maroon-800 px-4 py-3 text-sm font-bold text-white transition-colors hover:text-white/70 disabled:cursor-not-allowed disabled:opacity-60">
-              {loading ? <><Loader2 size={17} className="animate-spin" />{otpStep ? 'Verifying...' : 'Sending code...'}</> : otpStep ? <><CheckCircle2 size={17} />Verify & Create Account</> : <>Continue to Email Verification <ArrowRight size={17} /></>}
+              {loading ? <><Loader2 size={17} className="animate-spin" />{otpStep ? 'Verifying...' : 'Sending code...'}</> : otpStep ? <><CheckCircle2 size={17} />Verify & Create Account</> : 'Continue to Email Verification'}
             </button>
             <p className="mt-4 text-center text-sm text-slate-500">Already have an account? <Link to="/login" className="font-bold text-maroon-800 dark:text-rose-300 hover:underline">Log in</Link></p>
           </form>
