@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  ArrowRight,
   Bell,
   CalendarDays,
   ChevronDown,
@@ -85,6 +84,7 @@ const SOCIAL_LINKS = [
   {
     label: 'Facebook',
     href: '#',
+    hoverColor: 'group-hover:text-[#1877f2]',
     icon: (
       <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
     ),
@@ -92,6 +92,7 @@ const SOCIAL_LINKS = [
   {
     label: 'Instagram',
     href: '#',
+    hoverColor: 'group-hover:text-[#e1306c]',
     icon: (
       <>
         <rect x="2" y="2" width="20" height="20" rx="5" />
@@ -103,6 +104,7 @@ const SOCIAL_LINKS = [
   {
     label: 'YouTube',
     href: '#',
+    hoverColor: 'group-hover:text-[#ff0000]',
     icon: (
       <>
         <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17" />
@@ -113,6 +115,7 @@ const SOCIAL_LINKS = [
   {
     label: 'LinkedIn',
     href: '#',
+    hoverColor: 'group-hover:text-[#0a66c2]',
     icon: (
       <>
         <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
@@ -631,7 +634,7 @@ export default function Landing() {
 
         <div className="mx-auto flex min-h-[inherit] max-w-[1440px] flex-col justify-center px-5 py-14 sm:px-8 lg:px-14 lg:py-16 max-lg:pb-20">
           <div className="max-w-[690px]">
-            <p className="text-xs font-bold uppercase leading-5 tracking-[0.19em] text-rose-100 sm:text-xs">
+            <p className="text-xs font-bold uppercase leading-5 tracking-[0.19em] text-white sm:text-xs">
               Polytechnic University of the Philippines
               <span className="hidden sm:inline">
                 {' '}—{' '}
@@ -653,7 +656,7 @@ export default function Landing() {
               with Self-service Triage Kiosk
             </p>
 
-            <p className="mt-5 max-w-xl text-[13px] leading-6 text-rose-50/90 sm:text-[15px] sm:leading-7">
+            <p className="mt-5 max-w-xl text-[13px] leading-6 text-white sm:text-[15px] sm:leading-7">
               Book appointments, check in with QR, access
               your clinic health records and receive
               important updates, all in one place.
@@ -685,7 +688,7 @@ export default function Landing() {
                   <span className="block text-xs font-bold">
                     Accessible
                   </span>
-                  <span className="block text-xs leading-4 text-rose-100/75">
+                  <span className="block text-xs leading-4 text-white">
                     Across devices
                   </span>
                 </span>
@@ -699,7 +702,7 @@ export default function Landing() {
                   <span className="block text-xs font-bold">
                     Protected
                   </span>
-                  <span className="block text-xs leading-4 text-rose-100/75">
+                  <span className="block text-xs leading-4 text-white">
                     Account access
                   </span>
                 </span>
@@ -713,14 +716,14 @@ export default function Landing() {
                   <span className="block text-xs font-bold">
                     Student-focused
                   </span>
-                  <span className="block text-xs leading-4 text-rose-100/75">
+                  <span className="block text-xs leading-4 text-white">
                     Campus healthcare
                   </span>
                 </span>
               </div>
             </div>
 
-            <p className="mt-6 font-serif text-sm italic text-rose-100/85 sm:text-base">
+            <p className="mt-6 font-serif text-sm italic text-white sm:text-base">
               “Smarter campus healthcare for every
               Iskolar ng Bayan.”
             </p>
@@ -751,35 +754,30 @@ export default function Landing() {
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.85fr)]">
           <div
             id="how-it-works"
-            className="scroll-mt-24 md:scroll-mt-4 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7"
+            className="scroll-mt-24 md:scroll-mt-4 flex flex-col rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7"
           >
             <SectionTitle
               title="How CareLink Works"
               description="Four simple steps to access campus clinic services."
             />
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid flex-1 content-center gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {STEPS.map((step, index) => {
                 const Icon = step.icon;
 
                 return (
                   <div
                     key={step.title}
-                    className="relative rounded-2xl border border-rose-100 bg-gradient-to-b from-white to-maroon-50 p-4"
+                    className="rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-sm sm:p-4"
                   >
-                    <div className="mb-4 flex items-center justify-between">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-maroon-800 text-xs font-extrabold text-white">
-                        {index + 1}
-                      </span>
+                    <Icon
+                      size={24}
+                      strokeWidth={2.5}
+                      className="text-maroon-800 dark:text-rose-300"
+                    />
 
-                      <Icon
-                        size={21}
-                        className="text-maroon-700 dark:text-rose-300"
-                      />
-                    </div>
-
-                    <h3 className="text-[13px] font-extrabold text-slate-900">
-                      {step.title}
+                    <h3 className="mt-3 text-[13px] font-extrabold text-slate-900">
+                      {index + 1}. {step.title}
                     </h3>
 
                     <p className="mt-2 text-xs leading-5 text-slate-500">
@@ -788,21 +786,6 @@ export default function Landing() {
                   </div>
                 );
               })}
-            </div>
-
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-rose-50 px-4 py-3">
-              <p className="text-xs font-medium text-maroon-800 dark:text-rose-300">
-                Your first clinic appointment starts with
-                your CareLink account.
-              </p>
-
-              <Link
-                to="/register"
-                className="inline-flex items-center gap-1 text-xs font-extrabold text-maroon-800 dark:text-rose-300 hover:underline"
-              >
-                Create an account
-                <ArrowRight size={15} />
-              </Link>
             </div>
           </div>
 
@@ -853,13 +836,13 @@ export default function Landing() {
         className="mx-auto max-w-[1440px] scroll-mt-24 md:scroll-mt-4 px-4 py-7 sm:px-6 lg:px-10"
       >
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.85fr)]">
-          <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7">
+          <div className="flex flex-col rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7">
             <SectionTitle
               title="Our Clinic Services"
               description="Choose from the clinic appointment services available to PUP Biñan students."
             />
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid flex-1 content-start grid-cols-2 gap-3 sm:grid-cols-3">
               {SERVICES.map((service) => {
                 const Icon = service.icon;
 
@@ -867,10 +850,10 @@ export default function Landing() {
                   <Link
                     key={service.title}
                     to="/login"
-                    className="group flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/40/40 sm:min-h-[155px]"
+                    className="group flex min-w-0 flex-col rounded-2xl border border-slate-200/90 bg-white p-3.5 text-left shadow-sm sm:p-4"
                   >
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-maroon-100 dark:bg-rose-950/40 text-maroon-800 dark:text-rose-300">
-                      <Icon size={21} />
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-maroon-800 bg-white text-maroon-800 transition-colors duration-500 group-hover:duration-700 group-hover:bg-maroon-800 group-hover:text-white">
+                      <Icon size={20} strokeWidth={2.5} />
                     </span>
 
                     <h3 className="mt-3 text-[13px] font-extrabold text-slate-900">
@@ -880,11 +863,6 @@ export default function Landing() {
                     <p className="mt-1 text-xs leading-5 text-slate-500">
                       {service.description}
                     </p>
-
-                    <ArrowRight
-                      size={15}
-                      className="mt-3 text-maroon-800 dark:text-rose-300 transition-transform group-hover:translate-x-1"
-                    />
                   </Link>
                 );
               })}
@@ -898,23 +876,17 @@ export default function Landing() {
 
           <div
             id="announcements"
-            className="scroll-mt-24 md:scroll-mt-4 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7"
+            className="scroll-mt-24 md:scroll-mt-4 flex flex-col rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7"
           >
-            <div className="mb-5 flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-xl font-extrabold text-slate-950 sm:text-2xl">
-                  Latest Announcements
-                </h2>
-              </div>
-
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-maroon-100 dark:bg-rose-950/40 text-maroon-800 dark:text-rose-300">
-                <Megaphone size={21} />
-              </span>
+            <div className="mb-5">
+              <h2 className="text-xl font-extrabold text-slate-950 sm:text-2xl">
+                Latest Announcements
+              </h2>
             </div>
 
             {announcementsLoading ? (
               <div
-                className="space-y-3"
+                className="flex-1 space-y-3"
                 aria-label="Loading announcements"
               >
                 {[1, 2, 3].map((item) => (
@@ -928,7 +900,7 @@ export default function Landing() {
                 ))}
               </div>
             ) : announcementsError ? (
-              <div className="rounded-2xl bg-slate-50 px-4 py-6 text-center">
+              <div className="flex-1 rounded-2xl bg-slate-50 px-4 py-6 text-center">
                 <p className="text-sm font-semibold text-slate-700">
                   Unable to load announcements.
                 </p>
@@ -946,7 +918,7 @@ export default function Landing() {
                 </button>
               </div>
             ) : announcements.length === 0 ? (
-              <div className="rounded-2xl bg-slate-50 px-4 py-7 text-center">
+              <div className="flex-1 rounded-2xl bg-slate-50 px-4 py-7 text-center">
                 <Bell
                   size={26}
                   className="mx-auto text-slate-400"
@@ -962,51 +934,49 @@ export default function Landing() {
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="flex-1 space-y-3">
                 {announcements.map((announcement) => (
                   <div
                     key={announcement.id}
-                    className="flex gap-3 py-3 first:pt-0"
+                    className="flex items-start gap-3 rounded-xl border border-slate-200/90 bg-white p-3 shadow-sm"
                   >
-                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-maroon-800 dark:text-rose-300">
-                      <Megaphone size={17} />
-                    </span>
+                    <Megaphone
+                      size={20}
+                      strokeWidth={2.5}
+                      className="mt-0.5 shrink-0 text-maroon-800"
+                    />
 
                     <div className="min-w-0 flex-1">
-                      <h3 className="line-clamp-2 text-[13px] font-bold text-slate-900">
+                      <h3 className="line-clamp-1 text-[13px] font-bold text-slate-900">
                         {announcement.title}
                       </h3>
 
-                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                      <p className="mt-1 line-clamp-1 text-xs leading-5 text-slate-500">
                         {announcement.content}
                       </p>
-
-                      <p className="mt-1.5 text-xs font-medium text-slate-400">
-                        {formatAnnouncementDate(
-                          announcement.published_at ||
-                            announcement.created_at
-                        )}
-                      </p>
                     </div>
+
+                    <span className="shrink-0 whitespace-nowrap text-xs font-medium text-slate-400">
+                      {formatAnnouncementDate(
+                        announcement.published_at ||
+                          announcement.created_at
+                      )}
+                    </span>
                   </div>
                 ))}
               </div>
             )}
 
-            <div className="mt-5 rounded-xl border border-rose-100 bg-rose-50 p-3">
-              <p className="text-xs leading-5 text-maroon-800 dark:text-rose-300">
-                Sign in to receive your personal clinic
-                notifications and appointment updates.
-              </p>
-
+            <p className="mt-5 text-xs leading-5 text-slate-900">
+              Sign in to receive your personal clinic notifications and
+              appointment updates.{' '}
               <Link
                 to="/login"
-                className="mt-2 inline-flex items-center gap-1 text-xs font-extrabold text-maroon-800 dark:text-rose-300 hover:underline"
+                className="font-extrabold text-slate-900 underline underline-offset-2 hover:no-underline"
               >
                 Open Student Portal
-                <ArrowRight size={14} />
               </Link>
-            </div>
+            </p>
           </div>
         </div>
       </section>
@@ -1033,13 +1003,13 @@ export default function Landing() {
                     )
                   }
                   aria-expanded={openFaq === index}
-                  className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-3 text-left text-[13px] font-bold text-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                  className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-3 text-left text-[13px] font-bold text-slate-800 transition-colors duration-500 hover:bg-maroon-800 hover:text-white"
                 >
                   {faq.question}
 
                   <ChevronDown
                     size={17}
-                    className={`shrink-0 text-maroon-800 dark:text-rose-300 transition-transform ${
+                    className={`shrink-0 transition ${
                       openFaq === index
                         ? 'rotate-180'
                         : ''
@@ -1164,7 +1134,7 @@ export default function Landing() {
                   rel="noopener noreferrer"
                   aria-label={social.label}
                   title={social.label}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-50 text-maroon-800 transition hover:-translate-y-0.5 hover:bg-maroon-800 hover:text-white dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-800 dark:hover:text-white"
+                  className="group flex h-9 w-9 items-center justify-center rounded-full bg-maroon-800 text-white transition hover:-translate-y-0.5 hover:bg-slate-100"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -1176,6 +1146,7 @@ export default function Landing() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     aria-hidden="true"
+                    className={`transition-colors duration-300 ${social.hoverColor}`}
                   >
                     {social.icon}
                   </svg>
@@ -1231,15 +1202,10 @@ export default function Landing() {
         </div>
 
         <div className="border-t border-slate-100">
-          <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-2 px-5 py-5 text-center text-xs text-slate-400 sm:flex-row sm:text-left lg:px-14">
+          <div className="mx-auto max-w-[1440px] px-5 py-5 text-center text-xs text-slate-400 lg:px-14">
             <span>
               © {currentYear} PUPBC CareLink.
               All rights reserved.
-            </span>
-
-            <span>
-              Smarter campus healthcare for every
-              Iskolar ng Bayan.
             </span>
           </div>
         </div>
