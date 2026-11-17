@@ -48,7 +48,7 @@ const KioskErrorModal = ({
               type="button"
               onClick={onClose}
               aria-label="Close error message"
-              className="absolute right-4 top-4 rounded-[15px] p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+              className="absolute right-4 top-4 rounded-[15px] p-2 text-slate-400"
             >
               <X className="h-5 w-5" />
             </button>
@@ -70,7 +70,7 @@ const KioskErrorModal = ({
                 <button
                   type="button"
                   onClick={onSecondary}
-                  className="rounded-[15px] border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                  className="rounded-[15px] border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700"
                 >
                   {secondaryLabel}
                 </button>
@@ -80,7 +80,7 @@ const KioskErrorModal = ({
                 type="button"
                 onClick={onClose}
                 autoFocus
-                className="min-w-[120px] rounded-[15px] bg-maroon-800 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-maroon-900"
+                className="min-w-[120px] rounded-[15px] bg-maroon-800 px-6 py-3 text-sm font-bold text-white"
               >
                 {primaryLabel}
               </button>

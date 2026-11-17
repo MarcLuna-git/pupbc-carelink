@@ -45,7 +45,7 @@ const KioskOptions = ({ onScanQR, onEnterID, onBack }) => {
           onClick={() => setShowHelp(true)}
           aria-label="Check-in help and emergency notice"
           title="No appointment or urgent emergency?"
-          className="absolute right-0 -top-12 inline-flex h-10 w-10 items-center justify-center rounded-full text-white/80 transition-colors hover:text-white"
+          className="absolute right-0 -top-12 inline-flex h-10 w-10 items-center justify-center rounded-full text-white/80"
         >
           <HelpCircle className="h-7 w-7" />
         </button>
@@ -55,7 +55,7 @@ const KioskOptions = ({ onScanQR, onEnterID, onBack }) => {
             <button
               type="button"
               onClick={onBack}
-              className="p-3 bg-white/5 hover:bg-white/10 rounded-[15px] border border-white/10 transition"
+              className="p-3 bg-white/5 rounded-[15px] border border-white/10"
             >
               <ArrowLeft className="w-5 h-5 text-white/70" />
             </button>
@@ -70,7 +70,7 @@ const KioskOptions = ({ onScanQR, onEnterID, onBack }) => {
               key={option.id}
               type="button"
               onClick={option.onClick}
-              className={`bg-white/[0.03] backdrop-blur-xl rounded-[15px] p-6 md:p-8 border ${option.border} hover:bg-white/[0.06] transition-colors text-center flex flex-col items-center h-full`}
+              className={`bg-white/[0.03] backdrop-blur-xl rounded-[15px] p-6 md:p-8 border ${option.border} text-center flex flex-col items-center h-full`}
             >
               <div className={`w-16 h-16 md:w-20 md:h-20 ${option.iconBg} rounded-[15px] flex items-center justify-center mb-4`}>
                 <option.icon className={`w-8 h-8 md:w-10 md:h-10 ${option.iconColor}`} />
@@ -105,7 +105,7 @@ const KioskOptions = ({ onScanQR, onEnterID, onBack }) => {
               type="button"
               onClick={() => setShowHelp(false)}
               aria-label="Close"
-              className="absolute right-4 top-4 rounded-[15px] p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+              className="absolute right-4 top-4 rounded-[15px] p-2 text-slate-400"
             >
               <X className="h-5 w-5" />
             </button>
@@ -127,7 +127,7 @@ const KioskOptions = ({ onScanQR, onEnterID, onBack }) => {
                 type="button"
                 onClick={() => setShowHelp(false)}
                 autoFocus
-                className="min-w-[120px] rounded-[15px] bg-maroon-800 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-maroon-900"
+                className="min-w-[120px] rounded-[15px] bg-maroon-800 px-6 py-3 text-sm font-bold text-white"
               >
                 OK
               </button>

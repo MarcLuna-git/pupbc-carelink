@@ -75,7 +75,7 @@ const KioskSettings = () => {
     <KioskLayout>
       <Link
         to="/kiosk"
-        className="absolute left-6 top-6 z-20 inline-flex items-center gap-2 rounded-[15px] border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20 md:left-10 md:top-8"
+        className="absolute left-6 top-6 z-20 inline-flex items-center gap-2 rounded-[15px] border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm md:left-10 md:top-8"
       >
         <Home className="h-5 w-5" />
         Home
@@ -130,11 +130,11 @@ const KioskSettings = () => {
                   aria-label="Remove time Guard"
                   disabled={saving}
                   onClick={toggle}
-                  className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 disabled:opacity-60 ${
+                  className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 disabled:opacity-60 ${
                     switchOn ? 'bg-yellow-400' : 'bg-white/20'
                   }`}
                 >
-                  <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition-transform ${
+                  <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow ${
                     switchOn ? 'translate-x-7' : 'translate-x-1'
                   }`} />
                 </button>
@@ -161,16 +161,16 @@ const KioskSettings = () => {
                     <button
                       type="submit"
                       disabled={saving || !password}
-                      className="inline-flex items-center gap-2 rounded-[15px] bg-yellow-400 px-5 py-3 text-sm font-semibold text-maroon-950 transition hover:bg-yellow-300 disabled:opacity-50"
+                      className="inline-flex items-center gap-2 rounded-[15px] bg-yellow-400 px-5 py-3 text-sm font-semibold text-maroon-950 disabled:opacity-50"
                     >
-                      {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wrench className="h-4 w-4" />}
+                      <Wrench className="h-4 w-4" />
                       {saving ? 'Checking…' : 'Remove time guard'}
                     </button>
                     <button
                       type="button"
                       disabled={saving}
                       onClick={() => { setShowPassword(false); setPassword(''); setError(''); }}
-                      className="rounded-[15px] px-5 py-3 text-sm font-semibold text-white/70 transition hover:bg-white/10 disabled:opacity-50"
+                      className="rounded-[15px] px-5 py-3 text-sm font-semibold text-white/70 disabled:opacity-50"
                     >
                       Cancel
                     </button>

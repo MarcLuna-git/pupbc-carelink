@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { Clock, Users, Stethoscope, Activity } from 'lucide-react';
 import clinicLogo from '../../assets/clinic-logo.webp';
 import KioskLayout from '../../layouts/KioskLayout';
@@ -13,8 +12,6 @@ const getGreeting = (date) => {
 
 const KioskWelcome = ({ onStart }) => {
   const [time, setTime] = useState(() => new Date());
-  const [starting, setStarting] = useState(false);
-  const startTimerRef = useRef(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -22,18 +19,6 @@ const KioskWelcome = ({ onStart }) => {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
-
-  useEffect(() => () => {
-    if (startTimerRef.current) clearTimeout(startTimerRef.current);
-  }, []);
-
-  const handleStart = () => {
-    if (starting) return;
-    setStarting(true);
-    startTimerRef.current = setTimeout(() => {
-      onStart?.();
-    }, 920);
-  };
 
   const greeting = getGreeting(time);
 
@@ -99,33 +84,10 @@ const KioskWelcome = ({ onStart }) => {
 
         <button
           type="button"
-          onClick={handleStart}
-          disabled={starting}
-          className="relative inline-flex min-h-16 min-w-[240px] cursor-pointer items-center justify-center overflow-hidden rounded-[15px] bg-yellow-400 px-12 py-4 text-xl font-extrabold text-maroon-950 shadow-lg shadow-yellow-400/20 transition-colors duration-200 hover:bg-yellow-300 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-white active:bg-yellow-500 disabled:cursor-wait"
+          onClick={onStart}
+          className="inline-flex min-h-16 min-w-[240px] cursor-pointer items-center justify-center rounded-[15px] bg-yellow-400 px-12 py-4 text-xl font-extrabold text-maroon-950 shadow-lg shadow-yellow-400/20 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-white"
         >
-          {starting ? (
-            <motion.span
-              key="starting-bar"
-              aria-hidden="true"
-              initial={{ left: '0%', right: '100%' }}
-              animate={{
-                left: ['0%', '0%', '100%'],
-                right: ['100%', '0%', '0%'],
-              }}
-              transition={{ duration: 0.9, times: [0, 0.5, 1], ease: 'easeInOut' }}
-              className="pointer-events-none absolute inset-y-0 bg-maroon-950/20"
-            />
-          ) : (
-            <motion.span
-              key="idle-shimmer"
-              aria-hidden="true"
-              initial={{ x: '-120%' }}
-              animate={{ x: '220%' }}
-              transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 1.6, ease: 'easeInOut' }}
-              className="pointer-events-none absolute inset-y-0 left-0 w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-white/45 to-transparent"
-            />
-          )}
-          <span className="relative z-10">Tap to Start</span>
+          Tap to Start
         </button>
       </div>
 

@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { AlertCircle, ArrowLeft, CheckCircle, Info } from 'lucide-react';
 import api from '../../services/api';
 import KioskLayout from '../../layouts/KioskLayout';
@@ -21,9 +20,9 @@ const FLAGS = [
 const SECTION_TITLE = 'border-t border-white/10 pt-4 text-xs font-semibold uppercase tracking-wider text-yellow-300';
 
 // Tap choices (Warning Signs): same look as the Duration and Pain Level buttons.
-const CHOICE = 'min-h-12 cursor-pointer rounded-[15px] border font-bold transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
+const CHOICE = 'min-h-12 cursor-pointer rounded-[15px] border font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
 const CHOICE_ON = 'border-yellow-400 bg-yellow-400 text-maroon-950';
-const CHOICE_OFF = 'border-white/30 bg-white/5 text-white hover:bg-white/15';
+const CHOICE_OFF = 'border-white/30 bg-white/5 text-white';
 
 // Shown under a question that was skipped when Confirm and Check In was pressed.
 // Always reserves its height (invisible when hidden) so toggling errors never shifts the layout.
@@ -78,7 +77,6 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone, demoMode = false }) =
     return () => document.removeEventListener('pointerdown', handlePointerDown);
   }, [editingOther, notes]);
   const [loading, setLoading] = useState(false);
-  const [returning, setReturning] = useState(false);
   const [error, setError] = useState('');
   // Questions skipped on the last Confirm press: symptoms, duration, pain, flags, other.
   const [missing, setMissing] = useState({});
@@ -100,11 +98,6 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone, demoMode = false }) =
     const timer = setTimeout(onDone, 30000);
     return () => clearTimeout(timer);
   }, [has_active_checkin, onDone]);
-  const handleReturnHome = () => {
-    if (returning) return;
-    setReturning(true);
-    setTimeout(onDone, 920);
-  };
 
   if (has_active_checkin && active_checkin) {
     return (
@@ -116,24 +109,10 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone, demoMode = false }) =
           <p>Please wait for your number to be called.</p>
           <button
             type="button"
-            onClick={handleReturnHome}
-            disabled={returning}
-            className="relative mt-6 inline-flex min-h-16 min-w-[240px] cursor-pointer items-center justify-center overflow-hidden rounded-[15px] bg-yellow-400 px-10 py-4 text-lg font-extrabold text-maroon-950 shadow-lg shadow-yellow-400/20 transition-colors duration-200 hover:bg-yellow-300 active:bg-yellow-500 disabled:cursor-wait"
+            onClick={onDone}
+            className="mt-6 inline-flex min-h-16 min-w-[240px] cursor-pointer items-center justify-center rounded-[15px] bg-yellow-400 px-10 py-4 text-lg font-extrabold text-maroon-950 shadow-lg shadow-yellow-400/20"
           >
-            {returning && (
-              <motion.span
-                key="return-home-bar"
-                aria-hidden="true"
-                initial={{ left: '0%', right: '100%' }}
-                animate={{
-                  left: ['0%', '0%', '100%'],
-                  right: ['100%', '0%', '0%'],
-                }}
-                transition={{ duration: 0.9, times: [0, 0.5, 1], ease: 'easeInOut' }}
-                className="pointer-events-none absolute inset-y-0 bg-maroon-950/20"
-              />
-            )}
-            <span className="relative z-10">Done and Return Home</span>
+            Done and Return Home
           </button>
           <p className="mt-3 text-sm">Returns home automatically after 30 seconds.</p>
         </div>
@@ -178,7 +157,6 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone, demoMode = false }) =
     setLoading(true); setError('');
     try {
       if (demoMode) {
-        await new Promise((resolve) => setTimeout(resolve, 920));
         const isHigh = triage && (redFlags.length > 0 || hasOther || (painLevel !== null && painLevel >= 7));
         const isMedium = triage && !isHigh && painLevel !== null && painLevel >= 4;
         const priority = isHigh ? 'HIGH' : isMedium ? 'MEDIUM' : 'LOW';
@@ -192,8 +170,7 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone, demoMode = false }) =
         return;
       }
 
-      const [response] = await Promise.all([
-        api.post('/kiosk/checkin', {
+      const response = await api.post('/kiosk/checkin', {
           ...data.identity,
           student_id: user.student_id,
           // Other services send no triage: the server uses the portal reason and the regular queue.
@@ -204,9 +181,7 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone, demoMode = false }) =
             red_flags: redFlags.length ? redFlags : ['none'],
             notes: notes.trim() || undefined,
           } : {}),
-        }),
-        new Promise((resolve) => setTimeout(resolve, 920)),
-      ]);
+      });
       onCheckedIn(response.data.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Check-in failed. Please try again.');
@@ -293,7 +268,7 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone, demoMode = false }) =
             role="radio"
             aria-checked={duration === option}
             onClick={() => { setDuration(duration === option ? null : option); answered('duration'); }}
-            className={'min-h-12 cursor-pointer rounded-[15px] border px-3 font-bold transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ' + (duration === option ? 'border-yellow-400 bg-yellow-400 text-maroon-950' : 'border-white/30 bg-white/5 text-white hover:bg-white/15')}
+            className={CHOICE + ' px-3 ' + (duration === option ? CHOICE_ON : CHOICE_OFF)}
           >
             {option.replace('-', '–')}
           </button>
@@ -313,7 +288,7 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone, demoMode = false }) =
             role="radio"
             aria-checked={painLevel === level}
             onClick={() => { setPainLevel(painLevel === level ? null : level); answered('pain'); }}
-            className={'min-h-12 cursor-pointer rounded-[15px] border text-lg font-bold transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ' + (painLevel === level ? 'border-yellow-400 bg-yellow-400 text-maroon-950' : 'border-white/30 bg-white/5 text-white hover:bg-white/15')}
+            className={CHOICE + ' text-lg ' + (painLevel === level ? CHOICE_ON : CHOICE_OFF)}
           >
             {level}
           </button>
@@ -381,22 +356,9 @@ const KioskConfirm = ({ data, onCheckedIn, onBack, onDone, demoMode = false }) =
       <button
         type="submit"
         disabled={loading}
-        className="relative inline-flex min-h-16 w-full sm:w-auto min-w-[240px] cursor-pointer items-center justify-center overflow-hidden rounded-[15px] bg-yellow-400 px-10 py-4 text-lg font-extrabold text-maroon-950 shadow-lg shadow-yellow-400/20 transition-colors duration-200 hover:bg-yellow-300 active:bg-yellow-500 disabled:cursor-wait"
+        className="inline-flex min-h-16 w-full sm:w-auto min-w-[240px] cursor-pointer items-center justify-center rounded-[15px] bg-yellow-400 px-10 py-4 text-lg font-extrabold text-maroon-950 shadow-lg shadow-yellow-400/20 disabled:cursor-wait"
       >
-        {loading && (
-          <motion.span
-            key="confirm-checkin-bar"
-            aria-hidden="true"
-            initial={{ left: '0%', right: '100%' }}
-            animate={{
-              left: ['0%', '0%', '100%'],
-              right: ['100%', '0%', '0%'],
-            }}
-            transition={{ duration: 0.9, times: [0, 0.5, 1], ease: 'easeInOut' }}
-            className="pointer-events-none absolute inset-y-0 bg-maroon-950/20"
-          />
-        )}
-        <span className="relative z-10">Confirm and Check In</span>
+        Confirm and Check In
       </button>
     </div>
   </form>

@@ -761,28 +761,16 @@ const KioskScan = ({
             className="w-full max-w-lg mx-auto"
           >
             <div className="flex items-center gap-4 mb-6">
-              <motion.button
-                whileHover={{
-                  scale: 1.05,
-                }}
-                whileTap={{
-                  scale: 0.95,
-                }}
+              <button
+                type="button"
                 onClick={() => {
                   stopQrScanner();
                   onBack();
                 }}
-                className="
-                  p-3
-                  bg-white/5
-                  hover:bg-white/10
-                  rounded-[15px]
-                  border border-white/10
-                  transition
-                "
+                className="p-3 bg-white/5 rounded-[15px] border border-white/10"
               >
                 <ArrowLeft className="w-5 h-5 text-white/70" />
-              </motion.button>
+              </button>
 
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-white">
@@ -849,8 +837,6 @@ const KioskScan = ({
                         rounded-[15px]
                         text-xs
                         font-semibold
-                        hover:bg-white/10
-                        transition
                         flex
                         items-center
                         gap-2
@@ -955,47 +941,14 @@ const KioskScan = ({
                   </div>
                 </div>
 
-                <motion.button
-                  whileHover={{
-                    scale: 1.02,
-                  }}
-                  whileTap={{
-                    scale: 0.98,
-                  }}
+                <button
                   type="submit"
                   disabled={loading}
-                  className="
-                    w-full
-                    py-5
-                    bg-gradient-to-r
-                    from-yellow-400
-                    to-yellow-500
-                    text-maroon-900
-                    font-bold
-                    rounded-[15px]
-                    text-lg
-                    transition
-                    flex
-                    items-center
-                    justify-center
-                    gap-3
-                    disabled:opacity-50
-                    shadow-xl
-                    shadow-yellow-400/10
-                  "
+                  className="w-full py-5 bg-gradient-to-r from-yellow-400 to-yellow-500 text-maroon-900 font-bold rounded-[15px] text-lg flex items-center justify-center gap-3 disabled:opacity-50 shadow-xl shadow-yellow-400/10"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-6 h-6 animate-spin" />
-                      Verifying...
-                    </>
-                  ) : (
-                    <>
-                      <Search className="w-6 h-6" />
-                      Continue
-                    </>
-                  )}
-                </motion.button>
+                  <Search className="w-6 h-6" />
+                  {loading ? 'Verifying...' : 'Continue'}
+                </button>
               </motion.form>
             )}
           </motion.div>

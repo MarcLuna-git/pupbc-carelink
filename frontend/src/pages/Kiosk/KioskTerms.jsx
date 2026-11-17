@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState } from 'react';
 import { Shield } from 'lucide-react';
 import KioskLayout from '../../layouts/KioskLayout';
 
@@ -28,20 +27,11 @@ const POLICIES = [
 
 const KioskTerms = ({ onAgree, onBack }) => {
   const [accepted, setAccepted] = useState(false);
-  const [continuing, setContinuing] = useState(false);
-  const continueTimerRef = useRef(null);
-
-  useEffect(() => () => {
-    if (continueTimerRef.current) clearTimeout(continueTimerRef.current);
-  }, []);
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    if (!accepted || continuing) return;
-    setContinuing(true);
-    continueTimerRef.current = setTimeout(() => {
-      onAgree?.();
-    }, 920);
+    if (!accepted) return;
+    onAgree?.();
   };
 
   return (
@@ -87,33 +77,20 @@ const KioskTerms = ({ onAgree, onBack }) => {
               <button
                 type="button"
                 onClick={onBack}
-                className="min-h-16 w-full sm:w-auto rounded-[15px] border border-white/15 bg-white/10 px-6 py-3 text-[15px] font-semibold text-white transition-colors hover:bg-white/15"
+                className="min-h-16 w-full sm:w-auto rounded-[15px] border border-white/15 bg-white/10 px-6 py-3 text-[15px] font-semibold text-white"
               >
                 Back
               </button>
               <button
                 type="submit"
-                disabled={!accepted || continuing}
-                className={`relative min-h-16 w-full sm:w-auto overflow-hidden rounded-[15px] px-7 py-3 text-[15px] font-bold transition-colors ${
+                disabled={!accepted}
+                className={`min-h-16 w-full sm:w-auto rounded-[15px] px-7 py-3 text-[15px] font-bold ${
                   accepted
-                    ? 'bg-yellow-400 text-maroon-950 hover:bg-yellow-300'
+                    ? 'bg-yellow-400 text-maroon-950'
                     : 'cursor-not-allowed bg-white/10 text-white/45'
-                } ${continuing ? 'cursor-wait' : ''}`}
+                }`}
               >
-                {continuing && (
-                  <motion.span
-                    key="agree-bar"
-                    aria-hidden="true"
-                    initial={{ left: '0%', right: '100%' }}
-                    animate={{
-                      left: ['0%', '0%', '100%'],
-                      right: ['100%', '0%', '0%'],
-                    }}
-                    transition={{ duration: 0.9, times: [0, 0.5, 1], ease: 'easeInOut' }}
-                    className="pointer-events-none absolute inset-y-0 bg-maroon-950/20"
-                  />
-                )}
-                <span className="relative z-10">Agree and Continue</span>
+                Agree and Continue
               </button>
             </div>
           </div>

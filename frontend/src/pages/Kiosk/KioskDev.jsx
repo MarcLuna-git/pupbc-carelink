@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
-import { Lock, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Lock, Eye, EyeOff } from 'lucide-react';
 import api from '../../services/api';
 import KioskLayout from '../../layouts/KioskLayout';
 import KioskErrorModal from './KioskErrorModal';
@@ -156,7 +156,7 @@ const KioskDev = () => {
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -166,9 +166,9 @@ const KioskDev = () => {
             <button
               type="submit"
               disabled={verifying || !password}
-              className="flex min-h-14 w-full items-center justify-center gap-2 rounded-[15px] bg-yellow-400 px-6 py-3 font-extrabold text-maroon-950 transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex min-h-14 w-full items-center justify-center gap-2 rounded-[15px] bg-yellow-400 px-6 py-3 font-extrabold text-maroon-950 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {verifying ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Unlock Demo Mode'}
+              {verifying ? 'Checking...' : 'Unlock Demo Mode'}
             </button>
           </form>
         </div>
@@ -194,10 +194,10 @@ const KioskDev = () => {
             key={page.id}
             type="button"
             onClick={() => jumpTo(page.id)}
-            className={`cursor-pointer rounded-[8px] px-2.5 py-1 font-semibold transition ${
+            className={`cursor-pointer rounded-[8px] px-2.5 py-1 font-semibold ${
               activeJump === page.id
                 ? 'bg-white text-maroon-950'
-                : 'bg-white/10 text-white/85 hover:bg-white/20'
+                : 'bg-white/10 text-white/85'
             }`}
           >
             {page.label}
@@ -206,7 +206,7 @@ const KioskDev = () => {
         <button
           type="button"
           onClick={handleLock}
-          className="ml-1 cursor-pointer rounded-[8px] border border-white/20 px-2.5 py-1 font-semibold text-white/80 hover:bg-white/15 hover:text-white"
+          className="ml-1 cursor-pointer rounded-[8px] border border-white/20 px-2.5 py-1 font-semibold text-white/80"
         >
           Lock
         </button>

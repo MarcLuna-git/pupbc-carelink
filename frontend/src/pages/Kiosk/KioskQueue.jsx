@@ -17,14 +17,7 @@ const KioskQueue = ({ checkin, onDone, demoMode = false }) => {
   const isPriority = checkin.queue_type === 'priority';
   const [queueData, setQueueData] = useState(null);
   const [countdown, setCountdown] = useState(30);
-  const [finishing, setFinishing] = useState(false);
   const queueRequestPending = useRef(false);
-
-  const handleDone = () => {
-    if (finishing) return;
-    setFinishing(true);
-    setTimeout(onDone, 920);
-  };
 
   useEffect(() => {
     if (demoMode) {
@@ -120,24 +113,10 @@ const KioskQueue = ({ checkin, onDone, demoMode = false }) => {
 
         <button
           type="button"
-          onClick={handleDone}
-          disabled={finishing}
-          className="relative inline-flex min-h-16 w-full cursor-pointer items-center justify-center overflow-hidden rounded-[15px] bg-yellow-400 px-12 py-4 text-lg font-extrabold text-maroon-950 shadow-lg shadow-yellow-400/20 transition-colors duration-200 hover:bg-yellow-300 active:bg-yellow-500 disabled:cursor-wait"
+          onClick={onDone}
+          className="inline-flex min-h-16 w-full cursor-pointer items-center justify-center rounded-[15px] bg-yellow-400 px-12 py-4 text-lg font-extrabold text-maroon-950 shadow-lg shadow-yellow-400/20"
         >
-          {finishing && (
-            <motion.span
-              key="queue-done-bar"
-              aria-hidden="true"
-              initial={{ left: '0%', right: '100%' }}
-              animate={{
-                left: ['0%', '0%', '100%'],
-                right: ['100%', '0%', '0%'],
-              }}
-              transition={{ duration: 0.9, times: [0, 0.5, 1], ease: 'easeInOut' }}
-              className="pointer-events-none absolute inset-y-0 bg-maroon-950/20"
-            />
-          )}
-          <span className="relative z-10">Done</span>
+          Done
         </button>
       </motion.div>
     </KioskLayout>
