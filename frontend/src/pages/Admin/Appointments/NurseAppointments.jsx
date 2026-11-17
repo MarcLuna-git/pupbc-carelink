@@ -17,6 +17,13 @@ const fieldClass = 'w-full rounded-lg border border-gray-200 bg-white py-2.5 tex
 
 const PER_PAGE = 5;
 
+// Default action button: border, light shadow, hover, a darker shade while pressed, and a focus ring.
+const BTN = 'inline-flex cursor-pointer select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-md border text-sm font-semibold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-800 disabled:cursor-not-allowed disabled:opacity-50';
+const BTN_PRIMARY = 'border-maroon-800 bg-maroon-800 text-white hover:border-maroon-900 hover:bg-maroon-900 active:bg-maroon-950 focus-visible:ring-maroon-500 dark:border-gray-500 dark:bg-gray-700 dark:hover:bg-gray-600 dark:active:bg-gray-500';
+const BTN_DANGER = 'border-red-300 bg-white text-red-700 hover:bg-red-50 active:bg-red-100 focus-visible:ring-red-400 dark:border-red-700 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/20 dark:active:bg-red-900/40';
+const BTN_DANGER_SOLID = 'border-red-600 bg-red-600 text-white hover:border-red-700 hover:bg-red-700 active:bg-red-800 focus-visible:ring-red-400';
+const BTN_SECONDARY = 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 focus-visible:ring-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:active:bg-gray-600';
+
 const STATUS_TABS = [
   { key: 'all', label: 'All' },
   { key: 'pending', label: 'Pending' },
@@ -212,12 +219,12 @@ const NurseAppointments = () => {
     );
   };
 
-  const btnBase = 'inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg p-2 text-xs font-semibold transition disabled:opacity-50 sm:px-3 sm:py-1.5';
-  const primaryBtn = `${btnBase} bg-maroon-800 text-white hover:bg-maroon-900`;
-  const declineBtn = `${btnBase} bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30`;
+  // Row buttons: a normal button size on desktop, icon only on phones.
+  const primaryBtn = `${BTN} ${BTN_PRIMARY} p-2 sm:px-3.5 sm:py-2`;
+  const declineBtn = `${BTN} ${BTN_DANGER} p-2 sm:px-3.5 sm:py-2`;
   const actionBtn = (className, Icon, label, onClick, disabled = false) => (
     <button type="button" onClick={onClick} disabled={disabled} className={className} title={label} aria-label={label}>
-      <Icon className="h-3.5 w-3.5" aria-hidden="true" /><span className="hidden sm:inline">{label}</span>
+      <Icon className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">{label}</span>
     </button>
   );
 
@@ -491,20 +498,23 @@ const NurseAppointments = () => {
                   {selectedAppointment.status === 'pending' ? (
                     <>
                       <button
+                        type="button"
                         onClick={() => handleApprove(selectedAppointment.id)}
-                        className="w-full py-3 bg-green-500 text-white font-semibold rounded-2xl hover:bg-green-600 transition flex items-center justify-center gap-1.5 text-sm disabled:opacity-50">
-                        {<CheckCircle className="w-4 h-4" />}
+                        className={`${BTN} ${BTN_PRIMARY} w-full py-2.5`}>
+                        <CheckCircle className="w-4 h-4" aria-hidden="true" />
                         Approve Appointment
                       </button>
                       <button
+                        type="button"
                         onClick={() => { setRejectModal(selectedAppointment.id); }}
-                        className="w-full py-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold rounded-2xl hover:bg-red-100 dark:hover:bg-red-900/30 transition text-sm border border-red-200 dark:border-red-800/20">
+                        className={`${BTN} ${BTN_DANGER} w-full py-2.5`}>
+                        <X className="w-4 h-4" aria-hidden="true" />
                         Decline Appointment
                       </button>
                     </>
                   ) : null}
-                  <button onClick={() => setSelectedAppointment(null)}
-                    className="w-full py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm">
+                  <button type="button" onClick={() => setSelectedAppointment(null)}
+                    className={`${BTN} ${BTN_SECONDARY} w-full py-2.5`}>
                     Close
                   </button>
                 </div>
@@ -542,15 +552,16 @@ const NurseAppointments = () => {
               />
 
               <div className="flex gap-3 mt-4">
-                <button onClick={() => { setRejectModal(null); setRejectReason(''); }}
-                  className="flex-1 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm">
+                <button type="button" onClick={() => { setRejectModal(null); setRejectReason(''); }}
+                  className={`${BTN} ${BTN_SECONDARY} flex-1 py-2.5`}>
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={handleReject}
                   disabled={!rejectReason.trim()}
-                  className="flex-1 py-3 bg-red-500 text-white font-semibold rounded-2xl hover:bg-red-600 transition text-sm disabled:opacity-50 flex items-center justify-center gap-1.5">
-                  {<XCircle className="w-4 h-4" />}
+                  className={`${BTN} ${BTN_DANGER_SOLID} flex-1 py-2.5`}>
+                  <XCircle className="w-4 h-4" aria-hidden="true" />
                   Decline
                 </button>
               </div>
