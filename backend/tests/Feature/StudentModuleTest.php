@@ -269,6 +269,43 @@ class StudentModuleTest extends TestCase
             ->assertJsonPath('data.appointment.id', $rebooked->id);
     }
 
+    public function test_qr_page_live_queue_shows_the_students_place_and_only_queue_numbers(): void
+    {
+        $today = Carbon::now('Asia/Manila')->toDateString();
+        $visit = function (string $number, string $status, int $minutesAgo) use ($today) {
+            $student = $this->student(['first_name' => 'Secret' . Str::random(6)]);
+            $appointment = $this->appointment($student, $today);
+            AppointmentCheckin::create([
+                'appointment_id' => $appointment->id, 'user_id' => $student->id,
+                'queue_number' => $number, 'queue_type' => 'regular', 'status' => $status,
+                'checked_in_at' => now()->subMinutes($minutesAgo), 'check_in_time' => now()->subMinutes($minutesAgo),
+            ]);
+            return $student;
+        };
+        $serving = $visit('R-901', 'serving', 40);
+        $visit('R-902', 'called', 30);
+        $first = $visit('R-903', 'waiting', 20);
+        $second = $visit('R-904', 'waiting', 10);
+
+        $queue = $this->actingAs($second, 'api')->getJson('/api/student/qr')->assertOk()->json('data.live_queue');
+        $this->assertContains('R-901', $queue['serving']);
+        $this->assertContains('R-902', $queue['calling']);
+        $this->assertSame(['R-903', 'R-904'], array_values(array_intersect($queue['waiting'], ['R-903', 'R-904'])));
+        $this->assertSame('R-904', $queue['mine']['queue_number']);
+        $this->assertSame('waiting', $queue['mine']['status']);
+        $this->assertSame(array_search('R-904', $queue['waiting'], true), $queue['mine']['ahead']);
+        $this->assertGreaterThanOrEqual(1, $queue['mine']['ahead']);
+        // Other students are queue numbers only.
+        $this->assertStringNotContainsString($first->first_name, json_encode($queue));
+        $this->assertStringNotContainsString($first->student_id, json_encode($queue));
+
+        $mine = $this->actingAs($serving, 'api')->getJson('/api/student/qr')->json('data.live_queue.mine');
+        $this->assertSame(['queue_number' => 'R-901', 'status' => 'serving', 'ahead' => null], $mine);
+
+        $this->actingAs($this->student(), 'api')->getJson('/api/student/qr')
+            ->assertOk()->assertJsonPath('data.live_queue.mine', null);
+    }
+
     public function test_notification_actions_are_scoped_and_delete_persists(): void
     {
         $student = $this->student();

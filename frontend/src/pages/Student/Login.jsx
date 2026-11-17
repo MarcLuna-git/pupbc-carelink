@@ -8,7 +8,6 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  ArrowRight,
   UserRound,
   ChevronDown,
   Lock,
@@ -846,10 +845,9 @@ const Login = () => {
 
                 <Link
                   to="/register"
-                  className="font-semibold text-maroon-600 dark:text-maroon-400 hover:text-maroon-800 dark:hover:text-maroon-300 transition-colors inline-flex items-center space-x-1"
+                  className="font-semibold text-maroon-600 dark:text-maroon-400 hover:text-maroon-800 dark:hover:text-maroon-300 transition-colors inline-flex items-center"
                 >
                   <span>Create Account</span>
-                  <ArrowRight className="w-4 h-4" />
                 </Link>
               </p>
             </div>

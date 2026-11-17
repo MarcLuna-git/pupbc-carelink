@@ -15,8 +15,13 @@
   background: var(--sp-bg); color: var(--sp-text); min-height:100dvh;overflow-x:hidden;
 }
 .dark .student-approved-shell {
-  --sp-bg: #17151b; --sp-surface: #242029; --sp-soft: #36232c; --sp-border: #443640;
-  --sp-text: #f6edf0; --sp-muted: #c1acb5; --sp-accent: #efb0bd;
+  --sp-bg: var(--dashboard-bg, #111827);
+  --sp-surface: var(--dashboard-surface, #1f2937);
+  --sp-soft: var(--dashboard-soft, #1f2937);
+  --sp-border: var(--dashboard-outline, #374151);
+  --sp-text: var(--dashboard-text, #f3f4f6);
+  --sp-muted: var(--dashboard-muted, #9ca3af);
+  --sp-accent: var(--dashboard-accent, #f3f4f6);
 }
 .student-approved-shell :is(button,a,input,select,textarea):focus-visible { outline: 2px solid #c85c73; outline-offset: 3px; }
 .student-skip-link { position:fixed;left:12px;top:-70px;z-index:200;padding:12px 18px;background:var(--sp-surface);border-radius:8px;color:var(--sp-accent); }
@@ -48,7 +53,7 @@
  */
 .student-account-button { display:flex;width:100%;align-items:center;gap:10px;min-width:0;padding:8px 10px;border:1px solid;border-radius:10px;text-align:left;cursor:pointer;transition:background-color .15s ease,border-color .15s ease; }
 .student-account-avatar { display:flex;flex-shrink:0;align-items:center;justify-content:center;overflow:hidden;border-radius:999px;background:#fbeee9;color:var(--color-maroon-800);font-weight:700; }
-.dark .student-account-avatar { background:#3b1d27;color:#efb0bd; }
+.dark .student-account-avatar { background:#374151;color:#f3f4f6; }
 .student-account-avatar img { width:100%;height:100%;object-fit:cover; }
 .student-account-avatar.is-small { width:32px;height:32px;font-size:12px; }
 .student-account-avatar.is-large { width:48px;height:48px;font-size:14px;box-shadow:0 0 0 2px #fff; }
@@ -75,8 +80,7 @@
 .student-sidebar-campus { position:absolute;bottom:0;left:0;width:100%;height:245px;object-fit:cover;filter:grayscale(1);mix-blend-mode:luminosity;opacity:.16;mask-image:linear-gradient(transparent,#000 35%);pointer-events:none; }
 .student-shell-body { min-height:100dvh;min-width:0;margin-left:var(--sp-sidebar);display:flex;flex-direction:column;padding-bottom:calc(var(--sp-nav-height) + env(safe-area-inset-bottom));background:var(--sp-bg); }
 .student-header { position:fixed;top:0;left:var(--sp-sidebar);right:0;z-index:30;background:linear-gradient(to bottom,var(--color-maroon-50),var(--sp-surface));border-bottom:1px solid var(--sp-border);box-shadow:0 2px 10px #3d12200a; }
-/* Same fade as the account dropdown's summary, in dark: maroon-950 at 30%. */
-.dark .student-header { background:linear-gradient(to bottom,#3d050c4d,var(--sp-surface)); }
+/* Header dark mode uses the global dashboard dark mode in index.css */
 .student-header-inner { height:var(--sp-header-height);display:flex;align-items:center;gap:16px;padding:0 24px; }
 .student-header-page { flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;font-weight:700;color:var(--sp-accent); }
 .student-old-header-brand,.student-old-header-greeting { display:none; }
@@ -118,7 +122,7 @@
 .carelink-assistant-hide:hover { background:var(--color-maroon-800);border-color:var(--color-maroon-800);color:#fff; }
 .carelink-assistant-dock:hover .carelink-assistant-hide,.carelink-assistant-dock:focus-within .carelink-assistant-hide { opacity:1;scale:1;pointer-events:auto; }
 .carelink-assistant-dock.is-dragging .carelink-assistant-hide { opacity:0;pointer-events:none; }
-.dark .carelink-assistant-hide { border-color:#443640;background:#242029;color:#c1acb5; }
+.dark .carelink-assistant-hide { border-color:#374151;background:#1f2937;color:#9ca3af; }
 .dark .carelink-assistant-hide:hover { background:var(--color-maroon-800);border-color:var(--color-maroon-800);color:#fff; }
 @media (hover:none) { .carelink-assistant-hide { opacity:1;scale:1;pointer-events:auto; } }
 

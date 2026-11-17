@@ -28,6 +28,7 @@ class StudentAppointmentStatusMail extends Mailable
             'cancelled' => 'Appointment cancelled',
             'rescheduled' => 'Appointment rescheduled',
             'expired' => 'Appointment expired',
+            'called' => 'The clinic is calling you',
         ];
         if (!isset($titles[$this->event])) {
             throw new InvalidArgumentException('Unsupported appointment email event.');
@@ -44,6 +45,10 @@ class StudentAppointmentStatusMail extends Mailable
                 : 'Your appointment has been cancelled at your request.',
             'rescheduled' => 'The clinic has rescheduled your appointment. Please review the updated schedule below.',
             'expired' => 'Your pending appointment expired because its appointment date has passed.',
+            // Sent when the nurse calls the student from the queue (KioskController::callNext).
+            'called' => 'The clinic is calling '
+                . ($appointment->queue_number ? 'queue number ' . $appointment->queue_number : 'you')
+                . '. Please go to the clinic now.',
         ];
         $this->eventMessage = $messages[$this->event];
 

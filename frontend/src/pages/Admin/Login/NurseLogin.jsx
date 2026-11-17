@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Eye, EyeOff, Loader2, Lock, Mail, Stethoscope,
-  Heart, CalendarCheck, QrCode, ShieldCheck, Hospital,
+  CalendarCheck, QrCode, ShieldCheck, Hospital,
   Building2, GraduationCap, LockKeyhole, AlertCircle, CheckCircle2, Headset
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -232,7 +232,6 @@ const NurseLogin = () => {
 
             <div className="mb-5 tall:mb-8">
               <div className="mb-2 flex items-center gap-3">
-                <Heart className="h-6 w-6 text-red-500" />
                 <span className="text-[15px] font-semibold uppercase tracking-[0.18em] text-gray-500">Healthcare Provider</span>
               </div>
               <h3 className="text-[30px] font-extrabold leading-tight tracking-tight text-gray-900 sm:text-[34px] tall:text-[40px]">Welcome back</h3>

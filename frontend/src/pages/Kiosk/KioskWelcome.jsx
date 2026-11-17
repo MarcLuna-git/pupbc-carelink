@@ -101,7 +101,7 @@ const KioskWelcome = ({ onStart }) => {
           type="button"
           onClick={handleStart}
           disabled={starting}
-          className="relative inline-flex min-h-16 min-w-[240px] cursor-pointer items-center justify-center overflow-hidden rounded-[10px] bg-yellow-400 px-12 py-4 text-xl font-extrabold text-maroon-950 shadow-lg shadow-yellow-400/20 transition-colors duration-200 hover:bg-yellow-300 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-white active:bg-yellow-500 disabled:cursor-wait"
+          className="relative inline-flex min-h-16 min-w-[240px] cursor-pointer items-center justify-center overflow-hidden rounded-[15px] bg-yellow-400 px-12 py-4 text-xl font-extrabold text-maroon-950 shadow-lg shadow-yellow-400/20 transition-colors duration-200 hover:bg-yellow-300 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-white active:bg-yellow-500 disabled:cursor-wait"
         >
           {starting ? (
             <motion.span
@@ -130,7 +130,7 @@ const KioskWelcome = ({ onStart }) => {
       </div>
 
       <div className="absolute bottom-6 right-8 z-20 md:bottom-8 md:right-12">
-        <div className="flex items-center gap-3 rounded-[10px] border border-white/15 bg-maroon-950/60 px-4 py-3">
+        <div className="flex items-center gap-3 rounded-[15px] border border-white/15 bg-maroon-950/60 px-4 py-3">
           <Activity className="h-5 w-5 text-green-300" aria-hidden="true" />
           <div>
             <p className="text-sm font-medium text-white">Clinic Open</p>

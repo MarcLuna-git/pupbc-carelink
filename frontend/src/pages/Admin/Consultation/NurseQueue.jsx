@@ -134,7 +134,8 @@ const NurseQueue = () => {
       setLoading(false);
     }
     // Straight to the form: the Consultation page loads the visit fresh and takes the claim on it.
-    if (arrived) navigate(consultationPath(student.checkin_id));
+    // The row is passed along so the form opens without waiting for the queue to load again.
+    if (arrived) navigate(consultationPath(student.checkin_id), { state: { visit: { ...student, status: 'serving' } } });
   };
 
 

@@ -56,7 +56,7 @@ const KioskPage = () => {
     setScanMethod(null);
   };
 
-  if (!authorized) return <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6"><form onSubmit={authorizeDevice} className="bg-white rounded-[10px] p-6 max-w-md space-y-4"><h1 className="text-xl font-bold">Clinic Device Setup</h1><p>Clinic staff must authorize this tablet before student check-in.</p><label className="block">Device access token<input autoComplete="off" type="password" required value={deviceToken} onChange={e => setDeviceToken(e.target.value)} className="border rounded-[10px] p-3 w-full" /></label>{deviceError && <p role="alert">{deviceError}</p>}<button className="bg-maroon-800 text-white px-4 py-3 rounded-[10px]">Authorize Device</button></form></div>;
+  if (!authorized) return <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6"><form onSubmit={authorizeDevice} className="bg-white rounded-[15px] p-6 max-w-md space-y-4"><h1 className="text-xl font-bold">Clinic Device Setup</h1><p>Clinic staff must authorize this tablet before student check-in.</p><label className="block">Device access token<input autoComplete="off" type="password" required value={deviceToken} onChange={e => setDeviceToken(e.target.value)} className="border rounded-[15px] p-3 w-full" /></label>{deviceError && <p role="alert">{deviceError}</p>}<button className="bg-maroon-800 text-white px-4 py-3 rounded-[15px]">Authorize Device</button></form></div>;
   return (
     <>
       {step === 'welcome' && <KioskWelcome onStart={handleStart} />}

@@ -72,6 +72,10 @@ Route::get('/test', function () {
 });
 
 
+// Hidden /kiosk/dev demo mode password check (read-only, no DB writes).
+Route::post('/kiosk/dev-verify', [KioskDevToolsController::class, 'verifyPassword'])
+    ->middleware('throttle:10,1,kiosk-dev:');
+
 // Separate group counters; all groups still share the outer throttle:api limit.
 Route::prefix('kiosk')
     ->middleware([
@@ -439,7 +443,7 @@ Route::middleware([
                     '/chatbot/message',
                     [ChatbotController::class, 'message']
                 )->middleware([
-                    'throttle:' . (int) config('chatbot.rate_limit', 20) . ',1',
+                    'throttle:' . (int) config('chatbot.rate_limit', 5) . ',1',
                     'throttle:chatbot-daily',
                 ]);
 

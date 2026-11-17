@@ -74,7 +74,7 @@ services:
       - key: MAIL_ENCRYPTION
         value: tls
       - key: MAIL_FROM_ADDRESS
-        value: jjjjema098@gmail.com
+        value: pupbinancarelink@gmail.com
       - key: MAIL_FROM_NAME
         value: "PUPBC CareLink"
       - key: MAIL_TIMEOUT
@@ -147,9 +147,9 @@ services:
       - key: CHATBOT_ENABLED
         value: "true"
       - key: CHATBOT_RATE_LIMIT
-        value: "20"
+        value: "5"
       - key: CHATBOT_DAILY_LIMIT
-        value: "100"
+        value: "15"
 
       # Public clinic contact address shown by the chatbot.
       - key: CLINIC_EMAIL

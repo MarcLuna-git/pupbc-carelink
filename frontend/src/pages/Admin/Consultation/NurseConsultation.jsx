@@ -45,9 +45,11 @@ const NurseConsultation = () => {
     const id = ++request.current;
     try {
       const response = await api.get('/nurse/queue/checkins');
-      if (id !== request.current || !response.data.success) return null;
+      if (!response.data.success) return null;
       const next = queueRowsFrom(response);
-      setRows(next);
+      // A newer load (the sync loop) owns the list on screen, but the caller still gets its rows:
+      // opening a visit right after Patient arrived must not lose them to that newer load.
+      if (id === request.current) setRows(next);
       return next;
     } catch (err) {
       if (!silent) { setMessageType('error'); setMessage('Unable to load the clinic queue. Retrying automatically.'); }

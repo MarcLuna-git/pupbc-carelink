@@ -318,4 +318,41 @@ class StudentAppointmentNotificationTest extends TestCase
         $this->assertSame(0, Notification::where('user_id', $student->id)->count());
         Mail::assertNothingSent();
     }
+
+    public function test_calling_a_student_from_the_queue_notifies_them_once_after_commit(): void
+    {
+        $student = $this->student();
+        $appointment = Appointment::create(array_merge($this->booking(), [
+            'user_id' => $student->id, 'status' => 'approved', 'appointment_date' => today()->toDateString(),
+        ]));
+        $appointment->forceFill(['queue_number' => 'R-997', 'queue_type' => 'regular'])->save();
+        $checkin = AppointmentCheckin::create([
+            'appointment_id' => $appointment->id, 'user_id' => $student->id,
+            'queue_number' => 'R-997', 'queue_type' => 'regular', 'status' => 'waiting',
+            'checked_in_at' => now(), 'check_in_time' => now(),
+        ]);
+        $nurse = User::create([
+            'student_id' => 'NOTICE-' . Str::random(10), 'first_name' => 'Queue', 'last_name' => 'Nurse',
+            'email' => Str::uuid() . '@example.test', 'password' => 'unused',
+            'birthday' => '1990-05-15', 'role' => 'nurse', 'status' => null,
+        ]);
+        $this->studentIds[] = $nurse->id;
+
+        $this->actingAs($nurse, 'api')->postJson('/api/nurse/queue/call-next')
+            ->assertOk()->assertJsonPath('data.id', $checkin->id)->assertJsonPath('data.status', 'called');
+        $this->assertSame(1, Notification::where('user_id', $student->id)->where('type', 'appointment_called')->count());
+        Mail::assertNothingSent();
+        DB::commit();
+
+        Mail::assertSent(StudentAppointmentStatusMail::class, 1);
+        Mail::assertSent(StudentAppointmentStatusMail::class, function ($mail) use ($student, $appointment) {
+            $mail->build();
+            $html = view($mail->view, $mail->buildViewData())->render();
+            $this->assertSame('called', $mail->event);
+            $this->assertSame($appointment->id, $mail->appointmentId);
+            $this->assertStringContainsString('The clinic is calling queue number R-997. Please go to the clinic now.', $html);
+            $this->assertStringNotContainsString($appointment->concern, $html);
+            return $mail->hasTo($student->email);
+        });
+    }
 }

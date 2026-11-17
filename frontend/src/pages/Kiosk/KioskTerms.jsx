@@ -48,7 +48,7 @@ const KioskTerms = ({ onAgree, onBack }) => {
     <KioskLayout>
       <div className="w-full max-w-2xl mx-auto pb-2">
         <div className="mb-4 flex items-center gap-3.5">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] border border-white/15 bg-white/10 text-yellow-400">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] border border-white/15 bg-white/10 text-yellow-400">
             <Shield className="h-5 w-5" />
           </div>
           <div>
@@ -59,7 +59,7 @@ const KioskTerms = ({ onAgree, onBack }) => {
 
         <form
           onSubmit={handleSubmit}
-          className="rounded-[10px] border border-white/15 bg-white/[0.06] backdrop-blur-xl"
+          className="rounded-[15px] border border-white/15 bg-white/[0.06] backdrop-blur-xl"
         >
           <div className="divide-y divide-white/10 px-5 sm:px-6">
             {POLICIES.map((policy) => (
@@ -70,7 +70,7 @@ const KioskTerms = ({ onAgree, onBack }) => {
             ))}
           </div>
 
-          <div className="border-t border-white/15 bg-black/15 px-5 py-4 sm:px-6 rounded-b-[10px] space-y-5">
+          <div className="border-t border-white/15 bg-black/15 px-5 py-4 sm:px-6 rounded-b-[15px] space-y-5">
             <label className="flex cursor-pointer items-baseline gap-3.5 select-none">
               <input
                 type="checkbox"
@@ -87,14 +87,14 @@ const KioskTerms = ({ onAgree, onBack }) => {
               <button
                 type="button"
                 onClick={onBack}
-                className="w-full sm:w-auto rounded-[10px] border border-white/15 bg-white/10 px-6 py-3 text-[15px] font-semibold text-white transition-colors hover:bg-white/15"
+                className="min-h-16 w-full sm:w-auto rounded-[15px] border border-white/15 bg-white/10 px-6 py-3 text-[15px] font-semibold text-white transition-colors hover:bg-white/15"
               >
                 Back
               </button>
               <button
                 type="submit"
                 disabled={!accepted || continuing}
-                className={`relative w-full sm:w-auto overflow-hidden rounded-[10px] px-7 py-3 text-[15px] font-bold transition-colors ${
+                className={`relative min-h-16 w-full sm:w-auto overflow-hidden rounded-[15px] px-7 py-3 text-[15px] font-bold transition-colors ${
                   accepted
                     ? 'bg-yellow-400 text-maroon-950 hover:bg-yellow-300'
                     : 'cursor-not-allowed bg-white/10 text-white/45'

@@ -47,6 +47,7 @@ import { useStudentHealthProfileStatus } from './hooks/useStudentHealthProfileSt
 
 const KioskPage = lazy(() => import('./pages/Kiosk/KioskPage'));
 const KioskSettings = lazy(() => import('./pages/Kiosk/KioskSettings'));
+const KioskDev = lazy(() => import('./pages/Kiosk/KioskDev'));
 import AppErrorBoundary from './components/AppErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
 import RouteLoadingBar, { StudentRouteSuspenseFallback } from './components/RouteLoadingBar';
@@ -191,6 +192,10 @@ function App() {
           <Route
             path="/kiosk/settings"
             element={<KioskSettings />}
+          />
+          <Route
+            path="/kiosk/dev"
+            element={<KioskDev />}
           />
 
           {/* ==================================================

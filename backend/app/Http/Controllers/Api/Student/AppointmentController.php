@@ -545,8 +545,40 @@ class AppointmentController extends Controller
                     ? $this->appointmentData($appointment)
                     : null,
                 'recent_activity' => $this->qrRecentActivity($user->id),
+                'live_queue' => $this->liveQueue($user->id),
             ],
         ]);
+    }
+
+    /*
+     * Today's clinic queue for the student's QR page, in call order. Queue numbers only:
+     * no names and no triage details of other students (same as the kiosk queue board).
+     */
+    private function liveQueue(string|int $userId): array
+    {
+        $rows = ClinicQueue::ordered()
+            ->without(['user', 'triage', 'appointment'])
+            ->whereIn('status', ['waiting', 'called', 'serving'])
+            // The Developer tools demo patients stay on the nurse queue list only.
+            ->when(\App\Support\DemoQueue::userIds(), fn ($query, $demoIds) => $query->whereNotIn('user_id', $demoIds))
+            ->get(['id', 'user_id', 'queue_number', 'status']);
+
+        $waiting = $rows->where('status', 'waiting')->values();
+        $mine = $rows->firstWhere('user_id', $userId);
+        $place = $mine ? $waiting->search(fn ($row) => $row->id === $mine->id) : false;
+
+        return [
+            'serving' => $rows->where('status', 'serving')->pluck('queue_number')->values(),
+            'calling' => $rows->where('status', 'called')->pluck('queue_number')->values(),
+            'waiting' => $waiting->take(8)->pluck('queue_number')->values(),
+            'waiting_total' => $waiting->count(),
+            'mine' => $mine ? [
+                'queue_number' => $mine->queue_number,
+                'status' => $mine->status,
+                // How many waiting students are called before this one (null once called or serving).
+                'ahead' => $place === false ? null : $place,
+            ] : null,
+        ];
     }
 
     private function qrRecentActivity(string|int $userId): array

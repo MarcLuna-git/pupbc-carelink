@@ -22,11 +22,11 @@ return [
 
     // Requests per minute, per student. Kept separate from the global API
     // throttle so one student cannot exhaust the shared Gemini quota.
-    'rate_limit' => (int) env('CHATBOT_RATE_LIMIT', 20),
+    'rate_limit' => (int) env('CHATBOT_RATE_LIMIT', 5),
 
     // Rolling 24-hour ceiling, per student. The per-minute limit stops bursts;
     // this one stops a single student from draining the shared daily quota.
-    'daily_limit' => (int) env('CHATBOT_DAILY_LIMIT', 100),
+    'daily_limit' => (int) env('CHATBOT_DAILY_LIMIT', 15),
 
     // Guardrails on what a single request may carry.
     'max_message_length' => 1000,

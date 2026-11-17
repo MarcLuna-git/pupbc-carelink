@@ -147,7 +147,7 @@ const ChoiceButtons = ({ options, value, onSelect, label }) => (
       {!options.includes(value) && <option value="">Select</option>}
       {options.map((option) => <option key={option} value={option}>{option}</option>)}
     </select>
-    <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-maroon-700 dark:text-maroon-300" />
+    <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
   </span>
 );
 
@@ -182,7 +182,7 @@ const CheckList = ({ options, selected, onToggle, label }) => {
         </span>
         {selected.length > 1 && <span className="shrink-0 rounded-full bg-maroon-800 px-1.5 text-xs text-white">{selected.length}</span>}
       </button>
-      <ChevronDown aria-hidden="true" className={`pointer-events-none absolute right-3.5 top-[1.2rem] h-4 w-4 -translate-y-1/2 text-maroon-700 transition dark:text-maroon-300 ${open ? 'rotate-180' : ''}`} />
+      <ChevronDown aria-hidden="true" className={`pointer-events-none absolute right-3.5 top-[1.2rem] h-4 w-4 -translate-y-1/2 text-gray-400 transition dark:text-gray-500 ${open ? 'rotate-180' : ''}`} />
       {open && (
         <ul role="listbox" aria-multiselectable="true" aria-label={label} className="absolute left-0 right-0 top-full z-20 mt-1 grid max-h-60 gap-0.5 overflow-y-auto rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)] p-1.5 shadow-lg">
           {[...new Set([...options, ...selected])].map((option) => {
@@ -220,11 +220,14 @@ const RowEditor = ({ editor, draft, onChange }) => {
   if (editor.type === 'textarea') return <textarea {...common} rows={2} maxLength={editor.maxLength} placeholder={editor.placeholder} className={`${FIELD_CLASS} resize-none`} />;
   if (editor.type === 'select') {
     return (
-      <select {...common}>
-        <option value="">Select</option>
-        {common.value && !editor.options.includes(common.value) && <option>{common.value}</option>}
-        {editor.options.map((option) => <option key={option}>{option}</option>)}
-      </select>
+      <span className="relative block">
+        <select {...common} className={`${FIELD_CLASS} cursor-pointer appearance-none pr-10`}>
+          <option value="">Select</option>
+          {common.value && !editor.options.includes(common.value) && <option>{common.value}</option>}
+          {editor.options.map((option) => <option key={option}>{option}</option>)}
+        </select>
+        <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+      </span>
     );
   }
   return <input {...common} type="text" inputMode={editor.inputMode} maxLength={editor.maxLength} placeholder={editor.placeholder} />;

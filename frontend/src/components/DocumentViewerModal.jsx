@@ -181,7 +181,9 @@ export default function DocumentViewerModal({ title, subtitle, docKey, load, onC
       aria-labelledby="document-viewer-title"
       onCancel={(event) => { event.preventDefault(); closeRef.current(); }}
       // A browser may close the dialog itself without asking first (a second Escape in a row): follow it.
-      onClose={() => closeRef.current()}
+      // Only when it really is closed: the dev server (React StrictMode) closes and reopens the dialog
+      // once on mount, and that first close is reported late, after it is already open again.
+      onClose={() => { if (!dialog.current?.open) closeRef.current(); }}
       onClick={(event) => { if (event.target === dialog.current) closeRef.current(); }}
       onKeyDown={onKeyDown}
       className="m-auto h-[calc(100dvh-1.5rem)] max-h-[60rem] w-[calc(100%-1.5rem)] max-w-6xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white p-0 text-gray-900 shadow-2xl backdrop:bg-gray-950/60 open:flex dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"

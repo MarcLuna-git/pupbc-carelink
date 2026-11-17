@@ -58,4 +58,30 @@ class DevToolsController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Read-only password check for the hidden /kiosk/dev demo mode.
+     * Does not touch the database or mutate TimeGuard state.
+     */
+    public function verifyPassword(Request $request)
+    {
+        abort_unless(config('dev_tools.enabled'), 403, 'Developer Tools are disabled.');
+
+        $data = $request->validate([
+            'password' => 'required|string|max:255',
+        ]);
+
+        if (!hash_equals((string) config('dev_tools.password'), (string) $data['password'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Incorrect admin password.',
+                'errors' => ['password' => ['Incorrect admin password.']],
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Kiosk demo mode unlocked.',
+        ]);
+    }
 }

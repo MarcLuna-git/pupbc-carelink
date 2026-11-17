@@ -2,7 +2,7 @@ import { getUser, setUser } from '../../../services/session';
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Check, Loader2, Heart, Shield, ClipboardList, AlertCircle, Info, PenLine, Users } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Check, ChevronDown, Loader2, Heart, Shield, ClipboardList, AlertCircle, Info, PenLine, Users } from 'lucide-react';
 import api from '../../../services/api';
 import { StudentToast } from '../../../components/StudentFeedback';
 import { contactNameError, contactPhoneError, formatContactPhone, ownMobileContactError, signatureNameError } from '../../../utils/contactValidation';
@@ -517,10 +517,10 @@ const HealthProfile = ({ onBack }) => {
                 </div>
                 <div>
                   <label className={labelClass}>Relationship <span className="text-red-400">*</span></label>
-                  <select className={inputClass('emergency_relationship')} name="emergency_relationship" value={form.emergency_relationship} onChange={handleChange}>
+                  <span className="relative block"><select className={`${inputClass('emergency_relationship')} cursor-pointer appearance-none pr-10`} name="emergency_relationship" value={form.emergency_relationship} onChange={handleChange}>
                     {form.emergency_relationship && !['Parent', 'Guardian', 'Sibling', 'Spouse', 'Relative', 'Friend', 'Other'].includes(form.emergency_relationship) && <option>{form.emergency_relationship}</option>}
                     <option value="">Select</option><option>Parent</option><option>Guardian</option><option>Sibling</option><option>Spouse</option><option>Relative</option><option>Friend</option><option>Other</option>
-                  </select>
+                  </select><ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" /></span>
                   {errors.emergency_relationship && <p className={errorClass}>{errors.emergency_relationship}</p>}
                 </div>
                 <div>
@@ -565,13 +565,13 @@ const HealthProfile = ({ onBack }) => {
             {step === 4 && (
               <div className="space-y-4">
                 <div><label className={labelClass}>Occupation <span className={optionalClass}>(optional)</span></label><input className={inputClass('occupation')} name="occupation" value={form.occupation} onChange={handleChange} placeholder="Your occupation" maxLength={191} /></div>
-                <div><label className={labelClass}>Marital Status <span className={optionalClass}>(optional)</span></label><select className={inputClass('marital_status')} name="marital_status" value={form.marital_status} onChange={handleChange}><option value="">Select</option><option>Single</option><option>Married</option><option>Widowed</option><option>Separated</option><option>Prefer not to say</option></select></div>
+                <div><label className={labelClass}>Marital Status <span className={optionalClass}>(optional)</span></label><span className="relative block"><select className={`${inputClass('marital_status')} cursor-pointer appearance-none pr-10`} name="marital_status" value={form.marital_status} onChange={handleChange}><option value="">Select</option><option>Single</option><option>Married</option><option>Widowed</option><option>Separated</option><option>Prefer not to say</option></select><ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" /></span></div>
                 <div>
                   <label className={labelClass}>Tobacco Use <span className={optionalClass}>(optional)</span></label>
                   <div className="flex gap-2">{['Never', 'Past', 'Present'].map(opt => <button key={opt} type="button" onClick={() => setForm({...form, tobacco_use: opt})} className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${form.tobacco_use === opt ? 'bg-maroon-800 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-500'}`}>{opt}</button>)}</div>
                   {(form.tobacco_use === 'Past' || form.tobacco_use === 'Present') && (<div className="grid grid-cols-2 gap-3 mt-3"><div><label className={labelClass}>How much?</label><input className={inputClass('tobacco_amount')} name="tobacco_amount" maxLength={100} value={form.tobacco_amount} onChange={handleChange} /></div><div><label className={labelClass}>How long?</label><input className={inputClass('tobacco_duration')} name="tobacco_duration" maxLength={100} value={form.tobacco_duration} onChange={handleChange} /></div></div>)}
                 </div>
-                <div><label className={labelClass}>Alcohol Use <span className={optionalClass}>(optional)</span></label><select className={inputClass('alcohol_use')} name="alcohol_use" value={form.alcohol_use} onChange={handleChange}><option value="">Select</option><option>None</option><option>Occasional</option><option>Daily</option></select></div>
+                <div><label className={labelClass}>Alcohol Use <span className={optionalClass}>(optional)</span></label><span className="relative block"><select className={`${inputClass('alcohol_use')} cursor-pointer appearance-none pr-10`} name="alcohol_use" value={form.alcohol_use} onChange={handleChange}><option value="">Select</option><option>None</option><option>Occasional</option><option>Daily</option></select><ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" /></span></div>
                 <div><label className={labelClass}>Other Substance Use <span className={optionalClass}>(optional)</span></label><textarea className={inputClass('other_substance_use')} name="other_substance_use" maxLength={2000} value={form.other_substance_use} onChange={handleChange} rows={2} placeholder="Specify if any..." /></div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-2xl"><span className="text-sm">Do you have a disability?</span><YesNoButtons name="has_disability" value={form.has_disability} onChange={setForm} /></div>

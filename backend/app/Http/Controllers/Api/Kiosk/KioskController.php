@@ -187,6 +187,11 @@ class KioskController extends Controller
                     'called_by' => auth()->id(),
                 ]);
                 $next->refresh(); // Refresh to get the called_at value
+                // Tell the student by email and in the portal. Demo patients have no real inbox.
+                $appointment = $next->appointment_id ? Appointment::find($next->appointment_id) : null;
+                if ($appointment && !in_array($next->user_id, \App\Support\DemoQueue::userIds(), true)) {
+                    app(\App\Services\AppointmentEventNotification::class)->send($appointment, 'called');
+                }
             }
             return $next;
         }, 3);

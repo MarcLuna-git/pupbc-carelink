@@ -125,6 +125,7 @@ const KioskScan = ({
   onStudentFound,
   onBack,
   method: initialMethod,
+  demoMode = false,
 }) => {
   const [methodTab, setMethodTab] = useState(initialMethod || 'manual');
   const [studentId, setStudentId] = useState('');
@@ -546,6 +547,19 @@ const KioskScan = ({
         qr_hash: qrHash || rawValue,
       };
 
+      if (demoMode) {
+        scanCooldownRef.current = true;
+        setSuccess(true);
+        setTimeout(() => {
+          onStudentFound({
+            demo: true,
+            scanned_value: rawValue,
+            identity: payload,
+          });
+        }, 150);
+        return;
+      }
+
       const response = await api.post('/kiosk/lookup', payload);
 
       if (!response.data?.success) {
@@ -639,6 +653,17 @@ const KioskScan = ({
         student_id: trimmedStudentId,
         method: 'manual',
       };
+
+      if (demoMode) {
+        setSuccess(true);
+        setTimeout(() => {
+          onStudentFound({
+            demo: true,
+            identity: payload,
+          });
+        }, 400);
+        return;
+      }
 
       const response = await api.post(
         '/kiosk/lookup',
@@ -751,7 +776,7 @@ const KioskScan = ({
                   p-3
                   bg-white/5
                   hover:bg-white/10
-                  rounded-[10px]
+                  rounded-[15px]
                   border border-white/10
                   transition
                 "
@@ -775,7 +800,7 @@ const KioskScan = ({
                 <div className="relative mx-auto aspect-square w-full max-w-[95%]">
                   <div
                     id={qrRegionId}
-                    className="h-full w-full overflow-hidden rounded-[10px] border-2 border-white/10 bg-black [&>div]:!h-full [&>div]:!w-full [&_video]:!h-full [&_video]:!w-full [&_video]:object-cover"
+                    className="h-full w-full overflow-hidden rounded-[15px] border-2 border-white/10 bg-black [&>div]:!h-full [&>div]:!w-full [&_video]:!h-full [&_video]:!w-full [&_video]:object-cover"
                   />
 
                   <input
@@ -788,10 +813,10 @@ const KioskScan = ({
                   />
 
                   {cameraReady && (
-                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-[10px] overflow-hidden">
-                      <div className="relative h-56 w-56 sm:h-64 sm:w-64 rounded-[10px] border border-yellow-400/25 shadow-[0_0_0_9999px_rgba(0,0,0,0.48)]">
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-[15px] overflow-hidden">
+                      <div className="relative h-56 w-56 sm:h-64 sm:w-64 rounded-[15px] border border-yellow-400/25 shadow-[0_0_0_9999px_rgba(0,0,0,0.48)]">
                         {!loading && (
-                          <div className="absolute inset-0 overflow-hidden rounded-[10px]">
+                          <div className="absolute inset-0 overflow-hidden rounded-[15px]">
                             <motion.div
                               aria-hidden="true"
                               initial={{ top: '8%' }}
@@ -801,10 +826,10 @@ const KioskScan = ({
                             />
                           </div>
                         )}
-                        <div className="absolute -top-0.5 -left-0.5 h-10 w-10 rounded-tl-[10px] border-t-4 border-l-4 border-yellow-400" />
-                        <div className="absolute -top-0.5 -right-0.5 h-10 w-10 rounded-tr-[10px] border-t-4 border-r-4 border-yellow-400" />
-                        <div className="absolute -bottom-0.5 -left-0.5 h-10 w-10 rounded-bl-[10px] border-b-4 border-l-4 border-yellow-400" />
-                        <div className="absolute -bottom-0.5 -right-0.5 h-10 w-10 rounded-br-[10px] border-b-4 border-r-4 border-yellow-400" />
+                        <div className="absolute -top-0.5 -left-0.5 h-10 w-10 rounded-tl-[15px] border-t-4 border-l-4 border-yellow-400" />
+                        <div className="absolute -top-0.5 -right-0.5 h-10 w-10 rounded-tr-[15px] border-t-4 border-r-4 border-yellow-400" />
+                        <div className="absolute -bottom-0.5 -left-0.5 h-10 w-10 rounded-bl-[15px] border-b-4 border-l-4 border-yellow-400" />
+                        <div className="absolute -bottom-0.5 -right-0.5 h-10 w-10 rounded-br-[15px] border-b-4 border-r-4 border-yellow-400" />
                       </div>
                     </div>
                   )}
@@ -821,7 +846,7 @@ const KioskScan = ({
                         bg-white/5
                         border border-white/10
                         text-white/80
-                        rounded-[10px]
+                        rounded-[15px]
                         text-xs
                         font-semibold
                         hover:bg-white/10
@@ -904,7 +929,7 @@ const KioskScan = ({
                         w-full
                         bg-white/5
                         border-2 border-white/10
-                        rounded-[10px]
+                        rounded-[15px]
                         pl-14
                         pr-5
                         py-5
@@ -947,7 +972,7 @@ const KioskScan = ({
                     to-yellow-500
                     text-maroon-900
                     font-bold
-                    rounded-[10px]
+                    rounded-[15px]
                     text-lg
                     transition
                     flex

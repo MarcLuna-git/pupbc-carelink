@@ -81,6 +81,19 @@ function formatStudentId(value) {
   return formatted;
 }
 
+// The Student ID field drops any key that does not fit 2023-00000-BN-0. This tells the student
+// why the key they just typed did not show up. Empty when nothing was dropped.
+function studentIdTypingNote(typed, formatted) {
+  const wanted = String(typed).toUpperCase().replace(/[-\s]/g, '');
+  const kept = formatted.replace(/-/g, '');
+  if (wanted.length <= kept.length) return '';
+  if (kept.length < 4) return `The year must be from 2000 to ${new Date().getFullYear()}.`;
+  if (kept.length < 9) return 'Use numbers only for the 5 digits after the year.';
+  if (kept.length < 11) return 'Type BN after the 5 digits.';
+  if (kept.length < 12) return 'The last number must be 0 or 1.';
+  return 'Your Student ID is already complete.';
+}
+
 function apiMessage(error, fallback) {
   const status = error?.response?.status;
   if (status === 429) return 'Too many requests. Please wait and try again.';
@@ -353,7 +366,11 @@ export default function Register() {
     if (['first_name', 'middle_name', 'last_name'].includes(name)) {
       next = formatPersonName(value.replace(/[^\p{L}\s\-'.]/gu, ''));
     }
-    if (name === 'student_id') next = formatStudentId(value);
+    let typingNote = '';
+    if (name === 'student_id') {
+      next = formatStudentId(value);
+      typingNote = studentIdTypingNote(value, next);
+    }
     setForm((previous) => {
       const updated = { ...previous, [name]: next };
       if (name === 'course') {
@@ -371,7 +388,7 @@ export default function Register() {
     });
     setErrors((previous) => ({
       ...previous,
-      [name]: '',
+      [name]: typingNote,
       ...(['course', 'year'].includes(name) ? { section: '' } : {}),
       ...(name === 'course' ? { year: '' } : {}),
       ...(name === 'password' ? { password_confirmation: '' } : {}),
@@ -853,7 +870,7 @@ export default function Register() {
               </div>
             )}
             <button type="submit" disabled={loading || resending || verified} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-maroon-800 px-4 py-3 text-sm font-bold text-white transition-colors hover:text-white/70 disabled:cursor-not-allowed disabled:opacity-60">
-              {loading ? <><Loader2 size={17} className="animate-spin" />{otpStep ? 'Verifying...' : 'Sending code...'}</> : otpStep ? <><CheckCircle2 size={17} />Verify & Create Account</> : 'Continue to Email Verification'}
+              {loading ? <><Loader2 size={17} className="animate-spin" />{otpStep ? 'Verifying...' : 'Sending code...'}</> : otpStep ? 'Verify & Create Account' : 'Continue to Email Verification'}
             </button>
             <p className="mt-4 text-center text-sm text-slate-500">Already have an account? <Link to="/login" className="font-bold text-maroon-800 dark:text-rose-300 hover:underline">Log in</Link></p>
           </form>

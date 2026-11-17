@@ -151,7 +151,9 @@
 .ap-calendar-grid button:hover:not(:disabled):not(.is-selected) { background:var(--color-gray-100);border-color:var(--sp-border);color:var(--color-gray-700); }
 .dark .ap-calendar-grid button:hover:not(:disabled):not(.is-selected) { background:color-mix(in oklab,var(--color-gray-900) 30%,transparent);color:var(--color-gray-300); }
 .ap-calendar-grid button.is-selected { background:var(--color-maroon-800);border-color:var(--color-maroon-800);color:#fff;font-weight:700; }
+.dark .ap-calendar-grid button.is-selected { background:var(--color-gray-700);border-color:var(--color-gray-600);color:#fff; }
 .ap-calendar-grid button.is-selected:hover:not(:disabled) { background:var(--color-maroon-900);border-color:var(--color-maroon-900); }
+.dark .ap-calendar-grid button.is-selected:hover:not(:disabled) { background:var(--color-gray-600);border-color:var(--color-gray-500); }
 .ap-calendar-grid button.is-today:not(.is-selected) { border-color:var(--color-gray-300);color:var(--sp-accent);font-weight:700; }
 .ap-calendar-grid button:focus-visible { outline:2px solid var(--sp-accent);outline-offset:1px; }
 .ap-calendar-grid button:disabled { opacity:.33;cursor:not-allowed; }
@@ -160,6 +162,7 @@
 .ap-time-grid button { position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:46px;padding:6px 3px;border:1px dashed var(--sp-border);border-radius:5px;font-size:12px;line-height:1.15;color:var(--sp-text);background:var(--sp-surface);white-space:nowrap; }
 .ap-time-grid button:disabled { opacity:.5;cursor:not-allowed; }
 .ap-time-grid button.is-selected { background:var(--color-maroon-800);color:white;border-color:var(--color-maroon-800); }
+.dark .ap-time-grid button.is-selected { background:var(--color-gray-700);color:#fff;border-color:var(--color-gray-600); }
 .ap-time-grid button>span { font-size:11px;color:inherit;line-height:1.25;white-space:normal; }
 .ap-time-grid button>span.ap-slot-past-tag { color:var(--sp-muted);font-weight:600; }
 .ap-time-grid button>span.ap-slot-full-tag { color:#a13e51;font-weight:600; }
@@ -182,7 +185,7 @@
 .ap-service-list label:hover:not(.is-selected) { background:var(--color-gray-50);border-color:var(--color-gray-300); }
 .dark .ap-service-list label:hover:not(.is-selected) { background:color-mix(in oklab,var(--color-gray-900) 30%,transparent); }
 .ap-service-list label.is-selected { background:var(--color-gray-50);border-color:var(--color-maroon-800); }
-.dark .ap-service-list label.is-selected { background:color-mix(in oklab,var(--color-gray-900) 30%,transparent); }
+.dark .ap-service-list label.is-selected { background:var(--color-gray-700);border-color:var(--color-gray-500); }
 .ap-service-list input { width:11px;height:11px;flex-shrink:0;accent-color:var(--color-maroon-800); }
 .ap-service-list svg { width:13px;height:13px;flex-shrink:0;color:var(--sp-accent); }
 .ap-service-list strong { display:block;font-size:12px;line-height:1.2; }
@@ -220,7 +223,7 @@
 /* Hover feedback: the card "lifts" — the same neutral gray as a hovered list
    row (--sp-bg), a plain gray border and a soft shadow; no pink tint. */
 .ap-history-item:hover { background:var(--sp-bg);border-color:#d6d3d1;box-shadow:0 3px 10px #0000000f; }
-.dark .ap-history-item:hover { border-color:#4b4650;box-shadow:0 3px 10px #00000033; }
+.dark .ap-history-item:hover { border-color:#4b5563;box-shadow:0 3px 10px #00000033; }
 .ap-history-item .ap-date-tile { flex-shrink:0;min-width:60px;background:var(--color-gray-100);border-color:var(--color-gray-200);color:#111827; }
 .dark .ap-history-item .ap-date-tile { background:var(--color-gray-700);border-color:var(--color-gray-600);color:#fff; }
 .ap-history-item .ap-date-tile span { font-size:12px; }
@@ -277,7 +280,7 @@
 .ap-history-row .ap-history-actions :is(button,a):hover { background:var(--color-maroon-900);border-color:var(--color-maroon-900);color:white;text-decoration:none; }
 .ap-history-row .ap-history-actions :is(button,a):hover svg { color:white; }
 .dark .ap-history-row .ap-history-actions :is(button,a) { border-color:var(--color-gray-600); }
-.dark .ap-history-row .ap-history-actions :is(button,a):hover { background:var(--color-maroon-900);border-color:var(--color-maroon-900); }
+.dark .ap-history-row .ap-history-actions :is(button,a):hover { background:var(--color-gray-700);border-color:var(--color-gray-600); }
 /* Tablet: drop the Staff · Room column (still in View Details). */
 @media (min-width:768px) and (max-width:1023px) {
   .ap-history-table-head,.ap-history-row { grid-template-columns:minmax(110px,1fr) minmax(130px,1.3fr) 104px 150px; }
@@ -394,8 +397,8 @@
   .ap-history-table { margin:4px 12px;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#c9bfc2 transparent; }
   .ap-history-table::-webkit-scrollbar { height:6px; }
   .ap-history-table::-webkit-scrollbar-thumb { background:#c9bfc2;border-radius:6px; }
-  .dark .ap-history-table { scrollbar-color:#4a4149 transparent; }
-  .dark .ap-history-table::-webkit-scrollbar-thumb { background:#4a4149; }
+  .dark .ap-history-table { scrollbar-color:#374151 transparent; }
+  .dark .ap-history-table::-webkit-scrollbar-thumb { background:#374151; }
   .ap-history-table-head,.ap-history-row { grid-template-columns:112px 160px 140px 108px 128px;gap:12px;min-width:max-content;padding-left:12px;padding-right:12px; }
   .ap-history-table-head>span,.ap-history-row>span { white-space:nowrap; }
   .ap-policy-note { font-size:12px; }
@@ -419,7 +422,7 @@
 .dark .ap-history-filter-reset button { color:var(--color-gray-300); }
 .dark .ap-history-filter-reset button:hover:not(:disabled) { background:var(--color-gray-700); }
 .ap-history-select svg { position:absolute;right:14px;top:50%;width:16px;height:16px;transform:translateY(-50%);pointer-events:none;color:var(--color-maroon-700); }
-.dark .ap-history-select svg { color:var(--color-maroon-300); }
+.dark .ap-history-select svg { color:var(--color-gray-400); }
 .ap-history-search .ap-history-filters { margin-bottom:16px; }
 @media (max-width:1023px) { .ap-history-filters { grid-template-columns:1fr 1fr; } .ap-history-filter-search { grid-column:1/-1; } }
 @media (max-width:639px) { .ap-history-filters { grid-template-columns:minmax(0,1fr);margin:4px 12px 12px;padding:12px; } }

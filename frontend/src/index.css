@@ -100,46 +100,96 @@ input[type="password"]::-ms-clear {
 }
 
 html { color-scheme: light; }
-html.dark { color-scheme: dark; }
-.dark body { background-color: #111827; color: #e5e7eb; }
+html.dark {
+  color-scheme: dark;
+  --dashboard-bg: #111827;
+  --dashboard-surface: #1f2937;
+  --dashboard-header: #111827;
+  --dashboard-soft: #1f2937;
+  --dashboard-border: #1f2937;
+  --dashboard-outline: #374151;
+  --dashboard-text: #f3f4f6;
+  --dashboard-muted: #9ca3af;
+  --dashboard-accent: #f3f4f6;
+  --dashboard-selected-bg: #ffffff1a;
+  --dashboard-selected-text: #ffffff;
+}
+.dark body { background-color: var(--dashboard-bg); color: var(--dashboard-text); }
 
-/* Fallbacks for older screens. Explicit dark utilities always take precedence. */
-.dark .bg-white:not([class*="dark:bg-"]) { background-color: #1f2937; }
-.dark :is(.bg-gray-50, .bg-slate-50):not([class*="dark:bg-"]) { background-color: #111827; }
-.dark :is(.bg-gray-100, .bg-slate-100):not([class*="dark:bg-"]) { background-color: #263244; }
-.dark :is(.bg-gray-200, .bg-slate-200):not([class*="dark:bg-"]) { background-color: #374151; }
-.dark :is(.bg-gray-300, .bg-slate-300):not([class*="dark:bg-"]) { background-color: #4b5563; }
-.dark :is(.border-gray-100, .border-gray-200, .border-slate-100, .border-slate-200):not([class*="dark:border-"]) { border-color: #374151; }
-.dark :is(.border-gray-300, .border-slate-300):not([class*="dark:border-"]) { border-color: #4b5563; }
-.dark :is(.text-gray-950, .text-gray-900, .text-gray-800, .text-slate-950, .text-slate-900, .text-slate-800):not([class*="dark:text-"]) { color: #e5e7eb; }
-.dark :is(.text-gray-700, .text-gray-600, .text-slate-700, .text-slate-600):not([class*="dark:text-"]) { color: #cbd5e1; }
-.dark :is(.text-gray-500, .text-gray-400, .text-slate-500, .text-slate-400):not([class*="dark:text-"]) { color: #a8b3c5; }
-.dark :is(.text-maroon-600, .text-maroon-700, .text-maroon-800, .text-maroon-900):not([class*="dark:text-"]) { color: #f8b4b4; }
-.dark :is(.bg-maroon-50, .bg-maroon-100, .bg-rose-50, .bg-rose-100):not([class*="dark:bg-"]) { background-color: #3b202c; }
-.dark :is(.text-rose-700, .text-rose-800):not([class*="dark:text-"]) { color: #fda4af; }
-.dark :is(.bg-red-50, .bg-red-100):not([class*="dark:bg-"]) { background-color: #40232b; }
-.dark :is(.text-red-600, .text-red-700, .text-red-800):not([class*="dark:text-"]) { color: #fca5a5; }
-.dark :is(.bg-green-50, .bg-green-100):not([class*="dark:bg-"]) { background-color: #173a30; }
-.dark :is(.text-green-600, .text-green-700, .text-green-800):not([class*="dark:text-"]) { color: #86efac; }
-.dark :is(.bg-blue-50, .bg-blue-100):not([class*="dark:bg-"]) { background-color: #1f3354; }
-.dark :is(.text-blue-600, .text-blue-700, .text-blue-800):not([class*="dark:text-"]) { color: #93c5fd; }
-.dark :is(.bg-yellow-50, .bg-yellow-100, .bg-orange-50, .bg-orange-100):not([class*="dark:bg-"]) { background-color: #403323; }
-.dark :is(.text-yellow-600, .text-yellow-700, .text-orange-600, .text-orange-700):not([class*="dark:text-"]) { color: #fcd34d; }
-.dark :is(.bg-purple-50, .bg-purple-100):not([class*="dark:bg-"]) { background-color: #352847; }
-.dark :is(.text-purple-600, .text-purple-700):not([class*="dark:text-"]) { color: #d8b4fe; }
-.dark :is(input, textarea)::placeholder { color: #a8b3c5; opacity: 1; }
-.dark :is(input, select, textarea):focus-visible { outline-color: #f8b4b4; }
-.dark .hover\:bg-gray-50:hover:not([class*="dark:hover:bg-"]),
-.dark .hover\:bg-gray-100:hover:not([class*="dark:hover:bg-"]),
-.dark .hover\:bg-slate-100:hover:not([class*="dark:hover:bg-"]) { background-color: #374151; }
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-fadeInUp, .animate-fadeIn, .animate-shake { animation: none; }
+/* ============================================================
+   Global Dashboard Dark Mode (shared by Nurse & Student portals)
+   ============================================================ */
+.dark :is(.nurse-shell, .student-approved-shell) {
+  background-color: var(--dashboard-bg);
+  color: var(--dashboard-text);
 }
 
-html { color-scheme: light; }
-html.dark { color-scheme: dark; }
-.dark body { background-color: #111827; color: #e5e7eb; }
+.dark :is(.nurse-sidebar, .student-sidebar) {
+  background: linear-gradient(to bottom, var(--dashboard-surface), var(--dashboard-bg));
+  box-shadow: 0 25px 50px -12px #0000004d;
+}
+
+.dark :is(.nurse-sidebar-brand, .student-sidebar-brand) {
+  border-bottom-color: #ffffff0d;
+}
+
+.dark :is(.nurse-brand-symbol, .student-brand-symbol) {
+  background: #ffffff1a;
+}
+
+.dark :is(.nurse-sidebar-campus, .student-sidebar-campus) {
+  opacity: .08;
+}
+
+.dark :is(.nurse-nav-link, .student-sidebar-nav > a) {
+  color: #d1d5db;
+}
+
+.dark :is(.nurse-nav-link:hover, .student-sidebar-nav > a:hover) {
+  background: #ffffff0d;
+  color: #fff;
+}
+
+/* Consistent neutral selected state across both portals in dark mode */
+.dark :is(.nurse-nav-link[aria-current="page"], .student-sidebar-nav > a[aria-current="page"]) {
+  background: var(--dashboard-selected-bg);
+  color: var(--dashboard-selected-text);
+  box-shadow: none;
+}
+
+.dark :is(.nurse-header, .student-header) {
+  background: color-mix(in srgb, var(--dashboard-header) 80%, transparent);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom-color: var(--dashboard-border);
+  box-shadow: none;
+}
+
+.dark :is(.nurse-shell, .student-approved-shell) :is(button, a, input, select, textarea):focus-visible {
+  outline-color: #9ca3af;
+}
+
+/* Remove maroon/rose accents inside dashboards in dark mode so selected tabs,
+   buttons, and active states stay neutral slate/gray like the Nurse dark theme. */
+.dark :is(.nurse-shell, .student-approved-shell) :is([class*="dark:bg-maroon-"], [class*="dark:bg-rose-"]) {
+  background-color: #374151;
+}
+.dark :is(.nurse-shell, .student-approved-shell) :is([class*="dark:border-maroon-"], [class*="dark:border-rose-"]) {
+  border-color: #4b5563;
+}
+.dark :is(.nurse-shell, .student-approved-shell) :is([class*="dark:text-maroon-"], [class*="dark:text-rose-"]) {
+  color: #f3f4f6;
+}
+.dark :is(.nurse-shell, .student-approved-shell) :is([class*="dark:hover:bg-maroon-"], [class*="dark:hover:bg-rose-"]):hover {
+  background-color: #374151;
+}
+.dark :is(.nurse-shell, .student-approved-shell) :is(.bg-maroon-800, .bg-maroon-900):not([class*="dark:bg-"]) {
+  background-color: #374151;
+  color: #ffffff;
+}
+.dark :is(.nurse-shell, .student-approved-shell) :is(.border-maroon-800, .border-maroon-900):not([class*="dark:border-"]) {
+  border-color: #4b5563;
+}
 
 /* Fallbacks for older screens. Explicit dark utilities always take precedence. */
 .dark .bg-white:not([class*="dark:bg-"]) { background-color: #1f2937; }
@@ -151,10 +201,10 @@ html.dark { color-scheme: dark; }
 .dark :is(.border-gray-300, .border-slate-300):not([class*="dark:border-"]) { border-color: #4b5563; }
 .dark :is(.text-gray-950, .text-gray-900, .text-gray-800, .text-slate-950, .text-slate-900, .text-slate-800):not([class*="dark:text-"]) { color: #e5e7eb; }
 .dark :is(.text-gray-700, .text-gray-600, .text-slate-700, .text-slate-600):not([class*="dark:text-"]) { color: #cbd5e1; }
-.dark :is(.text-gray-500, .text-gray-400, .text-slate-500, .text-slate-400):not([class*="dark:text-"]) { color: #a8b3c5; }
-.dark :is(.text-maroon-600, .text-maroon-700, .text-maroon-800, .text-maroon-900):not([class*="dark:text-"]) { color: #f8b4b4; }
-.dark :is(.bg-maroon-50, .bg-maroon-100, .bg-rose-50, .bg-rose-100):not([class*="dark:bg-"]) { background-color: #3b202c; }
-.dark :is(.text-rose-700, .text-rose-800):not([class*="dark:text-"]) { color: #fda4af; }
+.dark :is(.text-gray-500, .text-gray-400, .text-slate-500, .text-slate-400):not([class*="dark:text-"]) { color: #9ca3af; }
+.dark :is(.text-maroon-600, .text-maroon-700, .text-maroon-800, .text-maroon-900):not([class*="dark:text-"]) { color: #e5e7eb; }
+.dark :is(.bg-maroon-50, .bg-maroon-100, .bg-rose-50, .bg-rose-100):not([class*="dark:bg-"]) { background-color: #1f2937; }
+.dark :is(.text-rose-700, .text-rose-800):not([class*="dark:text-"]) { color: #d1d5db; }
 .dark :is(.bg-red-50, .bg-red-100):not([class*="dark:bg-"]) { background-color: #40232b; }
 .dark :is(.text-red-600, .text-red-700, .text-red-800):not([class*="dark:text-"]) { color: #fca5a5; }
 .dark :is(.bg-green-50, .bg-green-100):not([class*="dark:bg-"]) { background-color: #173a30; }
@@ -165,8 +215,8 @@ html.dark { color-scheme: dark; }
 .dark :is(.text-yellow-600, .text-yellow-700, .text-orange-600, .text-orange-700):not([class*="dark:text-"]) { color: #fcd34d; }
 .dark :is(.bg-purple-50, .bg-purple-100):not([class*="dark:bg-"]) { background-color: #352847; }
 .dark :is(.text-purple-600, .text-purple-700):not([class*="dark:text-"]) { color: #d8b4fe; }
-.dark :is(input, textarea)::placeholder { color: #94a3b8; opacity: 1; }
-.dark :is(input, select, textarea):focus-visible { outline-color: #f8b4b4; }
+.dark :is(input, textarea)::placeholder { color: #9ca3af; opacity: 1; }
+.dark :is(input, select, textarea):focus-visible { outline-color: #9ca3af; }
 .dark .hover\:bg-gray-50:hover:not([class*="dark:hover:bg-"]),
 .dark .hover\:bg-gray-100:hover:not([class*="dark:hover:bg-"]),
 .dark .hover\:bg-slate-100:hover:not([class*="dark:hover:bg-"]) { background-color: #374151; }

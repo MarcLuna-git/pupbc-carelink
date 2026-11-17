@@ -1,16 +1,40 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, Clock, User, Users, RefreshCw, ArrowRight, QrCode } from 'lucide-react';
+import { CheckCircle, Clock, User, Users } from 'lucide-react';
 import api from '../../services/api';
 import KioskLayout from '../../layouts/KioskLayout';
 
-const KioskQueue = ({ checkin, onDone }) => {
+const DEMO_QUEUE_DATA = {
+  now_serving: { queue_number: 'R-004' },
+  queue: [
+    { id: 'demo-1', status: 'waiting' },
+    { id: 'demo-2', status: 'waiting' },
+    { id: 'demo-checkin', status: 'waiting' },
+  ],
+};
+
+const KioskQueue = ({ checkin, onDone, demoMode = false }) => {
   const isPriority = checkin.queue_type === 'priority';
   const [queueData, setQueueData] = useState(null);
   const [countdown, setCountdown] = useState(30);
+  const [finishing, setFinishing] = useState(false);
   const queueRequestPending = useRef(false);
 
+  const handleDone = () => {
+    if (finishing) return;
+    setFinishing(true);
+    setTimeout(onDone, 920);
+  };
+
   useEffect(() => {
+    if (demoMode) {
+      setQueueData(DEMO_QUEUE_DATA);
+      const cInterval = setInterval(() => setCountdown(prev => {
+        if (prev <= 1) { onDone(); return 0; }
+        return prev - 1;
+      }), 1000);
+      return () => clearInterval(cInterval);
+    }
     fetchQueue();
     const qInterval = setInterval(fetchQueue, 10000);
     const cInterval = setInterval(() => setCountdown(prev => {
@@ -18,7 +42,7 @@ const KioskQueue = ({ checkin, onDone }) => {
       return prev - 1;
     }), 1000);
     return () => { clearInterval(qInterval); clearInterval(cInterval); };
-  }, []);
+  }, [demoMode]);
 
   const fetchQueue = async () => {
     if (queueRequestPending.current || document.hidden) return;
@@ -50,7 +74,7 @@ const KioskQueue = ({ checkin, onDone }) => {
         <motion.div
           initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 200, delay: 0.4 }}
-          className={`rounded-[10px] p-8 md:p-10 mb-6 border-2 relative overflow-hidden ${
+          className={`rounded-[15px] p-8 md:p-10 mb-6 border-2 relative overflow-hidden ${
             isPriority ? 'bg-red-500/5 border-red-500/30' : 'bg-yellow-400/5 border-yellow-400/30'
           }`}>
           <div className={`absolute inset-0 opacity-10 ${isPriority ? 'bg-red-500' : 'bg-yellow-400'}`} />
@@ -66,17 +90,17 @@ const KioskQueue = ({ checkin, onDone }) => {
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-          <div className="bg-white/5 backdrop-blur-xl rounded-[10px] p-4 border border-white/10">
+          <div className="bg-white/5 backdrop-blur-xl rounded-[15px] p-4 border border-white/10">
             <User className="w-5 h-5 text-yellow-300 mx-auto mb-1" />
             <p className="text-white/70 text-xs">Patient</p>
             <p className="text-white text-sm font-semibold truncate">Your clinic visit</p>
           </div>
-          <div className="bg-white/5 backdrop-blur-xl rounded-[10px] p-4 border border-white/10">
+          <div className="bg-white/5 backdrop-blur-xl rounded-[15px] p-4 border border-white/10">
             <Users className="w-5 h-5 text-yellow-300 mx-auto mb-1" />
             <p className="text-white/70 text-xs">Ahead</p>
             <p className="text-white text-sm font-semibold">{aheadCount} patient{aheadCount !== 1 ? 's' : ''}</p>
           </div>
-          <div className="bg-white/5 backdrop-blur-xl rounded-[10px] p-4 border border-white/10">
+          <div className="bg-white/5 backdrop-blur-xl rounded-[15px] p-4 border border-white/10">
             <Clock className="w-5 h-5 text-yellow-300 mx-auto mb-1" />
             <p className="text-white/70 text-xs">Est. Wait</p>
             <p className="text-white text-sm font-semibold">~{waitTime} min</p>
@@ -84,7 +108,7 @@ const KioskQueue = ({ checkin, onDone }) => {
         </div>
 
         {queueData?.now_serving && (
-          <div className="bg-green-500/5 backdrop-blur-xl rounded-[10px] p-4 mb-6 border border-green-500/20 flex items-center justify-between">
+          <div className="bg-green-500/5 backdrop-blur-xl rounded-[15px] p-4 mb-6 border border-green-500/20 flex items-center justify-between">
             <span className="text-green-400 text-sm font-semibold">NOW SERVING</span>
             <span className="text-green-300 text-xl font-bold">{queueData.now_serving.queue_number}</span>
           </div>
@@ -94,13 +118,27 @@ const KioskQueue = ({ checkin, onDone }) => {
           Screen resets in {countdown}s
         </p>
 
-        <motion.button
-          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-          onClick={onDone}
-          className="w-full py-5 bg-gradient-to-r from-yellow-400 to-yellow-500 text-maroon-900 font-bold rounded-[10px] text-lg transition flex items-center justify-center gap-3 shadow-xl shadow-yellow-400/10">
-          Done
-          <ArrowRight className="w-5 h-5" />
-        </motion.button>
+        <button
+          type="button"
+          onClick={handleDone}
+          disabled={finishing}
+          className="relative inline-flex min-h-16 w-full cursor-pointer items-center justify-center overflow-hidden rounded-[15px] bg-yellow-400 px-12 py-4 text-lg font-extrabold text-maroon-950 shadow-lg shadow-yellow-400/20 transition-colors duration-200 hover:bg-yellow-300 active:bg-yellow-500 disabled:cursor-wait"
+        >
+          {finishing && (
+            <motion.span
+              key="queue-done-bar"
+              aria-hidden="true"
+              initial={{ left: '0%', right: '100%' }}
+              animate={{
+                left: ['0%', '0%', '100%'],
+                right: ['100%', '0%', '0%'],
+              }}
+              transition={{ duration: 0.9, times: [0, 0.5, 1], ease: 'easeInOut' }}
+              className="pointer-events-none absolute inset-y-0 bg-maroon-950/20"
+            />
+          )}
+          <span className="relative z-10">Done</span>
+        </button>
       </motion.div>
     </KioskLayout>
   );

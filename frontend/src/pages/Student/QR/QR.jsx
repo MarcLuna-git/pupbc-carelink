@@ -19,7 +19,6 @@ import {
   Clock,
   CircleCheck,
   Users,
-  LogIn,
   Info,
   Stethoscope,
   FileText,
@@ -39,6 +38,7 @@ import { escapeHtml } from '../../../utils/escapeHtml';
 import { whenPrintReady } from '../../../utils/printReady';
 import { StudentToast } from '../../../components/StudentFeedback';
 import { QUEUE_STATUS_NOTES, checkinStepIndex } from './checkinTracker';
+import LiveQueue from './LiveQueue';
 
 const formatDate = (value) => formatAppointmentDate(value, { month: 'long' });
 const formatDateWithWeekday = (value) =>
@@ -172,6 +172,7 @@ const QR = () => {
   const [qrUsable, setQrUsable] = useState(false);
   const [appointments, setAppointments] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [liveQueue, setLiveQueue] = useState(null);
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [qrDataUrl, setQrDataUrl] = useState('');
   const hasLoadedRef = useRef(false);
@@ -259,6 +260,7 @@ const QR = () => {
       const appointmentPayload = qrData?.appointment;
       setAppointments(appointmentPayload ? [appointmentPayload] : []);
       setRecentActivity(Array.isArray(qrData?.recent_activity) ? qrData.recent_activity : []);
+      setLiveQueue(qrData?.live_queue || null);
       // Clear only a previous load failure; keep e.g. the download notice.
       setMessage((current) => (current === LOAD_ERROR ? '' : current));
     } catch (error) {
@@ -789,45 +791,28 @@ const QR = () => {
         </div>
 
         <div className="flex flex-col gap-3">
-          {/* Check-in Information */}
+          {/* Live Queue: the student's place in line and what the clinic is doing now (was Check-in Information). */}
           <div className={CARD}>
-            <CardTitle icon={Clock}>Check-in Information</CardTitle>
+            <CardTitle
+              icon={Users}
+              action={(
+                <span className="inline-flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-400">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-60" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-600" />
+                  </span>
+                  Live, updates every 10 seconds
+                </span>
+              )}
+            >
+              Live Queue
+            </CardTitle>
 
-            {/* Only while a visit is in progress: once it is completed (or there is none) it goes back to the default note. */}
-            {trackedAppointment && opensLabel && deadlineLabel ? (
-              <div className="grid gap-4 rounded-xl bg-gray-50 p-5 dark:bg-gray-900/30 sm:grid-cols-2 sm:divide-x sm:divide-gray-200 dark:sm:divide-gray-700">
-                <div className="flex items-start gap-3.5">
-                  <LogIn className="mt-1 h-7 w-7 shrink-0 text-maroon-700 dark:text-maroon-300" />
-                  <div>
-                    <p className="text-sm font-medium text-maroon-800 dark:text-maroon-300">Check-in Opens</p>
-                    <p className="text-3xl font-bold text-maroon-800 dark:text-maroon-200">{opensLabel}</p>
-                    <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                      {allDayWindow
-                        ? 'Open all day (kiosk time guard off)'
-                        : minutesBeforeStart
-                          ? `${minutesBeforeStart} minutes before your appointment`
-                          : 'Before your appointment'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3.5 sm:pl-5">
-                  <Clock className="mt-1 h-7 w-7 shrink-0 text-maroon-700 dark:text-maroon-300" />
-                  <div>
-                    <p className="text-sm font-medium text-maroon-800 dark:text-maroon-300">Check-in Deadline</p>
-                    <p className="text-3xl font-bold text-maroon-800 dark:text-maroon-200">{deadlineLabel}</p>
-                    <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                      {allDayWindow
-                        ? 'Open until the end of your appointment day.'
-                        : 'After this time, your slot may be forfeited.'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-xl bg-gray-50 p-5 text-sm text-gray-600 dark:bg-gray-900/30 dark:text-gray-400">
-                Your check-in window will appear here on the day of an approved appointment.
-              </div>
-            )}
+            <LiveQueue
+              queue={liveQueue}
+              opensLabel={trackedAppointment ? opensLabel : null}
+              deadlineLabel={trackedAppointment ? deadlineLabel : null}
+            />
 
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               {CHECKIN_TIPS.map(({ icon: Icon, title, desc }) => (

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { QrCode, Keyboard, ArrowLeft, AlertTriangle, HelpCircle, X } from 'lucide-react';
+import { QrCode, Keyboard, ArrowLeft, HelpCircle, Info, X } from 'lucide-react';
 import KioskLayout from '../../layouts/KioskLayout';
 
 const KioskOptions = ({ onScanQR, onEnterID, onBack }) => {
@@ -45,9 +45,9 @@ const KioskOptions = ({ onScanQR, onEnterID, onBack }) => {
           onClick={() => setShowHelp(true)}
           aria-label="Check-in help and emergency notice"
           title="No appointment or urgent emergency?"
-          className="absolute right-0 -top-12 inline-flex h-10 w-10 items-center justify-center rounded-[10px] border border-white/15 bg-white/5 text-white/80 transition-colors hover:bg-white/15 hover:text-white"
+          className="absolute right-0 -top-12 inline-flex h-10 w-10 items-center justify-center rounded-full text-white/80 transition-colors hover:text-white"
         >
-          <HelpCircle className="h-5 w-5" />
+          <HelpCircle className="h-7 w-7" />
         </button>
 
         <div className="mb-8">
@@ -55,7 +55,7 @@ const KioskOptions = ({ onScanQR, onEnterID, onBack }) => {
             <button
               type="button"
               onClick={onBack}
-              className="p-3 bg-white/5 hover:bg-white/10 rounded-[10px] border border-white/10 transition"
+              className="p-3 bg-white/5 hover:bg-white/10 rounded-[15px] border border-white/10 transition"
             >
               <ArrowLeft className="w-5 h-5 text-white/70" />
             </button>
@@ -70,9 +70,9 @@ const KioskOptions = ({ onScanQR, onEnterID, onBack }) => {
               key={option.id}
               type="button"
               onClick={option.onClick}
-              className={`bg-white/[0.03] backdrop-blur-xl rounded-[10px] p-6 md:p-8 border ${option.border} hover:bg-white/[0.06] transition-colors text-center flex flex-col items-center h-full`}
+              className={`bg-white/[0.03] backdrop-blur-xl rounded-[15px] p-6 md:p-8 border ${option.border} hover:bg-white/[0.06] transition-colors text-center flex flex-col items-center h-full`}
             >
-              <div className={`w-16 h-16 md:w-20 md:h-20 ${option.iconBg} rounded-[10px] flex items-center justify-center mb-4`}>
+              <div className={`w-16 h-16 md:w-20 md:h-20 ${option.iconBg} rounded-[15px] flex items-center justify-center mb-4`}>
                 <option.icon className={`w-8 h-8 md:w-10 md:h-10 ${option.iconColor}`} />
               </div>
 
@@ -99,26 +99,26 @@ const KioskOptions = ({ onScanQR, onEnterID, onBack }) => {
             role="dialog"
             aria-modal="true"
             aria-labelledby="kiosk-help-title"
-            className="relative w-full max-w-md rounded-[10px] border border-white/15 bg-[#2a0808] p-6 text-center text-white shadow-2xl"
+            className="relative w-full max-w-md rounded-[15px] border border-slate-200 bg-white p-6 text-center text-slate-900 shadow-2xl"
           >
             <button
               type="button"
               onClick={() => setShowHelp(false)}
               aria-label="Close"
-              className="absolute right-4 top-4 rounded-[10px] p-2 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+              className="absolute right-4 top-4 rounded-[15px] p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
             >
               <X className="h-5 w-5" />
             </button>
 
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[10px] border border-red-400/25 bg-red-500/15 text-red-300">
-              <AlertTriangle className="h-7 w-7" />
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-600">
+              <Info className="h-7 w-7" />
             </div>
 
-            <h2 id="kiosk-help-title" className="text-xl font-bold text-white">
+            <h2 id="kiosk-help-title" className="text-xl font-bold text-slate-900">
               No Appointment or Urgent Emergency?
             </h2>
 
-            <p className="mt-2.5 text-sm leading-relaxed text-white/80">
+            <p className="mt-2.5 text-sm leading-relaxed text-slate-600">
               Do not use kiosk check-in. Please go directly to the clinic or call emergency services.
             </p>
 
@@ -127,7 +127,7 @@ const KioskOptions = ({ onScanQR, onEnterID, onBack }) => {
                 type="button"
                 onClick={() => setShowHelp(false)}
                 autoFocus
-                className="min-w-[120px] rounded-[10px] bg-yellow-400 px-6 py-2.5 text-sm font-bold text-maroon-950 transition-colors hover:bg-yellow-300"
+                className="min-w-[120px] rounded-[15px] bg-maroon-800 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-maroon-900"
               >
                 OK
               </button>

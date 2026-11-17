@@ -54,7 +54,7 @@ class RouteServiceProvider extends ServiceProvider
         // throttle on the route stops bursts; this one stops a single student
         // from draining the shared Gemini daily quota.
         RateLimiter::for('chatbot-daily', function (Request $request) {
-            return Limit::perDay((int) config('chatbot.daily_limit', 100))
+            return Limit::perDay((int) config('chatbot.daily_limit', 15))
                 ->by(optional($request->user())->id ?: $request->ip());
         });
     }
