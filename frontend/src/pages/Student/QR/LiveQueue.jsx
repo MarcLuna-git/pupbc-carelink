@@ -2,6 +2,7 @@
  * Live Queue window on the student QR page: where the student is in today's clinic queue, who is
  * being called and who is in consultation. Fed by `live_queue` of GET /student/qr, which the page
  * reloads every 10 seconds. Other students appear as queue numbers only, never by name.
+ * QR.jsx shows it in place of Check-in Information only while the student is in today's queue.
  */
 
 const PANEL = 'rounded-xl bg-gray-50 p-4 dark:bg-gray-900/30';
@@ -30,7 +31,7 @@ const Numbers = ({ numbers, mine, empty }) => (numbers.length ? (
   </div>
 ) : <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{empty}</p>);
 
-const LiveQueue = ({ queue, opensLabel, deadlineLabel }) => {
+const LiveQueue = ({ queue }) => {
   const serving = queue?.serving || [];
   const calling = queue?.calling || [];
   const waiting = queue?.waiting || [];
@@ -74,10 +75,6 @@ const LiveQueue = ({ queue, opensLabel, deadlineLabel }) => {
         <Numbers numbers={waiting} mine={mine?.queue_number} empty="No one is waiting." />
         {total > waiting.length && <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">and {total - waiting.length} more</p>}
       </div>
-
-      {opensLabel && deadlineLabel && !mine && (
-        <p className="text-xs text-gray-600 dark:text-gray-400">Kiosk check in is open from {opensLabel} to {deadlineLabel}.</p>
-      )}
     </div>
   );
 };

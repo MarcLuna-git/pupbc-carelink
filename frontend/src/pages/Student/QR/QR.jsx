@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   CalendarDays,
   Clock,
+  LogIn,
   CircleCheck,
   Users,
   Info,
@@ -571,6 +572,8 @@ const QR = () => {
   const isNoShow = queue?.status === 'no_show';
   const opensLabel = formatTime(checkinOpensAt);
   const deadlineLabel = formatTime(checkinDeadlineAt);
+  // Live Queue takes the Check-in Information spot once the student is in today's queue.
+  const inLiveQueue = Boolean(liveQueue?.mine);
 
   return (
     <motion.div
@@ -791,28 +794,75 @@ const QR = () => {
         </div>
 
         <div className="flex flex-col gap-3">
-          {/* Live Queue: the student's place in line and what the clinic is doing now (was Check-in Information). */}
+          {/* One spot, two views: Check-in Information by default, and Live Queue once the
+              student has checked in at the kiosk and has a queue number today. */}
           <div className={CARD}>
-            <CardTitle
-              icon={Users}
-              action={(
-                <span className="inline-flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-400">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-60" />
-                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-600" />
-                  </span>
-                  Live, updates every 10 seconds
-                </span>
-              )}
-            >
-              Live Queue
-            </CardTitle>
+            {inLiveQueue ? (
+              <>
+                <CardTitle
+                  icon={Users}
+                  action={(
+                    <span className="inline-flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-400">
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-60" />
+                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-600" />
+                      </span>
+                      Live, updates every 10 seconds
+                    </span>
+                  )}
+                >
+                  Live Queue
+                </CardTitle>
 
-            <LiveQueue
-              queue={liveQueue}
-              opensLabel={trackedAppointment ? opensLabel : null}
-              deadlineLabel={trackedAppointment ? deadlineLabel : null}
-            />
+                <LiveQueue queue={liveQueue} />
+              </>
+            ) : (
+              <>
+                <CardTitle icon={Clock}>Check-in Information</CardTitle>
+
+                {/* Only while a visit is in progress: once it is completed (or there is none) it goes back to the default note. */}
+                {trackedAppointment && opensLabel && deadlineLabel ? (
+                  <div className="grid gap-4 rounded-xl bg-gray-50 p-5 dark:bg-gray-900/30 sm:grid-cols-2 sm:divide-x sm:divide-gray-200 dark:sm:divide-gray-700">
+                    <div className="flex items-start gap-3.5">
+                      <LogIn className="mt-1 h-7 w-7 shrink-0 text-maroon-700 dark:text-maroon-300" />
+                      <div>
+                        <p className="text-sm font-medium text-maroon-800 dark:text-maroon-300">Check-in Opens</p>
+                        <p className="text-3xl font-bold text-maroon-800 dark:text-maroon-200">{opensLabel}</p>
+                        <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                          {allDayWindow
+                            ? 'Open all day (kiosk time guard off)'
+                            : minutesBeforeStart
+                              ? `${minutesBeforeStart} minutes before your appointment`
+                              : 'Before your appointment'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3.5 sm:pl-5">
+                      <Clock className="mt-1 h-7 w-7 shrink-0 text-maroon-700 dark:text-maroon-300" />
+                      <div>
+                        <p className="text-sm font-medium text-maroon-800 dark:text-maroon-300">Check-in Deadline</p>
+                        <p className="text-3xl font-bold text-maroon-800 dark:text-maroon-200">{deadlineLabel}</p>
+                        <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                          {allDayWindow
+                            ? 'Open until the end of your appointment day.'
+                            : 'After this time, your slot may be forfeited.'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl bg-gray-50 p-5 text-sm text-gray-600 dark:bg-gray-900/30 dark:text-gray-400">
+                    Your check-in window will appear here on the day of an approved appointment.
+                  </div>
+                )}
+
+                {trackedAppointment && (
+                  <p className="mt-3 text-xs text-gray-600 dark:text-gray-400">
+                    After you check in at the clinic kiosk, your live queue will show here.
+                  </p>
+                )}
+              </>
+            )}
 
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               {CHECKIN_TIPS.map(({ icon: Icon, title, desc }) => (
