@@ -980,6 +980,9 @@ Route::middleware([
 
                 Route::patch('/students/{id}/archive', [NurseStudentController::class, 'archive']);
                 Route::patch('/students/{id}/restore', [NurseStudentController::class, 'restore']);
+                // Delete for good (admin password). Tight limit against password guessing.
+                Route::delete('/students/{id}', [NurseStudentController::class, 'destroy'])
+                    ->middleware('throttle:10,1,student-delete:');
 
                 Route::get('/academic-periods', [\App\Http\Controllers\Api\Nurse\CourseManagementController::class, 'periods']);
                 Route::post('/academic-periods', [\App\Http\Controllers\Api\Nurse\CourseManagementController::class, 'storePeriod']);
@@ -1001,6 +1004,7 @@ Route::middleware([
                 Route::post('/masterlist/import', [\App\Http\Controllers\Api\Nurse\MasterlistController::class, 'import']);
                 Route::post('/masterlist/clear', [\App\Http\Controllers\Api\Nurse\MasterlistController::class, 'clear']);
                 Route::put('/masterlist/settings', [\App\Http\Controllers\Api\Nurse\MasterlistController::class, 'updateSettings']);
+                Route::put('/masterlist/{id}', [\App\Http\Controllers\Api\Nurse\MasterlistController::class, 'update'])->whereNumber('id');
                 Route::delete('/masterlist/{id}', [\App\Http\Controllers\Api\Nurse\MasterlistController::class, 'destroy'])->whereNumber('id');
 
                 Route::get(

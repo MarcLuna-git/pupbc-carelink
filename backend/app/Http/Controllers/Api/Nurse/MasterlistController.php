@@ -15,7 +15,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /*
- * Course Management → Masterlist: import the school's list of enrolled students from an
+ * Students → Masterlist tab (was under Course Management): import the school's list of enrolled students from an
  * Excel or CSV file, look through it, and turn on the registration check.
  * The uploaded file is only read; it is never stored.
  */
@@ -62,7 +62,7 @@ class MasterlistController extends Controller
             ->orderBy('student_masterlist.full_name')
             ->select([
                 'student_masterlist.id', 'student_masterlist.student_id', 'student_masterlist.full_name',
-                'student_masterlist.last_name', 'student_masterlist.course_id', 'student_masterlist.course_code',
+                'student_masterlist.last_name', 'student_masterlist.first_name', 'student_masterlist.course_id', 'student_masterlist.course_code',
                 'student_masterlist.year_level', 'student_masterlist.section', 'student_masterlist.updated_at',
                 'users.id as user_id',
             ]);
@@ -89,6 +89,8 @@ class MasterlistController extends Controller
             ->orderBy('course_code')
             ->get();
 
+        $allCourses = Course::orderBy('code')->get(['id', 'code', 'name', 'is_active']);
+
         return response()->json([
             'success' => true,
             'data' => $page->items(),
@@ -100,6 +102,7 @@ class MasterlistController extends Controller
             'periods' => $periods,
             'summary' => ['total' => $total, 'registered' => $registered, 'not_registered' => $total - $registered],
             'courses' => $courses,
+            'all_courses' => $allCourses,
             'imports' => $imports,
             'settings' => ['required' => Masterlist::required(), 'active_count' => Masterlist::activeCount()],
         ]);
@@ -199,6 +202,64 @@ class MasterlistController extends Controller
         NurseSync::changed('academic');
 
         return response()->json(['success' => true, 'data' => $result, 'message' => "Masterlist saved. {$result['added']} added, {$result['updated']} updated."]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $row = DB::table('student_masterlist')->where('id', $id)->first();
+        abort_if(!$row, 404, 'This student is no longer on the masterlist.');
+
+        $data = $request->validate([
+            'student_id' => ['required', 'string', 'max:17', 'regex:' . Masterlist::ID_PATTERN],
+            'last_name' => 'required|string|max:100',
+            'first_name' => 'nullable|string|max:150',
+            'course_id' => 'nullable|uuid',
+            'year_level' => 'nullable|in:1st Year,2nd Year,3rd Year,4th Year,5th Year',
+            'section' => 'nullable|string|max:20',
+        ], [
+            'student_id.regex' => 'Student ID must look like 2023-00000-BN-0.',
+        ]);
+
+        $studentId = strtoupper(preg_replace('/\s+/', '', trim($data['student_id'])));
+        $duplicate = DB::table('student_masterlist')
+            ->where('academic_period_id', $row->academic_period_id)
+            ->where('student_id', $studentId)
+            ->where('id', '!=', $id)
+            ->exists();
+        if ($duplicate) {
+            throw ValidationException::withMessages(['student_id' => 'This Student ID is already on the masterlist for this academic period.']);
+        }
+
+        $course = !empty($data['course_id']) ? Course::find($data['course_id']) : null;
+        if (!empty($data['course_id']) && !$course) {
+            throw ValidationException::withMessages(['course_id' => 'Choose a valid course.']);
+        }
+
+        $lastName = trim($data['last_name']);
+        $firstName = trim((string) ($data['first_name'] ?? ''));
+        $fullName = mb_substr($firstName !== '' ? "{$lastName}, {$firstName}" : $lastName, 0, 255);
+        $section = trim((string) ($data['section'] ?? ''));
+
+        DB::table('student_masterlist')->where('id', $id)->update([
+            'student_id' => $studentId,
+            'full_name' => $fullName,
+            'last_name' => mb_substr($lastName, 0, 100),
+            'first_name' => $firstName !== '' ? mb_substr($firstName, 0, 150) : null,
+            'course_id' => $course?->id,
+            'course_code' => $course?->code,
+            'year_level' => !empty($data['year_level']) ? $data['year_level'] : null,
+            'section' => $section !== '' ? $section : null,
+            'updated_at' => now(),
+        ]);
+
+        AuditLog::create([
+            'user_id' => auth()->id(), 'action' => 'masterlist_student_updated',
+            'description' => "Updated {$studentId} on the masterlist",
+            'ip_address' => request()->ip(),
+        ]);
+        NurseSync::changed('academic');
+
+        return response()->json(['success' => true, 'message' => 'Student updated on the masterlist.']);
     }
 
     public function destroy($id)

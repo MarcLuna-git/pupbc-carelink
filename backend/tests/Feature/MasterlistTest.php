@@ -232,4 +232,33 @@ class MasterlistTest extends TestCase
         $this->period->update(['is_active' => false]);
         $this->assertArrayHasKey('student_id', $refused($this->details(['student_id' => '2090-00002-BN-0', 'last_name' => 'Dela Cruz'])));
     }
+
+    public function test_nurse_can_update_a_masterlist_student_and_duplicate_id_is_rejected(): void
+    {
+        $this->upload('import', $this->groupedFile())->assertOk();
+        $row = DB::table('student_masterlist')
+            ->where('academic_period_id', $this->period->id)
+            ->where('student_id', '2090-00001-BN-0')
+            ->first();
+
+        $this->actingAs($this->nurse, 'api')->putJson("/api/nurse/masterlist/{$row->id}", [
+            'student_id' => '2090-00099-BN-0',
+            'last_name' => 'Santos',
+            'first_name' => 'Maria L.',
+            'course_id' => $this->course->id,
+            'year_level' => '2nd Year',
+            'section' => '2-1',
+        ])->assertOk();
+
+        $updated = DB::table('student_masterlist')->where('id', $row->id)->first();
+        $this->assertSame('2090-00099-BN-0', $updated->student_id);
+        $this->assertSame('Santos, Maria L.', $updated->full_name);
+        $this->assertSame('2nd Year', $updated->year_level);
+        $this->assertSame('2-1', $updated->section);
+
+        $this->actingAs($this->nurse, 'api')->putJson("/api/nurse/masterlist/{$row->id}", [
+            'student_id' => '2090-00002-BN-0',
+            'last_name' => 'Santos',
+        ])->assertStatus(422)->assertJsonValidationErrors(['student_id']);
+    }
 }

@@ -148,6 +148,70 @@ class StudentController extends Controller
         }, 3);
     }
 
+    /*
+     * Delete a student for good, with the admin (Developer Tools) password.
+     * Removes the account and every record tied to it: profiles, appointments,
+     * check-ins, consultations, certificates, QR code, notifications and uploaded
+     * files. Clinic records that only point at the student (medicine stock history)
+     * stay and lose the link. One audit line under the nurse keeps who did it.
+     */
+    public function destroy(Request $request, $id)
+    {
+        $data = $request->validate(['password' => 'required|string|max:255'], [
+            'password.required' => 'Enter the admin password.',
+        ]);
+
+        $adminPassword = (string) config('dev_tools.password');
+        if ($adminPassword === '' || !hash_equals($adminPassword, (string) $data['password'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Incorrect admin password.',
+                'errors' => ['password' => ['Incorrect admin password.']],
+            ], 422);
+        }
+
+        $files = [];
+        $deleted = DB::transaction(function () use ($id, &$files) {
+            ClinicQueue::lock();
+            $student = User::withTrashed()->where('role', 'student')->lockForUpdate()->findOrFail($id);
+
+            abort_if(ClinicQueue::ordered()
+                ->where('appointment_checkins.user_id', $student->id)
+                ->whereIn('appointment_checkins.status', ['waiting', 'called', 'serving'])
+                ->exists(), 422, 'This student is in the clinic queue right now. Finish or close the visit first.');
+
+            $files = DB::table('student_attachments')->where('user_id', $student->id)->pluck('path')->filter()->all();
+
+            $checkinIds = DB::table('appointment_checkins')->where('user_id', $student->id)->pluck('id');
+            DB::table('nurse_visit_claims')->whereIn('checkin_id', $checkinIds)->delete();
+            // Soft-deleting models: remove the rows for real. The rest go with the
+            // user row (foreign keys with cascade).
+            \App\Models\Consultation::withTrashed()->where('user_id', $student->id)->forceDelete();
+            Appointment::withTrashed()->where('user_id', $student->id)->forceDelete();
+            DB::table('appointment_checkins')->where('user_id', $student->id)->delete();
+
+            $label = trim("{$student->first_name} {$student->last_name}") . " ({$student->student_id})";
+            $student->forceDelete();
+
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'student_deleted',
+                'description' => "Student deleted with all records: {$label}",
+                'ip_address' => request()->ip(),
+            ]);
+
+            return $label;
+        }, 3);
+
+        // Files are removed only after the database delete is saved.
+        if ($files) {
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($files);
+        }
+        \Illuminate\Support\Facades\Cache::forget('nurse_dashboard_stats');
+
+        return response()->json(['success' => true, 'message' => "Deleted {$deleted} and all their records."]);
+    }
+
     public function healthProfile($id)
     {
         $student = User::withTrashed()->where('role', 'student')->with('healthProfile')->findOrFail($id);

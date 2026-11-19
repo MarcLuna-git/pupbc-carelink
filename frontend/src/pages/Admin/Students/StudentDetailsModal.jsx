@@ -117,6 +117,30 @@ export function StudentDetailsModal({ student, loading, error, appointments, his
     </>}
   </Modal>;
 }
+// Delete for good: shows what will be removed, then asks for the admin password.
+export function DeleteStudentModal({ student, password, error, onPasswordChange, onSubmit, onClose, saving }) {
+  const close = () => { if (!saving) onClose(); };
+  return <div onClick={event => { if (event.target === event.currentTarget.firstElementChild) close(); }}>
+    <Modal title="Delete student" onClose={close}>
+      <form onSubmit={onSubmit} aria-busy={saving} autoComplete="off">
+        <header className="flex items-start justify-between border-b border-gray-200 p-5 dark:border-gray-700"><h2 className="text-lg font-semibold">Delete Student</h2><button type="button" disabled={saving} aria-label="Close delete student" onClick={close} className={`rounded-lg p-2 ${focus}`}><X size={20} /></button></header>
+        <div className="space-y-4 p-5 text-sm">
+          <p>You are about to delete <span className="font-semibold">{fullName(student)}</span> ({student?.student_id || 'no Student ID'}).</p>
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">
+            <p className="font-semibold">This cannot be undone.</p>
+            <p className="mt-1">All of this student's data will be deleted: account, profile, health profile, appointments, visits, consultations, certificates, QR code, notifications and uploaded files.</p>
+          </div>
+          <div>
+            <label htmlFor="delete-admin-password" className="block font-medium">Admin password <span className="text-red-600">*</span></label>
+            <input id="delete-admin-password" type="password" autoComplete="new-password" value={password} onChange={event => onPasswordChange(event.target.value)} disabled={saving} aria-invalid={Boolean(error)} aria-describedby={error ? 'delete-admin-password-error' : undefined} className={`${inputStyle} mt-1.5`} />
+            {error && <p id="delete-admin-password-error" role="alert" className="mt-1 text-xs text-red-600">{error}</p>}
+          </div>
+        </div>
+        <footer className="flex justify-end gap-3 border-t border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/30"><button type="button" disabled={saving} onClick={close} className={secondary}>Cancel</button><button type="submit" disabled={saving || !password} className={`inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 ${focus}`}>{saving ? 'Deleting…' : 'Delete Student'}</button></footer>
+      </form>
+    </Modal>
+  </div>;
+}
 export function ArchiveStudentModal({ reason, reasonError, onReasonChange, onSubmit, onClose, saving }) {
   const close = () => { if (!saving) onClose(); };
   return <div onClick={event => { if (event.target === event.currentTarget.firstElementChild) close(); }}>

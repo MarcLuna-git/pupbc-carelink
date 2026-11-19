@@ -504,50 +504,43 @@ const Login = () => {
 
   <div className="absolute inset-0 bg-gradient-to-t from-maroon-950/70 via-transparent to-transparent" />
 
-  <div className="relative z-10 flex w-full flex-col items-center justify-center px-8 py-12 text-center text-white xl:px-14">
-    <div className="mb-7 flex h-28 w-28 items-center justify-center rounded-full border border-white/30 bg-white/15 p-3 shadow-xl backdrop-blur-sm">
+  {/* Three clear parts: brand (top), title and text (middle), quote (bottom). */}
+  <div className="relative z-10 flex w-full flex-col justify-between gap-8 px-8 py-10 text-white xl:px-14 xl:py-12">
+    {/* 1. Brand */}
+    <Link to="/" className="inline-flex items-center gap-3 self-start">
       <img
         src={clinicLogo}
         alt="PUPBC CareLink clinic logo"
-        className="h-full w-full rounded-full object-cover"
+        className="h-12 w-12 rounded-full border border-white/30 bg-white object-cover shadow-lg"
       />
+      <span>
+        <span className="block text-xl font-extrabold tracking-tight">PUPBC CareLink</span>
+        <span className="block text-xs text-white/80">Student Health Portal · PUP Biñan Campus</span>
+      </span>
+    </Link>
+
+    {/* 2. Title and text */}
+    <div className="max-w-xl">
+      <h1 className="font-serif text-4xl font-bold leading-[1.1] xl:text-5xl">
+        Your Health.<br />Our Priority.
+      </h1>
+      <p className="mt-5 text-sm font-semibold leading-7 text-white xl:text-base">
+        A QR Integrated Health Information System with Self-service Triage Kiosk.
+      </p>
+      <p className="mt-2 max-w-md text-sm leading-7 text-white/80 xl:text-base">
+        Book appointments, access your clinic records and stay connected with campus health services.
+      </p>
     </div>
 
-    <h1 className="text-4xl font-extrabold tracking-tight xl:text-5xl">
-      PUPBC <span className="text-rose-200">CareLink</span>
-    </h1>
-
-    <p className="mt-4 max-w-md text-lg font-semibold text-white/95">
-      Polytechnic University of the Philippines
-    </p>
-
-    <p className="mt-1 text-sm font-medium text-rose-100">
-      Biñan Campus
-    </p>
-
-    <div className="my-8 h-px w-20 bg-rose-200/70" />
-
-    <h2 className="max-w-md text-2xl font-bold leading-tight">
-      Your Health. Our Priority.
-    </h2>
-
-    <p className="mt-4 max-w-md text-sm leading-7 text-rose-100/90">
-      A QR Integrated Health Information System with
-      Self-service Triage Kiosk.
-    </p>
-
-    <p className="mt-3 max-w-sm text-sm leading-6 text-white/75">
-      Book appointments, access your clinic records and stay
-      connected with campus health services.
-    </p>
-
-    <p className="mt-10 font-serif text-lg italic text-rose-100">
-      “Smarter campus healthcare for every Iskolar ng Bayan.”
-    </p>
-
-    <p className="mt-12 text-xs text-white/55">
-      PUPBC CareLink · Student Health Portal
-    </p>
+    {/* 3. Quote and campus */}
+    <div className="flex items-end justify-between gap-4 text-white/90">
+      <p className="max-w-xs font-serif text-lg italic leading-6">
+        “Smarter campus healthcare for every Iskolar ng Bayan.”
+      </p>
+      <p className="text-right text-xs leading-5 text-white/75">
+        Polytechnic University of the Philippines<br />Biñan Campus
+      </p>
+    </div>
   </div>
 </div>
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
-import { BookMarked, CalendarDays, Layers, Search, X, Pencil, Plus, Trash2, AlertCircle, ChevronDown, TableProperties, ListChecks } from 'lucide-react';
+import { BookMarked, CalendarDays, Layers, Search, X, Pencil, Plus, Trash2, AlertCircle, ChevronDown, TableProperties } from 'lucide-react';
 import api from '../../../services/api';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import NursePageTitle from '../../../components/NursePageTitle';
@@ -10,10 +10,10 @@ import AcademicFormModal, { AcademicDeleteModal } from './AcademicFormModal';
 import useNurseSync from '../../../hooks/useNurseSync';
 import { periodLabel, academicNames } from './academicOptions';
 import { NurseToast } from '../../../components/NurseFeedback';
-import MasterlistPanel from './MasterlistPanel';
 
-const tabs = [{ key: 'course', label: 'Courses', icon: BookMarked }, { key: 'section', label: 'Sections', icon: Layers }, { key: 'period', label: 'Academic periods', icon: CalendarDays }, { key: 'masterlist', label: 'Masterlist', icon: ListChecks }];
-const recordTabs = tabs.filter(item => item.key !== 'masterlist');
+const tabs = [{ key: 'course', label: 'Courses', icon: BookMarked }, { key: 'section', label: 'Sections', icon: Layers }, { key: 'period', label: 'Academic periods', icon: CalendarDays }];
+// The Masterlist is a tab of the Students page now (Student Directory | Masterlist).
+const recordTabs = tabs;
 const defaults = {
   period: { academic_year_start: '', academic_year_end: '', semester: '1st Semester', is_active: true },
   course: { code: '', name: '', is_active: true },
@@ -65,7 +65,6 @@ export default function CourseManagement() {
   const sectionCount = (type, id) => sections.filter(section => section[type === 'course' ? 'course_id' : 'academic_period_id'] === id).length;
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
-    // The Masterlist tab loads its own data (MasterlistPanel), so it has no list here.
     return (data[tab] || []).filter(item => {
       const course = data.course.find(course => course.id === item.course_id) || item.course;
       const period = data.period.find(period => period.id === item.academic_period_id) || item.academic_period;
@@ -137,7 +136,7 @@ export default function CourseManagement() {
     {loadError && <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-300"><AlertCircle size={18} /><p className="min-w-0 flex-1">{loadError}</p><button type="button" onClick={() => load()} disabled={refreshing} className={`${secondary} bg-white dark:bg-gray-800`}>Try again</button></div>}
     {modal && <AcademicFormModal type={modal.type} editing={Boolean(modal.id)} form={form} onChange={changeField} onClose={closeForm} onSubmit={submit} saving={saving} errors={errors} error={formError} courses={courses} periods={periods} disabled={loading || (modal.type === 'section' && !modal.id && !canAddSection)} />}
     {deleteTarget && <AcademicDeleteModal type={deleteTarget.type} label={itemLabel(deleteTarget.item)} onClose={closeDelete} onConfirm={confirmDelete} deleting={deleting} error={deleteError} />}
-    {tab === 'masterlist' ? <MasterlistPanel /> : <NurseListCard
+    {<NurseListCard
       aria-label={title}
       aria-busy={loading || refreshing}
       icon={TableProperties}

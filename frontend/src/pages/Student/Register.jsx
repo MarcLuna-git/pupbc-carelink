@@ -505,8 +505,11 @@ export default function Register() {
     } catch (error) {
       setMessageType('error');
       const validationErrors = error.response?.status === 422 ? error.response.data?.errors : null;
-      setMessage(validationErrors ? '' : apiMessage(error, 'Unable to register. Please check your details.'));
-      if (error.response?.data?.registration_pending) {
+      const pending = Boolean(error.response?.data?.registration_pending);
+      // Pending: the registration is saved but the email was not confirmed, so show
+      // the server's note ("enter your code if received...") instead of "server unavailable".
+      setMessage(validationErrors ? '' : pending ? (error.response.data.message || 'Your registration is pending. Enter your code if you received it.') : apiMessage(error, 'Unable to register. Please check your details.'));
+      if (pending) {
         setOtpStep(true);
         setOtp('');
         setCooldown(60);
@@ -598,7 +601,6 @@ export default function Register() {
             <h1 className="font-serif text-4xl font-bold leading-[1.1] xl:text-5xl">
               A Healthier<br />Tomorrow<br />Starts Here.
             </h1>
-            <div className="mt-5 h-1 w-14 rounded-full bg-rose-200" />
             <p className="mt-5 max-w-sm text-sm leading-7 text-white/95 xl:text-base">
               Your campus care, one account away. Create a secure account to book clinic visits,
               use QR check-in and view your available health records.

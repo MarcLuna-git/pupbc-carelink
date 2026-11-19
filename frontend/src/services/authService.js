@@ -1,6 +1,9 @@
 import api from './api';
 import { clearSession, currentPortal, getUser, hasSession, startSession } from './session';
 
+// Requests that send an email (registration code) wait up to 60 seconds.
+const EMAIL_REQUEST_TIMEOUT_MS = 60000;
+
 // One /auth/me check per portal at a time (several guards can ask at once).
 const restoring = {};
 
@@ -67,13 +70,18 @@ const authService = {
     return response.data?.data?.status || 'unchecked';
   },
 
+  // The server saves the registration and then sends the code by email (SMTP),
+  // which can take longer than the usual request timeout. So this call waits
+  // longer, and if it still gets no answer it asks once more: the server sees
+  // the saved registration and answers right away with "already pending".
   async register(data) {
-    const response = await api.post(
-      '/auth/register',
-      data
-    );
-
-    return response.data;
+    const send = () => api.post('/auth/register', data, { timeout: EMAIL_REQUEST_TIMEOUT_MS });
+    try {
+      return (await send()).data;
+    } catch (error) {
+      if (error?.response || error?.code === 'ERR_CANCELED') throw error;
+      return (await send()).data;
+    }
   },
 
   async verifyRegistration(email, otp) {
@@ -93,7 +101,8 @@ const authService = {
       '/auth/register/resend-otp',
       {
         email,
-      }
+      },
+      { timeout: EMAIL_REQUEST_TIMEOUT_MS }
     );
 
     return response.data;

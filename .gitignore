@@ -43,6 +43,7 @@ mydocs - transcriber/
 mydocs - takenotes/
 mydocs - owasp zap/
 mydocs - notes/
+mydocs - chapter 4 and 5/
 # School masterlist files (student personal data). Import them in the nurse portal; never commit them.
 /masterlist*.xlsx
 /masterlist*.csv

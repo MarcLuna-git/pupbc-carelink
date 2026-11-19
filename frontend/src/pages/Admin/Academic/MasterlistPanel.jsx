@@ -1,17 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, AlertTriangle, CheckCircle2, ChevronDown, Download, FileSpreadsheet, Loader2, Search, ShieldCheck, Trash2, Upload, Users, X } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle2, ChevronDown, Download, FilePenLine, FileSpreadsheet, Loader2, Pencil, Save, Search, ShieldCheck, Trash2, Upload, Users, X } from 'lucide-react';
 import api from '../../../services/api';
 import NurseListCard, { CountChip } from '../../../components/NurseListCard';
 import NursePageSkeleton from '../../../components/NursePageSkeleton';
 import { NurseToast } from '../../../components/NurseFeedback';
 import useNurseSync from '../../../hooks/useNurseSync';
+import { formatStudentId } from '../../../utils/inputFilters';
 import { Pagination } from '../Students/StudentDirectory';
 import { inputStyle, primary, secondary, focus } from '../Students/directoryOptions';
 import { ModalShell, cancelButton } from './AcademicFormModal';
 import { periodLabel } from './academicOptions';
 
 /*
- * Course Management → Masterlist: the school's list of enrolled students.
+ * Students → Masterlist tab (was under Course Management): the school's list of enrolled students.
  * The nurse imports an Excel or CSV file for an academic period, checks the preview, and saves it.
  * When the registration check is on, only students on this list can register.
  */
@@ -30,6 +31,13 @@ const errorText = (err, fallback) => {
 };
 const yearSection = row => [row.year_level, row.section].filter(Boolean).join(' · ') || 'Not in file';
 const selectStyle = `${inputStyle} min-h-11 cursor-pointer appearance-none pr-10`;
+const YEARS = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'];
+const derivedFirstName = row => {
+  if (row.first_name) return row.first_name;
+  if (row.full_name?.includes(',')) return row.full_name.split(',').slice(1).join(',').trim();
+  const parts = (row.full_name || '').trim().split(/\s+/);
+  return parts.length > 1 ? parts.slice(1).join(' ') : '';
+};
 
 function Select({ label, value, onChange, children, disabled }) {
   return <label className="relative block min-w-0"><span className="sr-only">{label}</span><select value={value} onChange={event => onChange(event.target.value)} disabled={disabled} className={selectStyle}>{children}</select><ChevronDown size={16} aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400" /></label>;
@@ -63,6 +71,10 @@ export default function MasterlistPanel() {
   const [confirm, setConfirm] = useState(null);
   const [confirmBusy, setConfirmBusy] = useState(false);
   const [confirmError, setConfirmError] = useState('');
+  const [editing, setEditing] = useState(null);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editErrors, setEditErrors] = useState({});
+  const [editError, setEditError] = useState('');
   const requestId = useRef(0);
 
   const load = useCallback(async signal => {
@@ -158,6 +170,53 @@ export default function MasterlistPanel() {
       await load();
     } catch (err) { setConfirmError(errorText(err, 'Unable to finish this. Please try again.')); }
     finally { setConfirmBusy(false); }
+  };
+
+  const openEdit = row => {
+    setEditing({
+      id: row.id,
+      student_id: row.student_id || '',
+      last_name: row.last_name || '',
+      first_name: derivedFirstName(row),
+      course_id: row.course_id || '',
+      year_level: row.year_level || '',
+      section: row.section || '',
+    });
+    setEditErrors({});
+    setEditError('');
+  };
+
+  const changeEdit = (key, value) => {
+    setEditing(previous => previous && { ...previous, [key]: key === 'student_id' ? formatStudentId(value) : value });
+    setEditErrors(previous => (previous[key] ? { ...previous, [key]: null } : previous));
+    setEditError('');
+  };
+
+  const saveEdit = async event => {
+    event.preventDefault();
+    if (!editing) return;
+    setEditSaving(true);
+    setEditErrors({});
+    setEditError('');
+    try {
+      const { data } = await api.put(`/nurse/masterlist/${editing.id}`, {
+        student_id: editing.student_id.trim(),
+        last_name: editing.last_name.trim(),
+        first_name: editing.first_name.trim() || null,
+        course_id: editing.course_id || null,
+        year_level: editing.year_level || null,
+        section: editing.section.trim() || null,
+      });
+      setMessage(data.message || 'Student updated on the masterlist.');
+      setEditing(null);
+      await load();
+    } catch (err) {
+      const errors = err.response?.data?.errors || {};
+      setEditErrors(errors);
+      setEditError(Object.keys(errors).length ? '' : errorText(err, 'Unable to save changes. Please try again.'));
+    } finally {
+      setEditSaving(false);
+    }
   };
 
   const previewRows = useMemo(() => {
@@ -296,16 +355,16 @@ export default function MasterlistPanel() {
       </div>}
     >
       {!rows.length ? <div className="flex flex-col items-center px-6 py-14 text-center"><span className="rounded-2xl bg-gray-50 p-4 text-gray-400 dark:bg-gray-900/50"><Users size={28} /></span><h2 className="mt-4 font-semibold">{activeFilters ? 'No matching students' : 'No masterlist yet'}</h2><p className="mt-2 max-w-sm text-sm leading-relaxed text-gray-500 dark:text-gray-400">{activeFilters ? 'Try a different search or clear your filters.' : 'Import a file above to add the students for this period.'}</p></div> : <>
-        <div className="hidden overflow-x-auto lg:block"><table className="w-full text-left text-sm"><caption className="sr-only">Masterlist</caption><thead className="border-b border-gray-200 bg-gray-100 text-xs text-gray-500 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-400"><tr>{['Student ID', 'Name', 'Course', 'Year & section', 'Account', 'Action'].map(label => <th key={label} scope="col" className="px-5 py-3.5 font-medium">{label}</th>)}</tr></thead>
+        <div className="hidden overflow-x-auto lg:block"><table className="w-full text-left text-sm"><caption className="sr-only">Masterlist</caption><thead className="border-b border-gray-200 bg-gray-100 text-xs text-gray-500 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-400"><tr>{['Student ID', 'Name', 'Course', 'Year & section', 'Account', 'Actions'].map(label => <th key={label} scope="col" className="px-5 py-3.5 font-medium">{label}</th>)}</tr></thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-700">{rows.map(row => <tr key={row.id} className="hover:bg-gray-50/70 dark:hover:bg-gray-700/20">
             <td className="whitespace-nowrap px-5 py-3.5 font-medium tabular-nums">{row.student_id}</td>
             <td className="px-5 py-3.5">{row.full_name}</td>
             <td className="px-5 py-3.5 font-semibold text-maroon-800 dark:text-maroon-300">{row.course_code || <span className="font-normal text-gray-400">None</span>}</td>
             <td className="px-5 py-3.5 text-gray-600 dark:text-gray-300">{yearSection(row)}</td>
             <td className="px-5 py-3.5"><AccountBadge registered={row.registered} /></td>
-            <td className="px-4 py-3.5"><RemoveButton row={row} onClick={() => { setConfirm({ type: 'remove', row }); setConfirmError(''); }} /></td>
+            <td className="px-4 py-3.5"><RowActions row={row} onEdit={() => openEdit(row)} onDelete={() => { setConfirm({ type: 'remove', row }); setConfirmError(''); }} /></td>
           </tr>)}</tbody></table></div>
-        <div className="divide-y divide-gray-100 lg:hidden dark:divide-gray-700">{rows.map(row => <article key={row.id} className="p-4 sm:p-5"><div className="flex items-start justify-between gap-3"><div className="min-w-0 flex-1"><h3 className="break-words font-semibold">{row.full_name}</h3><p className="mt-1 text-sm tabular-nums text-gray-600 dark:text-gray-300">{row.student_id}</p></div><AccountBadge registered={row.registered} /></div><div className="mt-3 flex items-center justify-between gap-3"><p className="min-w-0 text-xs text-gray-500 dark:text-gray-400">{row.course_code || 'No course'} · {yearSection(row)}</p><RemoveButton row={row} onClick={() => { setConfirm({ type: 'remove', row }); setConfirmError(''); }} /></div></article>)}</div>
+        <div className="divide-y divide-gray-100 lg:hidden dark:divide-gray-700">{rows.map(row => <article key={row.id} className="p-4 sm:p-5"><div className="flex items-start justify-between gap-3"><div className="min-w-0 flex-1"><h3 className="break-words font-semibold">{row.full_name}</h3><p className="mt-1 text-sm tabular-nums text-gray-600 dark:text-gray-300">{row.student_id}</p></div><AccountBadge registered={row.registered} /></div><div className="mt-3 flex items-center justify-between gap-3"><p className="min-w-0 text-xs text-gray-500 dark:text-gray-400">{row.course_code || 'No course'} · {yearSection(row)}</p><RowActions row={row} onEdit={() => openEdit(row)} onDelete={() => { setConfirm({ type: 'remove', row }); setConfirmError(''); }} /></div></article>)}</div>
       </>}
       <Pagination meta={list?.meta || { total: 0, last_page: 1 }} page={page} onPage={setPage} loading={loading} entity="students" />
     </NurseListCard>
@@ -318,17 +377,28 @@ export default function MasterlistPanel() {
     {confirm && <ModalShell labelledBy="masterlist-confirm-title" onClose={() => { if (!confirmBusy) setConfirm(null); }} busy={confirmBusy} width="max-w-md">
       <div className="p-6">
         <span className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300"><AlertTriangle size={24} aria-hidden="true" /></span>
-        <h2 id="masterlist-confirm-title" className="mt-4 text-lg font-bold text-gray-900 dark:text-white">{confirm.type === 'remove' ? 'Remove this student?' : 'Clear the whole list?'}</h2>
+        <h2 id="masterlist-confirm-title" className="mt-4 text-lg font-bold text-gray-900 dark:text-white">{confirm.type === 'remove' ? 'Delete this student?' : 'Clear the whole list?'}</h2>
         <p className="mt-1 text-sm leading-relaxed text-gray-600 dark:text-gray-300">{confirm.type === 'remove'
           ? <><strong className="font-semibold text-gray-900 dark:text-white">{confirm.row.full_name}</strong> ({confirm.row.student_id}) will be taken off the masterlist. Their account, if they have one, stays.</>
           : <>All {summary.total.toLocaleString()} students for <strong className="font-semibold text-gray-900 dark:text-white">{periodLabel(periods.find(item => item.id === periodId))}</strong> will be taken off the masterlist. Student accounts stay.</>}</p>
         {confirmError && <p role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/25 dark:text-red-300">{confirmError}</p>}
         <div className="mt-6 flex justify-end gap-2">
           <button type="button" onClick={() => setConfirm(null)} disabled={confirmBusy} className={cancelButton}>Cancel</button>
-          <button type="button" onClick={runConfirm} disabled={confirmBusy} className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 ${focus}`}>{confirmBusy ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}{confirm.type === 'remove' ? 'Remove' : 'Clear list'}</button>
+          <button type="button" onClick={runConfirm} disabled={confirmBusy} className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 ${focus}`}>{confirmBusy ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}{confirm.type === 'remove' ? 'Delete' : 'Clear list'}</button>
         </div>
       </div>
     </ModalShell>}
+
+    {editing && <MasterlistEditModal
+      form={editing}
+      courses={list?.all_courses || []}
+      saving={editSaving}
+      errors={editErrors}
+      error={editError}
+      onChange={changeEdit}
+      onClose={() => { if (!editSaving) setEditing(null); }}
+      onSubmit={saveEdit}
+    />}
   </div>;
 }
 
@@ -336,6 +406,86 @@ function AccountBadge({ registered }) {
   return <span className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${registered ? 'bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}>{registered ? 'Has account' : 'No account yet'}</span>;
 }
 
-function RemoveButton({ row, onClick }) {
-  return <button type="button" onClick={onClick} className={`inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950/40 ${focus}`} aria-label={`Remove ${row.full_name} from the masterlist`}><Trash2 size={15} />Remove</button>;
+function RowActions({ row, onEdit, onDelete }) {
+  return (
+    <div className="flex items-center gap-1">
+      <button type="button" onClick={onEdit} className={`inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 dark:text-maroon-300 dark:hover:bg-maroon-950 ${focus}`} aria-label={`Edit ${row.full_name} on the masterlist`}><Pencil size={15} />Edit</button>
+      <button type="button" onClick={onDelete} className={`inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950/40 ${focus}`} aria-label={`Delete ${row.full_name} from the masterlist`}><Trash2 size={15} />Delete</button>
+    </div>
+  );
+}
+
+function MasterlistEditModal({ form, courses, saving, errors, error, onChange, onClose, onSubmit }) {
+  const fieldClass = key => `${inputStyle} min-h-11 disabled:opacity-60 ${errors[key] ? 'border-red-400 dark:border-red-400' : ''}`;
+  const fieldError = key => errors[key] ? <p role="alert" className="mt-1.5 text-xs text-red-700 dark:text-red-300">{Array.isArray(errors[key]) ? errors[key][0] : errors[key]}</p> : null;
+
+  return (
+    <ModalShell labelledBy="masterlist-edit-title" onClose={onClose} busy={saving} width="max-w-2xl">
+      <header className="flex items-start gap-3 border-b border-gray-100 px-5 py-4 dark:border-gray-700 sm:px-6">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-maroon-50 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-400"><FilePenLine size={20} aria-hidden="true" /></span>
+        <div className="min-w-0 flex-1">
+          <h2 id="masterlist-edit-title" className="font-bold text-gray-900 dark:text-white">Edit masterlist student</h2>
+          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Update the Student ID, name, or academic details on this list.</p>
+        </div>
+        <button type="button" onClick={onClose} disabled={saving} aria-label="Close" className={`rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50 dark:hover:bg-gray-700 ${focus}`}><X size={20} /></button>
+      </header>
+      <form onSubmit={onSubmit} aria-busy={saving} className="flex min-h-0 flex-col">
+        <div className="space-y-4 overflow-y-auto px-5 py-5 sm:px-6">
+          {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/25 dark:text-red-300">{error}</p>}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="masterlist-edit-student-id" className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">Student ID</label>
+              <input id="masterlist-edit-student-id" type="text" required maxLength={17} value={form.student_id} onChange={event => onChange('student_id', event.target.value)} disabled={saving} placeholder="2023-00001-BN-0" autoComplete="off" className={`${fieldClass('student_id')} tabular-nums`} />
+              {fieldError('student_id')}
+            </div>
+            <div>
+              <label htmlFor="masterlist-edit-course" className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">Course</label>
+              <div className="relative">
+                <select id="masterlist-edit-course" value={form.course_id} onChange={event => onChange('course_id', event.target.value)} disabled={saving} className={`${fieldClass('course_id')} cursor-pointer appearance-none pr-10`}>
+                  <option value="">None</option>
+                  {courses.map(course => <option key={course.id} value={course.id}>{course.code} — {course.name}{!course.is_active ? ' (inactive)' : ''}</option>)}
+                </select>
+                <ChevronDown size={16} aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              </div>
+              {fieldError('course_id')}
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="masterlist-edit-last-name" className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">Last name</label>
+              <input id="masterlist-edit-last-name" type="text" required maxLength={100} value={form.last_name} onChange={event => onChange('last_name', event.target.value)} disabled={saving} autoComplete="off" className={fieldClass('last_name')} />
+              {fieldError('last_name')}
+            </div>
+            <div>
+              <label htmlFor="masterlist-edit-first-name" className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">First &amp; middle name</label>
+              <input id="masterlist-edit-first-name" type="text" maxLength={150} value={form.first_name} onChange={event => onChange('first_name', event.target.value)} disabled={saving} autoComplete="off" className={fieldClass('first_name')} />
+              {fieldError('first_name')}
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="masterlist-edit-year" className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">Year level</label>
+              <div className="relative">
+                <select id="masterlist-edit-year" value={form.year_level} onChange={event => onChange('year_level', event.target.value)} disabled={saving} className={`${fieldClass('year_level')} cursor-pointer appearance-none pr-10`}>
+                  <option value="">Not set</option>
+                  {YEARS.map(year => <option key={year} value={year}>{year}</option>)}
+                </select>
+                <ChevronDown size={16} aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              </div>
+              {fieldError('year_level')}
+            </div>
+            <div>
+              <label htmlFor="masterlist-edit-section" className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">Section</label>
+              <input id="masterlist-edit-section" type="text" maxLength={20} value={form.section} onChange={event => onChange('section', event.target.value)} disabled={saving} placeholder="3-1" autoComplete="off" className={fieldClass('section')} />
+              {fieldError('section')}
+            </div>
+          </div>
+        </div>
+        <footer className="flex justify-end gap-2 border-t border-gray-100 px-5 py-4 dark:border-gray-700 sm:px-6">
+          <button type="button" onClick={onClose} disabled={saving} className={cancelButton}>Cancel</button>
+          <button type="submit" disabled={saving} className={`${primary} min-h-11`}>{saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}{saving ? 'Saving…' : 'Save changes'}</button>
+        </footer>
+      </form>
+    </ModalShell>
+  );
 }
