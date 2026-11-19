@@ -26,7 +26,7 @@ const INITIAL = {
   email: '', mobile_number: '', course: '', year: '', section: '',
   password: '', password_confirmation: '', agree_terms: false,
 };
-const INPUT = 'min-h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-maroon-800 focus:ring-2 focus:ring-maroon-800/15 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:border-rose-300 dark:focus:ring-rose-300/25 disabled:cursor-not-allowed disabled:opacity-60';
+const INPUT = 'min-h-11 w-full min-w-0 rounded-[10px] border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-maroon-800 focus:ring-2 focus:ring-maroon-800/15 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:border-rose-300 dark:focus:ring-rose-300/25 disabled:cursor-not-allowed disabled:opacity-60';
 const STUDENT_ID_PATTERN = /^\d{4}-\d{5}-BN-[01]$/;
 const ID_NOT_FOUND = 'This Student ID is not on the school list. Check it, or visit the clinic for help.';
 const ID_REGISTERED = 'This Student ID already has an account. Sign in instead.';
@@ -124,7 +124,7 @@ function Field({ id, label, error, optional, children }) {
 function SectionTitle({ icon: Icon, children }) {
   return (
     <div className="mb-3 flex items-center gap-2 border-b border-slate-100 pb-2.5">
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-maroon-800 text-white dark:bg-maroon-700">
+      <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-maroon-800 text-white dark:bg-maroon-700">
         <Icon size={17} />
       </span>
       <h3 className="text-sm font-extrabold text-slate-900">{children}</h3>
@@ -606,8 +606,8 @@ export default function Register() {
               use QR check-in and view your available health records.
             </p>
             <div className="mt-6 flex flex-wrap gap-2 text-xs font-semibold">
-              <span className="rounded-xl border border-white/25 bg-maroon-800/65 px-3 py-2 backdrop-blur-sm">Secure email verification</span>
-              <span className="rounded-xl border border-white/25 bg-maroon-800/65 px-3 py-2 backdrop-blur-sm">Made for PUP Biñan students</span>
+              <span className="rounded-[10px] border border-white/25 bg-maroon-800/65 px-3 py-2 backdrop-blur-sm">Secure email verification</span>
+              <span className="rounded-[10px] border border-white/25 bg-maroon-800/65 px-3 py-2 backdrop-blur-sm">Made for PUP Biñan students</span>
             </div>
           </div>
 
@@ -645,7 +645,7 @@ export default function Register() {
             onClose={() => navigate('/login', { replace: true })}
           />
 
-          <form onSubmit={handleSubmit} noValidate autoComplete="off" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_50px_rgba(25,32,51,0.07)] sm:p-6">
+          <form onSubmit={handleSubmit} noValidate autoComplete="off" className="rounded-[10px] border border-slate-200 bg-white p-4 shadow-[0_14px_50px_rgba(25,32,51,0.07)] sm:p-6">
             {!otpStep ? (
               <div className="space-y-5">
                 <section>
@@ -776,7 +776,7 @@ export default function Register() {
                           type="button"
                           onClick={() => setShowPassword((value) => !value)}
                           aria-label={showPassword ? 'Hide password' : 'Show password'}
-                          className="absolute right-2 top-1.5 flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+                          className="absolute right-2 top-1.5 flex h-8 w-8 items-center justify-center rounded-[10px] text-slate-500 hover:bg-slate-100"
                         >
                           {showPassword ? <Eye size={17} /> : <EyeOff size={17} />}
                         </button>
@@ -784,7 +784,7 @@ export default function Register() {
                     </Field>
 
                     {/* Password Strength: always shown. Each circle turns into a green check once that rule is met. */}
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-600 dark:bg-slate-800/60" aria-live="polite">
+                    <div className="rounded-[10px] border border-slate-200 bg-slate-50 p-3 dark:border-slate-600 dark:bg-slate-800/60" aria-live="polite">
                       <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Password Strength</p>
                       <ul className="mt-1.5 space-y-1.5">
                         {PASSWORD_RULES.map(({ label, test }) => {
@@ -818,7 +818,7 @@ export default function Register() {
                           type="button"
                           onClick={() => setShowConfirm((value) => !value)}
                           aria-label={showConfirm ? 'Hide password' : 'Show password'}
-                          className="absolute right-2 top-1.5 flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+                          className="absolute right-2 top-1.5 flex h-8 w-8 items-center justify-center rounded-[10px] text-slate-500 hover:bg-slate-100"
                         >
                           {showConfirm ? <Eye size={17} /> : <EyeOff size={17} />}
                         </button>
@@ -839,7 +839,7 @@ export default function Register() {
                         )}
                       </p>
                     )}
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <div className="rounded-[10px] border border-slate-200 bg-slate-50 p-3">
                       <div className="flex items-start gap-3">
                         <input id="agree_terms" name="agree_terms" type="checkbox" checked={form.agree_terms} onChange={change} disabled={loading} className="mt-1 h-4 w-4 shrink-0 accent-maroon-800" />
                         <div className="text-xs leading-6 text-slate-600">
@@ -856,7 +856,7 @@ export default function Register() {
               </div>
             ) : (
               <div className="py-4 text-center">
-                <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-maroon-800 text-white dark:bg-maroon-700"><Mail size={27} /></span>
+                <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-[10px] bg-maroon-800 text-white dark:bg-maroon-700"><Mail size={27} /></span>
                 <h3 className="mt-4 text-xl font-bold">Check your inbox</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-500">Enter the six-digit code sent to <strong className="break-all text-slate-900">{form.email}</strong>. It expires in 10 minutes.</p>
                 <div className="mx-auto mt-5 max-w-[250px] text-left">
@@ -871,7 +871,7 @@ export default function Register() {
                 </div>
               </div>
             )}
-            <button type="submit" disabled={loading || resending || verified} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-maroon-800 px-4 py-3 text-sm font-bold text-white transition-colors hover:text-white/70 disabled:cursor-not-allowed disabled:opacity-60">
+            <button type="submit" disabled={loading || resending || verified} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-maroon-800 px-4 py-3 text-sm font-bold text-white transition-colors hover:text-white/70 disabled:cursor-not-allowed disabled:opacity-60">
               {loading ? <><Loader2 size={17} className="animate-spin" />{otpStep ? 'Verifying...' : 'Sending code...'}</> : otpStep ? 'Verify & Create Account' : 'Continue to Email Verification'}
             </button>
             <p className="mt-4 text-center text-sm text-slate-500">Already have an account? <Link to="/login" className="font-bold text-maroon-800 dark:text-rose-300 hover:underline">Log in</Link></p>
@@ -882,10 +882,10 @@ export default function Register() {
 
       {legalModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) setLegalModal(null); }}>
-          <section role="dialog" aria-modal="true" aria-labelledby="legal-title" className="flex max-h-[85dvh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+          <section role="dialog" aria-modal="true" aria-labelledby="legal-title" className="flex max-h-[85dvh] w-full max-w-lg flex-col overflow-hidden rounded-[10px] bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <h2 id="legal-title" className="flex items-center gap-2 text-base font-extrabold text-slate-900"><FileText size={19} className="text-maroon-800 dark:text-rose-300" />{legalModal === 'terms' ? 'Terms of Service' : 'Privacy Policy'}</h2>
-              <button type="button" onClick={() => setLegalModal(null)} aria-label="Close" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><X size={19} /></button>
+              <button type="button" onClick={() => setLegalModal(null)} aria-label="Close" className="rounded-[10px] p-2 text-slate-500 hover:bg-slate-100"><X size={19} /></button>
             </div>
             <div className="space-y-4 overflow-y-auto p-5 text-sm leading-6 text-slate-600">
               {legalModal === 'terms' ? (
@@ -904,7 +904,7 @@ export default function Register() {
                 </>
               )}
             </div>
-            <div className="border-t border-slate-200 p-4"><button type="button" onClick={() => setLegalModal(null)} className="w-full rounded-xl bg-maroon-800 py-2.5 text-sm font-bold text-white transition-colors hover:text-white/70">Close</button></div>
+            <div className="border-t border-slate-200 p-4"><button type="button" onClick={() => setLegalModal(null)} className="w-full rounded-[10px] bg-maroon-800 py-2.5 text-sm font-bold text-white transition-colors hover:text-white/70">Close</button></div>
           </section>
         </div>
       )}

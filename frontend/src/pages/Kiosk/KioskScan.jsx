@@ -7,6 +7,7 @@ import {
   User,
   CheckCircle,
   RefreshCw,
+  Delete,
 } from 'lucide-react';
 import api from '../../services/api';
 import KioskLayout from '../../layouts/KioskLayout';
@@ -98,27 +99,17 @@ const savedFacing = () => {
   }
 };
 
-// Student ID format: 2001-00123-BN-0 (4 digits, 5 digits, 2 letters, 1 digit).
-// Keeps only characters valid for each segment and inserts dashes as the user types.
-const STUDENT_ID_SEGMENTS = [
-  { length: 4, pattern: /[0-9]/ },
-  { length: 5, pattern: /[0-9]/ },
-  { length: 2, pattern: /[A-Z]/ },
-  { length: 1, pattern: /[0-9]/ },
-];
-
+// Student ID format: 2001-00123-BN-0 (4 digits, 5 digits, automatic -BN-, 1 digit 0/1).
 const formatStudentId = (value) => {
-  const chars = value.toUpperCase().replace(/[^0-9A-Z]/g, '').split('');
-  const segments = STUDENT_ID_SEGMENTS.map(() => '');
-  let segment = 0;
+  const raw = String(value ?? '').replace(/\D/g, '');
+  const prefix = raw.slice(0, 9);
+  const last = raw.length > 9 && /^[01]$/.test(raw[9]) ? raw[9] : '';
 
-  for (const char of chars) {
-    while (segment < STUDENT_ID_SEGMENTS.length && segments[segment].length === STUDENT_ID_SEGMENTS[segment].length) segment += 1;
-    if (segment === STUDENT_ID_SEGMENTS.length) break;
-    if (STUDENT_ID_SEGMENTS[segment].pattern.test(char)) segments[segment] += char;
-  }
-
-  return segments.filter(Boolean).join('-');
+  if (prefix.length < 4) return prefix;
+  if (prefix.length === 4) return `${prefix}-`;
+  if (prefix.length < 9) return `${prefix.slice(0, 4)}-${prefix.slice(4)}`;
+  if (!last) return `${prefix.slice(0, 4)}-${prefix.slice(4)}-BN-`;
+  return `${prefix.slice(0, 4)}-${prefix.slice(4)}-BN-${last}`;
 };
 
 const KioskScan = ({
@@ -760,7 +751,7 @@ const KioskScan = ({
             }}
             className="w-full max-w-lg mx-auto"
           >
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-4 -mt-4 mb-10">
               <button
                 type="button"
                 onClick={() => {
@@ -788,7 +779,7 @@ const KioskScan = ({
                 <div className="relative mx-auto aspect-square w-full max-w-[95%]">
                   <div
                     id={qrRegionId}
-                    className="h-full w-full overflow-hidden rounded-[15px] border-2 border-white/10 bg-black [&>div]:!h-full [&>div]:!w-full [&_video]:!h-full [&_video]:!w-full [&_video]:object-cover"
+                    className={`h-full w-full overflow-hidden rounded-[15px] border-2 border-white/10 bg-black [&>div]:!h-full [&>div]:!w-full [&_video]:!h-full [&_video]:!w-full [&_video]:object-cover ${facingRef.current === 'user' ? '[&_video]:-scale-x-100' : ''}`}
                   />
 
                   <input
@@ -823,32 +814,30 @@ const KioskScan = ({
                   )}
                 </div>
 
-                {cameraReady && (
-                  <div className="flex justify-center">
-                    <button
-                      type="button"
-                      onClick={switchCamera}
-                      disabled={fileScanning || loading}
-                      className="
-                        px-5 py-2.5
-                        bg-white/5
-                        border border-white/10
-                        text-white/80
-                        rounded-[15px]
-                        text-xs
-                        font-semibold
-                        flex
-                        items-center
-                        gap-2
-                        disabled:opacity-50
-                      "
-                    >
-                      <RefreshCw className="w-4 h-4" />
+                <div className={`flex justify-center ${cameraReady ? '' : 'invisible pointer-events-none'}`} aria-hidden={!cameraReady}>
+                  <button
+                    type="button"
+                    onClick={switchCamera}
+                    disabled={!cameraReady || fileScanning || loading}
+                    className="
+                      px-5 py-2.5
+                      bg-white/5
+                      border border-white/10
+                      text-white/80
+                      rounded-[15px]
+                      text-xs
+                      font-semibold
+                      flex
+                      items-center
+                      gap-2
+                      disabled:opacity-50
+                    "
+                  >
+                    <RefreshCw className="w-4 h-4" />
 
-                      Switch Camera
-                    </button>
-                  </div>
-                )}
+                    Switch Camera
+                  </button>
+                </div>
 
                 {loading && (
                   <div
@@ -884,8 +873,9 @@ const KioskScan = ({
                   opacity: 1,
                 }}
                 onSubmit={handleLookup}
+                className="space-y-4"
               >
-                <div className="mb-4">
+                <div>
                   <label
                     className="
                       text-white/70
@@ -928,17 +918,55 @@ const KioskScan = ({
                         focus:outline-none
                         transition
                         uppercase
+                        tabular-nums
                       "
                       type="text"
+                      inputMode="none"
+                      readOnly
                       value={studentId}
-                      onChange={(event) =>
-                        setStudentId(formatStudentId(event.target.value))
-                      }
                       placeholder="2023-00000-BN-0"
                       maxLength={15}
-                      autoFocus
                     />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3" role="group" aria-label="Student ID keypad">
+                  {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
+                    <button
+                      key={digit}
+                      type="button"
+                      disabled={loading}
+                      onClick={() => setStudentId((prev) => formatStudentId(prev + digit))}
+                      className="h-16 sm:h-[72px] rounded-[15px] border border-white/15 bg-white/[0.06] text-2xl font-bold text-white tabular-nums disabled:opacity-50"
+                    >
+                      {digit}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    disabled={loading || !studentId}
+                    onClick={() => setStudentId('')}
+                    className="h-16 sm:h-[72px] rounded-[15px] border border-white/15 bg-white/10 text-base font-semibold text-white/85 disabled:opacity-40"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={() => setStudentId((prev) => formatStudentId(`${prev}0`))}
+                    className="h-16 sm:h-[72px] rounded-[15px] border border-white/15 bg-white/[0.06] text-2xl font-bold text-white tabular-nums disabled:opacity-50"
+                  >
+                    0
+                  </button>
+                  <button
+                    type="button"
+                    disabled={loading || !studentId}
+                    onClick={() => setStudentId((prev) => formatStudentId(prev.replace(/\D/g, '').slice(0, -1)))}
+                    aria-label="Backspace"
+                    className="flex h-16 sm:h-[72px] items-center justify-center rounded-[15px] border border-white/15 bg-white/10 text-white/85 disabled:opacity-40"
+                  >
+                    <Delete className="h-6 w-6" />
+                  </button>
                 </div>
 
                 <button

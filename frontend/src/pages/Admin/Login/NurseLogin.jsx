@@ -19,7 +19,7 @@ const heroOverride = Object.values(
 const heroPhoto = heroOverride || clinicPhoto;
 
 const LogoTile = ({ className = '' }) => (
-  <div className={`flex items-center justify-center rounded-2xl bg-gradient-to-br from-red-600 via-maroon-700 to-maroon-900 shadow-lg shadow-maroon-900/40 ${className}`}>
+  <div className={`flex items-center justify-center rounded-[10px] bg-gradient-to-br from-red-600 via-maroon-700 to-maroon-900 shadow-lg shadow-maroon-900/40 ${className}`}>
     <Stethoscope className="h-1/2 w-1/2 text-yellow-400" strokeWidth={2.25} />
   </div>
 );
@@ -105,7 +105,7 @@ const NurseLogin = () => {
   ];
 
   const inputClass =
-    'w-full h-12 tall:h-14 rounded-2xl border border-slate-200 bg-white pl-14 text-[15px] text-gray-800 outline-none transition-colors placeholder:text-gray-400 hover:border-maroon-300 focus:border-maroon-800';
+    'w-full h-12 tall:h-14 rounded-[10px] border border-slate-200 bg-white pl-14 text-[15px] text-gray-800 outline-none transition-colors placeholder:text-gray-400 hover:border-maroon-300 focus:border-maroon-800';
 
   return (
     <div className="flex min-h-screen overflow-hidden bg-[#F7F7F8]">
@@ -193,9 +193,9 @@ const NurseLogin = () => {
             {features.map((feature) => (
               <div
                 key={feature.label}
-                className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 backdrop-blur-md roomy:py-3.5 tall:px-4 tall:py-3"
+                className="flex items-center gap-3 rounded-[10px] border border-white/15 bg-white/10 px-3 py-2.5 backdrop-blur-md roomy:py-3.5 tall:px-4 tall:py-3"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 tall:h-11 tall:w-11">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-white/15 tall:h-11 tall:w-11">
                   <feature.icon className="h-[18px] w-[18px] text-yellow-400 tall:h-5 tall:w-5" />
                 </span>
                 <span className="text-[13px] font-medium leading-snug text-white tall:text-[15px]">{feature.label}</span>
@@ -224,9 +224,9 @@ const NurseLogin = () => {
           transition={{ duration: 0.6, ease: 'easeOut' }}
           className="relative z-10 w-full max-w-[420px] tall:max-w-[480px]"
         >
-          <div className="relative rounded-[32px] border border-gray-100 bg-white px-7 pb-7 pt-14 shadow-[0_20px_60px_-24px_rgba(17,24,39,0.18)] sm:px-9 tall:px-11 tall:pb-11 tall:pt-20">
+          <div className="relative rounded-[10px] border border-gray-100 bg-white px-7 pb-7 pt-14 shadow-[0_20px_60px_-24px_rgba(17,24,39,0.18)] sm:px-9 tall:px-11 tall:pb-11 tall:pt-20">
             {/* Logo tile overlapping the card's top edge */}
-            <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-[30px] bg-white p-3 shadow-[0_-6px_20px_-12px_rgba(17,24,39,0.15)]">
+            <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-[10px] bg-white p-3 shadow-[0_-6px_20px_-12px_rgba(17,24,39,0.15)]">
               <LogoTile className="h-16 w-16 tall:h-[76px] tall:w-[76px]" />
             </div>
 
@@ -280,7 +280,7 @@ const NurseLogin = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 rounded-[10px] p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
                     tabIndex={-1}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
@@ -309,7 +309,7 @@ const NurseLogin = () => {
                     name="remember"
                     checked={form.remember}
                     onChange={handleChange}
-                    className="h-5 w-5 cursor-pointer rounded-md border-gray-300 text-maroon-700 focus:ring-maroon-500/20"
+                    className="h-5 w-5 cursor-pointer rounded-[10px] border-gray-300 text-maroon-700 focus:ring-maroon-500/20"
                   />
                   <span className="text-base text-gray-600">Remember me</span>
                 </label>
@@ -382,7 +382,7 @@ const NurseLogin = () => {
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-sm rounded-3xl bg-white p-7 text-center shadow-2xl"
+              className="w-full max-w-sm rounded-[10px] bg-white p-7 text-center shadow-2xl"
             >
               <span
                 className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full ${

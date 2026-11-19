@@ -4,7 +4,7 @@ import { formatContactPhone, philippineMobileDigits } from '../utils/contactVali
 // Small Philippine flag for the +63 prefix.
 export function PhilippineFlag() {
   return (
-    <svg viewBox="0 0 30 20" aria-hidden="true" className="h-3.5 w-5 shrink-0 rounded-[2px] ring-1 ring-slate-200 dark:ring-slate-600">
+    <svg viewBox="0 0 30 20" aria-hidden="true" className="h-3.5 w-5 shrink-0 rounded-[10px] ring-1 ring-slate-200 dark:ring-slate-600">
       <rect width="30" height="10" fill="#0038a8" />
       <rect y="10" width="30" height="10" fill="#ce1126" />
       <path d="M0 0 17.32 10 0 20Z" fill="#fff" />

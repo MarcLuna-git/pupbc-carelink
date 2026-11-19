@@ -13,12 +13,12 @@ import { NurseToast } from '../../../components/NurseFeedback';
 
 // Same services students can book on their Appointments page.
 const SERVICES = ['Consultation', 'Medical Certificate', 'Medical Clearance', 'Follow-up Checkup', 'Vaccination', 'Other'];
-const fieldClass = 'w-full rounded-lg border border-gray-200 bg-white py-2.5 text-sm focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white';
+const fieldClass = 'w-full rounded-[10px] border border-gray-200 bg-white py-2.5 text-sm focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white';
 
 const PER_PAGE = 5;
 
 // Default action button: border, light shadow, hover, a darker shade while pressed, and a focus ring.
-const BTN = 'inline-flex cursor-pointer select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-md border text-sm font-semibold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-800 disabled:cursor-not-allowed disabled:opacity-50';
+const BTN = 'inline-flex cursor-pointer select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] border text-sm font-semibold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-800 disabled:cursor-not-allowed disabled:opacity-50';
 const BTN_PRIMARY = 'border-maroon-800 bg-maroon-800 text-white hover:border-maroon-900 hover:bg-maroon-900 active:bg-maroon-950 focus-visible:ring-maroon-500 dark:border-gray-500 dark:bg-gray-700 dark:hover:bg-gray-600 dark:active:bg-gray-500';
 const BTN_DANGER = 'border-red-300 bg-white text-red-700 hover:bg-red-50 active:bg-red-100 focus-visible:ring-red-400 dark:border-red-700 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/20 dark:active:bg-red-900/40';
 const BTN_DANGER_SOLID = 'border-red-600 bg-red-600 text-white hover:border-red-700 hover:bg-red-700 active:bg-red-800 focus-visible:ring-red-400';
@@ -249,7 +249,7 @@ const NurseAppointments = () => {
 
       <NursePageTitle path="/nurse/appointments" />
       {/* Search and filters: one row, search first, then the service, the date and Clear filters. */}
-      <section aria-label="Search and filters" className="rounded-lg border border-gray-100 bg-white p-3 dark:border-gray-700 dark:bg-gray-800 sm:p-4">
+      <section aria-label="Search and filters" className="rounded-[10px] border border-gray-100 bg-white p-3 dark:border-gray-700 dark:bg-gray-800 sm:p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
@@ -268,7 +268,7 @@ const NurseAppointments = () => {
             </select>
             <input type="date" aria-label="Filter by appointment date" className={`${fieldClass} px-3 lg:w-44`} value={date} onChange={(e) => { setDate(e.target.value); setPage(1); }} />
             <button type="button" onClick={() => { setSearch(''); setService(''); setDate(''); setPage(1); }} disabled={!search && !service && !date}
-              className="cursor-pointer whitespace-nowrap rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">
+              className="cursor-pointer whitespace-nowrap rounded-[10px] border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">
               Clear filters
             </button>
           </div>
@@ -276,11 +276,11 @@ const NurseAppointments = () => {
       </section>
 
       {/* Status tabs: their own card under the search, filtering the requests below. */}
-      <section aria-label="Appointment status" className="rounded-lg border border-gray-100 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
+      <section aria-label="Appointment status" className="rounded-[10px] border border-gray-100 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
         <div role="group" aria-label="Filter appointments by status" className="flex gap-1 overflow-x-auto">
           {STATUS_TABS.map(f => (
             <button key={f.key} type="button" aria-pressed={filter === f.key} onClick={() => { setFilter(f.key); setPage(1); }}
-              className={`flex-1 shrink-0 whitespace-nowrap rounded-md px-3 py-2.5 text-sm font-semibold capitalize transition-colors ${
+              className={`flex-1 shrink-0 whitespace-nowrap rounded-[10px] px-3 py-2.5 text-sm font-semibold capitalize transition-colors ${
                 filter === f.key
                   ? 'bg-maroon-800 text-white'
                   : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200'
@@ -300,10 +300,10 @@ const NurseAppointments = () => {
         title={<>Appointment requests<CountChip>{loading ? '…' : meta.total}</CountChip></>}
         description="Newest bookings first. Open one to review it, or approve and decline pending requests right here."
         actions={
-          <div role="group" aria-label="Choose how to view appointments" className="flex rounded-lg bg-gray-100 p-1 dark:bg-gray-700/60">
+          <div role="group" aria-label="Choose how to view appointments" className="flex rounded-[10px] bg-gray-100 p-1 dark:bg-gray-700/60">
             {[{ key: 'table', label: 'Table', icon: Table2 }, { key: 'list', label: 'List', icon: List }].map(({ key, label, icon: Icon }) => (
               <button key={key} type="button" aria-pressed={view === key} onClick={() => changeView(key)}
-                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors ${
+                className={`inline-flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-sm font-semibold transition-colors ${
                   view === key ? 'bg-white text-maroon-800 shadow-sm dark:bg-gray-800 dark:text-maroon-300' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                 }`}>
                 <Icon className="h-4 w-4" aria-hidden="true" />{label}
@@ -316,7 +316,7 @@ const NurseAppointments = () => {
           <div className="p-3 sm:p-4"><NursePageSkeleton contentOnly label="Loading appointments" /></div>
         ) : filtered.length === 0 ? (
           <div className="py-14 text-center">
-            <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-50 dark:bg-gray-700/50"><Inbox className="h-8 w-8 text-gray-300 dark:text-gray-500" /></span>
+            <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[10px] bg-gray-50 dark:bg-gray-700/50"><Inbox className="h-8 w-8 text-gray-300 dark:text-gray-500" /></span>
             <p className="text-gray-500 dark:text-gray-400 font-medium">No appointments found</p>
             <p className="text-sm text-gray-400 dark:text-gray-400 mt-1">
               {filter !== 'all' ? `No ${badgeLabel(filter).toLowerCase()} appointments.` : 'All clear!'}
@@ -361,11 +361,11 @@ const NurseAppointments = () => {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     onClick={() => setSelectedAppointment(app)}
-                    className="cursor-pointer rounded-lg border border-gray-100 bg-white p-4 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700/40">
+                    className="cursor-pointer rounded-[10px] border border-gray-100 bg-white p-4 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700/40">
 
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3 sm:gap-4 min-w-0">
-                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-maroon-50 dark:bg-maroon-900/20">
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[10px] bg-maroon-50 dark:bg-maroon-900/20">
                           <User className="w-5 h-5 text-maroon-800 dark:text-maroon-400" />
                         </div>
                         <div className="min-w-0">
@@ -418,7 +418,7 @@ const NurseAppointments = () => {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="bg-white dark:bg-gray-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden"
+              className="bg-white dark:bg-gray-800 rounded-[10px] w-full max-w-md shadow-2xl overflow-hidden"
               style={{ maxHeight: '90vh' }}
               onClick={e => e.stopPropagation()}>
 
@@ -427,7 +427,7 @@ const NurseAppointments = () => {
                   {(() => { const Icon = (statusConfig[stageOf(selectedAppointment)] || statusConfig.pending).icon; return <Icon className="w-3.5 h-3.5" />; })()}
                   {badgeLabel(stageOf(selectedAppointment))}
                 </span>
-                <button onClick={() => setSelectedAppointment(null)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl">
+                <button onClick={() => setSelectedAppointment(null)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-[10px]">
                   <X className="w-5 h-5 text-gray-400" />
                 </button>
               </div>
@@ -435,7 +435,7 @@ const NurseAppointments = () => {
               <div className="overflow-y-auto px-5 pb-5" style={{ WebkitOverflowScrolling: 'touch' }}>
 
                 <div className="flex items-start gap-3 mb-4">
-                  <div className="w-10 h-10 bg-maroon-50 dark:bg-maroon-900/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 bg-maroon-50 dark:bg-maroon-900/20 rounded-[10px] flex items-center justify-center flex-shrink-0">
                     <User className="w-5 h-5 text-maroon-800 dark:text-maroon-400" />
                   </div>
                   <div className="min-w-0">
@@ -452,7 +452,7 @@ const NurseAppointments = () => {
                 </div>
 
                 {selectedAppointment.status === 'pending' && (
-                  <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/20 rounded-2xl p-4 mb-4">
+                  <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/20 rounded-[10px] p-4 mb-4">
                     <div className="flex items-start gap-2">
                       <Clock className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
                       <div>
@@ -463,7 +463,7 @@ const NurseAppointments = () => {
                   </div>
                 )}
 
-                <div className="bg-gray-50 dark:bg-gray-700/30 rounded-2xl p-4 space-y-3 mb-4">
+                <div className="bg-gray-50 dark:bg-gray-700/30 rounded-[10px] p-4 space-y-3 mb-4">
                   <div className="flex items-center gap-3">
                     <Stethoscope className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <div>
@@ -534,10 +534,10 @@ const NurseAppointments = () => {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="bg-white dark:bg-gray-800 rounded-3xl w-full max-w-sm shadow-2xl p-6"
+              className="bg-white dark:bg-gray-800 rounded-[10px] w-full max-w-sm shadow-2xl p-6"
               onClick={e => e.stopPropagation()}>
 
-              <div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-[10px] flex items-center justify-center mx-auto mb-4">
                 <XCircle className="w-6 h-6 text-red-500" />
               </div>
               <h3 className="text-base font-bold text-gray-900 dark:text-white text-center">Decline Appointment</h3>
@@ -548,7 +548,7 @@ const NurseAppointments = () => {
                 onChange={(e) => setRejectReason(e.target.value)}
                 placeholder="Enter reason for rejection..."
                 rows={3}
-                className="w-full mt-4 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 resize-none"
+                className="w-full mt-4 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-[10px] px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 resize-none"
               />
 
               <div className="flex gap-3 mt-4">
@@ -578,7 +578,7 @@ const NurseAppointments = () => {
             onClick={() => setCancelModal(null)}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-gray-800 rounded-3xl w-full max-w-sm shadow-2xl p-6"
+              className="bg-white dark:bg-gray-800 rounded-[10px] w-full max-w-sm shadow-2xl p-6"
               onClick={e => e.stopPropagation()}>
               <h3 className="text-base font-bold text-gray-900 dark:text-white text-center">Cancel Appointment</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-1">Please provide a cancellation reason.</p>
@@ -587,11 +587,11 @@ const NurseAppointments = () => {
                 onChange={e => setCancelReason(e.target.value)}
                 placeholder="Enter reason for cancellation..."
                 rows={3}
-                className="w-full mt-4 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-500/20 resize-none"
+                className="w-full mt-4 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-[10px] px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-500/20 resize-none"
               />
               <div className="flex gap-3 mt-4">
-                <button onClick={() => { setCancelModal(null); setCancelReason(''); }} className="flex-1 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-2xl text-sm">Back</button>
-                <button onClick={handleCancel} disabled={!cancelReason.trim()} className="flex-1 py-3 bg-gray-700 text-white font-semibold rounded-2xl text-sm disabled:opacity-50">Confirm</button>
+                <button onClick={() => { setCancelModal(null); setCancelReason(''); }} className="flex-1 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-[10px] text-sm">Back</button>
+                <button onClick={handleCancel} disabled={!cancelReason.trim()} className="flex-1 py-3 bg-gray-700 text-white font-semibold rounded-[10px] text-sm disabled:opacity-50">Confirm</button>
               </div>
             </motion.div>
           </motion.div>

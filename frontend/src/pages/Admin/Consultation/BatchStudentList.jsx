@@ -94,7 +94,7 @@ export default function BatchStudentList({ text, linked, students, error, onText
             />
           </div>
           {open && query.trim().length >= 2 && (
-            <ul id="batch-student-results" role="listbox" className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
+            <ul id="batch-student-results" role="listbox" className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-[10px] border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
               {searching && !results.length ? (
                 <li className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Searching…</li>
               ) : results.length ? results.map((user) => {
@@ -132,9 +132,9 @@ export default function BatchStudentList({ text, linked, students, error, onText
       <div>
         <p className={fieldLabel}>Student list <CountChip>{students.length}</CountChip></p>
         {students.length ? (
-          <ol className="max-h-[22rem] space-y-1 overflow-y-auto rounded-lg border border-gray-100 p-2 dark:border-gray-700">
+          <ol className="max-h-[22rem] space-y-1 overflow-y-auto rounded-[10px] border border-gray-100 p-2 dark:border-gray-700">
             {students.map((student, index) => (
-              <li key={keyOf(student.name)} className="flex items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-gray-50 dark:hover:bg-gray-700/40">
+              <li key={keyOf(student.name)} className="flex items-center gap-2 rounded-[10px] px-2 py-1 text-sm hover:bg-gray-50 dark:hover:bg-gray-700/40">
                 <span className="w-6 shrink-0 text-right text-xs tabular-nums text-gray-400">{index + 1}.</span>
                 <span className="min-w-0 flex-1 truncate">{student.name}</span>
                 {student.student_id && (
@@ -147,7 +147,7 @@ export default function BatchStudentList({ text, linked, students, error, onText
             ))}
           </ol>
         ) : (
-          <p className="rounded-lg border border-dashed border-gray-200 px-4 py-10 text-center text-sm text-gray-500 dark:border-gray-600 dark:text-gray-400">The students you add appear here, numbered, as they will print.</p>
+          <p className="rounded-[10px] border border-dashed border-gray-200 px-4 py-10 text-center text-sm text-gray-500 dark:border-gray-600 dark:text-gray-400">The students you add appear here, numbered, as they will print.</p>
         )}
       </div>
     </div>

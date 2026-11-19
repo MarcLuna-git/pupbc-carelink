@@ -43,7 +43,7 @@ const NurseLayoutForMobileView = ({
   }, [moreOpen]);
 
   const dockLinkClass = (active) =>
-    `relative flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-xl px-1 transition-colors ${
+    `relative flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-[10px] px-1 transition-colors ${
       active
         ? 'text-maroon-800 dark:text-white'
         : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
@@ -52,7 +52,7 @@ const NurseLayoutForMobileView = ({
   const activePill = (
     <motion.div
       layoutId="nurse-mobile-active-tab"
-      className="absolute inset-1 rounded-xl bg-maroon-50 dark:bg-white/10"
+      className="absolute inset-1 rounded-[10px] bg-maroon-50 dark:bg-white/10"
       transition={{ type: 'spring', stiffness: 500, damping: 34 }}
     />
   );
@@ -158,7 +158,7 @@ const NurseLayoutForMobileView = ({
                   type="button"
                   onClick={() => setMoreOpen(false)}
                   aria-label="Close"
-                  className="rounded-xl p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                  className="rounded-[10px] p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -173,13 +173,13 @@ const NurseLayoutForMobileView = ({
                       key={item.path}
                       to={item.path}
                       aria-current={active ? 'page' : undefined}
-                      className={`relative flex flex-col items-center gap-2 rounded-2xl p-3 text-center transition-colors ${
+                      className={`relative flex flex-col items-center gap-2 rounded-[10px] p-3 text-center transition-colors ${
                         active
                           ? 'bg-maroon-50 text-maroon-800 dark:bg-white/10 dark:text-white'
                           : 'text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700/50'
                       }`}
                     >
-                      <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-maroon-800 to-maroon-900 text-white shadow-lg shadow-maroon-900/20 dark:from-gray-700 dark:to-gray-800">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-gradient-to-br from-maroon-800 to-maroon-900 text-white shadow-lg shadow-maroon-900/20 dark:from-gray-700 dark:to-gray-800">
                         <Icon className="h-5 w-5" />
                       </span>
                       <span className="text-xs font-medium">{item.label}</span>

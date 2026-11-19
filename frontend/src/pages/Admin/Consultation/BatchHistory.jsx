@@ -76,7 +76,7 @@ export default function BatchHistory({ issued, loading, loadError, onReload, onN
   return (
     <div className="space-y-5">
       {message && (
-        <p role={message.type === 'error' ? 'alert' : 'status'} className={`rounded-lg px-4 py-3 text-sm font-medium ${message.type === 'error' ? 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-300' : 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-300'}`}>{message.text}</p>
+        <p role={message.type === 'error' ? 'alert' : 'status'} className={`rounded-[10px] px-4 py-3 text-sm font-medium ${message.type === 'error' ? 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-300' : 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-300'}`}>{message.text}</p>
       )}
 
       <NurseListCard
@@ -137,7 +137,7 @@ export default function BatchHistory({ issued, loading, loadError, onReload, onN
                           {confirmId === item.id ? (
                             <>
                               <span className="text-xs font-semibold text-red-700 dark:text-red-400">Delete?</span>
-                              <button type="button" onClick={() => remove(item)} className="rounded-lg bg-red-700 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-red-800">Yes</button>
+                              <button type="button" onClick={() => remove(item)} className="rounded-[10px] bg-red-700 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-red-800">Yes</button>
                               <button type="button" onClick={() => setConfirmId(null)} className={`${secondary} !px-2.5 !py-1.5 text-xs`}>No</button>
                             </>
                           ) : (

@@ -5,7 +5,7 @@ import { Bell, Check, Trash2, Calendar, Clock, CheckCircle, XCircle, Info, Loade
 import api from '../../../services/api';
 
 const Skeleton = ({ className = '' }) => (
-  <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded-2xl ${className}`} />
+  <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded-[10px] ${className}`} />
 );
 
 const Notifications = () => {
@@ -153,16 +153,16 @@ const Notifications = () => {
             <Skeleton className="h-7 w-36 mb-1.5" />
             <Skeleton className="h-4 w-40" />
           </div>
-          <Skeleton className="h-10 w-40 rounded-xl" />
+          <Skeleton className="h-10 w-40 rounded-[10px]" />
         </div>
         <div className="flex gap-2">
-          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-9 w-20 rounded-lg" />)}
+          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-9 w-20 rounded-[10px]" />)}
         </div>
         <div className="space-y-3">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 sm:p-5">
+            <div key={i} className="bg-white dark:bg-gray-800 rounded-[10px] border border-gray-100 dark:border-gray-700 p-4 sm:p-5">
               <div className="flex items-start gap-3 sm:gap-4">
-                <Skeleton className="w-10 h-10 rounded-xl flex-shrink-0" />
+                <Skeleton className="w-10 h-10 rounded-[10px] flex-shrink-0" />
                 <div className="flex-1 space-y-2">
                   <Skeleton className="h-4 w-48" />
                   <Skeleton className="h-3 w-full" />
@@ -190,7 +190,7 @@ const Notifications = () => {
           <button 
             onClick={markAllAsRead} 
             disabled={actionLoading === 'all'}
-            className="flex items-center justify-center gap-2 bg-maroon-800 text-white px-4 py-2.5 rounded-xl hover:bg-maroon-900 transition font-semibold text-xs sm:text-sm disabled:opacity-50">
+            className="flex items-center justify-center gap-2 bg-maroon-800 text-white px-4 py-2.5 rounded-[10px] hover:bg-maroon-900 transition font-semibold text-xs sm:text-sm disabled:opacity-50">
             {actionLoading === 'all' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
             <span>Mark All Read</span>
           </button>
@@ -200,7 +200,7 @@ const Notifications = () => {
       <AnimatePresence>
         {message && (
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-            className="p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-2xl text-sm font-medium text-center border border-green-200 dark:border-green-800/20">
+            className="p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-[10px] text-sm font-medium text-center border border-green-200 dark:border-green-800/20">
             {message}
           </motion.div>
         )}
@@ -213,7 +213,7 @@ const Notifications = () => {
           { key: 'read', label: 'Read', count: notifications.length - unreadCount },
         ].map(f => (
           <button key={f.key} onClick={() => setFilter(f.key)}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold capitalize whitespace-nowrap transition-all flex-shrink-0 ${
+            className={`px-4 py-2 rounded-[10px] text-xs font-semibold capitalize whitespace-nowrap transition-all flex-shrink-0 ${
               filter === f.key 
                 ? 'bg-maroon-800 text-white shadow-md' 
                 : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50'
@@ -226,7 +226,7 @@ const Notifications = () => {
 
       <div className="space-y-3">
         {filteredNotifications.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700/50 py-12 text-center">
+          <div className="bg-white dark:bg-gray-800 rounded-[10px] border border-gray-100 dark:border-gray-700/50 py-12 text-center">
             <Bell className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
             <p className="text-gray-500 dark:text-gray-400 font-medium text-sm">No notifications</p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
@@ -246,13 +246,13 @@ const Notifications = () => {
                 onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) openNotification(notif); }}
                 role="button"
                 tabIndex={0}
-                className={`bg-white dark:bg-gray-800 rounded-2xl border p-4 sm:p-5 hover:shadow-md transition-all ${
+                className={`bg-white dark:bg-gray-800 rounded-[10px] border p-4 sm:p-5 hover:shadow-md transition-all ${
                   notif.read 
                     ? 'border-gray-100 dark:border-gray-700/50' 
                     : 'border-l-4 border-l-maroon-800 dark:border-l-maroon-500 bg-maroon-50/20 dark:bg-maroon-900/5'
                 }`}>
                 <div className="flex items-start gap-3 sm:gap-4">
-                  <div className={`w-10 h-10 ${config.bg} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                  <div className={`w-10 h-10 ${config.bg} rounded-[10px] flex items-center justify-center flex-shrink-0`}>
                     <TypeIcon className={`w-5 h-5 ${config.iconColor}`} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -279,7 +279,7 @@ const Notifications = () => {
                           <button 
                             onClick={(event) => { event.stopPropagation(); markAsRead(notif.id); }}
                             disabled={actionLoading === notif.id}
-                            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-green-500 transition"
+                            className="p-1.5 rounded-[10px] hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-green-500 transition"
                             title="Mark as read">
                             {actionLoading === notif.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                           </button>
@@ -287,7 +287,7 @@ const Notifications = () => {
                         <button 
                           onClick={(event) => { event.stopPropagation(); deleteNotification(notif.id); }}
                           disabled={actionLoading === notif.id}
-                          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-red-500 transition"
+                          className="p-1.5 rounded-[10px] hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-red-500 transition"
                           title="Delete">
                           {actionLoading === notif.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                         </button>

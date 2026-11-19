@@ -284,8 +284,8 @@ const NurseQueue = () => {
             { label: 'Completed today', value: stats.completed_today, icon: CheckCircle, tone: 'bg-maroon-50 text-maroon-700 dark:bg-maroon-900/30 dark:text-maroon-300' },
             { label: 'Skipped / No Show', value: checkedInStudents.filter(s => ['skipped', 'on_hold'].includes(s.status)).length + stats.no_show_today, icon: UserX, tone: 'bg-maroon-50 text-maroon-700 dark:bg-maroon-900/30 dark:text-maroon-300' },
           ].map(({ label, value, icon: Icon, tone }) => (
-            <div key={label} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tone}`}><Icon className="h-5 w-5" aria-hidden="true" /></span>
+            <div key={label} className="flex items-center gap-3 rounded-[10px] border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] ${tone}`}><Icon className="h-5 w-5" aria-hidden="true" /></span>
               <div className="min-w-0">
                 <p className="truncate text-xs font-medium text-gray-500 dark:text-gray-400">{label}</p>
                 <p className="text-xl font-bold text-gray-900 tabular-nums dark:text-white">{value}<span className="ml-1 text-xs font-medium text-gray-400">student{value === 1 ? '' : 's'}</span></p>
@@ -303,25 +303,25 @@ const NurseQueue = () => {
             {/* Auto call next: on = the next student is called by itself whenever the desk is free (this page open). Off by default. */}
             {!autoQueue && (
               <button type="button" onClick={() => toggleAuto(true)} title="Call the next student automatically whenever no one is being called or seen"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:bg-transparent dark:text-gray-200 dark:hover:bg-gray-700/50">
+                className="inline-flex items-center gap-1.5 rounded-[10px] border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:bg-transparent dark:text-gray-200 dark:hover:bg-gray-700/50">
                 <Play className="h-3.5 w-3.5 fill-current" aria-hidden="true" /> Auto call next
               </button>
             )}
             {autoQueue && (
               <button type="button" onClick={() => toggleAuto(false)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-maroon-200 bg-maroon-50 px-3 py-2 text-xs font-semibold text-maroon-800 transition hover:bg-maroon-100 dark:border-maroon-800/40 dark:bg-maroon-900/20 dark:text-maroon-300">
+                className="inline-flex items-center gap-1.5 rounded-[10px] border border-maroon-200 bg-maroon-50 px-3 py-2 text-xs font-semibold text-maroon-800 transition hover:bg-maroon-100 dark:border-maroon-800/40 dark:bg-maroon-900/20 dark:text-maroon-300">
                 <Square className="h-3.5 w-3.5 fill-current" aria-hidden="true" /> {clinicOpen ? 'Stop auto call' : 'Stop auto call (clinic closed)'}
               </button>
             )}
             <button type="button" onClick={() => setOptionsOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:bg-transparent dark:text-gray-200 dark:hover:bg-gray-700/50">
+              className="inline-flex items-center gap-1.5 rounded-[10px] border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:bg-transparent dark:text-gray-200 dark:hover:bg-gray-700/50">
               <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" /> Options
             </button>
           </div>}
         >
           {queueRows.length === 0 ? (
             <div className="py-14 text-center">
-              <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-50 dark:bg-gray-700/50">
+              <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[10px] bg-gray-50 dark:bg-gray-700/50">
                 <ClipboardList className="h-8 w-8 text-gray-300 dark:text-gray-500" />
               </span>
               <h3 className="text-base font-semibold text-gray-600 dark:text-gray-300">No Checked-in Students</h3>
@@ -376,7 +376,7 @@ const NurseQueue = () => {
                         <td className="px-3 py-3 sm:px-4">
                           <button type="button" onClick={() => rowClick(s)} disabled={loading}
                             aria-label={`${action.label}: ${s.name}, ${s.queue_number}`}
-                            className={`inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${action.className}`}>
+                            className={`inline-flex items-center gap-1 whitespace-nowrap rounded-[10px] px-3 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${action.className}`}>
                             {action.label}
                           </button>
                         </td>

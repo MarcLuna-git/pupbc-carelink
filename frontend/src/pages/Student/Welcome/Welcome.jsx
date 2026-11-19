@@ -17,9 +17,9 @@ const Welcome = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-maroon-50 to-yellow-50 dark:from-gray-950 dark:to-gray-900 px-4 py-12">
       <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-        className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 text-center">
+        className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-[10px] shadow-2xl p-8 text-center">
         
-        <div className="w-20 h-20 bg-gradient-to-br from-maroon-800 to-maroon-900 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-maroon-800/20">
+        <div className="w-20 h-20 bg-gradient-to-br from-maroon-800 to-maroon-900 rounded-[10px] flex items-center justify-center mx-auto mb-6 shadow-lg shadow-maroon-800/20">
           <Heart className="w-10 h-10 text-white" />
         </div>
 
@@ -33,8 +33,8 @@ const Welcome = () => {
 
         <div className="space-y-3 mt-6 text-left">
           {steps.map((s, i) => (
-            <div key={i} className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
-              <div className="w-9 h-9 bg-maroon-50 dark:bg-maroon-900/20 rounded-xl flex items-center justify-center flex-shrink-0">
+            <div key={i} className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-[10px]">
+              <div className="w-9 h-9 bg-maroon-50 dark:bg-maroon-900/20 rounded-[10px] flex items-center justify-center flex-shrink-0">
                 <s.icon className="w-4.5 h-4.5 text-maroon-800 dark:text-maroon-400" />
               </div>
               <div>
@@ -46,7 +46,7 @@ const Welcome = () => {
         </div>
 
         <button onClick={() => navigate('/student/health-profile')}
-          className="w-full mt-6 py-3.5 bg-maroon-800 text-white font-bold rounded-2xl hover:bg-maroon-900 transition flex items-center justify-center space-x-2">
+          className="w-full mt-6 py-3.5 bg-maroon-800 text-white font-bold rounded-[10px] hover:bg-maroon-900 transition flex items-center justify-center space-x-2">
           <span>Start Health Profile</span>
           <ArrowRight className="w-5 h-5" />
         </button>

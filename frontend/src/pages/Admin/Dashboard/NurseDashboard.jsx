@@ -158,8 +158,8 @@ const NurseDashboard = () => {
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Clinic totals">
         {summaryCards.map((card) => (
-          <div key={card.title} className="flex min-w-0 items-center gap-3 rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:gap-4 sm:p-5">
-            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${card.color}`}>
+          <div key={card.title} className="flex min-w-0 items-center gap-3 rounded-[10px] border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:gap-4 sm:p-5">
+            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] ${card.color}`}>
               <card.icon className={`h-5 w-5 ${card.iconColor}`} aria-hidden="true" />
             </span>
             <div className="min-w-0">
@@ -185,7 +185,7 @@ const NurseDashboard = () => {
           >
             {todaySchedule.length === 0 ? (
               <div className="py-12 text-center">
-                <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-50 dark:bg-gray-700/50">
+                <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-[10px] bg-gray-50 dark:bg-gray-700/50">
                   <CalendarCheck className="h-7 w-7 text-gray-300 dark:text-gray-500" />
                 </span>
                 <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">No appointments for today.</p>
@@ -219,7 +219,7 @@ const NurseDashboard = () => {
           >
             {upcoming.length === 0 ? (
               <div className="py-12 text-center">
-                <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-50 dark:bg-gray-700/50">
+                <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-[10px] bg-gray-50 dark:bg-gray-700/50">
                   <CalendarRange className="h-7 w-7 text-gray-300 dark:text-gray-500" aria-hidden="true" />
                 </span>
                 <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">No upcoming visits.</p>
@@ -232,7 +232,7 @@ const NurseDashboard = () => {
                   return (
                     <li key={visit.id}>
                       <Link to="/nurse/appointments" className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/40">
-                        <span className="flex w-11 shrink-0 flex-col items-center rounded-lg bg-maroon-50 py-1 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-300">
+                        <span className="flex w-11 shrink-0 flex-col items-center rounded-[10px] bg-maroon-50 py-1 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-300">
                           <span className="text-xs font-bold uppercase leading-tight">{date.toLocaleDateString('en-US', { month: 'short' })}</span>
                           <span className="text-base font-bold leading-tight">{date.getDate()}</span>
                         </span>

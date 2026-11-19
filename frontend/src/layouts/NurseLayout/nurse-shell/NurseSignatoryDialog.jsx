@@ -8,7 +8,7 @@ import { addSignatory, removeSignatory, selectSignatory, selectedSignatoryId, si
  * Account menu → Document signatory: pick whose name is printed in the signature part of the clinic
  * documents, or add another doctor or nurse to the list. The choice applies from the next print on.
  */
-const input = 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100';
+const input = 'w-full rounded-[10px] border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100';
 const emptyForm = { name: '', role: '', license: '' };
 
 export const signatoryDetail = (choice) => [choice.role, choice.license && `Lic. No. ${choice.license}`].filter(Boolean).join(' · ');
@@ -51,13 +51,13 @@ export default function NurseSignatoryDialog({ user, onClose }) {
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section role="dialog" aria-modal="true" aria-labelledby="nurse-signatory-title" className="flex max-h-[calc(100dvh-32px)] w-full max-w-md flex-col rounded-2xl bg-white text-gray-900 shadow-2xl dark:bg-gray-800 dark:text-gray-100">
+      <section role="dialog" aria-modal="true" aria-labelledby="nurse-signatory-title" className="flex max-h-[calc(100dvh-32px)] w-full max-w-md flex-col rounded-[10px] bg-white text-gray-900 shadow-2xl dark:bg-gray-800 dark:text-gray-100">
         <div className="flex items-start justify-between gap-3 border-b border-gray-100 p-5 dark:border-gray-700">
           <div>
             <h2 id="nurse-signatory-title" className="text-lg font-bold">Document signatory</h2>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">The name printed in the signature part of the documents you print.</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700"><X className="h-5 w-5" /></button>
+          <button type="button" onClick={onClose} aria-label="Close" className="rounded-[10px] p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700"><X className="h-5 w-5" /></button>
         </div>
 
         <div className="space-y-5 overflow-y-auto p-5">
@@ -67,7 +67,7 @@ export default function NurseSignatoryDialog({ user, onClose }) {
               {choices.map((choice) => {
                 const checked = choice.id === selected;
                 return (
-                  <div key={choice.id} className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 ${checked ? 'border-maroon-500 bg-maroon-50 dark:border-maroon-300 dark:bg-maroon-900/20' : 'border-gray-200 dark:border-gray-600'}`}>
+                  <div key={choice.id} className={`flex items-center gap-2 rounded-[10px] border px-3 py-2.5 ${checked ? 'border-maroon-500 bg-maroon-50 dark:border-maroon-300 dark:bg-maroon-900/20' : 'border-gray-200 dark:border-gray-600'}`}>
                     <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
                       <input type="radio" name="document-signatory" checked={checked} onChange={() => choose(choice.id)} className="h-4 w-4 shrink-0 accent-maroon-800" />
                       <span className="min-w-0">
@@ -76,7 +76,7 @@ export default function NurseSignatoryDialog({ user, onClose }) {
                       </span>
                     </label>
                     {choice.custom && (
-                      <button type="button" onClick={() => remove(choice.id)} aria-label={`Remove ${choice.name}`} className="shrink-0 rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"><Trash2 className="h-4 w-4" /></button>
+                      <button type="button" onClick={() => remove(choice.id)} aria-label={`Remove ${choice.name}`} className="shrink-0 rounded-[10px] p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"><Trash2 className="h-4 w-4" /></button>
                     )}
                   </div>
                 );
@@ -84,7 +84,7 @@ export default function NurseSignatoryDialog({ user, onClose }) {
             </div>
           </fieldset>
 
-          <form onSubmit={add} noValidate className="space-y-2 rounded-xl border border-dashed border-gray-200 p-3 dark:border-gray-600">
+          <form onSubmit={add} noValidate className="space-y-2 rounded-[10px] border border-dashed border-gray-200 p-3 dark:border-gray-600">
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Add a doctor or nurse</p>
             <div>
               <label htmlFor="signatory-name" className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-300">Name as printed</label>
@@ -101,12 +101,12 @@ export default function NurseSignatoryDialog({ user, onClose }) {
                 <input id="signatory-license" name="license" value={form.license} onChange={change} maxLength={30} autoComplete="off" className={input} />
               </div>
             </div>
-            <button type="submit" className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"><Plus className="h-4 w-4" aria-hidden="true" /> Add and use</button>
+            <button type="submit" className="inline-flex items-center gap-2 rounded-[10px] border border-gray-200 px-3 py-2 text-sm font-medium hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"><Plus className="h-4 w-4" aria-hidden="true" /> Add and use</button>
           </form>
         </div>
 
         <div className="border-t border-gray-100 p-4 dark:border-gray-700">
-          <button type="button" onClick={onClose} className="w-full rounded-xl bg-maroon-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-maroon-900">Done</button>
+          <button type="button" onClick={onClose} className="w-full rounded-[10px] bg-maroon-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-maroon-900">Done</button>
         </div>
       </section>
     </div>,

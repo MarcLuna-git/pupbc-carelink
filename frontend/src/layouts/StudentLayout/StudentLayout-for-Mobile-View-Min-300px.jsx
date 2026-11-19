@@ -85,7 +85,7 @@ const StudentLayoutForMobileView = ({
                 onFocus={() => preloadForPath(item.path)}
                 aria-label={item.label}
                 aria-current={active ? 'page' : undefined}
-                className={`relative flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-xl px-1 transition-all ${
+                className={`relative flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-[10px] px-1 transition-all ${
                   active
                     ? 'text-maroon-800 dark:text-white'
                     : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'
@@ -94,7 +94,7 @@ const StudentLayoutForMobileView = ({
                 {active && (
                   <motion.div
                     layoutId="student-mobile-active-tab"
-                    className="absolute inset-1 rounded-xl bg-maroon-50 dark:bg-white/10"
+                    className="absolute inset-1 rounded-[10px] bg-maroon-50 dark:bg-white/10"
                     transition={{ type: 'spring', stiffness: 500, damping: 34 }}
                   />
                 )}

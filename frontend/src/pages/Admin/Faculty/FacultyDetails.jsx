@@ -13,12 +13,12 @@ import { STATUSES, avatarColor, dateTimeLabel, dayLabel, initials, quantityLabel
  * consultations and the last medicines the clinic gave them. Record Consultation and Dispense
  * Medicine open the same forms as their tabs.
  */
-const card = 'rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800';
+const card = 'rounded-[10px] border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800';
 const COLUMNS = 'md:grid-cols-[minmax(0,1.3fr)_minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,1.6fr)_minmax(0,1.2fr)]';
 
 function ContactRow({ icon: Icon, label, value, href }) {
   return <li className="flex items-center gap-3">
-    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-50 text-gray-500 dark:bg-gray-700 dark:text-gray-300"><Icon size={16} aria-hidden="true" /></span>
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-gray-50 text-gray-500 dark:bg-gray-700 dark:text-gray-300"><Icon size={16} aria-hidden="true" /></span>
     <div className="min-w-0"><p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
       {value ? (href ? <a href={href} className="break-all text-sm font-medium text-gray-900 hover:underline dark:text-gray-100">{value}</a> : <p className="break-words text-sm font-medium">{value}</p>) : <p className="text-sm text-gray-400">Not provided</p>}
     </div>
@@ -60,15 +60,15 @@ export default function FacultyDetails({ id, onBack, onViewHistory, onNotify }) 
 
   useNurseSync(['faculty'], signal => load(signal, true), id);
 
-  const back = <button type="button" onClick={onBack} aria-label="Back to the faculty directory" className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 ${focus}`}><ArrowLeft size={18} aria-hidden="true" /></button>;
+  const back = <button type="button" onClick={onBack} aria-label="Back to the faculty directory" className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 ${focus}`}><ArrowLeft size={18} aria-hidden="true" /></button>;
 
-  if (loading) return <div role="status" className="space-y-4"><span className="sr-only">Loading faculty member</span><div className="h-28 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" /><div className="h-48 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" /></div>;
+  if (loading) return <div role="status" className="space-y-4"><span className="sr-only">Loading faculty member</span><div className="h-28 animate-pulse rounded-[10px] bg-gray-100 dark:bg-gray-800" /><div className="h-48 animate-pulse rounded-[10px] bg-gray-100 dark:bg-gray-800" /></div>;
   if (missing || !state.member) {
     return <div className="space-y-4">{back}
       <div className={`${card} py-12 text-center`}>
         <h2 className="text-base font-semibold text-gray-700 dark:text-gray-200">{missing ? 'Faculty member not found' : 'Unable to show this faculty member'}</h2>
         <p className="mt-1 text-sm text-gray-500">{missing ? 'They may have been removed from the directory.' : error}</p>
-        <button type="button" onClick={onBack} className={`mt-5 inline-flex h-10 items-center rounded-lg bg-maroon-800 px-5 text-sm font-semibold text-white hover:bg-maroon-900 ${focus}`}>Back to directory</button>
+        <button type="button" onClick={onBack} className={`mt-5 inline-flex h-10 items-center rounded-[10px] bg-maroon-800 px-5 text-sm font-semibold text-white hover:bg-maroon-900 ${focus}`}>Back to directory</button>
       </div>
     </div>;
   }
@@ -78,7 +78,7 @@ export default function FacultyDetails({ id, onBack, onViewHistory, onNotify }) 
   const inactive = member.status !== 'active';
 
   return <div className="space-y-5">
-    {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-center text-sm font-medium text-red-700 dark:bg-red-900/20 dark:text-red-400">{error}</p>}
+    {error && <p role="alert" className="rounded-[10px] bg-red-50 p-3 text-center text-sm font-medium text-red-700 dark:bg-red-900/20 dark:text-red-400">{error}</p>}
     <section aria-label="Faculty member" className={`${card} flex flex-col gap-4 sm:flex-row sm:items-center`}>
       <div className="flex min-w-0 flex-1 items-center gap-4">
         {back}
@@ -90,11 +90,11 @@ export default function FacultyDetails({ id, onBack, onViewHistory, onNotify }) 
       </div>
       <div className="flex flex-wrap gap-3">
         <button type="button" onClick={() => setConsulting(true)} disabled={inactive} title={inactive ? 'Make this faculty member active to record a consultation' : undefined}
-          className={`inline-flex h-10 items-center gap-2 rounded-lg bg-maroon-800 px-5 text-sm font-semibold text-white hover:bg-maroon-900 disabled:cursor-not-allowed disabled:opacity-50 ${focus}`}><Stethoscope size={16} aria-hidden="true" />Record Consultation</button>
+          className={`inline-flex h-10 items-center gap-2 rounded-[10px] bg-maroon-800 px-5 text-sm font-semibold text-white hover:bg-maroon-900 disabled:cursor-not-allowed disabled:opacity-50 ${focus}`}><Stethoscope size={16} aria-hidden="true" />Record Consultation</button>
         <button type="button" onClick={() => setDispensing(true)} disabled={inactive} title={inactive ? 'Make this faculty member active to dispense medicine' : undefined}
-          className={`inline-flex h-10 items-center gap-2 rounded-lg bg-maroon-800 px-5 text-sm font-semibold text-white hover:bg-maroon-900 disabled:cursor-not-allowed disabled:opacity-50 ${focus}`}><Pill size={16} aria-hidden="true" />Dispense Medicine</button>
+          className={`inline-flex h-10 items-center gap-2 rounded-[10px] bg-maroon-800 px-5 text-sm font-semibold text-white hover:bg-maroon-900 disabled:cursor-not-allowed disabled:opacity-50 ${focus}`}><Pill size={16} aria-hidden="true" />Dispense Medicine</button>
         <button type="button" onClick={() => onViewHistory(member.id)}
-          className={`inline-flex h-10 items-center rounded-lg border border-maroon-300 bg-white px-5 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 dark:border-maroon-700 dark:bg-transparent dark:text-maroon-300 dark:hover:bg-maroon-900/20 ${focus}`}>View History</button>
+          className={`inline-flex h-10 items-center rounded-[10px] border border-maroon-300 bg-white px-5 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 dark:border-maroon-700 dark:bg-transparent dark:text-maroon-300 dark:hover:bg-maroon-900/20 ${focus}`}>View History</button>
       </div>
     </section>
 
@@ -113,12 +113,12 @@ export default function FacultyDetails({ id, onBack, onViewHistory, onNotify }) 
           <div className="flex items-center justify-between gap-3"><dt className="text-gray-500 dark:text-gray-400">Added</dt><dd className="font-medium">{dayLabel(member.created_at) || '—'}</dd></div>
           <div className="flex items-center justify-between gap-3"><dt className="text-gray-500 dark:text-gray-400">Consultations</dt><dd className="font-medium tabular-nums">{consultationCount}</dd></div>
           <div className="flex items-center justify-between gap-3"><dt className="text-gray-500 dark:text-gray-400">Times dispensed</dt><dd className="font-medium tabular-nums">{count}</dd></div>
-          {inactive && <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">Inactive faculty cannot be consulted or given medicine. Edit them in the directory to make them active.</p>}
+          {inactive && <p className="rounded-[10px] bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">Inactive faculty cannot be consulted or given medicine. Edit them in the directory to make them active.</p>}
         </dl>
       </section>
     </div>
 
-    <section aria-label="Consultations" className="rounded-lg border border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
+    <section aria-label="Consultations" className="rounded-[10px] border border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
       <div className="px-5 py-4"><h3 className="text-sm font-bold">Consultations</h3></div>
       {consultations.length === 0 ? <p className="border-t border-gray-100 px-5 py-10 text-center text-sm text-gray-500 dark:border-gray-700">No consultation has been recorded for {member.full_name} yet.</p> : (
         <ul className="divide-y divide-gray-100 border-t border-gray-100 dark:divide-gray-700 dark:border-gray-700">
@@ -139,7 +139,7 @@ export default function FacultyDetails({ id, onBack, onViewHistory, onNotify }) 
       )}
     </section>
 
-    <section aria-label="Recent dispensing" className="rounded-lg border border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
+    <section aria-label="Recent dispensing" className="rounded-[10px] border border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
       <div className="flex items-center justify-between gap-3 px-5 py-4">
         <h3 className="text-sm font-bold">Recent Dispensing</h3>
         <button type="button" onClick={() => onViewHistory(member.id)} className={`rounded px-2 py-1 text-sm font-semibold text-maroon-800 hover:underline dark:text-maroon-300 ${focus}`}>View All</button>

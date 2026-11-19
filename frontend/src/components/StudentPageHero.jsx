@@ -26,7 +26,7 @@ const StudentPageHero = ({
 
   return (
     <section
-      className="relative isolate overflow-hidden rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)]"
+      className="relative isolate overflow-hidden rounded-[10px] border border-[var(--sp-border)] bg-[var(--sp-surface)]"
       aria-labelledby={id}
     >
       <div className="relative z-[1] flex max-w-full items-center gap-5 px-5 py-5 sm:px-6 sm:py-6">

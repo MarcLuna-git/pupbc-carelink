@@ -42,7 +42,7 @@
 .nurse-sidebar.is-collapsed .nurse-sidebar-brand a>div { max-width:0;opacity:0; }
 /* Folded rail: no room beside the logo, so the toggle sits over it (same 38px axis)
    and replaces it on hover or keyboard focus; a tap on touch screens hits it too. */
-.nurse-sidebar.is-collapsed .nurse-sidebar-collapse { position:absolute;left:21px;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:12px;background:#ffffff33;opacity:0; }
+.nurse-sidebar.is-collapsed .nurse-sidebar-collapse { position:absolute;left:21px;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius: 10px;background:#ffffff33;opacity:0; }
 .nurse-sidebar.is-collapsed .nurse-sidebar-brand:hover .nurse-sidebar-collapse,
 .nurse-sidebar.is-collapsed .nurse-sidebar-collapse:focus-visible { opacity:1; }
 .nurse-sidebar.is-collapsed .nurse-sidebar-brand:hover .nurse-brand-symbol,
@@ -81,7 +81,7 @@
   .nurse-header-inner { padding-left:40px; }
   .nurse-shell-body::-webkit-scrollbar { width:10px; }
   .nurse-shell-body::-webkit-scrollbar-track { background:transparent; }
-  .nurse-shell-body::-webkit-scrollbar-thumb { background-color:#c9bfc2;border-radius:8px;border:3px solid transparent;background-clip:content-box; }
+  .nurse-shell-body::-webkit-scrollbar-thumb { background-color:#c9bfc2;border-radius: 10px;border:3px solid transparent;background-clip:content-box; }
   .nurse-shell-body::-webkit-scrollbar-thumb:hover { background-color:#ab9ea2; }
   .dark .nurse-shell-body { scrollbar-color:#374151 transparent; }
   .dark .nurse-shell-body::-webkit-scrollbar-thumb { background-color:#374151; }

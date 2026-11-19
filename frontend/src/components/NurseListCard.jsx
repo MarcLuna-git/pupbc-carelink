@@ -20,12 +20,12 @@ const NurseListCard = ({
 }) => (
   <section
     {...sectionProps}
-    className={`overflow-hidden rounded-lg border border-gray-100 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 ${fill ? 'flex flex-1 flex-col' : ''} ${className}`}
+    className={`overflow-hidden rounded-[10px] border border-gray-100 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 ${fill ? 'flex flex-1 flex-col' : ''} ${className}`}
   >
     <header className="flex flex-wrap items-start justify-between gap-3 border-b border-gray-100 px-4 py-4 dark:border-gray-700 lg:px-6">
       <div className="flex min-w-0 items-start gap-3">
         {Icon && (
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-maroon-50 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-400">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-maroon-50 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-400">
             <Icon className="h-5 w-5" aria-hidden="true" />
           </span>
         )}
@@ -38,7 +38,7 @@ const NurseListCard = ({
     </header>
     <div className={`space-y-4 p-4 lg:p-6 ${fill ? 'flex flex-1 flex-col' : ''}`}>
       {toolbar}
-      <div className={`overflow-hidden rounded-lg border border-gray-100 dark:border-gray-700 ${fill ? 'flex flex-1 flex-col' : ''} ${bodyClassName}`}>
+      <div className={`overflow-hidden rounded-[10px] border border-gray-100 dark:border-gray-700 ${fill ? 'flex flex-1 flex-col' : ''} ${bodyClassName}`}>
         {children}
       </div>
     </div>

@@ -36,7 +36,7 @@ export const StudentToast = ({ message, type = 'success', onClose, duration = 40
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -12, scale: 0.97 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-xl shadow-gray-900/10 dark:border-gray-700 dark:bg-gray-800"
+            className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-[10px] border border-gray-100 bg-white p-4 shadow-xl shadow-gray-900/10 dark:border-gray-700 dark:bg-gray-800"
           >
             <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
               isSuccess
@@ -54,7 +54,7 @@ export const StudentToast = ({ message, type = 'success', onClose, duration = 40
                 type="button"
                 onClick={onClose}
                 aria-label="Dismiss message"
-                className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                className="rounded-[10px] p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -96,7 +96,7 @@ export const StudentNoticeModal = ({ open, type = 'error', title, highlight, mes
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-3xl bg-white p-7 text-center shadow-2xl dark:bg-gray-800"
+            className="w-full max-w-sm rounded-[10px] bg-white p-7 text-center shadow-2xl dark:bg-gray-800"
           >
             <span className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full ${
               isSuccess
@@ -171,7 +171,7 @@ export const StudentConfirmModal = ({
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-[320px] rounded-2xl bg-white p-5 text-center shadow-2xl dark:bg-gray-800"
+            className="w-full max-w-[320px] rounded-[10px] bg-white p-5 text-center shadow-2xl dark:bg-gray-800"
           >
             <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-maroon-50 text-maroon-800 dark:bg-maroon-900/30 dark:text-maroon-300">
               <Icon className="h-6 w-6" />

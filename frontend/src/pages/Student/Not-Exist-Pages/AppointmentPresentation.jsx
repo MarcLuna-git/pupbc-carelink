@@ -54,13 +54,13 @@ export function AppointmentRows({ appointments, statusConfig, formatDate, onView
               {/* Check-in window info for approved appointments */}
 {isApproved && checkinOpensAt && checkinDeadlineAt && !hasCheckin && (
                 <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-                  <div className="flex items-center gap-1 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30 rounded-lg px-2 py-1">
+                  <div className="flex items-center gap-1 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30 rounded-[10px] px-2 py-1">
                     <Clock className="w-3 h-3 text-green-600 dark:text-green-400" />
                     <span className="text-green-800 dark:text-green-300">
                       Opens: {formatTime(checkinOpensAt)}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 rounded-lg px-2 py-1">
+                  <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 rounded-[10px] px-2 py-1">
                     <Clock className="w-3 h-3 text-yellow-600 dark:text-yellow-400" />
                     <span className="text-yellow-800 dark:text-yellow-300">
                       Deadline: {formatTime(checkinDeadlineAt)}
@@ -71,7 +71,7 @@ export function AppointmentRows({ appointments, statusConfig, formatDate, onView
 
                {/* Expired appointment notice */}
               {isExpired && (
-                <div className="mt-2 flex items-center gap-2 text-xs bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-lg px-2 py-1.5 text-red-800 dark:text-red-300">
+                <div className="mt-2 flex items-center gap-2 text-xs bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-[10px] px-2 py-1.5 text-red-800 dark:text-red-300">
                   <AlertCircle className="w-3 h-3 flex-shrink-0" />
                   <span>Appointment expired - missed check-in window</span>
                 </div>
@@ -82,7 +82,7 @@ export function AppointmentRows({ appointments, statusConfig, formatDate, onView
                 <StatusIcon className="h-3 w-3 shrink-0" />
                 <span className="capitalize">{appointment.status === 'pending' ? 'Pending Approval' : appointment.status}</span>
               </span>
-              <button type="button" onClick={() => onView(appointment)} aria-label={`View details for ${appointment.service || 'appointment'} on ${formatDate(appointment.appointment_date)}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700">
+              <button type="button" onClick={() => onView(appointment)} aria-label={`View details for ${appointment.service || 'appointment'} on ${formatDate(appointment.appointment_date)}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700">
                 View Details <ChevronRight className="h-4 w-4" />
               </button>
             </div>

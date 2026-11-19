@@ -10,18 +10,18 @@ import { formatStudentId } from '../../../utils/inputFilters';
  * with a lot number and expiry date), Record Movement (dispensed, wasted, expired, adjustment), and Delete.
  * They look like the Add Medicine popup.
  */
-const field = 'h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:ring-maroon-300/30';
+const field = 'h-11 w-full rounded-[10px] border border-gray-200 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:ring-maroon-300/30';
 const isWhole = value => /^\d*$/.test(value);
 const errorText = (err, fallback) => (err.response?.data?.errors && Object.values(err.response.data.errors).flat()[0]) || err.response?.data?.message || fallback;
 
-const cancelButton = `inline-flex h-10 items-center rounded-lg border border-maroon-300 bg-white px-5 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 disabled:opacity-50 dark:border-maroon-700 dark:bg-transparent dark:text-maroon-300 dark:hover:bg-maroon-900/20 ${focus}`;
-const confirmButton = `inline-flex h-10 items-center gap-2 rounded-lg bg-maroon-800 px-5 text-sm font-semibold text-white hover:bg-maroon-900 disabled:cursor-not-allowed disabled:opacity-50 ${focus}`;
+const cancelButton = `inline-flex h-10 items-center rounded-[10px] border border-maroon-300 bg-white px-5 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 disabled:opacity-50 dark:border-maroon-700 dark:bg-transparent dark:text-maroon-300 dark:hover:bg-maroon-900/20 ${focus}`;
+const confirmButton = `inline-flex h-10 items-center gap-2 rounded-[10px] bg-maroon-800 px-5 text-sm font-semibold text-white hover:bg-maroon-900 disabled:cursor-not-allowed disabled:opacity-50 ${focus}`;
 
 function Header({ icon: Icon, title, subtitle, onClose, tone = 'bg-maroon-800' }) {
   return <header className="flex items-start gap-3 px-5 pb-2 pt-5 sm:px-6">
     <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white ${tone}`}><Icon size={18} aria-hidden="true" /></span>
     <div className="min-w-0 flex-1"><h2 className="text-lg font-bold">{title}</h2><p className="break-words text-sm text-gray-500 dark:text-gray-400">{subtitle}</p></div>
-    <button type="button" onClick={onClose} aria-label="Close" className={`rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 ${focus}`}><X size={18} /></button>
+    <button type="button" onClick={onClose} aria-label="Close" className={`rounded-[10px] p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 ${focus}`}><X size={18} /></button>
   </header>;
 }
 const Label = ({ children, required }) => <span className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-300">{children}{required && <span className="ml-0.5 text-red-600" aria-hidden="true">*</span>}</span>;
@@ -66,7 +66,7 @@ export function RestockModal({ medicine, timeGuardOff, onClose, onDone }) {
           <label><Label required>Quantity to add</Label><input className={field} inputMode="numeric" value={quantity} onChange={event => { if (isWhole(event.target.value)) setQuantity(event.target.value); }} required /></label>
           <label><Label>Reference <span className="font-normal text-gray-400">(Optional)</span></Label><input className={field} value={batch.reference} onChange={event => setBatch({ ...batch, reference: event.target.value })} placeholder="e.g. Supplier Delivery #SD-2026-1015" maxLength={150} /></label>
         </div>
-        <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-600">
+        <label className="flex cursor-pointer items-start gap-3 rounded-[10px] border border-gray-200 p-3 dark:border-gray-600">
           <input type="checkbox" className="mt-1 h-4 w-4 cursor-pointer accent-maroon-800" checked={byBatch} onChange={event => setByBatch(event.target.checked)} />
           <span><span className="block text-sm font-semibold">Track this stock by batch</span><span className="block text-xs text-gray-600 dark:text-gray-300">Record the lot number and expiry date. Stock that expires first is used first.</span></span>
         </label>
@@ -76,7 +76,7 @@ export function RestockModal({ medicine, timeGuardOff, onClose, onDone }) {
           <label><Label>Received date</Label><input className={field} type="date" value={batch.received_at} onChange={event => setBatch({ ...batch, received_at: event.target.value })} /></label>
           <label className="sm:col-span-2"><Label>Supplier <span className="font-normal text-gray-400">(Optional)</span></Label><input className={field} value={batch.supplier} onChange={event => setBatch({ ...batch, supplier: event.target.value })} maxLength={150} /></label>
         </div>}
-        {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{error}</p>}
+        {error && <p role="alert" className="rounded-[10px] bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{error}</p>}
       </div>
       <Footer>
         <button type="button" onClick={close} disabled={saving} className={cancelButton}>Cancel</button>
@@ -124,7 +124,7 @@ export function MovementModal({ medicine, onClose, onDone }) {
         </div>
         {dispensing && <label className="block"><Label required>Student ID</Label><input className={field} value={form.student_id} onChange={event => { setForm({ ...form, student_id: formatStudentId(event.target.value) }); setError(''); }} placeholder="2023-00000-BN-0" required /></label>}
         <label className="block"><Label required>Reason</Label><textarea className={`${field} h-auto resize-none py-2.5`} rows={3} maxLength={500} value={form.reason} onChange={event => setForm({ ...form, reason: event.target.value })} placeholder="e.g. Damaged stock" required /></label>
-        {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{error}</p>}
+        {error && <p role="alert" className="rounded-[10px] bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{error}</p>}
       </div>
       <Footer>
         <button type="button" onClick={close} disabled={saving} className={cancelButton}>Cancel</button>
@@ -154,12 +154,12 @@ export function DeleteModal({ medicine, onClose, onDone }) {
   return <Modal title="Delete medicine" onClose={close}>
     <Header icon={Trash2} tone="bg-red-600" title="Delete Medicine?" subtitle="This removes it from the inventory. It cannot be undone." onClose={close} />
     <div className="space-y-3 px-5 pb-5 pt-3 sm:px-6">
-      <p className="flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-300"><AlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden="true" /><span>Delete <strong>{medicine.name}</strong>{medicine.quantity > 0 ? ` (${medicine.quantity} ${medicine.unit} still in stock)` : ''}?</span></p>
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{error}</p>}
+      <p className="flex items-start gap-2 rounded-[10px] bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-300"><AlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden="true" /><span>Delete <strong>{medicine.name}</strong>{medicine.quantity > 0 ? ` (${medicine.quantity} ${medicine.unit} still in stock)` : ''}?</span></p>
+      {error && <p role="alert" className="rounded-[10px] bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{error}</p>}
     </div>
     <Footer>
       <button type="button" onClick={close} disabled={saving} className={cancelButton}>Cancel</button>
-      <button type="button" onClick={remove} disabled={saving} className={`inline-flex h-10 items-center gap-2 rounded-lg bg-red-600 px-5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60 ${focus}`}>{saving && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}{saving ? 'Deleting…' : 'Delete'}</button>
+      <button type="button" onClick={remove} disabled={saving} className={`inline-flex h-10 items-center gap-2 rounded-[10px] bg-red-600 px-5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60 ${focus}`}>{saving && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}{saving ? 'Deleting…' : 'Delete'}</button>
     </Footer>
   </Modal>;
 }

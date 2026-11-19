@@ -194,7 +194,7 @@ body:has(.student-approved-shell)::-webkit-scrollbar { display:none; }
   .student-main { min-height:100%;padding-top:16px; }
   .student-shell-body::-webkit-scrollbar { width:10px; }
   .student-shell-body::-webkit-scrollbar-track { background:transparent; }
-  .student-shell-body::-webkit-scrollbar-thumb { background-color:#c9bfc2;border-radius:8px;border:3px solid transparent;background-clip:content-box; }
+  .student-shell-body::-webkit-scrollbar-thumb { background-color:#c9bfc2;border-radius: 10px;border:3px solid transparent;background-clip:content-box; }
   .student-shell-body::-webkit-scrollbar-thumb:hover { background-color:#ab9ea2; }
   .dark .student-shell-body { scrollbar-color:#374151 transparent; }
   .dark .student-shell-body::-webkit-scrollbar-thumb { background-color:#374151; }

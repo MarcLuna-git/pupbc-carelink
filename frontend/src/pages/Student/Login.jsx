@@ -573,7 +573,7 @@ const Login = () => {
             </p>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-6 sm:p-8 border border-gray-100 dark:border-gray-700 animate-fadeInUp">
+          <div className="bg-white dark:bg-gray-800 rounded-[10px] shadow-xl p-6 sm:p-8 border border-gray-100 dark:border-gray-700 animate-fadeInUp">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
                 Welcome Back, Isko&apos;t Iska!
@@ -619,7 +619,7 @@ const Login = () => {
 
                   <input
                     id="student-id"
-                    className={`w-full border rounded-2xl pl-10 pr-4 py-3 text-sm focus:outline-none transition-all dark:bg-gray-700 dark:text-white ${
+                    className={`w-full border rounded-[10px] pl-10 pr-4 py-3 text-sm focus:outline-none transition-all dark:bg-gray-700 dark:text-white ${
                       errors.student_id
                         ? 'border-red-400 focus:border-red-500 dark:border-red-500'
                         : 'border-slate-200 dark:border-gray-600 focus:border-maroon-800 hover:border-maroon-300'
@@ -655,7 +655,7 @@ const Login = () => {
                       name="dobMonth"
                       value={form.dobMonth}
                       onChange={handleChange}
-                      className="peer w-full min-w-0 cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-2 pr-7 text-sm text-gray-900 focus:border-maroon-800 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      className="peer w-full min-w-0 cursor-pointer appearance-none rounded-[10px] border border-slate-200 bg-white py-2.5 pl-2 pr-7 text-sm text-gray-900 focus:border-maroon-800 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                       required
                     >
                       <option value="">Month</option>
@@ -679,7 +679,7 @@ const Login = () => {
                       name="dobDay"
                       value={form.dobDay}
                       onChange={handleChange}
-                      className="peer w-full min-w-0 cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-2 pr-7 text-sm text-gray-900 focus:border-maroon-800 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      className="peer w-full min-w-0 cursor-pointer appearance-none rounded-[10px] border border-slate-200 bg-white py-2.5 pl-2 pr-7 text-sm text-gray-900 focus:border-maroon-800 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                       required
                     >
                       <option value="">Day</option>
@@ -703,7 +703,7 @@ const Login = () => {
                       name="dobYear"
                       value={form.dobYear}
                       onChange={handleChange}
-                      className="peer w-full min-w-0 cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-2 pr-7 text-sm text-gray-900 focus:border-maroon-800 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      className="peer w-full min-w-0 cursor-pointer appearance-none rounded-[10px] border border-slate-200 bg-white py-2.5 pl-2 pr-7 text-sm text-gray-900 focus:border-maroon-800 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                       required
                     >
                       <option value="">Year</option>
@@ -736,7 +736,7 @@ const Login = () => {
 
                   <input
                     id="student-password"
-                    className={`w-full border rounded-2xl pl-10 pr-12 py-3 text-sm focus:outline-none transition-all dark:bg-gray-700 dark:text-white ${
+                    className={`w-full border rounded-[10px] pl-10 pr-12 py-3 text-sm focus:outline-none transition-all dark:bg-gray-700 dark:text-white ${
                       errors.password
                         ? 'border-red-400 focus:border-red-500 dark:border-red-500'
                         : 'border-slate-200 dark:border-gray-600 focus:border-maroon-800 hover:border-maroon-300'
@@ -755,7 +755,7 @@ const Login = () => {
                     onClick={() =>
                       setShowPassword((current) => !current)
                     }
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded-[10px] hover:bg-gray-100 dark:hover:bg-gray-600"
                     aria-label={
                       showPassword
                         ? 'Hide password'

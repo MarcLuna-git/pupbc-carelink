@@ -21,7 +21,7 @@ const TABS = [['directory', 'Faculty Directory'], ['consultation', 'Consultation
 const EMPTY_ROSTER = { list: [], stats: { total: 0 } };
 
 function StatCard({ icon: Icon, label, value }) {
-  return <div className="flex items-center gap-4 rounded-lg border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+  return <div className="flex items-center gap-4 rounded-[10px] border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
     <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-maroon-50 text-maroon-800 dark:bg-maroon-900/30 dark:text-maroon-300"><Icon size={22} aria-hidden="true" /></span>
     <div><p className="text-sm text-gray-500 dark:text-gray-400">{label}</p><p className="text-2xl font-bold tabular-nums text-gray-900 dark:text-white">{value}</p></div>
   </div>;
@@ -81,7 +81,7 @@ const NurseFaculty = () => {
     <div className="mx-auto max-w-[1440px] space-y-5">
       <NursePageTitle path="/nurse/faculty" />
 
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-center text-sm font-medium text-red-700 dark:bg-red-900/20 dark:text-red-400">{error}</p>}
+      {error && <p role="alert" className="rounded-[10px] bg-red-50 p-3 text-center text-sm font-medium text-red-700 dark:bg-red-900/20 dark:text-red-400">{error}</p>}
 
       {/* Action results show as a floating toast */}
       <NurseToast message={message} type={messageType} onClose={() => setMessage('')} />
@@ -103,20 +103,20 @@ const NurseFaculty = () => {
           <div id="faculty-panel" role="tabpanel" aria-labelledby={`faculty-tab-${tab}`}>
             {tab === 'directory' && <FacultyDirectory onView={id => go({ member: id })} onChanged={() => loadRoster(undefined, true).catch(() => {})} onNotify={notify} />}
             {tab === 'consultation' && (
-              <section aria-label="Faculty consultation" className="max-w-2xl rounded-lg border border-gray-100 bg-white p-5 text-gray-900 sm:p-6 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+              <section aria-label="Faculty consultation" className="max-w-2xl rounded-[10px] border border-gray-100 bg-white p-5 text-gray-900 sm:p-6 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
                 <h2 className="text-lg font-bold">Consultation</h2>
                 <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">Record a clinic consultation for a faculty member. It shows on their details.</p>
                 {active.length === 0
-                  ? <p className="rounded-lg bg-gray-50 p-4 text-sm text-gray-600 dark:bg-gray-700/40 dark:text-gray-300">There is no active faculty member yet. Add one in the Faculty Directory first.</p>
+                  ? <p className="rounded-[10px] bg-gray-50 p-4 text-sm text-gray-600 dark:bg-gray-700/40 dark:text-gray-300">There is no active faculty member yet. Add one in the Faculty Directory first.</p>
                   : <ConsultationForm key={formKey} facultyOptions={active} onDone={text => { notify(text); setFormKey(value => value + 1); }} />}
               </section>
             )}
             {tab === 'dispense' && (
-              <section aria-label="Dispense medicine" className="max-w-2xl rounded-lg border border-gray-100 bg-white p-5 text-gray-900 sm:p-6 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+              <section aria-label="Dispense medicine" className="max-w-2xl rounded-[10px] border border-gray-100 bg-white p-5 text-gray-900 sm:p-6 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
                 <h2 className="text-lg font-bold">Dispense Medicine</h2>
                 <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">Give a medicine to a faculty member. The stock comes out of the inventory, first expiry first.</p>
                 {active.length === 0
-                  ? <p className="rounded-lg bg-gray-50 p-4 text-sm text-gray-600 dark:bg-gray-700/40 dark:text-gray-300">There is no active faculty member yet. Add one in the Faculty Directory first.</p>
+                  ? <p className="rounded-[10px] bg-gray-50 p-4 text-sm text-gray-600 dark:bg-gray-700/40 dark:text-gray-300">There is no active faculty member yet. Add one in the Faculty Directory first.</p>
                   : <DispenseForm key={formKey} facultyOptions={active} onDone={text => { notify(text); setFormKey(value => value + 1); }} />}
               </section>
             )}

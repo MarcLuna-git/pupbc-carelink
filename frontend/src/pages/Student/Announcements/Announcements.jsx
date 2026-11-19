@@ -5,7 +5,7 @@ import api from '../../../services/api';
 import { SearchField, FilterMenu } from '../../../components/StudentSearchFilter';
 
 const Skeleton = ({ className = '' }) => (
-  <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded-2xl ${className}`} />
+  <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded-[10px] ${className}`} />
 );
 
 const getCachedAnnouncements = () => {
@@ -117,21 +117,21 @@ const Announcements = () => {
             <Skeleton className="h-7 w-40 mb-1.5" />
             <Skeleton className="h-4 w-36" />
           </div>
-          <Skeleton className="h-10 w-10 rounded-xl" />
+          <Skeleton className="h-10 w-10 rounded-[10px]" />
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
-          <Skeleton className="h-10 flex-1 rounded-2xl" />
-          <Skeleton className="h-10 w-40 rounded-2xl" />
+          <Skeleton className="h-10 flex-1 rounded-[10px]" />
+          <Skeleton className="h-10 w-40 rounded-[10px]" />
         </div>
         <div className="flex gap-2">
-          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-9 w-20 rounded-xl" />)}
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-9 w-20 rounded-[10px]" />)}
         </div>
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 sm:p-5">
+            <div key={i} className="bg-white dark:bg-gray-800 rounded-[10px] border border-gray-100 dark:border-gray-700 p-4 sm:p-5">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3 sm:gap-4 flex-1">
-                  <Skeleton className="w-10 h-10 rounded-xl flex-shrink-0" />
+                  <Skeleton className="w-10 h-10 rounded-[10px] flex-shrink-0" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-4 w-56" />
                     <div className="flex gap-2">
@@ -168,7 +168,7 @@ const Announcements = () => {
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-2xl text-sm text-center border border-red-200 dark:border-red-800/20">
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-[10px] text-sm text-center border border-red-200 dark:border-red-800/20">
           {error}
         </div>
       )}
@@ -186,7 +186,7 @@ const Announcements = () => {
 
       <div className="space-y-3">
         {filteredAnnouncements.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700/50 py-12 text-center">
+          <div className="bg-white dark:bg-gray-800 rounded-[10px] border border-gray-100 dark:border-gray-700/50 py-12 text-center">
             <Bell className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
             <p className="text-gray-500 dark:text-gray-400 font-medium text-sm">
               {search || filterCategory !== 'all' ? 'No announcements match your filters.' : 'No announcements yet.'}
@@ -203,13 +203,13 @@ const Announcements = () => {
               <motion.div key={ann.id} layout
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700/50 overflow-hidden hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600 transition-all">
+                className="bg-white dark:bg-gray-800 rounded-[10px] border border-gray-100 dark:border-gray-700/50 overflow-hidden hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600 transition-all">
                 <button 
                   className="w-full p-4 sm:p-5 text-left"
                   onClick={() => setExpandedId(expandedId === ann.id ? null : ann.id)}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 sm:gap-4 min-w-0">
-                      <div className="w-10 h-10 bg-maroon-50 dark:bg-maroon-900/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 bg-maroon-50 dark:bg-maroon-900/20 rounded-[10px] flex items-center justify-center flex-shrink-0">
                         <IconComponent className={`w-5 h-5 ${config.iconColor}`} />
                       </div>
                       <div className="min-w-0">

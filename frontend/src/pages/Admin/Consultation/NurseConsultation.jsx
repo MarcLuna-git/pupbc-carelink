@@ -150,9 +150,9 @@ const NurseConsultation = () => {
       {toast}
       {/* The way back to the queue, in its own card above the list. */}
       <section aria-labelledby="queue-shortcut-title"
-        className="flex flex-col gap-3 rounded-lg border border-gray-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between lg:px-6 dark:border-gray-700 dark:bg-gray-800">
+        className="flex flex-col gap-3 rounded-[10px] border border-gray-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between lg:px-6 dark:border-gray-700 dark:bg-gray-800">
         <div className="flex min-w-0 items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-maroon-50 text-maroon-700 dark:bg-maroon-900/30 dark:text-maroon-300">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-maroon-50 text-maroon-700 dark:bg-maroon-900/30 dark:text-maroon-300">
             <ListOrdered className="h-5 w-5" aria-hidden="true" />
           </span>
           <div className="min-w-0">
@@ -163,14 +163,14 @@ const NurseConsultation = () => {
           </div>
         </div>
         <Link to="/nurse/queue"
-          className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-maroon-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-maroon-900">
+          className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[10px] bg-maroon-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-maroon-900">
           Go to Queue
         </Link>
       </section>
 
 
       {/* Inner tabs: Individual Release is the consultation of a patient being seen; Batch Release is a Medical Clearance for a group. */}
-      <section aria-label="Release type" className="rounded-lg border border-gray-100 bg-white p-3 dark:border-gray-700 dark:bg-gray-800 lg:px-4">
+      <section aria-label="Release type" className="rounded-[10px] border border-gray-100 bg-white p-3 dark:border-gray-700 dark:bg-gray-800 lg:px-4">
       <div role="tablist" aria-label="Release type" className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         {[['individual', 'Individual Release', Stethoscope], ['batch', 'Batch Release', Users]].map(([id, title, Icon]) => (
           <button
@@ -181,7 +181,7 @@ const NurseConsultation = () => {
             aria-selected={tab === id}
             aria-controls={`consultation-panel-${id}`}
             onClick={() => chooseTab(id)}
-            className={`flex w-full items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition sm:inline-flex sm:w-auto ${
+            className={`flex w-full items-center gap-2 rounded-[10px] border px-4 py-2.5 text-sm font-semibold transition sm:inline-flex sm:w-auto ${
               tab === id
                 ? 'border-maroon-800 bg-maroon-800 text-white'
                 : 'border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-900/30'}`}
@@ -205,7 +205,7 @@ const NurseConsultation = () => {
       >
         {inConsultation.length === 0 ? (
           <div className="py-14 text-center">
-            <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-50 dark:bg-gray-700/50">
+            <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[10px] bg-gray-50 dark:bg-gray-700/50">
               <ClipboardList className="h-8 w-8 text-gray-300 dark:text-gray-500" />
             </span>
             <h3 className="text-base font-semibold text-gray-600 dark:text-gray-300">No patient in consultation</h3>
@@ -239,7 +239,7 @@ const NurseConsultation = () => {
                         <button
                           type="button"
                           onClick={() => navigate(consultationPath(s.checkin_id))}
-                          className="inline-flex items-center rounded-lg bg-maroon-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-maroon-900"
+                          className="inline-flex items-center rounded-[10px] bg-maroon-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-maroon-900"
                         >
                           Consulting
                         </button>

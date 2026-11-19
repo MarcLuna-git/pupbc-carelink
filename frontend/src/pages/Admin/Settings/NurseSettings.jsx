@@ -16,9 +16,9 @@ import { NurseToast } from '../../../components/NurseFeedback';
  * Student Settings switch rows.
  */
 const ToggleSwitch = ({ checked, onChange, label, description, icon: Icon, disabled = false }) => (
-  <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/50">
+  <div className="flex items-center justify-between gap-4 rounded-[10px] border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/50">
     <div className="flex min-w-0 items-start gap-3">
-      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-maroon-800 shadow-sm dark:bg-gray-800 dark:text-maroon-400">
+      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-white text-maroon-800 shadow-sm dark:bg-gray-800 dark:text-maroon-400">
         <Icon className="h-4 w-4" />
       </span>
       <div className="min-w-0">
@@ -294,9 +294,9 @@ const NurseSettings = () => {
     }
   };
 
-  const inputClass = "w-full border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-maroon-500 focus:outline-none";
+  const inputClass = "w-full border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 py-3 text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-maroon-500 focus:outline-none";
   const labelClass = "text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5";
-  const primaryButton = "w-full py-3 bg-maroon-800 text-white font-semibold rounded-lg hover:bg-maroon-900 transition flex items-center justify-center space-x-2 disabled:opacity-50";
+  const primaryButton = "w-full py-3 bg-maroon-800 text-white font-semibold rounded-[10px] hover:bg-maroon-900 transition flex items-center justify-center space-x-2 disabled:opacity-50";
 
   // Shared panel body: right column on tablet / desktop, inside the opened
   // accordion item on mobile.
@@ -381,7 +381,7 @@ const NurseSettings = () => {
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
-                className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 py-3 pl-10 pr-4 text-sm text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400"
+                className="w-full cursor-not-allowed rounded-[10px] border border-gray-200 bg-gray-50 py-3 pl-10 pr-4 text-sm text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400"
                 type="email"
                 value={profile.email}
                 disabled
@@ -416,7 +416,7 @@ const NurseSettings = () => {
                 required
               />
               <button type="button" onClick={() => setShowCurrentPass(!showCurrentPass)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600">
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-[10px] p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600">
                 {showCurrentPass ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
               </button>
             </div>
@@ -435,7 +435,7 @@ const NurseSettings = () => {
                 required
               />
               <button type="button" onClick={() => setShowNewPass(!showNewPass)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600">
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-[10px] p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600">
                 {showNewPass ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
               </button>
             </div>
@@ -495,7 +495,7 @@ const NurseSettings = () => {
           <p className="text-xs text-gray-500 dark:text-gray-400">Testing tools for the clinic flow. Applies to the whole nurse portal.</p>
 
           {!devToolsAvailable ? (
-            <p className="rounded-lg bg-gray-50 p-4 text-sm text-gray-500 dark:bg-gray-700/50 dark:text-gray-400">
+            <p className="rounded-[10px] bg-gray-50 p-4 text-sm text-gray-500 dark:bg-gray-700/50 dark:text-gray-400">
               Developer Tools are turned off on this server.
             </p>
           ) : (
@@ -512,7 +512,7 @@ const NurseSettings = () => {
               />
 
               {showDevPassword && !timeGuardOff && (
-                <form onSubmit={confirmTimeGuardBypass} className="space-y-3 rounded-lg border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
+                <form onSubmit={confirmTimeGuardBypass} className="space-y-3 rounded-[10px] border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
                   <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
                     Enter the developer password to remove the time guard.
                   </p>
@@ -533,13 +533,13 @@ const NurseSettings = () => {
                   {devError && <p role="alert" className="text-xs text-red-600 dark:text-red-400">{devError}</p>}
                   <div className="flex flex-wrap gap-2">
                     <button type="submit" disabled={devSaving || !devPassword}
-                      className="inline-flex items-center space-x-2 rounded-lg bg-maroon-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900 disabled:opacity-50">
+                      className="inline-flex items-center space-x-2 rounded-[10px] bg-maroon-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900 disabled:opacity-50">
                       {devSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wrench className="h-4 w-4" />}
                       <span>{devSaving ? 'Checking...' : 'Remove time guard'}</span>
                     </button>
                     <button type="button" disabled={devSaving}
                       onClick={() => { setShowDevPassword(false); setDevPassword(''); setDevError(''); }}
-                      className="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700/50">
+                      className="rounded-[10px] px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700/50">
                       Cancel
                     </button>
                   </div>
@@ -562,12 +562,12 @@ const NurseSettings = () => {
                 ['Last Updated', systemInfo.lastUpdated],
                 ['Environment', systemInfo.environment],
               ].map(([label, value]) => (
-                <div key={label} className="flex justify-between rounded-lg bg-gray-50 p-4 dark:bg-gray-700/50">
+                <div key={label} className="flex justify-between rounded-[10px] bg-gray-50 p-4 dark:bg-gray-700/50">
                   <span className="text-gray-500 dark:text-gray-400">{label}</span>
                   <span className="font-medium text-gray-700 dark:text-gray-200">{value}</span>
                 </div>
               ))}
-              <div className="flex justify-between rounded-lg bg-gray-50 p-4 dark:bg-gray-700/50">
+              <div className="flex justify-between rounded-[10px] bg-gray-50 p-4 dark:bg-gray-700/50">
                 <span className="text-gray-500 dark:text-gray-400">Logged in as</span>
                 <span className="font-medium capitalize text-maroon-700 dark:text-maroon-400">{user.role || 'Nurse'}</span>
               </div>
@@ -579,7 +579,7 @@ const NurseSettings = () => {
             <button
               type="button"
               onClick={handleLogout}
-              className="flex w-full items-center justify-center space-x-2 rounded-lg bg-red-50 py-3 font-semibold text-red-700 transition hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
+              className="flex w-full items-center justify-center space-x-2 rounded-[10px] bg-red-50 py-3 font-semibold text-red-700 transition hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
             >
               <LogOut className="h-4 w-4" />
               <span>Sign Out</span>
@@ -599,14 +599,14 @@ const NurseSettings = () => {
       {/* Action results show as a floating toast */}
       <NurseToast message={message} type={messageType} onClose={() => setMessage('')} />
 
-      <div className="rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
+      <div className="rounded-[10px] border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
         <div className="grid gap-5 md:grid-cols-[220px_minmax(0,1fr)]">
           {/* Mobile: accordion — tapping a section slides its panel open beneath it */}
           <div className="space-y-2 md:hidden">
             {tabs.map((tab) => {
               const isOpen = activeTab === tab.id;
               return (
-                <div key={tab.id} className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                <div key={tab.id} className="overflow-hidden rounded-[10px] border border-gray-200 dark:border-gray-700">
                   <button
                     type="button"
                     onClick={() => setActiveTab(isOpen ? '' : tab.id)}
@@ -651,7 +651,7 @@ const NurseSettings = () => {
             {tabs.map((tab) => (
               <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)}
                 aria-pressed={(activeTab || 'general') === tab.id}
-                className={`flex w-full items-center gap-3 rounded-lg border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold transition-colors last:border-b-0 dark:border-gray-700 ${
+                className={`flex w-full items-center gap-3 rounded-[10px] border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold transition-colors last:border-b-0 dark:border-gray-700 ${
                   activeTab === tab.id ? 'bg-maroon-800 text-white' : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700/50'
                 }`}>
                 <tab.icon className="h-4 w-4 shrink-0" />
@@ -685,12 +685,12 @@ const NurseSettings = () => {
 
       {showLogoutConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" role="presentation">
-          <section role="dialog" aria-modal="true" aria-labelledby="settings-logout-title" className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+          <section role="dialog" aria-modal="true" aria-labelledby="settings-logout-title" className="w-full max-w-sm rounded-[10px] bg-white p-6 shadow-2xl dark:bg-gray-800">
             <h2 id="settings-logout-title" className="text-lg font-bold text-gray-900 dark:text-white">Sign out?</h2>
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Are you sure you want to end your nurse session?</p>
             <div className="mt-6 flex gap-3">
-              <button type="button" onClick={() => setShowLogoutConfirm(false)} disabled={logoutLoading} className="flex-1 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-semibold text-gray-700 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-200">Cancel</button>
-              <button type="button" onClick={confirmLogout} disabled={logoutLoading} className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{logoutLoading ? 'Signing out...' : 'Sign Out'}</button>
+              <button type="button" onClick={() => setShowLogoutConfirm(false)} disabled={logoutLoading} className="flex-1 rounded-[10px] bg-gray-100 px-4 py-2.5 text-sm font-semibold text-gray-700 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-200">Cancel</button>
+              <button type="button" onClick={confirmLogout} disabled={logoutLoading} className="flex-1 rounded-[10px] bg-red-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{logoutLoading ? 'Signing out...' : 'Sign Out'}</button>
             </div>
           </section>
         </div>

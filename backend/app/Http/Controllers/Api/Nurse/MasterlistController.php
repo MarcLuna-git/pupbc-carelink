@@ -281,9 +281,6 @@ class MasterlistController extends Controller
     {
         $data = $request->validate(['academic_period_id' => 'required|uuid']);
         $period = AcademicPeriod::findOrFail($data['academic_period_id']);
-        if (Masterlist::required() && $period->is_active) {
-            throw ValidationException::withMessages(['academic_period_id' => 'Turn off the masterlist check for registration first.']);
-        }
         $count = DB::table('student_masterlist')->where('academic_period_id', $period->id)->delete();
         AuditLog::create([
             'user_id' => auth()->id(), 'action' => 'masterlist_cleared',
@@ -293,27 +290,6 @@ class MasterlistController extends Controller
         NurseSync::changed('academic');
 
         return response()->json(['success' => true, 'message' => "Masterlist cleared. {$count} students removed."]);
-    }
-
-    public function updateSettings(Request $request)
-    {
-        $data = $request->validate(['required' => 'required|boolean']);
-        if ($data['required'] && Masterlist::activeCount() === 0) {
-            throw ValidationException::withMessages(['required' => 'Import a masterlist for the active academic period first.']);
-        }
-        Masterlist::setRequired($data['required'], auth()->id());
-        AuditLog::create([
-            'user_id' => auth()->id(), 'action' => 'masterlist_check_' . ($data['required'] ? 'on' : 'off'),
-            'description' => 'Masterlist check for registration turned ' . ($data['required'] ? 'on' : 'off'),
-            'ip_address' => request()->ip(),
-        ]);
-        NurseSync::changed('academic');
-
-        return response()->json([
-            'success' => true,
-            'data' => ['required' => $data['required'], 'active_count' => Masterlist::activeCount()],
-            'message' => $data['required'] ? 'Only students on the masterlist can register now.' : 'Any student can register now.',
-        ]);
     }
 
     /** @return array{0: AcademicPeriod, 1: array, 2: string} */

@@ -24,7 +24,7 @@
   --sp-accent: var(--dashboard-accent, #f3f4f6);
 }
 .student-approved-shell :is(button,a,input,select,textarea):focus-visible { outline: 2px solid #c85c73; outline-offset: 3px; }
-.student-skip-link { position:fixed;left:12px;top:-70px;z-index:200;padding:12px 18px;background:var(--sp-surface);border-radius:8px;color:var(--sp-accent); }
+.student-skip-link { position:fixed;left:12px;top:-70px;z-index:200;padding:12px 18px;background:var(--sp-surface);border-radius: 10px;color:var(--sp-accent); }
 .student-skip-link:focus { top:12px; }
 .student-sidebar { position:fixed;inset:0 auto 0 0;z-index:40;display:flex;flex-direction:column;width:var(--sp-sidebar);overflow:hidden;background:linear-gradient(to bottom,var(--color-maroon-800),var(--color-maroon-900));color:white; }
 /* Faded white sheen at the very top: keeps the top-edge loading bar readable
@@ -43,7 +43,7 @@
 .student-nav-section { margin:4px 0 8px;padding:0 12px;font-size:10px;font-weight:700;letter-spacing:.14em;line-height:1.4;text-transform:uppercase;color:rgb(255 255 255 / .5);white-space:nowrap;overflow:hidden;transition:color .18s ease; }
 /* A clear gap between groups. */
 .student-sidebar-nav>a + .student-nav-section { margin-top:26px; }
-.student-sidebar-nav>a { margin-bottom:8px;border-radius:8px;padding:13px 12px;gap:11px;font-size:13px;min-height:45px;font-weight:500; }
+.student-sidebar-nav>a { margin-bottom:8px;border-radius: 10px;padding:13px 12px;gap:11px;font-size:13px;min-height:45px;font-weight:500; }
 .student-sidebar-nav>a[aria-current=page] { background:#ffffff20;color:white;box-shadow:none; }
 .student-sidebar-nav>a[aria-current=page] svg { color:white; }
 .student-sidebar-nav>a>svg:last-child:not(:first-child) { display:none; }

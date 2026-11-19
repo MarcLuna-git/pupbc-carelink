@@ -1,7 +1,7 @@
 .student-appointments { width:100%;min-width:0; }
 .approved-appointments-page { display:grid;gap:12px; }
-.ap-card { min-width:0;border:1px solid var(--sp-border,#eadfe1);border-radius:12px;background:var(--sp-surface,#fff);box-shadow:0 2px 7px #5a0b2004;overflow:hidden; }
-.ap-hero { position:relative;overflow:hidden;border:1px solid var(--sp-border);border-radius:12px;background:var(--sp-surface); }
+.ap-card { min-width:0;border:1px solid var(--sp-border,#eadfe1);border-radius: 10px;background:var(--sp-surface,#fff);box-shadow:0 2px 7px #5a0b2004;overflow:hidden; }
+.ap-hero { position:relative;overflow:hidden;border:1px solid var(--sp-border);border-radius: 10px;background:var(--sp-surface); }
 /* The loading bar sits above the hero artwork; isolation keeps that z-index
    local to the hero. */
 .ap-hero { isolation:isolate; }
@@ -181,7 +181,7 @@
 .ap-slots-loading svg { width:17px;height:17px; }
 .ap-service-list { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px 10px; }
 /* Each service is a bordered card; the selected one gets a maroon border. */
-.ap-service-list label { display:flex;align-items:center;gap:8px;padding:8px 10px;min-height:48px;border:1px solid var(--sp-border);border-radius:8px;background:var(--sp-surface);min-width:0;cursor:pointer;transition:border-color .12s ease,background-color .12s ease; }
+.ap-service-list label { display:flex;align-items:center;gap:8px;padding:8px 10px;min-height:48px;border:1px solid var(--sp-border);border-radius: 10px;background:var(--sp-surface);min-width:0;cursor:pointer;transition:border-color .12s ease,background-color .12s ease; }
 .ap-service-list label:hover:not(.is-selected) { background:var(--color-gray-50);border-color:var(--color-gray-300); }
 .dark .ap-service-list label:hover:not(.is-selected) { background:color-mix(in oklab,var(--color-gray-900) 30%,transparent); }
 .ap-service-list label.is-selected { background:var(--color-gray-50);border-color:var(--color-maroon-800); }
@@ -255,7 +255,7 @@
 /* List layout: one compact row per appointment under a column header. */
 /* List view: a nested, bordered table wrapper like the Records page —
    gray-100 column header, divided rows, outlined row actions. */
-.ap-history-table { margin:4px 16px 4px;border:1px solid var(--sp-border);border-radius:12px;overflow:hidden; }
+.ap-history-table { margin:4px 16px 4px;border:1px solid var(--sp-border);border-radius: 10px;overflow:hidden; }
 .ap-history-table-head,.ap-history-row { display:grid;grid-template-columns:minmax(120px,1fr) minmax(150px,1.3fr) minmax(130px,1.1fr) 112px 150px;align-items:center;gap:12px;padding:0 16px; }
 .ap-history-table-head { padding-top:12px;padding-bottom:12px;background:var(--color-gray-100);font-size:12px;font-weight:500;color:var(--color-gray-500); }
 .dark .ap-history-table-head { background:var(--color-gray-700);color:var(--color-gray-400); }
@@ -276,7 +276,7 @@
 .ap-history-row-service small { font-style:italic; }
 .ap-history-row-meta { overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
 .ap-history-row .ap-history-actions { justify-content:flex-start;gap:6px; }
-.ap-history-row .ap-history-actions :is(button,a) { min-height:32px;padding:0 10px;border:1px solid var(--color-gray-200);border-radius:8px;transition:background-color .15s ease,color .15s ease,border-color .15s ease; }
+.ap-history-row .ap-history-actions :is(button,a) { min-height:32px;padding:0 10px;border:1px solid var(--color-gray-200);border-radius: 10px;transition:background-color .15s ease,color .15s ease,border-color .15s ease; }
 .ap-history-row .ap-history-actions :is(button,a):hover { background:var(--color-maroon-900);border-color:var(--color-maroon-900);color:white;text-decoration:none; }
 .ap-history-row .ap-history-actions :is(button,a):hover svg { color:white; }
 .dark .ap-history-row .ap-history-actions :is(button,a) { border-color:var(--color-gray-600); }
@@ -406,16 +406,16 @@
 
 /* Appointment History search + filter panel — mirrors the Records page's
    Search and Filter box (gray-50 well, labelled fields, maroon chevrons). */
-.ap-history-filters { display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:12px;margin:4px 16px 12px;padding:16px;border:1px solid var(--sp-border);border-radius:12px;background:var(--color-gray-50); }
+.ap-history-filters { display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:12px;margin:4px 16px 12px;padding:16px;border:1px solid var(--sp-border);border-radius: 10px;background:var(--color-gray-50); }
 .dark .ap-history-filters { background:color-mix(in oklab,var(--color-gray-900) 30%,transparent); }
 .ap-history-filters>* { display:block;min-width:0; }
 .ap-history-filters>*>span:first-child { display:block;margin-bottom:6px;font-size:12px;font-weight:600;color:var(--color-gray-600); }
 .dark .ap-history-filters>*>span:first-child { color:var(--color-gray-300); }
 .ap-history-select { position:relative;display:block; }
-.ap-history-select select { width:100%;height:40px;padding:0 40px 0 12px;appearance:none;cursor:pointer;border:1px solid var(--sp-border);border-radius:12px;background:var(--sp-surface);font-size:14px;color:var(--color-gray-900); }
+.ap-history-select select { width:100%;height:40px;padding:0 40px 0 12px;appearance:none;cursor:pointer;border:1px solid var(--sp-border);border-radius: 10px;background:var(--sp-surface);font-size:14px;color:var(--color-gray-900); }
 .dark .ap-history-select select { color:#fff; }
 .ap-history-select select:focus { outline:none;box-shadow:0 0 0 2px var(--color-maroon-500); }
-.ap-history-filter-reset button { display:flex;width:100%;height:40px;align-items:center;justify-content:center;gap:6px;border:1px solid var(--sp-border);border-radius:12px;background:var(--sp-surface);font-size:14px;font-weight:600;color:var(--color-gray-700);cursor:pointer;transition:background-color .15s ease; }
+.ap-history-filter-reset button { display:flex;width:100%;height:40px;align-items:center;justify-content:center;gap:6px;border:1px solid var(--sp-border);border-radius: 10px;background:var(--sp-surface);font-size:14px;font-weight:600;color:var(--color-gray-700);cursor:pointer;transition:background-color .15s ease; }
 .ap-history-filter-reset button:hover:not(:disabled) { background:var(--color-gray-100); }
 .ap-history-filter-reset button:disabled { opacity:.5;cursor:not-allowed; }
 .ap-history-filter-reset svg { width:15px;height:15px;color:var(--sp-accent); }

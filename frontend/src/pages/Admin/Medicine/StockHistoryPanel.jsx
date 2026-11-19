@@ -12,7 +12,7 @@ import { exportStockHistory } from './stockHistoryExport';
  * change and the stock before and after it. Filter by date and movement; export the filtered history.
  */
 const PER_PAGE = 10;
-const input = 'h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:[color-scheme:dark]';
+const input = 'h-10 w-full rounded-[10px] border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:[color-scheme:dark]';
 const COLUMNS = 'md:grid-cols-[minmax(0,1.5fr)_minmax(0,1.1fr)_minmax(0,0.9fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,1.1fr)_minmax(0,2fr)]';
 
 export default function StockHistoryPanel({ medicine, onClose, onNotify }) {
@@ -73,14 +73,14 @@ export default function StockHistoryPanel({ medicine, onClose, onNotify }) {
 
   const filtered = Boolean(filters.from || filters.to || filters.type);
 
-  return <section ref={panel} aria-label={`Stock history of ${medicine.name}`} className="scroll-mt-4 overflow-hidden rounded-lg border border-gray-100 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+  return <section ref={panel} aria-label={`Stock history of ${medicine.name}`} className="scroll-mt-4 overflow-hidden rounded-[10px] border border-gray-100 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
     <header className="flex items-start gap-3 border-b border-gray-100 px-4 py-4 dark:border-gray-700 lg:px-6">
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-maroon-50 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-300"><Clock className="h-5 w-5" aria-hidden="true" /></span>
       <div className="min-w-0 flex-1">
         <h2 className="break-words font-bold">Stock History - {medicine.name}</h2>
         <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">View the stock movement history for this medicine.</p>
       </div>
-      <button type="button" onClick={onClose} aria-label="Close stock history" className={`rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 ${focus}`}><X className="h-5 w-5" /></button>
+      <button type="button" onClick={onClose} aria-label="Close stock history" className={`rounded-[10px] p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 ${focus}`}><X className="h-5 w-5" /></button>
     </header>
 
     <div className="flex flex-col gap-3 px-4 pt-4 lg:flex-row lg:items-end lg:px-6">
@@ -92,17 +92,17 @@ export default function StockHistoryPanel({ medicine, onClose, onNotify }) {
         </label>
       </div>
       <div className="flex gap-2 lg:ml-auto">
-        <button type="button" onClick={() => download('csv')} disabled={Boolean(exporting)} className={`inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-maroon-300 bg-white px-4 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 disabled:opacity-50 lg:flex-none dark:border-maroon-700 dark:bg-transparent dark:text-maroon-300 dark:hover:bg-maroon-900/20 ${focus}`}>
+        <button type="button" onClick={() => download('csv')} disabled={Boolean(exporting)} className={`inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[10px] border border-maroon-300 bg-white px-4 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 disabled:opacity-50 lg:flex-none dark:border-maroon-700 dark:bg-transparent dark:text-maroon-300 dark:hover:bg-maroon-900/20 ${focus}`}>
           {exporting === 'csv' ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <FileText className="h-4 w-4" aria-hidden="true" />}Export CSV
         </button>
-        <button type="button" onClick={() => download('xlsx')} disabled={Boolean(exporting)} className={`inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-green-600 bg-white px-4 text-sm font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50 lg:flex-none dark:border-green-700 dark:bg-transparent dark:text-green-400 dark:hover:bg-green-900/20 ${focus}`}>
+        <button type="button" onClick={() => download('xlsx')} disabled={Boolean(exporting)} className={`inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[10px] border border-green-600 bg-white px-4 text-sm font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50 lg:flex-none dark:border-green-700 dark:bg-transparent dark:text-green-400 dark:hover:bg-green-900/20 ${focus}`}>
           {exporting === 'xlsx' ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <FileSpreadsheet className="h-4 w-4" aria-hidden="true" />}Export Excel
         </button>
       </div>
     </div>
 
     <div className="p-4 lg:p-6" aria-busy={loading}>
-      <div className="overflow-hidden rounded-lg border border-gray-100 dark:border-gray-700">
+      <div className="overflow-hidden rounded-[10px] border border-gray-100 dark:border-gray-700">
         {error ? <p role="alert" className="p-8 text-center text-sm text-red-700 dark:text-red-300">{error}</p>
           : loading ? <div role="status" className="space-y-2 p-4">{[0, 1, 2].map(key => <div key={key} className="h-10 animate-pulse rounded bg-gray-100 dark:bg-gray-700" />)}<span className="sr-only">Loading stock history</span></div>
             : rows.length === 0 ? <p className="px-6 py-12 text-center text-sm text-gray-500 dark:text-gray-400">{filtered ? 'No stock movements match these filters.' : 'No stock movements recorded yet.'}</p>

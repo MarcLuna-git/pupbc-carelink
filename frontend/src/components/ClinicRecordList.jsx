@@ -33,7 +33,7 @@ function Vitals({ vitals }) {
     ...Object.entries(vitals).filter(([key, value]) => !known.has(key) && has(value) && typeof value !== 'object').map(([key, value]) => [key.replaceAll('_', ' ').replace(/^./, c => c.toUpperCase()), String(value)]),
   ];
   if (!entries.length) return null;
-  return <ul className="flex flex-wrap gap-2">{entries.map(([label, value]) => <li key={label} className="rounded-lg bg-gray-100 px-2.5 py-1 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300">{label} <b className="font-semibold text-gray-900 dark:text-white">{value}</b></li>)}</ul>;
+  return <ul className="flex flex-wrap gap-2">{entries.map(([label, value]) => <li key={label} className="rounded-[10px] bg-gray-100 px-2.5 py-1 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300">{label} <b className="font-semibold text-gray-900 dark:text-white">{value}</b></li>)}</ul>;
 }
 
 function Row({ label, children }) {
@@ -87,7 +87,7 @@ export default function ClinicRecordList({ records = [], emptyText = 'No clinic 
 
   if (open) {
     return <div ref={top}>
-      <button type="button" autoFocus onClick={() => show(null)} className="mb-3 inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon-500 dark:text-maroon-300 dark:hover:bg-maroon-950"><ChevronLeft size={16} aria-hidden="true" />Back to list</button>
+      <button type="button" autoFocus onClick={() => show(null)} className="mb-3 inline-flex items-center gap-1 rounded-[10px] px-2 py-1.5 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon-500 dark:text-maroon-300 dark:hover:bg-maroon-950"><ChevronLeft size={16} aria-hidden="true" />Back to list</button>
       <div className="mb-1 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-gray-100 pb-3 dark:border-gray-700">
         <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${isEmergency(open) ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-300'}`}>{recordTypeLabel(open)}</span>
         <time dateTime={open.occurred_at} className="text-sm text-gray-500 dark:text-gray-400">{recordDate(open.occurred_at)}</time>
@@ -96,14 +96,14 @@ export default function ClinicRecordList({ records = [], emptyText = 'No clinic 
     </div>;
   }
   if (!records.length) return <p className="py-12 text-center text-sm text-gray-500 dark:text-gray-400">{emptyText}</p>;
-  return <ul ref={top} className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
+  return <ul ref={top} className="divide-y divide-gray-100 overflow-hidden rounded-[10px] border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
     {records.map(record => {
       const emergency = isEmergency(record);
       const Icon = emergency ? HeartPulse : Stethoscope;
       const summary = record.reason || record.chief_complaint || 'No complaint recorded';
       return <li key={keyOf(record)}>
         <button type="button" onClick={() => show(keyOf(record))} aria-label={`View ${recordTypeLabel(record).toLowerCase()} from ${recordDate(record.occurred_at)}`} className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-maroon-500 dark:hover:bg-gray-700/40">
-          <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${emergency ? 'bg-red-50 text-red-700 dark:bg-red-900/25 dark:text-red-300' : 'bg-maroon-50 text-maroon-800 dark:bg-maroon-950/40 dark:text-maroon-300'}`}><Icon size={18} aria-hidden="true" /></span>
+          <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] ${emergency ? 'bg-red-50 text-red-700 dark:bg-red-900/25 dark:text-red-300' : 'bg-maroon-50 text-maroon-800 dark:bg-maroon-950/40 dark:text-maroon-300'}`}><Icon size={18} aria-hidden="true" /></span>
           <span className="min-w-0 flex-1">
             <span className="flex flex-wrap items-baseline gap-x-3"><span className="text-sm font-semibold">{recordTypeLabel(record)}</span><span className="text-xs text-gray-500 dark:text-gray-400">{recordDate(record.occurred_at)}</span></span>
             <span className="mt-0.5 block truncate text-sm text-gray-600 dark:text-gray-300">{summary}</span>

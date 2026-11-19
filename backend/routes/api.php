@@ -1003,7 +1003,6 @@ Route::middleware([
                 Route::post('/masterlist/preview', [\App\Http\Controllers\Api\Nurse\MasterlistController::class, 'preview']);
                 Route::post('/masterlist/import', [\App\Http\Controllers\Api\Nurse\MasterlistController::class, 'import']);
                 Route::post('/masterlist/clear', [\App\Http\Controllers\Api\Nurse\MasterlistController::class, 'clear']);
-                Route::put('/masterlist/settings', [\App\Http\Controllers\Api\Nurse\MasterlistController::class, 'updateSettings']);
                 Route::put('/masterlist/{id}', [\App\Http\Controllers\Api\Nurse\MasterlistController::class, 'update'])->whereNumber('id');
                 Route::delete('/masterlist/{id}', [\App\Http\Controllers\Api\Nurse\MasterlistController::class, 'destroy'])->whereNumber('id');
 

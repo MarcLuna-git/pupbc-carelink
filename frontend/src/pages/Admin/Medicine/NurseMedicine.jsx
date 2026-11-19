@@ -25,8 +25,8 @@ const PER_PAGE = 10;
 const COLUMNS = 'lg:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1.1fr)_15rem]';
 const badge = 'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold';
 const cellLabel = 'block text-xs text-gray-500 lg:hidden';
-const control = 'h-11 w-full rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:ring-maroon-300/30';
-const rowButton = `inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition-colors disabled:opacity-50 ${focus}`;
+const control = 'h-11 w-full rounded-[10px] border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:ring-maroon-300/30';
+const rowButton = `inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border px-3 text-xs font-semibold transition-colors disabled:opacity-50 ${focus}`;
 const menuItem = `flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700/50 ${focus}`;
 
 // The ⋮ menu of a row. Export History opens its CSV / Excel choices beside it (below it on a phone).
@@ -48,15 +48,15 @@ function RowMenu({ medicine, onHistory, onExport, onMovement, onDelete }) {
   const run = action => () => { close(); action(medicine); };
   return <div ref={root} className="relative">
     <button type="button" aria-haspopup="menu" aria-expanded={open} aria-label={`More actions for ${medicine.name}`} onClick={() => { setOpen(value => !value); setSub(false); }}
-      className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 ${focus}`}><EllipsisVertical className="h-5 w-5" aria-hidden="true" /></button>
-    {open && <div role="menu" aria-label={`Actions for ${medicine.name}`} className="absolute right-0 top-full z-30 mt-1 w-56 rounded-xl border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
+      className={`inline-flex h-9 w-9 items-center justify-center rounded-[10px] text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 ${focus}`}><EllipsisVertical className="h-5 w-5" aria-hidden="true" /></button>
+    {open && <div role="menu" aria-label={`Actions for ${medicine.name}`} className="absolute right-0 top-full z-30 mt-1 w-56 rounded-[10px] border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
       <button type="button" role="menuitem" onClick={run(onHistory)} className={menuItem}><History className="h-4 w-4 text-maroon-800 dark:text-maroon-300" aria-hidden="true" />View Stock History</button>
       <div className="relative">
         <button type="button" role="menuitem" aria-haspopup="menu" aria-expanded={sub} onClick={() => setSub(value => !value)} className={`${menuItem} justify-between`}>
           <span className="flex items-center gap-2.5"><Download className="h-4 w-4 text-maroon-800 dark:text-maroon-300" aria-hidden="true" />Export History</span>
           <ChevronRight className={`h-4 w-4 text-gray-400 transition-transform ${sub ? 'rotate-90 md:rotate-180' : ''}`} aria-hidden="true" />
         </button>
-        {sub && <div role="menu" aria-label="Export history as" className="border-t border-gray-100 py-1 pl-3 dark:border-gray-700 md:absolute md:right-full md:top-0 md:mr-1 md:w-56 md:rounded-xl md:border md:border-gray-200 md:bg-white md:pl-0 md:shadow-lg md:dark:border-gray-600 md:dark:bg-gray-800">
+        {sub && <div role="menu" aria-label="Export history as" className="border-t border-gray-100 py-1 pl-3 dark:border-gray-700 md:absolute md:right-full md:top-0 md:mr-1 md:w-56 md:rounded-[10px] md:border md:border-gray-200 md:bg-white md:pl-0 md:shadow-lg md:dark:border-gray-600 md:dark:bg-gray-800">
           <button type="button" role="menuitem" onClick={run(item => onExport(item, 'csv'))} className={menuItem}><FileText className="h-4 w-4 text-green-600" aria-hidden="true" />Download CSV</button>
           <button type="button" role="menuitem" onClick={run(item => onExport(item, 'xlsx'))} className={menuItem}><FileSpreadsheet className="h-4 w-4 text-green-600" aria-hidden="true" />Download Excel (.xlsx)</button>
         </div>}
@@ -160,12 +160,12 @@ const NurseMedicine = () => {
     <div className="mx-auto max-w-[1440px] space-y-5">
       <NursePageTitle path="/nurse/medicines" />
 
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-center text-sm font-medium text-red-700 dark:bg-red-900/20 dark:text-red-400">{error}</p>}
+      {error && <p role="alert" className="rounded-[10px] bg-red-50 p-3 text-center text-sm font-medium text-red-700 dark:bg-red-900/20 dark:text-red-400">{error}</p>}
 
       {/* Action results show as a floating toast */}
       <NurseToast message={message} type={messageType} onClose={() => setMessage('')} />
 
-      <section aria-label="Medicine inventory" aria-busy={refreshing} className="rounded-lg border border-gray-100 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+      <section aria-label="Medicine inventory" aria-busy={refreshing} className="rounded-[10px] border border-gray-100 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
         {/* Search, the filters, sorting and Add Medicine share one height; they wrap to a second row when the page is narrow. */}
         <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-center lg:p-5">
           <div className="relative min-w-0 sm:col-span-2 lg:min-w-[16rem] lg:flex-1">
@@ -203,14 +203,14 @@ const NurseMedicine = () => {
             <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
           </div>
           <button type="button" onClick={() => setDialog({ kind: 'form', medicine: null })}
-            className={`inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-maroon-800 px-5 text-sm font-semibold text-white transition-colors hover:bg-maroon-900 sm:col-span-2 lg:w-auto ${focus}`}>
+            className={`inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-[10px] bg-maroon-800 px-5 text-sm font-semibold text-white transition-colors hover:bg-maroon-900 sm:col-span-2 lg:w-auto ${focus}`}>
             <Plus className="h-4 w-4" aria-hidden="true" />Add Medicine
           </button>
         </div>
 
         {medicines.length === 0 ? (
           <div className="border-t border-gray-100 py-14 text-center dark:border-gray-700">
-            <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-50 dark:bg-gray-700/50"><Package className="h-8 w-8 text-gray-300 dark:text-gray-500" aria-hidden="true" /></span>
+            <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[10px] bg-gray-50 dark:bg-gray-700/50"><Package className="h-8 w-8 text-gray-300 dark:text-gray-500" aria-hidden="true" /></span>
             <h3 className="text-base font-semibold text-gray-600 dark:text-gray-300">No Medicines Found</h3>
             <p className="mt-1 text-sm text-gray-400">{filtered ? 'Try a different search or filter.' : 'Use Add Medicine to register the first medicine.'}</p>
           </div>

@@ -163,9 +163,9 @@ const StudentAccountMenu = ({ variant = 'sidebar', collapsed = false }) => {
   );
 
   const itemClass =
-    'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800';
+    'flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800';
   const iconBox =
-    'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800';
+    'flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-gray-100 dark:bg-gray-800';
 
   const menu = (
     <AnimatePresence>
@@ -179,7 +179,7 @@ const StudentAccountMenu = ({ variant = 'sidebar', collapsed = false }) => {
           role="menu"
           aria-label="Account menu"
           style={{ position: 'fixed', ...position }}
-          className="student-account-menu z-[90] max-h-[calc(100dvh-24px)] overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-2xl shadow-black/15 dark:border-gray-700 dark:bg-gray-900"
+          className="student-account-menu z-[90] max-h-[calc(100dvh-24px)] overflow-y-auto rounded-[10px] border border-gray-200 bg-white shadow-2xl shadow-black/15 dark:border-gray-700 dark:bg-gray-900"
         >
           {/* Account summary */}
           <div className="border-b border-gray-100 bg-gradient-to-br from-maroon-50 to-white p-4 dark:border-gray-800 dark:from-maroon-950/30 dark:to-gray-900">
@@ -214,7 +214,7 @@ const StudentAccountMenu = ({ variant = 'sidebar', collapsed = false }) => {
             </Link>
 
             {/* Appearance: the row itself is static; only the switch acts. */}
-            <div className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+            <div className="mt-1 flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200">
               <span className={iconBox}><Palette className="h-4 w-4" /></span>
               <span className="min-w-0 flex-1">
                 <span id="student-appearance-label" className="block font-semibold">Appearance</span>
@@ -265,7 +265,7 @@ const StudentAccountMenu = ({ variant = 'sidebar', collapsed = false }) => {
               type="button"
               role="menuitem"
               onClick={signOut}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-maroon-800 transition-colors hover:bg-maroon-50 dark:text-maroon-300 dark:hover:bg-maroon-900/30"
+              className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-sm font-semibold text-maroon-800 transition-colors hover:bg-maroon-50 dark:text-maroon-300 dark:hover:bg-maroon-900/30"
             >
               <LogOut className="h-4 w-4" />
               <span>

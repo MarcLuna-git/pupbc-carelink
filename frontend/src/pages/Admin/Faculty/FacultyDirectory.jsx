@@ -15,8 +15,8 @@ import { STATUSES, avatarColor, initials } from './facultyOptions';
  */
 const PER_PAGE = 5;
 const COLUMNS = 'md:grid-cols-[minmax(0,2fr)_minmax(0,1.6fr)_minmax(0,0.9fr)_7rem]';
-const control = 'h-11 w-full rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:ring-maroon-300/30';
-const iconButton = `inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${focus}`;
+const control = 'h-11 w-full rounded-[10px] border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:ring-maroon-300/30';
+const iconButton = `inline-flex h-9 w-9 items-center justify-center rounded-[10px] transition-colors ${focus}`;
 
 export default function FacultyDirectory({ onView, onChanged, onNotify }) {
   const [rows, setRows] = useState([]);
@@ -69,7 +69,7 @@ export default function FacultyDirectory({ onView, onChanged, onNotify }) {
     setDialog(null); onNotify(text); onChanged();
   };
 
-  return <section aria-label="Faculty directory" aria-busy={refreshing || initial} className="rounded-lg border border-gray-100 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+  return <section aria-label="Faculty directory" aria-busy={refreshing || initial} className="rounded-[10px] border border-gray-100 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
     <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center lg:p-5">
       <div className="relative min-w-0 flex-1">
         <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
@@ -77,16 +77,16 @@ export default function FacultyDirectory({ onView, onChanged, onNotify }) {
         {search && <button type="button" onClick={() => { setSearch(''); setPage(1); }} aria-label="Clear search" className={`absolute right-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 ${focus}`}><X className="h-4 w-4" /></button>}
       </div>
       <button type="button" onClick={() => setDialog({ kind: 'form', member: null })}
-        className={`inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-maroon-800 px-5 text-sm font-semibold text-white transition-colors hover:bg-maroon-900 ${focus}`}>
+        className={`inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-[10px] bg-maroon-800 px-5 text-sm font-semibold text-white transition-colors hover:bg-maroon-900 ${focus}`}>
         <Plus className="h-4 w-4" aria-hidden="true" />Add Faculty Member
       </button>
     </div>
-    {error && <p role="alert" className="mx-4 mb-4 rounded-lg bg-red-50 p-3 text-center text-sm font-medium text-red-700 lg:mx-5 dark:bg-red-900/20 dark:text-red-400">{error}</p>}
+    {error && <p role="alert" className="mx-4 mb-4 rounded-[10px] bg-red-50 p-3 text-center text-sm font-medium text-red-700 lg:mx-5 dark:bg-red-900/20 dark:text-red-400">{error}</p>}
 
     {initial ? <div role="status" className="space-y-3 border-t border-gray-100 p-5 dark:border-gray-700"><span className="sr-only">Loading the faculty directory</span>{Array.from({ length: 5 }, (_, i) => <div key={i} className="h-12 animate-pulse rounded bg-gray-100 dark:bg-gray-700" />)}</div>
       : rows.length === 0 ? (
         <div className="border-t border-gray-100 py-14 text-center dark:border-gray-700">
-          <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-50 dark:bg-gray-700/50"><Users className="h-8 w-8 text-gray-300 dark:text-gray-500" aria-hidden="true" /></span>
+          <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[10px] bg-gray-50 dark:bg-gray-700/50"><Users className="h-8 w-8 text-gray-300 dark:text-gray-500" aria-hidden="true" /></span>
           <h3 className="text-base font-semibold text-gray-600 dark:text-gray-300">No Faculty Members Found</h3>
           <p className="mt-1 text-sm text-gray-400">{filtered ? 'Try a different search.' : 'Use Add Faculty Member to add the first one.'}</p>
         </div>

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Shield } from 'lucide-react';
 import KioskLayout from '../../layouts/KioskLayout';
 
 const POLICIES = [
@@ -35,16 +34,11 @@ const KioskTerms = ({ onAgree, onBack }) => {
   };
 
   return (
-    <KioskLayout>
-      <div className="w-full max-w-2xl mx-auto pb-2">
-        <div className="mb-4 flex items-center gap-3.5">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] border border-white/15 bg-white/10 text-yellow-400">
-            <Shield className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white md:text-3xl">Terms and Privacy</h1>
-            <p className="text-sm text-white/70">Please review our clinic policies before proceeding.</p>
-          </div>
+    <KioskLayout contentClassName="items-center py-4 pb-8">
+      <div className="w-full max-w-2xl mx-auto">
+        <div className="mb-9">
+          <h1 className="text-2xl font-bold text-white md:text-3xl">Terms and Privacy</h1>
+          <p className="mt-1 text-sm text-white/70">Please review our clinic policies before proceeding.</p>
         </div>
 
         <form

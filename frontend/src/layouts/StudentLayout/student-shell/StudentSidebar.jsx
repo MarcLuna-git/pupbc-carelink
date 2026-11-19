@@ -80,7 +80,7 @@ const StudentSidebar = ({
                 aria-label={item.label}
                 aria-current={active ? 'page' : undefined}
                 title={item.label}
-                className={`group relative flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold transition-all duration-200 ${
+                className={`group relative flex items-center gap-3 rounded-[10px] px-4 py-3.5 text-sm font-semibold transition-all duration-200 ${
                   active
                     ? 'bg-white text-maroon-900 shadow-lg shadow-black/10'
                     : 'text-white/80 hover:bg-white/10 hover:text-white'

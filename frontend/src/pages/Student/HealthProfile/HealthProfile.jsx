@@ -40,7 +40,7 @@ const textLimits = {
   medications: 2000, other_substance_use: 2000, disability_details: 2000,
 };
 
-const CARD = 'rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)]';
+const CARD = 'rounded-[10px] border border-[var(--sp-border)] bg-[var(--sp-surface)]';
 
 const STEP_ICONS = [Shield, ClipboardList, AlertCircle, Heart, Users, PenLine];
 
@@ -68,10 +68,10 @@ const HealthProfileShell = ({ completed, step = null, totalSteps = STEP_HEADERS.
       {loading ? (
         // Ghost of the header while the record loads, like the rest of the page.
         <div className="flex items-start gap-2.5" aria-hidden="true">
-          <div className="mt-0.5 h-6 w-6 animate-pulse rounded-md bg-gray-200 dark:bg-gray-700" />
+          <div className="mt-0.5 h-6 w-6 animate-pulse rounded-[10px] bg-gray-200 dark:bg-gray-700" />
           <div className="space-y-2">
-            <div className="h-5 w-40 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />
-            <div className="h-3.5 w-72 max-w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />
+            <div className="h-5 w-40 animate-pulse rounded-[10px] bg-gray-200 dark:bg-gray-700" />
+            <div className="h-3.5 w-72 max-w-full animate-pulse rounded-[10px] bg-gray-200 dark:bg-gray-700" />
             <div className="h-6 w-52 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
           </div>
         </div>
@@ -326,15 +326,15 @@ const HealthProfile = ({ onBack }) => {
   const steps = ['Emergency', 'Medical', 'History', 'Personal', 'Family', 'Consent'];
   const summaryErrors = Object.entries(errors).filter(([field, value]) => field !== 'consent_signature' && value).map(([, value]) => value);
   const progress = Math.round((step / totalSteps) * 100);
-  const inputClass = (field) => `w-full border rounded-xl px-4 py-3 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:border-maroon-800 transition ${errors[field] ? 'border-red-300 bg-red-50 dark:bg-red-900/20' : 'border-slate-200 bg-white'}`;
+  const inputClass = (field) => `w-full border rounded-[10px] px-4 py-3 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:border-maroon-800 transition ${errors[field] ? 'border-red-300 bg-red-50 dark:bg-red-900/20' : 'border-slate-200 bg-white'}`;
   const labelClass = 'text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1.5';
   const errorClass = 'text-red-500 text-xs mt-0.5';
   const optionalClass = 'text-xs text-gray-600 dark:text-gray-300 ml-1 font-normal italic';
 
   const YesNoButtons = ({ name, value, onChange }) => (
     <div className="flex items-center space-x-3">
-      <button type="button" onClick={() => onChange({...form, [name]: false})} className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${!value ? 'bg-maroon-800 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-500'}`}>No</button>
-      <button type="button" onClick={() => onChange({...form, [name]: true})} className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${value ? 'bg-maroon-800 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-500'}`}>Yes</button>
+      <button type="button" onClick={() => onChange({...form, [name]: false})} className={`px-3 py-1 rounded-[10px] text-xs font-semibold transition ${!value ? 'bg-maroon-800 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-500'}`}>No</button>
+      <button type="button" onClick={() => onChange({...form, [name]: true})} className={`px-3 py-1 rounded-[10px] text-xs font-semibold transition ${value ? 'bg-maroon-800 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-500'}`}>Yes</button>
     </div>
   );
 
@@ -344,11 +344,11 @@ const HealthProfile = ({ onBack }) => {
         const isSelected = selected.includes(item);
         return (
           <button key={item} type="button" onClick={() => onToggle(item)}
-            className={`flex items-center space-x-3 px-4 py-3 rounded-2xl border text-left text-sm font-medium transition-all ${
+            className={`flex items-center space-x-3 px-4 py-3 rounded-[10px] border text-left text-sm font-medium transition-all ${
               isSelected ? 'bg-maroon-50 border-maroon-300 text-maroon-800 dark:bg-maroon-900/20 dark:border-maroon-600 dark:text-maroon-300'
               : 'bg-white border-gray-200 text-gray-600 hover:border-maroon-200 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300'
             }`}>
-            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition ${isSelected ? 'bg-maroon-800 border-maroon-800 dark:bg-maroon-600 dark:border-maroon-600' : 'border-gray-300 dark:border-gray-500'}`}>
+            <div className={`w-5 h-5 rounded-[10px] border-2 flex items-center justify-center flex-shrink-0 transition ${isSelected ? 'bg-maroon-800 border-maroon-800 dark:bg-maroon-600 dark:border-maroon-600' : 'border-gray-300 dark:border-gray-500'}`}>
               {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
             </div>
             <span>{item}</span>
@@ -363,11 +363,11 @@ const HealthProfile = ({ onBack }) => {
       <HealthProfileShell loading>
         <div className="grid gap-6 lg:grid-cols-[230px_minmax(0,1fr)]" aria-busy="true">
           <div className="hidden space-y-2 lg:block">
-            {steps.map((label) => <div key={label} className="h-12 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700" />)}
+            {steps.map((label) => <div key={label} className="h-12 animate-pulse rounded-[10px] bg-gray-200 dark:bg-gray-700" />)}
           </div>
           <div className="space-y-4">
-            <div className="h-6 w-48 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />
-            {[0, 1, 2].map((key) => <div key={key} className="h-12 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700" />)}
+            <div className="h-6 w-48 animate-pulse rounded-[10px] bg-gray-200 dark:bg-gray-700" />
+            {[0, 1, 2].map((key) => <div key={key} className="h-12 animate-pulse rounded-[10px] bg-gray-200 dark:bg-gray-700" />)}
           </div>
         </div>
       </HealthProfileShell>
@@ -381,7 +381,7 @@ const HealthProfile = ({ onBack }) => {
           <AlertCircle className="w-10 h-10 text-red-600 mx-auto" aria-hidden="true" />
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">Unable to load health profile</h2>
           <p className="text-sm text-gray-700 dark:text-gray-200">Your saved information is safe. To avoid accidentally replacing existing medical information, editing is unavailable until your record loads.</p>
-          <button type="button" onClick={() => setReloadKey(key => key + 1)} className="px-5 py-3 rounded-xl bg-maroon-800 text-white font-semibold transition-colors hover:text-gray-300">Try again</button>
+          <button type="button" onClick={() => setReloadKey(key => key + 1)} className="px-5 py-3 rounded-[10px] bg-maroon-800 text-white font-semibold transition-colors hover:text-gray-300">Try again</button>
         </div>
       </HealthProfileShell>
     );
@@ -408,7 +408,7 @@ const HealthProfile = ({ onBack }) => {
             <button
               type="button"
               onClick={() => navigate('/student/appointments')}
-              className="w-full flex items-center justify-center space-x-2 px-5 py-3 rounded-xl bg-maroon-800 text-white text-sm font-semibold transition-colors hover:text-gray-300"
+              className="w-full flex items-center justify-center space-x-2 px-5 py-3 rounded-[10px] bg-maroon-800 text-white text-sm font-semibold transition-colors hover:text-gray-300"
             >
               <span>Proceed to Appointments</span>
               <ArrowRight className="w-4 h-4" />
@@ -416,7 +416,7 @@ const HealthProfile = ({ onBack }) => {
             <button
               type="button"
               onClick={() => { setShowCompletion(false); setStep(1); setMessage(''); }}
-              className="w-full px-5 py-3 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+              className="w-full px-5 py-3 rounded-[10px] bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition"
             >
               Review my answers
             </button>
@@ -456,7 +456,7 @@ const HealthProfile = ({ onBack }) => {
                     onClick={() => { if (reachable) { setStep(number); setMessage(''); } }}
                     disabled={!reachable}
                     aria-current={current ? 'step' : undefined}
-                    className={`relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
+                    className={`relative flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-sm font-semibold transition ${
                       current
                         ? 'bg-maroon-50 text-maroon-800 dark:bg-maroon-900/30 dark:text-maroon-200'
                         : reachable
@@ -485,7 +485,7 @@ const HealthProfile = ({ onBack }) => {
         <div className="min-w-0 lg:border-l lg:border-[var(--sp-border)] lg:pl-6">
 
         {!profileCompleted && (
-          <div className="mb-5 p-3 rounded-2xl bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 text-sm text-blue-700 dark:text-blue-400 flex items-start space-x-2">
+          <div className="mb-5 p-3 rounded-[10px] bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 text-sm text-blue-700 dark:text-blue-400 flex items-start space-x-2">
             <Info className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
             <span>Complete the required fields in each step, then submit to finish your Health Profile.</span>
           </div>
@@ -503,7 +503,7 @@ const HealthProfile = ({ onBack }) => {
         </div>
 
         <StudentToast message={message} type={messageType} onClose={() => setMessage('')} />
-        {step !== 1 && summaryErrors.length > 0 && <div role="alert" className="p-3 rounded-2xl text-sm mb-4 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400">{summaryErrors.join('. ')}</div>}
+        {step !== 1 && summaryErrors.length > 0 && <div role="alert" className="p-3 rounded-[10px] text-sm mb-4 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400">{summaryErrors.join('. ')}</div>}
 
         <AnimatePresence mode="wait">
           <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
@@ -551,12 +551,12 @@ const HealthProfile = ({ onBack }) => {
                   { label: 'Have you undergone surgery?', name: 'surgery', dateName: 'surgery_date', diagName: 'surgery_diagnosis' },
                 ].map(item => (
                   <div key={item.name} className="space-y-2">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-2xl"><span className="text-sm">{item.label}</span><YesNoButtons name={item.name} value={form[item.name]} onChange={setForm} /></div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-[10px]"><span className="text-sm">{item.label}</span><YesNoButtons name={item.name} value={form[item.name]} onChange={setForm} /></div>
                     {form[item.name] && (<><div><label className={labelClass}>Date</label><input type="date" max={getManilaDateString()} className={inputClass(item.dateName)} name={item.dateName} value={form[item.dateName]} onChange={handleChange} /></div><div><label className={labelClass}>Diagnosis</label><input className={inputClass(item.diagName)} name={item.diagName} value={form[item.diagName]} onChange={handleChange} placeholder="Diagnosis..." maxLength={191} /></div></>)}
                   </div>
                 ))}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-2xl"><span className="text-sm">Have you tested positive for COVID-19?</span><YesNoButtons name="had_covid" value={form.had_covid} onChange={setForm} /></div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-[10px]"><span className="text-sm">Have you tested positive for COVID-19?</span><YesNoButtons name="had_covid" value={form.had_covid} onChange={setForm} /></div>
                   {form.had_covid && (<><div><label className={labelClass}>Date</label><input type="date" max={getManilaDateString()} className={inputClass('covid_date')} name="covid_date" value={form.covid_date} onChange={handleChange} /></div><div><label className={labelClass}>Diagnosis</label><input className={inputClass('covid_diagnosis')} name="covid_diagnosis" value={form.covid_diagnosis} onChange={handleChange} placeholder="Diagnosis..." maxLength={191} /></div></>)}
                 </div>
               </div>
@@ -568,13 +568,13 @@ const HealthProfile = ({ onBack }) => {
                 <div><label className={labelClass}>Marital Status <span className={optionalClass}>(optional)</span></label><span className="relative block"><select className={`${inputClass('marital_status')} cursor-pointer appearance-none pr-10`} name="marital_status" value={form.marital_status} onChange={handleChange}><option value="">Select</option><option>Single</option><option>Married</option><option>Widowed</option><option>Separated</option><option>Prefer not to say</option></select><ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" /></span></div>
                 <div>
                   <label className={labelClass}>Tobacco Use <span className={optionalClass}>(optional)</span></label>
-                  <div className="flex gap-2">{['Never', 'Past', 'Present'].map(opt => <button key={opt} type="button" onClick={() => setForm({...form, tobacco_use: opt})} className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${form.tobacco_use === opt ? 'bg-maroon-800 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-500'}`}>{opt}</button>)}</div>
+                  <div className="flex gap-2">{['Never', 'Past', 'Present'].map(opt => <button key={opt} type="button" onClick={() => setForm({...form, tobacco_use: opt})} className={`px-3 py-1 rounded-[10px] text-xs font-semibold transition ${form.tobacco_use === opt ? 'bg-maroon-800 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-500'}`}>{opt}</button>)}</div>
                   {(form.tobacco_use === 'Past' || form.tobacco_use === 'Present') && (<div className="grid grid-cols-2 gap-3 mt-3"><div><label className={labelClass}>How much?</label><input className={inputClass('tobacco_amount')} name="tobacco_amount" maxLength={100} value={form.tobacco_amount} onChange={handleChange} /></div><div><label className={labelClass}>How long?</label><input className={inputClass('tobacco_duration')} name="tobacco_duration" maxLength={100} value={form.tobacco_duration} onChange={handleChange} /></div></div>)}
                 </div>
                 <div><label className={labelClass}>Alcohol Use <span className={optionalClass}>(optional)</span></label><span className="relative block"><select className={`${inputClass('alcohol_use')} cursor-pointer appearance-none pr-10`} name="alcohol_use" value={form.alcohol_use} onChange={handleChange}><option value="">Select</option><option>None</option><option>Occasional</option><option>Daily</option></select><ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" /></span></div>
                 <div><label className={labelClass}>Other Substance Use <span className={optionalClass}>(optional)</span></label><textarea className={inputClass('other_substance_use')} name="other_substance_use" maxLength={2000} value={form.other_substance_use} onChange={handleChange} rows={2} placeholder="Specify if any..." /></div>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-2xl"><span className="text-sm">Do you have a disability?</span><YesNoButtons name="has_disability" value={form.has_disability} onChange={setForm} /></div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-[10px]"><span className="text-sm">Do you have a disability?</span><YesNoButtons name="has_disability" value={form.has_disability} onChange={setForm} /></div>
                   {form.has_disability && <div><label className={labelClass}>Please describe</label><input className={inputClass('disability_details')} name="disability_details" value={form.disability_details} onChange={handleChange} placeholder="Type of disability..." maxLength={2000} /></div>}
                 </div>
                 {isFemale && (
@@ -582,10 +582,10 @@ const HealthProfile = ({ onBack }) => {
                     <p className="text-xs font-semibold text-pink-600 dark:text-pink-400 mb-3">Female Health Information <span className={optionalClass}>(optional)</span></p>
                     <div className="space-y-3">
                       <div><label className={labelClass}>Last Menstrual Period</label><input type="date" max={getManilaDateString()} className={inputClass('last_menstrual_period')} name="last_menstrual_period" value={form.last_menstrual_period} onChange={handleChange} /></div>
-                      <div className="space-y-2"><div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-2xl"><span className="text-sm">Do you have children?</span><YesNoButtons name="has_children" value={form.has_children} onChange={setForm} /></div>
+                      <div className="space-y-2"><div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-[10px]"><span className="text-sm">Do you have children?</span><YesNoButtons name="has_children" value={form.has_children} onChange={setForm} /></div>
                         {form.has_children && (<div className="grid grid-cols-2 gap-3"><div><label className={labelClass}>Number of Children</label><input className={inputClass('number_of_children')} name="number_of_children" value={form.number_of_children} onChange={handleChange} inputMode="numeric" maxLength={2} /></div><div><label className={labelClass}>Age on First Pregnancy</label><input className={inputClass('age_first_pregnancy')} name="age_first_pregnancy" value={form.age_first_pregnancy} onChange={handleChange} inputMode="numeric" maxLength={3} /></div></div>)}
                       </div>
-                      <div><label className={labelClass}>Obstetric History</label><div className="grid grid-cols-2 gap-2">{[{ name: 'gravidity', label: 'Gravidity' },{ name: 'term', label: 'Term' },{ name: 'premature', label: 'Premature' },{ name: 'abortion', label: 'Abortion' },{ name: 'living_children', label: 'Living Children' }].map(item => (<label key={item.name} className="flex items-center space-x-2 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"><input type="checkbox" name={item.name} checked={form[item.name]} onChange={handleChange} className="w-4 h-4 rounded accent-maroon-800" /><span className="text-xs text-gray-600 dark:text-gray-300">{item.label}</span></label>))}</div></div>
+                      <div><label className={labelClass}>Obstetric History</label><div className="grid grid-cols-2 gap-2">{[{ name: 'gravidity', label: 'Gravidity' },{ name: 'term', label: 'Term' },{ name: 'premature', label: 'Premature' },{ name: 'abortion', label: 'Abortion' },{ name: 'living_children', label: 'Living Children' }].map(item => (<label key={item.name} className="flex items-center space-x-2 p-2 rounded-[10px] hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"><input type="checkbox" name={item.name} checked={form[item.name]} onChange={handleChange} className="w-4 h-4 rounded accent-maroon-800" /><span className="text-xs text-gray-600 dark:text-gray-300">{item.label}</span></label>))}</div></div>
                     </div>
                   </div>
                 )}
@@ -601,7 +601,7 @@ const HealthProfile = ({ onBack }) => {
 
             {step === 6 && (
               <div className="space-y-4">
-                <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 rounded-2xl p-4 text-xs text-yellow-700 dark:text-yellow-400 leading-relaxed"><strong>Important:</strong> I certify that all information is true. I consent to data processing per RA 10173.</div>
+                <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 rounded-[10px] p-4 text-xs text-yellow-700 dark:text-yellow-400 leading-relaxed"><strong>Important:</strong> I certify that all information is true. I consent to data processing per RA 10173.</div>
                 <div><label className={labelClass}>Full Name (Electronic Signature) <span className="text-red-400">*</span></label><input className={inputClass('consent_signature')} name="consent_signature" value={form.consent_signature} onChange={handleChange} placeholder="Type your full name" maxLength={191} aria-invalid={Boolean(errors.consent_signature)} />{errors.consent_signature && <p role="alert" className={errorClass}>{errors.consent_signature}</p>}</div>
                 <div><label className={labelClass}>Date</label><input className={`${inputClass('consent_date')} bg-gray-50 dark:bg-gray-600 text-gray-500 cursor-not-allowed`} value={form.consent_date} disabled /></div>
                 <div className="flex items-start space-x-2"><input type="checkbox" name="agree_privacy" checked={form.agree_privacy} onChange={handleChange} className="mt-1 w-4 h-4 rounded accent-maroon-800 flex-shrink-0" /><span className="text-xs text-gray-500 dark:text-gray-400">I agree to the <span className="text-maroon-600 dark:text-maroon-400 underline">Privacy Policy</span> <span className="text-red-400">*</span></span></div>{errors.agree_privacy && <p className={errorClass}>{errors.agree_privacy}</p>}
@@ -613,11 +613,11 @@ const HealthProfile = ({ onBack }) => {
         </AnimatePresence>
 
         <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
-          {step > 1 ? <button onClick={prevStep} className="flex items-center space-x-1 px-4 py-2.5 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl"><ArrowLeft className="w-4 h-4" /><span>Back</span></button> : <div />}
+          {step > 1 ? <button onClick={prevStep} className="flex items-center space-x-1 px-4 py-2.5 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-[10px]"><ArrowLeft className="w-4 h-4" /><span>Back</span></button> : <div />}
           {step < totalSteps ? (
-            <button onClick={nextStep} className="flex items-center space-x-1 px-6 py-2.5 bg-maroon-800 text-white text-sm font-semibold rounded-xl transition-colors hover:text-gray-300"><span>Next</span><ArrowRight className="w-4 h-4" /></button>
+            <button onClick={nextStep} className="flex items-center space-x-1 px-6 py-2.5 bg-maroon-800 text-white text-sm font-semibold rounded-[10px] transition-colors hover:text-gray-300"><span>Next</span><ArrowRight className="w-4 h-4" /></button>
           ) : (
-            <button onClick={handleSubmit} disabled={loading} className="flex items-center space-x-1 px-6 py-2.5 bg-maroon-800 text-white text-sm font-semibold rounded-xl transition-colors hover:text-gray-300 disabled:opacity-50">
+            <button onClick={handleSubmit} disabled={loading} className="flex items-center space-x-1 px-6 py-2.5 bg-maroon-800 text-white text-sm font-semibold rounded-[10px] transition-colors hover:text-gray-300 disabled:opacity-50">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               <span>{loading ? 'Saving...' : 'Submit Health Profile'}</span>
             </button>

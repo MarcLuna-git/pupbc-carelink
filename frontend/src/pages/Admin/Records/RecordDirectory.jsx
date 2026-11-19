@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Eye } from 'lucide-react';
 import api from '../../../services/api';
 import { Avatar } from '../Students/StudentDirectory';
@@ -37,7 +38,7 @@ const SortCaret = ({ direction }) => (
 );
 
 export default function RecordDirectory({ records, onView, sort = null, onSort = () => {} }) {
-  const view = record => <button type="button" onClick={() => onView(record)} aria-label={`View ${recordType(record).toLowerCase()} record for ${fullName(record.student || {}) || 'student'}`} className={`inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 dark:text-maroon-300 dark:hover:bg-maroon-950 ${focus}`}><Eye size={16} aria-hidden="true" />View</button>;
+  const view = record => <button type="button" onClick={() => onView(record)} aria-label={`View ${recordType(record).toLowerCase()} record for ${fullName(record.student || {}) || 'student'}`} className={`inline-flex min-h-11 items-center gap-1.5 rounded-[10px] px-3 py-2 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 dark:text-maroon-300 dark:hover:bg-maroon-950 ${focus}`}><Eye size={16} aria-hidden="true" />View</button>;
   return <>
     <div className="hidden overflow-x-auto lg:block"><table className="w-full text-left text-sm"><caption className="sr-only">Clinic history, newest encounters first</caption><thead className="border-b border-gray-200 bg-gray-50 text-xs font-medium text-gray-500 dark:border-gray-700 dark:bg-gray-900/50"><tr>{RECORD_COLUMNS.map(([key, label]) => { const active = sort?.key === key ? sort.dir : null; return <th scope="col" key={key} aria-sort={active === 'desc' ? 'descending' : active === 'asc' ? 'ascending' : 'none'} className="px-4 py-3.5"><button type="button" onClick={() => onSort(key)} className={`inline-flex items-center gap-1 transition hover:text-gray-900 dark:hover:text-white${active ? ' text-gray-900 dark:text-white' : ''}`}>{label}<SortCaret direction={active} /></button></th>; })}<th scope="col" className="px-4 py-3.5">Action</th></tr></thead><tbody className="divide-y divide-gray-100 dark:divide-gray-700">{records.map(record => <tr key={`${record.record_type}-${record.id}`} className="hover:bg-maroon-50/40 dark:hover:bg-gray-700/30">
       <td className="px-4 py-4"><div className="flex items-center gap-3"><Avatar student={record.student || {}} /><div className="min-w-0"><p className="font-semibold">{fullName(record.student || {}) || 'Student not available'}</p><p className="mt-0.5 max-w-56 truncate text-xs text-gray-500 dark:text-gray-400" title={record.reason || record.chief_complaint}>{record.reason || record.chief_complaint || 'Not recorded'}</p></div></div></td>
@@ -64,7 +65,18 @@ const toDocumentRecord = record => {
     assessment: emergency ? '' : record.nursing_assessment,
     interventions: emergency ? record.intervention : record.nursing_interventions,
     vitals: { bp: vitals.bp, hr: vitals.hr, temp: vitals.temp, rr: vitals.rr, o2: vitals.o2_sat },
+    medicalCertificate: Boolean(record.medical_certificate),
     medicalCertificateRef: record.medical_certificate_ref,
+    sickCertificate: Boolean(record.sick_certificate),
+    sickCertificateRef: record.sick_certificate_ref,
+    sickRestDays: record.sick_rest_days,
+    ojtCertificate: Boolean(record.ojt_certificate),
+    ojtCertificateRef: record.ojt_certificate_ref,
+    ojtCompany: record.ojt_company,
+    liabilityForm: Boolean(record.liability_form),
+    liabilityActivity: record.liability_activity,
+    followUpRequired: Boolean(record.follow_up_required),
+    followUpDate: record.follow_up_date,
     staff: nurse ? `Nurse ${nurse}` : 'Clinic Staff',
     staffRole: 'Clinic Nurse',
   };
@@ -90,15 +102,49 @@ const patientDetails = async record => {
   }
 };
 
-// View: the record as its Consultation Form in the document viewer (preview, print, PDF).
+// View: the record as its Consultation Form (and any issued certificates/forms) in the document viewer.
 // Everything else on the record (history, plan, triage, issued documents) is in the side panel.
 export function RecordDetailsModal({ record, onClose }) {
   const emergency = record.record_type === 'emergency';
+  const [docKind, setDocKind] = useState('consultation');
+  useEffect(() => { setDocKind('consultation'); }, [record.record_type, record.id]);
+
+  const docs = [
+    ['consultation', emergency ? 'Emergency Encounter Form' : 'Consultation Form'],
+    ...(!emergency ? [
+      record.medical_certificate && ['certificate', 'Medical Certificate'],
+      record.sick_certificate && ['sick', 'Medical Certificate (Sick)'],
+      record.ojt_certificate && ['ojt', 'Medical Certificate (OJT)'],
+      record.liability_form && ['liability', 'Medical Liability Form'],
+    ].filter(Boolean) : []),
+  ];
+  const activeKind = docs.some(([kind]) => kind === docKind) ? docKind : 'consultation';
+
+  const docTabs = docs.length > 1 ? (
+    <div role="tablist" aria-label="Issued documents" className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-gray-200 bg-white px-4 py-2 sm:px-5 dark:border-gray-700 dark:bg-gray-800">
+      {docs.map(([kind, label]) => (
+        <button
+          key={kind}
+          type="button"
+          role="tab"
+          aria-selected={activeKind === kind}
+          onClick={() => setDocKind(kind)}
+          className={`rounded-[10px] px-3 py-1.5 text-xs font-semibold transition ${activeKind === kind
+            ? 'bg-maroon-800 text-white dark:bg-gray-700'
+            : 'border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700'}`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  ) : null;
+
   return <DocumentViewerModal
     title={emergency ? 'Emergency Encounter Record' : 'Consultation Record'}
     subtitle={`View and print ${emergency ? 'emergency encounter' : 'consultation'} details`}
-    docKey={`${record.record_type}-${record.id}`}
-    load={async () => buildRecordDocument('consultation', toDocumentRecord(record), await patientDetails(record))}
+    docKey={`${record.record_type}-${record.id}-${activeKind}`}
+    load={async () => buildRecordDocument(activeKind, toDocumentRecord(record), await patientDetails(record))}
+    headerExtra={docTabs}
     onClose={onClose}
     detailsLabel="Full record"
     details={<>

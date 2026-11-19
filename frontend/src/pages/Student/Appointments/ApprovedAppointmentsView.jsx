@@ -218,18 +218,18 @@ function BookingReviewModal({ form, editingId, loading, canBook, onClose }) {
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="booking-review-title" onClick={() => { if (!loading) onClose(); }}>
-      <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6 text-gray-900 shadow-xl dark:border-gray-700 dark:bg-gray-800 dark:text-white" onClick={event => event.stopPropagation()}>
+      <div className="w-full max-w-sm rounded-[10px] border border-gray-200 bg-white p-6 text-gray-900 shadow-xl dark:border-gray-700 dark:bg-gray-800 dark:text-white" onClick={event => event.stopPropagation()}>
         <div className="flex items-start justify-between gap-3">
           <div>
             <h3 id="booking-review-title" className="text-lg font-bold text-gray-900 dark:text-white">Booking Summary</h3>
             <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Please review your appointment details.</p>
           </div>
-          <button type="button" onClick={onClose} disabled={loading} aria-label="Close" className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50 dark:hover:bg-gray-700">
+          <button type="button" onClick={onClose} disabled={loading} aria-label="Close" className="rounded-[10px] p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50 dark:hover:bg-gray-700">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <dl className="mt-5 divide-y divide-gray-200 rounded-xl border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
+        <dl className="mt-5 divide-y divide-gray-200 rounded-[10px] border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
           {[
             [CalendarDays, 'Date', formatAppointmentDate(form.date)],
             [Clock, 'Time · Asia/Manila', form.time],
@@ -251,10 +251,10 @@ function BookingReviewModal({ form, editingId, loading, canBook, onClose }) {
         </p>
 
         <div className="mt-5 flex gap-3">
-          <button type="button" onClick={onClose} disabled={loading} className="flex-1 rounded-xl border border-gray-200 py-2.5 dark:border-gray-600 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:text-gray-200 dark:hover:bg-gray-700">
+          <button type="button" onClick={onClose} disabled={loading} className="flex-1 rounded-[10px] border border-gray-200 py-2.5 dark:border-gray-600 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:text-gray-200 dark:hover:bg-gray-700">
             Back
           </button>
-          <button type="submit" form="appointment-booking-form" disabled={!canBook} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-maroon-800 py-2.5 text-sm font-semibold text-white transition-colors hover:text-gray-300 disabled:opacity-60">
+          <button type="submit" form="appointment-booking-form" disabled={!canBook} className="flex flex-1 items-center justify-center gap-2 rounded-[10px] bg-maroon-800 py-2.5 text-sm font-semibold text-white transition-colors hover:text-gray-300 disabled:opacity-60">
             {loading ? <><Loader2 className="h-4 w-4 animate-spin" />Saving…</> : <>{editingId ? 'Update' : 'Confirm'}<ArrowRight className="h-4 w-4" /></>}
           </button>
         </div>

@@ -11,7 +11,7 @@ import { UNITS } from './medicineOptions';
  * quantity is not editable here.
  */
 const NOTES_MAX = 200;
-const field = 'h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:ring-maroon-300/30';
+const field = 'h-11 w-full rounded-[10px] border border-gray-200 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:ring-maroon-300/30';
 const isWhole = value => /^\d*$/.test(value);
 
 const blank = { name: '', generic_name: '', category: '', unit: '', quantity: '', minimum_stock: '', dosage: '', expiry_date: '', manufacturer: '', description: '' };
@@ -68,7 +68,7 @@ export default function MedicineFormModal({ medicine = null, categories, timeGua
           <h2 className="text-lg font-bold">{editing ? 'Edit Medicine' : 'Add Medicine'}</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">{editing ? 'Update the details of this medicine. Change the stock with Restock.' : 'Enter the details below to add a new medicine to the inventory.'}</p>
         </div>
-        <button type="button" onClick={close} aria-label="Close" className={`rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 ${focus}`}><X size={18} /></button>
+        <button type="button" onClick={close} aria-label="Close" className={`rounded-[10px] p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 ${focus}`}><X size={18} /></button>
       </header>
 
       <div className="space-y-4 px-5 pb-5 pt-3 sm:px-6">
@@ -103,12 +103,12 @@ export default function MedicineFormModal({ medicine = null, categories, timeGua
           <textarea className={`${field} h-auto resize-none py-2.5`} rows={3} maxLength={NOTES_MAX} value={form.description} onChange={set('description')} placeholder="Additional notes (e.g. special storage instructions)" />
           <span className="mt-1 block text-right text-xs text-gray-400" aria-live="polite">{form.description.length}/{NOTES_MAX}</span>
         </label>
-        {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{error}</p>}
+        {error && <p role="alert" className="rounded-[10px] bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{error}</p>}
       </div>
 
       <footer className="flex justify-end gap-3 border-t border-gray-200 bg-gray-50 px-5 py-4 sm:px-6 dark:border-gray-700 dark:bg-gray-900/30">
-        <button type="button" onClick={close} disabled={saving} className={`inline-flex h-10 items-center rounded-lg border border-maroon-300 bg-white px-5 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 disabled:opacity-50 dark:border-maroon-700 dark:bg-transparent dark:text-maroon-300 dark:hover:bg-maroon-900/20 ${focus}`}>Cancel</button>
-        <button type="submit" disabled={saving} className={`inline-flex h-10 items-center gap-2 rounded-lg bg-maroon-800 px-5 text-sm font-semibold text-white hover:bg-maroon-900 disabled:opacity-60 ${focus}`}>
+        <button type="button" onClick={close} disabled={saving} className={`inline-flex h-10 items-center rounded-[10px] border border-maroon-300 bg-white px-5 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 disabled:opacity-50 dark:border-maroon-700 dark:bg-transparent dark:text-maroon-300 dark:hover:bg-maroon-900/20 ${focus}`}>Cancel</button>
+        <button type="submit" disabled={saving} className={`inline-flex h-10 items-center gap-2 rounded-[10px] bg-maroon-800 px-5 text-sm font-semibold text-white hover:bg-maroon-900 disabled:opacity-60 ${focus}`}>
           {saving ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Save size={16} aria-hidden="true" />}{saving ? 'Saving…' : editing ? 'Save Changes' : 'Save Medicine'}
         </button>
       </footer>

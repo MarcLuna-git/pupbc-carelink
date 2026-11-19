@@ -115,7 +115,7 @@ const ForgotPassword = () => {
 
   return (
     <div className="min-h-screen recovery-auth-background flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md rounded-3xl border border-white/60 bg-white/95 p-6 shadow-2xl shadow-black/30 backdrop-blur-sm animate-fadeInUp sm:p-8">
+      <div className="w-full max-w-md rounded-[10px] border border-white/60 bg-white/95 p-6 shadow-2xl shadow-black/30 backdrop-blur-sm animate-fadeInUp sm:p-8">
 
         <div className="mb-6 flex flex-col items-center">
 
@@ -168,7 +168,7 @@ const ForgotPassword = () => {
 
             <input
               id="forgot-email"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-800 placeholder:text-slate-400 transition focus:border-maroon-800 focus:bg-white focus:outline-none"
+              className="w-full rounded-[10px] border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-800 placeholder:text-slate-400 transition focus:border-maroon-800 focus:bg-white focus:outline-none"
               type="email"
               value={email}
               onChange={(e) =>

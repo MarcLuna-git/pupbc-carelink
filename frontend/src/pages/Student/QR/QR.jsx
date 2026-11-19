@@ -82,10 +82,10 @@ const ROUTE_LOADING_DELAY = 1600;
 const LOAD_ERROR = 'Unable to load your QR information. Please try again.';
 
 const CARD =
-  'rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)] p-5 lg:p-6';
+  'rounded-[10px] border border-[var(--sp-border)] bg-[var(--sp-surface)] p-5 lg:p-6';
 
 const Skeleton = ({ className = '' }) => (
-  <div className={`animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 ${className}`} />
+  <div className={`animate-pulse rounded-[10px] bg-gray-200 dark:bg-gray-700 ${className}`} />
 );
 
 /* Ghost of CardTitle: icon + title, with an optional action that wraps below on narrow screens. */
@@ -118,7 +118,7 @@ const CardTitle = ({ icon: Icon, children, action }) => (
 /* Icon tile + label/value row used in the QR card and summary. */
 const DetailRow = ({ icon: Icon, label, value, hint }) => (
   <div className="flex items-start gap-3.5">
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-maroon-50 text-maroon-700 dark:bg-maroon-900/30 dark:text-maroon-300">
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-maroon-50 text-maroon-700 dark:bg-maroon-900/30 dark:text-maroon-300">
       <Icon className="h-5 w-5" />
     </div>
     <div className="min-w-0">
@@ -463,18 +463,18 @@ const QR = () => {
         <div className="grid gap-3 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
           {/* Ghost of the QR card */}
           <div className={`${CARD} flex flex-col`}>
-            <SkeletonTitle width="w-32" action={<Skeleton className="h-12 w-36 rounded-xl" />} />
+            <SkeletonTitle width="w-32" action={<Skeleton className="h-12 w-36 rounded-[10px]" />} />
             <div className="flex flex-col items-center">
-              <div className="rounded-2xl border border-gray-200 p-3 dark:border-gray-600">
-                <Skeleton className="h-48 w-48 rounded-xl sm:h-56 sm:w-56" />
+              <div className="rounded-[10px] border border-gray-200 p-3 dark:border-gray-600">
+                <Skeleton className="h-48 w-48 rounded-[10px] sm:h-56 sm:w-56" />
               </div>
               <Skeleton className="mt-4 h-6 w-44" />
               <Skeleton className="mt-2 h-3.5 w-40" />
               <Skeleton className="mt-1.5 h-3.5 w-28" />
               {/* Download / Print */}
               <div className="mt-4 grid w-full grid-cols-2 gap-3">
-                <Skeleton className="h-10 rounded-xl" />
-                <Skeleton className="h-10 rounded-xl" />
+                <Skeleton className="h-10 rounded-[10px]" />
+                <Skeleton className="h-10 rounded-[10px]" />
               </div>
             </div>
             <div className="mt-6 space-y-5 border-t border-gray-100 pt-5 dark:border-gray-700">
@@ -489,7 +489,7 @@ const QR = () => {
               ))}
             </div>
             {/* Keep Your QR Private ghost */}
-            <div className="mt-6 flex items-start gap-3 rounded-xl bg-gray-50 p-3 dark:bg-gray-900/30">
+            <div className="mt-6 flex items-start gap-3 rounded-[10px] bg-gray-50 p-3 dark:bg-gray-900/30">
               <Skeleton className="h-4 w-4 shrink-0 rounded" />
               <div className="flex-1 space-y-1.5">
                 <Skeleton className="h-3 w-32" />
@@ -503,7 +503,7 @@ const QR = () => {
             {/* Ghost of Check-in Information */}
             <div className={CARD}>
               <SkeletonTitle width="w-48" />
-              <div className="grid gap-4 rounded-xl bg-gray-50 p-5 dark:bg-gray-900/30 sm:grid-cols-2">
+              <div className="grid gap-4 rounded-[10px] bg-gray-50 p-5 dark:bg-gray-900/30 sm:grid-cols-2">
                 {[0, 1].map((key) => (
                   <div key={key} className={`flex items-start gap-3.5 ${key ? 'sm:pl-5' : ''}`}>
                     <Skeleton className="mt-1 h-7 w-7 shrink-0" />
@@ -517,7 +517,7 @@ const QR = () => {
               </div>
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 {[0, 1, 2].map((key) => (
-                  <div key={key} className="flex items-start gap-3 rounded-xl bg-gray-50 p-3.5 dark:bg-gray-900/30">
+                  <div key={key} className="flex items-start gap-3 rounded-[10px] bg-gray-50 p-3.5 dark:bg-gray-900/30">
                     <Skeleton className="h-6 w-6 shrink-0" />
                     <div className="flex-1 space-y-1.5">
                       <Skeleton className="h-3.5 w-24" />
@@ -531,8 +531,8 @@ const QR = () => {
 
             {/* Ghost of Appointment Summary — stretches like the real card */}
             <div className={`${CARD} flex flex-1 flex-col`}>
-              <SkeletonTitle width="w-52" action={<Skeleton className="h-9 w-48 rounded-lg" />} />
-              <div className="grid flex-1 content-center gap-5 rounded-xl border border-gray-100 p-5 dark:border-gray-700 sm:grid-cols-2">
+              <SkeletonTitle width="w-52" action={<Skeleton className="h-9 w-48 rounded-[10px]" />} />
+              <div className="grid flex-1 content-center gap-5 rounded-[10px] border border-gray-100 p-5 dark:border-gray-700 sm:grid-cols-2">
                 {[0, 1].map((column) => (
                   <div key={column} className={`space-y-5 ${column ? 'sm:pl-5' : ''}`}>
                     {[0, 1].map((key) => (
@@ -597,7 +597,7 @@ const QR = () => {
           )}
 
           {isNoShow ? (
-            <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-800/30 dark:bg-red-900/20">
+            <div className="flex items-start gap-3 rounded-[10px] border border-red-200 bg-red-50 p-4 dark:border-red-800/30 dark:bg-red-900/20">
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
               <div>
                 <p className="text-sm font-semibold text-red-800 dark:text-red-300">Marked as No Show</p>
@@ -675,7 +675,7 @@ const QR = () => {
             icon={QrCode}
             action={
               canUseQr && (
-                <div className="flex shrink-0 items-center gap-2 rounded-xl bg-green-50 px-3 py-2 dark:bg-green-900/20">
+                <div className="flex shrink-0 items-center gap-2 rounded-[10px] bg-green-50 px-3 py-2 dark:bg-green-900/20">
                   <CircleCheck className="h-5 w-5 fill-green-600 text-white dark:fill-green-500 dark:text-green-950" />
                   <div className="leading-tight">
                     <p className="text-sm font-semibold text-green-700 dark:text-green-400">Approved</p>
@@ -694,7 +694,7 @@ const QR = () => {
               animate={{ opacity: 1, scale: 1 }}
               className="text-center"
             >
-              <div className="inline-block rounded-2xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-600">
+              <div className="inline-block rounded-[10px] border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-600">
                 {qrDataUrl ? (
                   <img
                     src={qrDataUrl}
@@ -717,7 +717,7 @@ const QR = () => {
                   type="button"
                   onClick={handleDownload}
                   disabled={downloading || !qrDataUrl}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-maroon-800 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900 disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 rounded-[10px] bg-maroon-800 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900 disabled:opacity-50"
                 >
                   {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                   <span>{downloading ? 'Downloading...' : 'Download'}</span>
@@ -727,7 +727,7 @@ const QR = () => {
                   type="button"
                   onClick={handlePrint}
                   disabled={!qrDataUrl}
-                  className="flex items-center justify-center gap-2 rounded-xl border border-maroon-800 bg-white py-2.5 text-sm font-semibold text-maroon-800 transition hover:bg-maroon-50 disabled:opacity-50 dark:border-maroon-700 dark:bg-gray-800 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
+                  className="flex items-center justify-center gap-2 rounded-[10px] border border-maroon-800 bg-white py-2.5 text-sm font-semibold text-maroon-800 transition hover:bg-maroon-50 disabled:opacity-50 dark:border-maroon-700 dark:bg-gray-800 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
                 >
                   <Printer className="h-4 w-4" />
                   <span>Print</span>
@@ -736,7 +736,7 @@ const QR = () => {
             </motion.div>
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center py-6 text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-700">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[10px] bg-gray-100 dark:bg-gray-700">
                 <QrCode className="h-8 w-8 text-gray-400" />
               </div>
 
@@ -750,7 +750,7 @@ const QR = () => {
 
               <Link
                 to="/student/appointments"
-                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-maroon-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900"
+                className="mt-5 inline-flex items-center gap-2 rounded-[10px] bg-maroon-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900"
               >
                 <CalendarDays className="h-4 w-4" />
                 View Appointments
@@ -782,7 +782,7 @@ const QR = () => {
           )}
 
           {/* Keep Your QR Private */}
-          <div className="mt-6 flex items-start gap-3 rounded-xl bg-gray-50 p-3 dark:bg-gray-900/30">
+          <div className="mt-6 flex items-start gap-3 rounded-[10px] bg-gray-50 p-3 dark:bg-gray-900/30">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
             <div>
               <p className="text-xs font-semibold text-gray-900 dark:text-white">Keep Your QR Private</p>
@@ -822,7 +822,7 @@ const QR = () => {
 
                 {/* Only while a visit is in progress: once it is completed (or there is none) it goes back to the default note. */}
                 {trackedAppointment && opensLabel && deadlineLabel ? (
-                  <div className="grid gap-4 rounded-xl bg-gray-50 p-5 dark:bg-gray-900/30 sm:grid-cols-2 sm:divide-x sm:divide-gray-200 dark:sm:divide-gray-700">
+                  <div className="grid gap-4 rounded-[10px] bg-gray-50 p-5 dark:bg-gray-900/30 sm:grid-cols-2 sm:divide-x sm:divide-gray-200 dark:sm:divide-gray-700">
                     <div className="flex items-start gap-3.5">
                       <LogIn className="mt-1 h-7 w-7 shrink-0 text-maroon-700 dark:text-maroon-300" />
                       <div>
@@ -851,7 +851,7 @@ const QR = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl bg-gray-50 p-5 text-sm text-gray-600 dark:bg-gray-900/30 dark:text-gray-400">
+                  <div className="rounded-[10px] bg-gray-50 p-5 text-sm text-gray-600 dark:bg-gray-900/30 dark:text-gray-400">
                     Your check-in window will appear here on the day of an approved appointment.
                   </div>
                 )}
@@ -868,7 +868,7 @@ const QR = () => {
               {CHECKIN_TIPS.map(({ icon: Icon, title, desc }) => (
                 <div
                   key={title}
-                  className="flex items-start gap-3 rounded-xl bg-gray-50 p-3.5 dark:bg-gray-900/30"
+                  className="flex items-start gap-3 rounded-[10px] bg-gray-50 p-3.5 dark:bg-gray-900/30"
                 >
                   <Icon className="mt-0.5 h-6 w-6 shrink-0 text-maroon-700 dark:text-maroon-300" />
                   <div>
@@ -887,7 +887,7 @@ const QR = () => {
               action={
                 <Link
                   to="/student/appointments"
-                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--sp-border)] px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-900/30"
+                  className="inline-flex items-center gap-2 rounded-[10px] border border-[var(--sp-border)] px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-900/30"
                 >
                   View Appointment Details
                   <ArrowUpRight className="h-4 w-4" />
@@ -899,7 +899,7 @@ const QR = () => {
 
             {/* A completed visit's appointment is done: back to the default empty state, like the QR. */}
             {trackedAppointment ? (
-              <div className="grid flex-1 content-center gap-5 rounded-xl border border-gray-100 p-5 dark:border-gray-700 sm:grid-cols-2 sm:divide-x sm:divide-gray-100 dark:sm:divide-gray-700">
+              <div className="grid flex-1 content-center gap-5 rounded-[10px] border border-gray-100 p-5 dark:border-gray-700 sm:grid-cols-2 sm:divide-x sm:divide-gray-100 dark:sm:divide-gray-700">
                 <div className="space-y-5">
                   <DetailRow
                     icon={CalendarDays}
@@ -927,7 +927,7 @@ const QR = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+              <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-[10px] border border-dashed border-gray-200 p-6 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
                 <CalendarDays className="h-8 w-8 text-gray-300 dark:text-gray-600" />
                 <p>No approved appointment scheduled for today.</p>
                 <Link
@@ -946,7 +946,7 @@ const QR = () => {
       {visitCompleted && (
         <div className={`${CARD} flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between`}>
           <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-maroon-50 dark:bg-maroon-900/20">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-maroon-50 dark:bg-maroon-900/20">
               <FileText className="h-5 w-5 text-maroon-800 dark:text-maroon-300" />
             </span>
             <div>
@@ -958,7 +958,7 @@ const QR = () => {
           </div>
           <Link
             to="/student/health-records"
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-maroon-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-[10px] bg-maroon-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900"
           >
             GO
           </Link>
@@ -982,14 +982,14 @@ const QR = () => {
                 key={item.id}
                 type="button"
                 onClick={() => setSelectedActivity(item)}
-                className="flex w-full items-center justify-between gap-4 rounded-xl border border-gray-200 bg-gray-50/70 p-4 text-left transition hover:border-gray-300 hover:bg-gray-100/80 dark:border-gray-700 dark:bg-gray-900/30 dark:hover:border-gray-600 dark:hover:bg-gray-800/60"
+                className="flex w-full items-center justify-between gap-4 rounded-[10px] border border-gray-200 bg-gray-50/70 p-4 text-left transition hover:border-gray-300 hover:bg-gray-100/80 dark:border-gray-700 dark:bg-gray-900/30 dark:hover:border-gray-600 dark:hover:bg-gray-800/60"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">
                       {item.service === 'Consultation' ? 'General Consultation' : item.service || 'Appointment'}
                     </p>
-                    <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold ${badge.tone}`}>
+                    <span className={`inline-flex items-center rounded-[10px] border px-2 py-0.5 text-[11px] font-semibold ${badge.tone}`}>
                       {badge.label}
                     </span>
                   </div>
@@ -1038,7 +1038,7 @@ const QR = () => {
             </div>
           );
         })() : (
-          <div className="rounded-xl bg-gray-50 p-5 text-center text-sm text-gray-500 dark:bg-gray-900/30 dark:text-gray-400">
+          <div className="rounded-[10px] bg-gray-50 p-5 text-center text-sm text-gray-500 dark:bg-gray-900/30 dark:text-gray-400">
             No recent QR or check-in activity yet.
           </div>
         )}
@@ -1059,13 +1059,13 @@ const QR = () => {
               role="dialog"
               aria-modal="true"
               aria-labelledby="qr-activity-title"
-              className="relative w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-700 dark:bg-gray-800"
+              className="relative w-full max-w-md rounded-[10px] border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-700 dark:bg-gray-800"
             >
               <button
                 type="button"
                 onClick={() => setSelectedActivity(null)}
                 aria-label="Close"
-                className="absolute right-4 top-4 rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                className="absolute right-4 top-4 rounded-[10px] p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1082,10 +1082,10 @@ const QR = () => {
                 </p>
               </div>
 
-              <div className="mt-5 divide-y divide-gray-200 rounded-xl bg-gray-50 px-4 text-sm dark:divide-gray-700 dark:bg-gray-900/40">
+              <div className="mt-5 divide-y divide-gray-200 rounded-[10px] bg-gray-50 px-4 text-sm dark:divide-gray-700 dark:bg-gray-900/40">
                 <div className="flex items-center justify-between gap-4 py-3">
                   <span className="text-gray-500 dark:text-gray-400">Status</span>
-                  <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold ${badge.tone}`}>
+                  <span className={`inline-flex items-center rounded-[10px] border px-2 py-0.5 text-xs font-semibold ${badge.tone}`}>
                     {badge.label}
                   </span>
                 </div>
@@ -1135,7 +1135,7 @@ const QR = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedActivity(null)}
-                  className="rounded-xl bg-gray-100 px-6 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                  className="rounded-[10px] bg-gray-100 px-6 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                 >
                   Close
                 </button>

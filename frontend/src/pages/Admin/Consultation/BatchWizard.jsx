@@ -153,7 +153,7 @@ export default function BatchWizard({ docKey, onDocChange, onSaved, onShowIssued
   const title = trimFields(values)[doc.titleField || doc.fields[0]?.name] || doc.label;
 
   return (
-    <section ref={top} aria-label="New batch document" className="scroll-mt-4 overflow-hidden rounded-lg border border-gray-100 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+    <section ref={top} aria-label="New batch document" className="scroll-mt-4 overflow-hidden rounded-[10px] border border-gray-100 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
       {/* Stepper */}
       <ol className="flex border-b border-gray-100 px-2 py-3 dark:border-gray-700 sm:px-4">
         {STEPS.map((name, index) => {
@@ -167,7 +167,7 @@ export default function BatchWizard({ docKey, onDocChange, onSaved, onShowIssued
                 onClick={() => jump(index)}
                 disabled={!open}
                 aria-current={current ? 'step' : undefined}
-                className={`flex min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${focus} ${open ? 'hover:bg-gray-50 dark:hover:bg-gray-700/40' : 'cursor-default'}`}
+                className={`flex min-w-0 items-center gap-2 rounded-[10px] px-2 py-1.5 text-sm ${focus} ${open ? 'hover:bg-gray-50 dark:hover:bg-gray-700/40' : 'cursor-default'}`}
               >
                 <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${current
                   ? 'bg-maroon-800 text-white'
@@ -200,7 +200,7 @@ export default function BatchWizard({ docKey, onDocChange, onSaved, onShowIssued
           )}
         </div>
 
-        {saveError && <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-800 dark:bg-red-900/20 dark:text-red-300">{saveError}</p>}
+        {saveError && <p role="alert" className="rounded-[10px] bg-red-50 px-4 py-3 text-sm font-medium text-red-800 dark:bg-red-900/20 dark:text-red-300">{saveError}</p>}
 
         {step === 0 && <BatchDocumentPicker documents={BATCH_DOCUMENTS} value={docKey ? doc.key : ''} onChoose={choose} />}
 
@@ -220,7 +220,7 @@ export default function BatchWizard({ docKey, onDocChange, onSaved, onShowIssued
         {step === 3 && (
           <div className="space-y-4">
             {saved ? (
-              <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-green-50 px-4 py-3 dark:bg-green-900/20">
+              <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] bg-green-50 px-4 py-3 dark:bg-green-900/20">
                 <p className="flex items-center gap-2 text-sm font-medium text-green-800 dark:text-green-300"><CheckCircle2 className="h-5 w-5" aria-hidden="true" /> Saved. It is now in Issued documents.</p>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" onClick={() => previewRef.current?.print()} className={secondary}><Printer className="h-4 w-4" aria-hidden="true" /> Print again</button>
@@ -229,7 +229,7 @@ export default function BatchWizard({ docKey, onDocChange, onSaved, onShowIssued
                 </div>
               </div>
             ) : (
-              <dl className="grid gap-3 rounded-lg border border-gray-100 p-4 text-sm dark:border-gray-700 sm:grid-cols-3">
+              <dl className="grid gap-3 rounded-[10px] border border-gray-100 p-4 text-sm dark:border-gray-700 sm:grid-cols-3">
                 <div><dt className="text-xs text-gray-500 dark:text-gray-400">Document</dt><dd className="font-semibold">{doc.label}</dd></div>
                 <div><dt className="text-xs text-gray-500 dark:text-gray-400">For</dt><dd className="font-semibold">{title}{fieldSummary && <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">{fieldSummary}</span>}</dd></div>
                 <div><dt className="text-xs text-gray-500 dark:text-gray-400">Students</dt><dd className="font-semibold tabular-nums">{students.length}</dd></div>

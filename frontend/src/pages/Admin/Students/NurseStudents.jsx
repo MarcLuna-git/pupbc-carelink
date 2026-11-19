@@ -169,11 +169,11 @@ export default function NurseStudents() {
     <NursePageTitle path="/nurse/students" />
     {/* Delete result shows as a floating toast */}
     <NurseToast message={deleteNotice} type="success" onClose={() => setDeleteNotice('')} />
-    <section aria-label="Students view" className="rounded-lg border border-gray-100 bg-white p-3 dark:border-gray-700 dark:bg-gray-800 lg:px-4">
+    <section aria-label="Students view" className="rounded-[10px] border border-gray-100 bg-white p-3 dark:border-gray-700 dark:bg-gray-800 lg:px-4">
       <div role="tablist" aria-label="Students view" className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         {[['directory', 'Student Directory', IdCard], ['masterlist', 'Masterlist', ListChecks]].map(([id, title, Icon]) => (
           <button key={id} type="button" role="tab" id={`students-tab-${id}`} aria-selected={tabView === id} aria-controls={`students-panel-${id}`} onClick={() => chooseView(id)}
-            className={`flex w-full items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition sm:inline-flex sm:w-auto ${tabView === id
+            className={`flex w-full items-center gap-2 rounded-[10px] border px-4 py-2.5 text-sm font-semibold transition sm:inline-flex sm:w-auto ${tabView === id
               ? 'border-maroon-800 bg-maroon-800 text-white'
               : 'border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-900/30'}`}>
             <Icon className="h-4 w-4" aria-hidden="true" />{title}

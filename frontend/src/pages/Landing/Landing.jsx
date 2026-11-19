@@ -272,7 +272,7 @@ function FeatureCard({ feature }) {
 
   const content = (
     <>
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 border-maroon-800 bg-white text-maroon-800 transition-colors duration-500 group-hover:duration-700 group-hover:bg-maroon-800 group-hover:text-white sm:h-14 sm:w-14">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[10px] border-2 border-maroon-800 bg-white text-maroon-800 transition-colors duration-500 group-hover:duration-700 group-hover:bg-maroon-800 group-hover:text-white sm:h-14 sm:w-14">
         <Icon size={25} strokeWidth={2.5} />
       </span>
 
@@ -290,7 +290,7 @@ function FeatureCard({ feature }) {
   );
 
   const classes =
-    'group flex min-w-0 items-center gap-3 rounded-2xl ' +
+    'group flex min-w-0 items-center gap-3 rounded-[10px] ' +
     'border border-slate-200/90 bg-white p-3.5 text-left ' +
     'shadow-sm sm:p-4';
 
@@ -566,7 +566,7 @@ export default function Landing() {
             }
             aria-expanded={mobileMenuOpen}
             aria-controls="landing-mobile-menu"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-maroon-800 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 lg:hidden"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] text-maroon-800 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 lg:hidden"
           >
             {mobileMenuOpen ? (
               <X size={23} />
@@ -588,7 +588,7 @@ export default function Landing() {
                   key={item.href}
                   href={item.href}
                   onClick={(event) => scrollToSection(event, item.href)}
-                  className="block rounded-xl px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-maroon-800 hover:text-white dark:hover:bg-maroon-900 dark:hover:text-white"
+                  className="block rounded-[10px] px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-maroon-800 hover:text-white dark:hover:bg-maroon-900 dark:hover:text-white"
                 >
                   {item.label}
                 </a>
@@ -598,7 +598,7 @@ export default function Landing() {
                 <Link
                   to="/register"
                   onClick={closeMenu}
-                  className="flex min-h-11 items-center justify-center rounded-xl bg-rose-50 text-sm font-bold text-maroon-800 dark:text-rose-300"
+                  className="flex min-h-11 items-center justify-center rounded-[10px] bg-rose-50 text-sm font-bold text-maroon-800 dark:text-rose-300"
                 >
                   Get Started
                 </Link>
@@ -606,7 +606,7 @@ export default function Landing() {
                 <Link
                   to="/login"
                   onClick={closeMenu}
-                  className="flex min-h-11 items-center justify-center rounded-xl bg-maroon-800 text-sm font-bold text-white"
+                  className="flex min-h-11 items-center justify-center rounded-[10px] bg-maroon-800 text-sm font-bold text-white"
                 >
                   Login
                 </Link>
@@ -673,7 +673,7 @@ export default function Landing() {
 
               <a
                 href="#services"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/60 bg-white/5 px-6 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/15"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[10px] border border-white/60 bg-white/5 px-6 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/15"
               >
                 View Services
               </a>
@@ -754,7 +754,7 @@ export default function Landing() {
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.85fr)]">
           <div
             id="how-it-works"
-            className="scroll-mt-24 md:scroll-mt-4 flex flex-col rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7"
+            className="scroll-mt-24 md:scroll-mt-4 flex flex-col rounded-[10px] border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7"
           >
             <SectionTitle
               title="How CareLink Works"
@@ -768,7 +768,7 @@ export default function Landing() {
                 return (
                   <div
                     key={step.title}
-                    className="rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-sm sm:p-4"
+                    className="rounded-[10px] border border-slate-200/90 bg-white p-3.5 shadow-sm sm:p-4"
                   >
                     <Icon
                       size={24}
@@ -790,7 +790,7 @@ export default function Landing() {
           </div>
 
           {/* A HEALTHIER YOU — ACTUAL CLINIC PHOTO */}
-          <div className="group relative isolate min-h-[320px] overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm sm:min-h-[360px]">
+          <div className="group relative isolate min-h-[320px] overflow-hidden rounded-[10px] border border-slate-200/80 bg-white shadow-sm sm:min-h-[360px]">
             <img
               src={clinicVaccination}
               alt="Clinic nurse giving a vaccination to a PUP Biñan student"
@@ -804,8 +804,8 @@ export default function Landing() {
             <div className="flex h-full min-h-[320px] flex-col justify-between p-5 sm:min-h-[360px] sm:p-7">
               <div className="relative max-w-[255px]">
                 {/* Frosted panel behind the text — fades in on hover. */}
-                <div className="absolute -inset-4 z-[-1] rounded-2xl bg-white/70 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-                <span className="inline-flex rounded-lg border border-white/25 bg-maroon-800/85 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider text-white backdrop-blur-sm">
+                <div className="absolute -inset-4 z-[-1] rounded-[10px] bg-white/70 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                <span className="inline-flex rounded-[10px] border border-white/25 bg-maroon-800/85 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider text-white backdrop-blur-sm">
                   A Healthier You
                 </span>
 
@@ -820,7 +820,7 @@ export default function Landing() {
 
               <div className="relative max-w-[260px]">
                 {/* Frosted panel behind the quote — fades in on hover. */}
-                <div className="absolute -inset-2 z-[-1] rounded-xl bg-white/70 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                <div className="absolute -inset-2 z-[-1] rounded-[10px] bg-white/70 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
                 <p className="border-l-2 border-maroon-200 pl-3 text-xs font-medium leading-5 text-maroon-800 sm:text-sm">
                   We care for you - your health and well-being is our priority
                 </p>
@@ -836,7 +836,7 @@ export default function Landing() {
         className="mx-auto max-w-[1440px] scroll-mt-24 md:scroll-mt-4 px-4 py-7 sm:px-6 lg:px-10"
       >
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.85fr)]">
-          <div className="flex flex-col rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7">
+          <div className="flex flex-col rounded-[10px] border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7">
             <SectionTitle
               title="Our Clinic Services"
               description="Choose from the clinic appointment services available to PUP Biñan students."
@@ -850,9 +850,9 @@ export default function Landing() {
                   <Link
                     key={service.title}
                     to="/login"
-                    className="group flex min-w-0 flex-col rounded-2xl border border-slate-200/90 bg-white p-3.5 text-left shadow-sm sm:p-4"
+                    className="group flex min-w-0 flex-col rounded-[10px] border border-slate-200/90 bg-white p-3.5 text-left shadow-sm sm:p-4"
                   >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-maroon-800 bg-white text-maroon-800 transition-colors duration-500 group-hover:duration-700 group-hover:bg-maroon-800 group-hover:text-white">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border-2 border-maroon-800 bg-white text-maroon-800 transition-colors duration-500 group-hover:duration-700 group-hover:bg-maroon-800 group-hover:text-white">
                       <Icon size={20} strokeWidth={2.5} />
                     </span>
 
@@ -876,7 +876,7 @@ export default function Landing() {
 
           <div
             id="announcements"
-            className="scroll-mt-24 md:scroll-mt-4 flex flex-col rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7"
+            className="scroll-mt-24 md:scroll-mt-4 flex flex-col rounded-[10px] border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7"
           >
             <div className="mb-5">
               <h2 className="text-xl font-extrabold text-slate-950 sm:text-2xl">
@@ -892,7 +892,7 @@ export default function Landing() {
                 {[1, 2, 3].map((item) => (
                   <div
                     key={item}
-                    className="animate-pulse rounded-xl border border-slate-100 p-3"
+                    className="animate-pulse rounded-[10px] border border-slate-100 p-3"
                   >
                     <div className="h-3 w-3/4 rounded bg-slate-200" />
                     <div className="mt-3 h-2 w-1/3 rounded bg-slate-100" />
@@ -900,7 +900,7 @@ export default function Landing() {
                 ))}
               </div>
             ) : announcementsError ? (
-              <div className="flex-1 rounded-2xl bg-slate-50 px-4 py-6 text-center">
+              <div className="flex-1 rounded-[10px] bg-slate-50 px-4 py-6 text-center">
                 <p className="text-sm font-semibold text-slate-700">
                   Unable to load announcements.
                 </p>
@@ -918,7 +918,7 @@ export default function Landing() {
                 </button>
               </div>
             ) : announcements.length === 0 ? (
-              <div className="flex-1 rounded-2xl bg-slate-50 px-4 py-7 text-center">
+              <div className="flex-1 rounded-[10px] bg-slate-50 px-4 py-7 text-center">
                 <Bell
                   size={26}
                   className="mx-auto text-slate-400"
@@ -938,7 +938,7 @@ export default function Landing() {
                 {announcements.map((announcement) => (
                   <div
                     key={announcement.id}
-                    className="flex items-start gap-3 rounded-xl border border-slate-200/90 bg-white p-3 shadow-sm"
+                    className="flex items-start gap-3 rounded-[10px] border border-slate-200/90 bg-white p-3 shadow-sm"
                   >
                     <Megaphone
                       size={20}
@@ -983,7 +983,7 @@ export default function Landing() {
 
       {/* FAQ */}
       <section className="mx-auto max-w-[1440px] px-4 pb-10 sm:px-6 lg:px-10">
-        <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7">
+        <div className="rounded-[10px] border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7">
           <SectionTitle
             title="Frequently Asked Questions"
             description="Quick answers about using the CareLink Student Portal."
@@ -993,7 +993,7 @@ export default function Landing() {
             {FAQS.map((faq, index) => (
               <div
                 key={faq.question}
-                className="overflow-hidden rounded-xl border border-slate-200"
+                className="overflow-hidden rounded-[10px] border border-slate-200"
               >
                 <button
                   type="button"

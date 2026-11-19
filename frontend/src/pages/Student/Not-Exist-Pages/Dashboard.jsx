@@ -7,7 +7,7 @@ import { getUser, setUser } from '../../../services/session';
 import { groupAppointments, formatAppointmentDate } from '../../../utils/appointmentDate';
 
 const Skeleton = ({ className = '' }) => (
-  <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded-2xl ${className}`} />
+  <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded-[10px] ${className}`} />
 );
 
 const dashboardCacheKey = 'carelink.student.dashboard';
@@ -176,34 +176,34 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] mx-auto space-y-5">
-        <Skeleton className="h-40 rounded-3xl" />
+        <Skeleton className="h-40 rounded-[10px]" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-gray-800 rounded-3xl p-4 lg:p-5 border border-gray-100 dark:border-gray-700">
+            <div key={i} className="bg-white dark:bg-gray-800 rounded-[10px] p-4 lg:p-5 border border-gray-100 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <Skeleton className="h-3 w-20" />
                   <Skeleton className="h-8 w-12" />
                 </div>
-                <Skeleton className="w-12 h-12 rounded-2xl" />
+                <Skeleton className="w-12 h-12 rounded-[10px]" />
               </div>
             </div>
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <div className="lg:col-span-2 space-y-5">
-            <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-gray-100 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-[10px] p-5 border border-gray-100 dark:border-gray-700">
               <Skeleton className="h-5 w-32 mb-4" />
               <div className="grid grid-cols-4 gap-3">
                 {[...Array(4)].map((_, i) => (
                   <div key={i} className="flex flex-col items-center space-y-2">
-                    <Skeleton className="w-10 h-10 rounded-2xl" />
+                    <Skeleton className="w-10 h-10 rounded-[10px]" />
                     <Skeleton className="h-3 w-14" />
                   </div>
                 ))}
               </div>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-gray-100 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-[10px] p-5 border border-gray-100 dark:border-gray-700">
               <Skeleton className="h-5 w-36 mb-4" />
               {[...Array(2)].map((_, i) => (
                 <div key={i} className="flex items-start space-x-3 mb-3">
@@ -217,7 +217,7 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="space-y-5">
-            <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-gray-100 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-[10px] p-5 border border-gray-100 dark:border-gray-700">
               <Skeleton className="h-5 w-20 mb-4" />
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="flex items-start space-x-3 mb-3">
@@ -229,7 +229,7 @@ const Dashboard = () => {
                 </div>
               ))}
             </div>
-            <Skeleton className="h-28 rounded-3xl" />
+            <Skeleton className="h-28 rounded-[10px]" />
           </div>
         </div>
       </div>
@@ -240,14 +240,14 @@ const Dashboard = () => {
     <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] mx-auto space-y-5 pb-6">
       
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-maroon-800 to-maroon-900 dark:from-maroon-900 dark:to-maroon-950 rounded-3xl p-5 lg:p-6 text-white shadow-xl shadow-maroon-800/20">
+        className="bg-gradient-to-br from-maroon-800 to-maroon-900 dark:from-maroon-900 dark:to-maroon-950 rounded-[10px] p-5 lg:p-6 text-white shadow-xl shadow-maroon-800/20">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-yellow-200/80 text-sm font-medium">Welcome back,</p>
             <h1 className="text-2xl lg:text-3xl font-extrabold mt-1">{user.first_name}!</h1>
             <p className="text-yellow-100/60 text-sm mt-2">{user.course} - {user.year}{user.section ? ' - ' + user.section : ''}</p>
           </div>
-          <div className="hidden sm:block w-16 h-16 lg:w-20 lg:h-20 bg-white/10 backdrop-blur-sm rounded-3xl border border-white/20"></div>
+          <div className="hidden sm:block w-16 h-16 lg:w-20 lg:h-20 bg-white/10 backdrop-blur-sm rounded-[10px] border border-white/20"></div>
         </div>
         <div className="flex items-center space-x-4 mt-4 pt-4 border-t border-white/10">
           <div className="flex items-center space-x-1.5">
@@ -271,7 +271,7 @@ const Dashboard = () => {
 
       {!healthProfileDone && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-          className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 rounded-3xl p-4 flex items-center justify-between">
+          className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 rounded-[10px] p-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-500" />
             <div>
@@ -279,7 +279,7 @@ const Dashboard = () => {
               <p className="text-xs text-yellow-600 dark:text-yellow-500">Complete your health profile to unlock appointments & QR code.</p>
             </div>
           </div>
-          <Link to="/student/health-profile" className="px-4 py-2 bg-yellow-500 text-white text-sm font-semibold rounded-xl hover:bg-yellow-600 transition flex-shrink-0">
+          <Link to="/student/health-profile" className="px-4 py-2 bg-yellow-500 text-white text-sm font-semibold rounded-[10px] hover:bg-yellow-600 transition flex-shrink-0">
             Complete Now
           </Link>
         </motion.div>
@@ -288,13 +288,13 @@ const Dashboard = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {summaryCards.map((card, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-            className="bg-white dark:bg-gray-800 rounded-3xl p-4 lg:p-5 border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow">
+            className="bg-white dark:bg-gray-800 rounded-[10px] p-4 lg:p-5 border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-400 dark:text-gray-500">{card.sub}</p>
                 <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mt-1">{card.title}</p>
               </div>
-              <div className={`w-10 h-10 lg:w-12 lg:h-12 ${card.color} rounded-2xl flex items-center justify-center`}>
+              <div className={`w-10 h-10 lg:w-12 lg:h-12 ${card.color} rounded-[10px] flex items-center justify-center`}>
                 <card.icon className={`w-5 h-5 lg:w-6 lg:h-6 ${card.iconColor}`} />
               </div>
             </div>
@@ -304,7 +304,7 @@ const Dashboard = () => {
 
       <div className="grid gap-4 sm:grid-cols-2">
         {[['today', "Today's Appointments"], ['upcoming', 'Upcoming Appointments']].map(([key, title]) => (
-          <section key={key} className="rounded-3xl border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+          <section key={key} className="rounded-[10px] border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
             <h3 className="font-bold text-gray-900 dark:text-white">{title}</h3>
             {appointmentGroups[key].length === 0 ? (
               <p className="mt-3 text-sm text-gray-500">No {key === 'today' ? 'appointments today' : 'upcoming appointments'}.</p>
@@ -320,26 +320,26 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 space-y-5">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-gray-100 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-[10px] p-5 border border-gray-100 dark:border-gray-700">
             <h3 className="font-bold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {quickActions.map((action, i) => (
                 action.disabled ? (
-                  <button key={i} disabled className="flex flex-col items-center space-y-2 p-4 rounded-2xl bg-gray-50 dark:bg-gray-700/30 opacity-50 cursor-not-allowed relative group">
-                    <div className={`w-10 h-10 bg-gradient-to-br ${action.color} rounded-2xl flex items-center justify-center`}><action.icon className="w-5 h-5 text-white" /></div>
+                  <button key={i} disabled className="flex flex-col items-center space-y-2 p-4 rounded-[10px] bg-gray-50 dark:bg-gray-700/30 opacity-50 cursor-not-allowed relative group">
+                    <div className={`w-10 h-10 bg-gradient-to-br ${action.color} rounded-[10px] flex items-center justify-center`}><action.icon className="w-5 h-5 text-white" /></div>
                     <span className="text-xs font-medium text-gray-400 text-center">{action.label}</span>
                     <span className="absolute -top-2 -right-2 bg-yellow-400 text-xs font-bold text-yellow-900 px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition whitespace-nowrap">{action.disabledMsg}</span>
                   </button>
                 ) : (
-                  <Link key={i} to={action.path} className="group flex flex-col items-center space-y-2 p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <div className={`w-10 h-10 bg-gradient-to-br ${action.color} rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}><action.icon className="w-5 h-5 text-white" /></div>
+                  <Link key={i} to={action.path} className="group flex flex-col items-center space-y-2 p-4 rounded-[10px] hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <div className={`w-10 h-10 bg-gradient-to-br ${action.color} rounded-[10px] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}><action.icon className="w-5 h-5 text-white" /></div>
                     <span className="text-xs font-medium text-gray-600 dark:text-gray-300 text-center">{action.label}</span>
                   </Link>
                 )
               ))}
             </div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-gray-100 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-[10px] p-5 border border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-gray-900 dark:text-white">Announcements</h3>
               <Link to="/student/announcements" className="text-xs text-maroon-600 dark:text-maroon-400 hover:underline flex items-center space-x-1"><span>View All</span><ChevronRight className="w-3.5 h-3.5" /></Link>
@@ -349,7 +349,7 @@ const Dashboard = () => {
             ) : (
               <div className="space-y-3">
                 {announcements.map((item, i) => (
-                  <div key={i} className="flex items-start space-x-3 p-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <div key={i} className="flex items-start space-x-3 p-3 rounded-[10px] hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                     <Bell className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
                     <div><p className="text-sm font-semibold text-gray-800 dark:text-white">{item.title}</p><p className="text-xs text-gray-400 mt-0.5">{item.date} — {item.content}</p></div>
                   </div>
@@ -359,7 +359,7 @@ const Dashboard = () => {
           </div>
         </div>
         <div className="space-y-5">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-gray-100 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-[10px] p-5 border border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4"><h3 className="font-bold text-gray-900 dark:text-white">Recent</h3><Link to="/student/alerts" className="text-xs text-maroon-600 dark:text-maroon-400 hover:underline">View All</Link></div>
             {recentNotifications.length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-4">No notifications yet.</p>
@@ -374,7 +374,7 @@ const Dashboard = () => {
               </div>
             )}
           </div>
-          <div className={`rounded-3xl p-5 border ${healthProfileDone ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/30' : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800/30'}`}>
+          <div className={`rounded-[10px] p-5 border ${healthProfileDone ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/30' : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800/30'}`}>
             <h3 className="font-bold text-gray-900 dark:text-white mb-3 flex items-center space-x-2"><Heart className={`w-5 h-5 ${healthProfileDone ? 'text-green-600' : 'text-yellow-600'}`} /><span>Health Profile</span></h3>
             {healthProfileDone ? (
               <div className="flex items-center space-x-2 text-sm text-green-700 dark:text-green-400"><CheckCircle className="w-4 h-4" /><span>Completed — All features unlocked!</span></div>

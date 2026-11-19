@@ -252,10 +252,10 @@ export default function ChatMessage({
         )}
 
         <div
-          className={`rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+          className={`rounded-[10px] px-3.5 py-2.5 text-sm leading-relaxed ${
             isUser
-              ? 'rounded-tr-sm bg-maroon-800 text-white'
-              : 'rounded-tl-sm bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
+              ? 'rounded-tr-[10px] bg-maroon-800 text-white'
+              : 'rounded-tl-[10px] bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
           }`}
         >
           {showTriage && (
@@ -292,7 +292,7 @@ export default function ChatMessage({
             <div className="mt-3 flex flex-col gap-1.5">
               <Link
                 to={action.to}
-                className="inline-flex w-fit items-center rounded-xl bg-maroon-800 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-maroon-900"
+                className="inline-flex w-fit items-center rounded-[10px] bg-maroon-800 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-maroon-900"
               >
                 {action.label}
               </Link>

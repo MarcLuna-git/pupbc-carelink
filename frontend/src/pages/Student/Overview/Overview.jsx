@@ -46,7 +46,7 @@ import { useStudentBreadcrumbTab } from '../../../utils/studentBreadcrumb';
  */
 const ROUTE_LOADING_DELAY = 1600;
 
-const CARD = 'rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)]';
+const CARD = 'rounded-[10px] border border-[var(--sp-border)] bg-[var(--sp-surface)]';
 
 
 const fullName = (user) =>
@@ -108,12 +108,12 @@ const listOrNone = (items, extra) => {
 };
 
 const Skeleton = ({ className = '' }) => (
-  <div className={`animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 ${className}`} />
+  <div className={`animate-pulse rounded-[10px] bg-gray-200 dark:bg-gray-700 ${className}`} />
 );
 
 const EMERGENCY_RELATIONSHIPS = ['Parent', 'Guardian', 'Sibling', 'Spouse', 'Relative', 'Friend', 'Other'];
 
-const FIELD_CLASS = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-maroon-800 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white';
+const FIELD_CLASS = 'w-full rounded-[10px] border border-slate-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-maroon-800 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white';
 
 // Same choices as the Health Profile form.
 const MEDICAL_HISTORY_OPTIONS = [
@@ -184,7 +184,7 @@ const CheckList = ({ options, selected, onToggle, label }) => {
       </button>
       <ChevronDown aria-hidden="true" className={`pointer-events-none absolute right-3.5 top-[1.2rem] h-4 w-4 -translate-y-1/2 text-gray-400 transition dark:text-gray-500 ${open ? 'rotate-180' : ''}`} />
       {open && (
-        <ul role="listbox" aria-multiselectable="true" aria-label={label} className="absolute left-0 right-0 top-full z-20 mt-1 grid max-h-60 gap-0.5 overflow-y-auto rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)] p-1.5 shadow-lg">
+        <ul role="listbox" aria-multiselectable="true" aria-label={label} className="absolute left-0 right-0 top-full z-20 mt-1 grid max-h-60 gap-0.5 overflow-y-auto rounded-[10px] border border-[var(--sp-border)] bg-[var(--sp-surface)] p-1.5 shadow-lg">
           {[...new Set([...options, ...selected])].map((option) => {
             const picked = selected.includes(option);
             return (
@@ -192,7 +192,7 @@ const CheckList = ({ options, selected, onToggle, label }) => {
                 <button
                   type="button"
                   onClick={() => onToggle(option)}
-                  className={`flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-sm transition ${picked ? 'bg-gray-50 font-semibold text-maroon-800 dark:bg-gray-900/30 dark:text-maroon-300' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-900/30'}`}
+                  className={`flex w-full items-center justify-between gap-2 rounded-[10px] px-2.5 py-1.5 text-left text-sm transition ${picked ? 'bg-gray-50 font-semibold text-maroon-800 dark:bg-gray-900/30 dark:text-maroon-300' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-900/30'}`}
                 >
                   <span>{option}</span>
                   {picked && <Check aria-hidden="true" className="h-4 w-4 shrink-0" />}
@@ -239,7 +239,7 @@ const RowEditor = ({ editor, draft, onChange }) => {
  * section is in edit mode.
  */
 const InfoCard = ({ icon: Icon, title, rows, footer, editing = false, draft = {}, onChange, fieldErrors = {} }) => (
-  <section className="flex flex-col rounded-xl border border-[var(--sp-border)] p-4 sm:p-5">
+  <section className="flex flex-col rounded-[10px] border border-[var(--sp-border)] p-4 sm:p-5">
     <div className="mb-4 flex items-center justify-between gap-3">
       <h3 className="flex items-center gap-2.5 font-bold text-gray-900 dark:text-white">
         <Icon className="h-5 w-5 shrink-0 text-maroon-800 dark:text-maroon-300" />
@@ -264,7 +264,7 @@ const InfoCard = ({ icon: Icon, title, rows, footer, editing = false, draft = {}
 
 /* Placeholder card shown where Health Profile data is needed but missing. */
 const HealthProfileMissingCard = ({ icon: Icon, title }) => (
-  <section className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gray-200 p-5 text-center dark:border-gray-700">
+  <section className="flex flex-col items-center justify-center gap-2 rounded-[10px] border border-dashed border-gray-200 p-5 text-center dark:border-gray-700">
     <Icon className="h-6 w-6 text-gray-300 dark:text-gray-600" />
     <p className="font-semibold text-gray-700 dark:text-gray-300">{title}</p>
     <p className="text-xs text-gray-500 dark:text-gray-400">Complete your Health Profile to fill this in.</p>
@@ -281,7 +281,7 @@ const BADGE_TONES = {
 };
 
 const SummaryTile = ({ icon: Icon, title, badge, tone, lines }) => (
-  <div className="flex items-start gap-3.5 rounded-xl border border-[var(--sp-border)] p-4">
+  <div className="flex items-start gap-3.5 rounded-[10px] border border-[var(--sp-border)] p-4">
     <Icon className="mt-0.5 h-7 w-7 shrink-0 text-maroon-700 dark:text-maroon-300" />
     <div className="min-w-0 flex-1">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -666,7 +666,7 @@ const Overview = () => {
       <AlertCircle className="h-10 w-10 text-red-500" />
       <h2 className="mt-3 text-lg font-semibold text-gray-900 dark:text-white">Profile unavailable</h2>
       <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{error || 'We could not load your profile. Please try again.'}</p>
-      <button onClick={() => loadOverview()} className="mt-4 inline-flex items-center gap-2 rounded-md bg-maroon-800 px-4 py-2 text-sm font-semibold text-white hover:bg-maroon-900">
+      <button onClick={() => loadOverview()} className="mt-4 inline-flex items-center gap-2 rounded-[10px] bg-maroon-800 px-4 py-2 text-sm font-semibold text-white hover:bg-maroon-900">
         Retry
       </button>
     </div>
@@ -679,10 +679,10 @@ const Overview = () => {
         <Skeleton className="mb-5 h-3.5 w-72 max-w-full" />
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {[0, 1, 2, 3, 4, 5].map((key) => (
-            <div key={key} className="rounded-xl border border-[var(--sp-border)] p-4 sm:p-5">
+            <div key={key} className="rounded-[10px] border border-[var(--sp-border)] p-4 sm:p-5">
               <div className="mb-4 flex items-center justify-between">
                 <Skeleton className="h-5 w-40" />
-                <Skeleton className="h-7 w-16 rounded-lg" />
+                <Skeleton className="h-7 w-16 rounded-[10px]" />
               </div>
               <div className="space-y-3">
                 {[0, 1, 2, 3].map((row) => (
@@ -700,9 +700,9 @@ const Overview = () => {
       <div className={`${CARD} p-4 lg:p-6`}>
         <Skeleton className="mb-5 h-6 w-56" />
         <div className="grid gap-3 md:grid-cols-3">
-          <Skeleton className="h-20 rounded-xl" />
-          <Skeleton className="h-20 rounded-xl" />
-          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-[10px]" />
+          <Skeleton className="h-20 rounded-[10px]" />
+          <Skeleton className="h-20 rounded-[10px]" />
         </div>
       </div>
     </>
@@ -741,7 +741,7 @@ const Overview = () => {
                   </button>
                   {/* Opens to the right so the hero's rounded edge never clips it. */}
                   {photoMenuOpen && (
-                    <div role="menu" className="absolute bottom-0 left-full z-20 ml-2 w-40 overflow-hidden rounded-xl border border-[var(--sp-border)] bg-white py-1 text-sm dark:bg-gray-800">
+                    <div role="menu" className="absolute bottom-0 left-full z-20 ml-2 w-40 overflow-hidden rounded-[10px] border border-[var(--sp-border)] bg-white py-1 text-sm dark:bg-gray-800">
                       <button
                         type="button"
                         role="menuitem"
@@ -817,7 +817,7 @@ const Overview = () => {
             type="button"
             onClick={showHealthProfile ? closeHealthProfile : openHealthProfile}
             aria-pressed={showHealthProfile}
-            className="inline-flex items-center gap-1.5 self-start rounded-lg bg-maroon-800 px-4 py-2 text-xs font-semibold text-white transition-colors hover:text-gray-300 sm:self-auto"
+            className="inline-flex items-center gap-1.5 self-start rounded-[10px] bg-maroon-800 px-4 py-2 text-xs font-semibold text-white transition-colors hover:text-gray-300 sm:self-auto"
           >
             {showHealthProfile ? (
               <><ArrowLeft className="h-4 w-4" /> Go Back</>
@@ -871,7 +871,7 @@ const Overview = () => {
                 type="button"
                 onClick={cancelEdit}
                 disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--sp-border)] px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-60 dark:text-gray-200 dark:hover:bg-gray-700"
+                className="inline-flex items-center gap-1.5 rounded-[10px] border border-[var(--sp-border)] px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-60 dark:text-gray-200 dark:hover:bg-gray-700"
               >
                 <X className="h-3.5 w-3.5" /> Cancel
               </button>
@@ -879,7 +879,7 @@ const Overview = () => {
                 type="button"
                 onClick={saveEdit}
                 disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-maroon-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:text-gray-300 disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-[10px] bg-maroon-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:text-gray-300 disabled:opacity-60"
               >
                 {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                 {saving ? 'Saving...' : 'Save'}
@@ -891,14 +891,14 @@ const Overview = () => {
               onClick={startEdit}
               aria-label="Edit health information"
               title="Edit"
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--sp-border)] text-maroon-800 transition hover:bg-maroon-50 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[var(--sp-border)] text-maroon-800 transition hover:bg-maroon-50 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
             >
               <Pencil className="h-4 w-4" />
             </button>
           )}
         </div>
 
-        {editError && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">{editError}</p>}
+        {editError && <p role="alert" className="mb-4 rounded-[10px] bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">{editError}</p>}
 
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <InfoCard

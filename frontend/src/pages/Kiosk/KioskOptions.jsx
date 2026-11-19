@@ -20,9 +20,9 @@ const KioskOptions = ({ onScanQR, onEnterID, onBack }) => {
       icon: QrCode,
       title: 'Scan QR Code',
       desc: 'Quick check-in using your unique QR code from the student portal.',
-      border: 'border-blue-400/20',
-      iconBg: 'bg-blue-400/10',
-      iconColor: 'text-blue-400',
+      border: 'border-white/15',
+      iconBg: 'bg-white/10 border border-white/15',
+      iconColor: 'text-white/90',
       onClick: onScanQR,
     },
     {
@@ -30,62 +30,65 @@ const KioskOptions = ({ onScanQR, onEnterID, onBack }) => {
       icon: Keyboard,
       title: 'Enter Student ID',
       desc: 'Manually type your Student ID to look up your appointment.',
-      border: 'border-yellow-400/20',
-      iconBg: 'bg-yellow-400/10',
-      iconColor: 'text-yellow-400',
+      border: 'border-white/15',
+      iconBg: 'bg-white/10 border border-white/15',
+      iconColor: 'text-white/90',
       onClick: onEnterID,
     },
   ];
 
   return (
-    <KioskLayout>
-      <div className="relative w-full max-w-2xl mx-auto text-center">
-        <button
-          type="button"
-          onClick={() => setShowHelp(true)}
-          aria-label="Check-in help and emergency notice"
-          title="No appointment or urgent emergency?"
-          className="absolute right-0 -top-12 inline-flex h-10 w-10 items-center justify-center rounded-full text-white/80"
-        >
-          <HelpCircle className="h-7 w-7" />
-        </button>
+    <KioskLayout contentClassName="items-stretch pt-14 pb-10">
+      <div className="flex w-full max-w-3xl mx-auto flex-col text-center">
+        <div className="grid grid-cols-[46px_1fr_46px] items-center gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Back"
+            className="p-3 bg-white/5 rounded-[15px] border border-white/10 justify-self-start"
+          >
+            <ArrowLeft className="w-5 h-5 text-white/70" />
+          </button>
+          <h1 className="text-center text-2xl sm:text-3xl md:text-4xl font-bold text-white">How would you like to check in?</h1>
+          <span aria-hidden="true" />
+        </div>
 
-        <div className="mb-8">
-          <div className="flex items-center justify-center gap-4">
-            <button
-              type="button"
-              onClick={onBack}
-              className="p-3 bg-white/5 rounded-[15px] border border-white/10"
-            >
-              <ArrowLeft className="w-5 h-5 text-white/70" />
-            </button>
-            <h1 className="text-3xl md:text-4xl font-bold text-white">How would you like to check in?</h1>
+        <div className="flex flex-1 flex-col justify-center py-6">
+          <h2 className="text-white/90 text-xl md:text-2xl font-bold mb-6 text-center">Choose one option below to continue</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 w-full max-w-3xl mx-auto">
+            {options.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={option.onClick}
+                className={`bg-white/[0.06] backdrop-blur-xl rounded-[15px] p-7 md:p-8 aspect-square w-full max-w-sm mx-auto md:max-w-none border ${option.border} text-center flex flex-col items-center justify-center`}
+              >
+                <div className={`w-20 h-20 md:w-24 md:h-24 ${option.iconBg} rounded-[15px] flex items-center justify-center mb-6`}>
+                  <option.icon className={`w-10 h-10 md:w-12 md:h-12 ${option.iconColor}`} />
+                </div>
+
+                <h3 className="text-xl md:text-2xl font-bold text-white mb-3">{option.title}</h3>
+
+                <p className="text-white/75 text-sm md:text-base leading-relaxed max-w-xs">{option.desc}</p>
+              </button>
+            ))}
           </div>
-          <p className="text-white/70 text-sm md:text-base mt-2 text-center">Choose one option below to continue</p>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 max-w-2xl mx-auto">
-          {options.map((option) => (
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-white/70">
+            <p>Kiosk check-in is available only for eligible appointments scheduled for today.</p>
             <button
-              key={option.id}
               type="button"
-              onClick={option.onClick}
-              className={`bg-white/[0.03] backdrop-blur-xl rounded-[15px] p-6 md:p-8 border ${option.border} text-center flex flex-col items-center h-full`}
+              onClick={() => setShowHelp(true)}
+              aria-label="Check-in help and emergency notice"
+              title="No appointment or urgent emergency?"
+              className="inline-flex items-center gap-1 font-medium text-white/90 underline underline-offset-2"
             >
-              <div className={`w-16 h-16 md:w-20 md:h-20 ${option.iconBg} rounded-[15px] flex items-center justify-center mb-4`}>
-                <option.icon className={`w-8 h-8 md:w-10 md:h-10 ${option.iconColor}`} />
-              </div>
-
-              <h3 className="text-lg md:text-xl font-bold text-white mb-2">{option.title}</h3>
-
-              <p className="text-white/70 text-sm leading-relaxed flex-1">{option.desc}</p>
+              <HelpCircle className="h-4 w-4 shrink-0" />
+              <span>No appointment or emergency?</span>
             </button>
-          ))}
+          </div>
         </div>
-
-        <p className="mt-8 text-center text-xs text-white/70">
-          Kiosk check-in is available only for eligible appointments scheduled for today.
-        </p>
       </div>
 
       {showHelp && (

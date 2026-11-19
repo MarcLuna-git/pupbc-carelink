@@ -429,10 +429,10 @@ const ResetPassword = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-maroon-950 via-maroon-900 to-maroon-800 flex items-center justify-center px-4 py-8">
-      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md animate-fadeInUp">
+      <div className="bg-white rounded-[10px] shadow-2xl p-8 w-full max-w-md animate-fadeInUp">
 
         <div className="flex flex-col items-center mb-6">
-          <div className="w-16 h-16 bg-gradient-to-br from-maroon-800 to-maroon-900 rounded-2xl flex items-center justify-center shadow-lg mb-3">
+          <div className="w-16 h-16 bg-gradient-to-br from-maroon-800 to-maroon-900 rounded-[10px] flex items-center justify-center shadow-lg mb-3">
             <Key className="w-9 h-9 text-white" />
           </div>
 
@@ -478,7 +478,7 @@ const ResetPassword = () => {
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
 
               <input
-                className="border border-gray-300 rounded-xl pl-10 pr-4 py-3 text-sm w-full bg-gray-50 text-gray-600 cursor-not-allowed focus:outline-none"
+                className="border border-gray-300 rounded-[10px] pl-10 pr-4 py-3 text-sm w-full bg-gray-50 text-gray-600 cursor-not-allowed focus:outline-none"
                 type="email"
                 name="email"
                 value={
@@ -500,7 +500,7 @@ const ResetPassword = () => {
             </label>
 
             <input
-              className="border border-gray-300 rounded-xl px-4 py-3 text-lg font-semibold w-full focus:outline-none focus:ring-2 focus:ring-maroon-500 focus:border-maroon-500 text-center tracking-[0.4em]"
+              className="border border-gray-300 rounded-[10px] px-4 py-3 text-lg font-semibold w-full focus:outline-none focus:ring-2 focus:ring-maroon-500 focus:border-maroon-500 text-center tracking-[0.4em]"
               type="text"
               name="otp"
               value={
@@ -561,7 +561,7 @@ const ResetPassword = () => {
 
             <div className="relative">
               <input
-                className="border border-gray-300 rounded-xl px-4 py-3 pr-12 text-sm w-full focus:outline-none focus:ring-2 focus:ring-maroon-500 focus:border-maroon-500"
+                className="border border-gray-300 rounded-[10px] px-4 py-3 pr-12 text-sm w-full focus:outline-none focus:ring-2 focus:ring-maroon-500 focus:border-maroon-500"
                 type={
                   showPassword
                     ? 'text'
@@ -612,7 +612,7 @@ const ResetPassword = () => {
 
             <div className="relative">
               <input
-                className="border border-gray-300 rounded-xl px-4 py-3 pr-12 text-sm w-full focus:outline-none focus:ring-2 focus:ring-maroon-500 focus:border-maroon-500"
+                className="border border-gray-300 rounded-[10px] px-4 py-3 pr-12 text-sm w-full focus:outline-none focus:ring-2 focus:ring-maroon-500 focus:border-maroon-500"
                 type={
                   showConfirmPassword
                     ? 'text'
@@ -667,7 +667,7 @@ const ResetPassword = () => {
           )}
 
           <button
-            className="w-full py-3 bg-maroon-800 hover:bg-maroon-900 text-white font-semibold rounded-xl flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="w-full py-3 bg-maroon-800 hover:bg-maroon-900 text-white font-semibold rounded-[10px] flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed transition"
             type="submit"
             disabled={
               loading ||

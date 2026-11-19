@@ -82,10 +82,10 @@ export default function ClinicCalendar() {
   });
 
   return (
-    <section aria-label="Clinic calendar" className="overflow-hidden rounded-lg border border-gray-100 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+    <section aria-label="Clinic calendar" className="overflow-hidden rounded-[10px] border border-gray-100 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-gray-100 px-4 py-4 dark:border-gray-700 lg:px-6">
         <div className="flex min-w-0 items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-maroon-50 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-400">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-maroon-50 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-400">
             <CalendarDays className="h-5 w-5" aria-hidden="true" />
           </span>
           <div className="min-w-0">
@@ -94,17 +94,17 @@ export default function ClinicCalendar() {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <button type="button" onClick={() => changeMonth(-1)} aria-label="Previous month" className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"><ChevronLeft className="h-5 w-5" /></button>
+          <button type="button" onClick={() => changeMonth(-1)} aria-label="Previous month" className="rounded-[10px] p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"><ChevronLeft className="h-5 w-5" /></button>
           <p className="min-w-36 text-center text-sm font-bold text-gray-900 dark:text-white" aria-live="polite">{monthLabel}</p>
-          <button type="button" onClick={() => changeMonth(1)} aria-label="Next month" className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"><ChevronRight className="h-5 w-5" /></button>
-          <button type="button" onClick={goToday} className="ml-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700/50">Today</button>
+          <button type="button" onClick={() => changeMonth(1)} aria-label="Next month" className="rounded-[10px] p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"><ChevronRight className="h-5 w-5" /></button>
+          <button type="button" onClick={goToday} className="ml-1 rounded-[10px] border border-gray-200 px-3 py-1.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700/50">Today</button>
         </div>
       </header>
 
       <div className="space-y-4 p-4 lg:p-6">
-        {loadError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{loadError}</p>}
+        {loadError && <p role="alert" className="rounded-[10px] bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{loadError}</p>}
 
-        <div className="overflow-hidden rounded-lg border border-gray-100 dark:border-gray-700">
+        <div className="overflow-hidden rounded-[10px] border border-gray-100 dark:border-gray-700">
           <div className="grid grid-cols-7 border-b border-gray-100 bg-gray-50 text-center text-xs font-semibold uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-400">
             {WEEKDAYS.map((day) => <div key={day} className="py-2">{day}</div>)}
           </div>
@@ -230,22 +230,22 @@ function DayNotesDialog({ dateKey, holidays, notes, onClose, onSaved, onDeleted 
     }
   };
 
-  const inputClass = 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white';
+  const inputClass = 'w-full rounded-[10px] border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white';
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) onClose(); }}>
-      <section role="dialog" aria-modal="true" aria-labelledby="calendar-day-title" className="flex max-h-[90dvh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-800">
+      <section role="dialog" aria-modal="true" aria-labelledby="calendar-day-title" className="flex max-h-[90dvh] w-full max-w-lg flex-col overflow-hidden rounded-[10px] bg-white shadow-2xl dark:bg-gray-800">
         <header className="flex items-start justify-between gap-3 border-b border-gray-100 px-5 py-4 dark:border-gray-700">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wide text-maroon-700 dark:text-maroon-400">Clinic calendar</p>
             <h2 id="calendar-day-title" className="mt-0.5 text-lg font-bold text-gray-900 dark:text-white">{longDate(dateKey)}</h2>
           </div>
-          <button type="button" onClick={onClose} disabled={busy} aria-label="Close" className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50 dark:hover:bg-gray-700"><X className="h-5 w-5" /></button>
+          <button type="button" onClick={onClose} disabled={busy} aria-label="Close" className="rounded-[10px] p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50 dark:hover:bg-gray-700"><X className="h-5 w-5" /></button>
         </header>
 
         <div className="space-y-4 overflow-y-auto px-5 py-4">
           {holidays.map((holiday) => (
-            <div key={holiday.name} className={`flex items-center gap-3 rounded-lg p-3 ${HOLIDAY_STYLE[holiday.type].chip}`}>
+            <div key={holiday.name} className={`flex items-center gap-3 rounded-[10px] p-3 ${HOLIDAY_STYLE[holiday.type].chip}`}>
               <PartyPopper className="h-5 w-5 shrink-0" />
               <div>
                 <p className="text-sm font-semibold">{holiday.name}</p>
@@ -257,13 +257,13 @@ function DayNotesDialog({ dateKey, holidays, notes, onClose, onSaved, onDeleted 
           <div>
             <h3 className="mb-2 flex items-center gap-2 text-sm font-bold text-gray-900 dark:text-white"><StickyNote className="h-4 w-4 text-maroon-800 dark:text-maroon-400" />Notes</h3>
             {notes.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-gray-200 p-4 text-center text-sm text-gray-400 dark:border-gray-600">No notes for this date yet.</p>
+              <p className="rounded-[10px] border border-dashed border-gray-200 p-4 text-center text-sm text-gray-400 dark:border-gray-600">No notes for this date yet.</p>
             ) : (
               <ul className="space-y-2">
                 {notes.map((note) => {
                   const color = COLORS[note.color] || COLORS.maroon;
                   return (
-                    <li key={note.id} className={`rounded-lg border p-3 ${editing?.id === note.id ? 'border-maroon-200 bg-maroon-50/40 dark:border-maroon-900/50 dark:bg-maroon-900/10' : 'border-gray-100 dark:border-gray-700'}`}>
+                    <li key={note.id} className={`rounded-[10px] border p-3 ${editing?.id === note.id ? 'border-maroon-200 bg-maroon-50/40 dark:border-maroon-900/50 dark:bg-maroon-900/10' : 'border-gray-100 dark:border-gray-700'}`}>
                       <div className="flex items-start gap-2">
                         <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${color.dot}`} />
                         <div className="min-w-0 flex-1">
@@ -273,13 +273,13 @@ function DayNotesDialog({ dateKey, holidays, notes, onClose, onSaved, onDeleted 
                         </div>
                         {confirmDelete === note.id ? (
                           <div className="flex shrink-0 items-center gap-1">
-                            <button type="button" onClick={() => remove(note)} disabled={busy} className="rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50">{busy ? 'Deleting…' : 'Delete'}</button>
-                            <button type="button" onClick={() => setConfirmDelete(null)} disabled={busy} className="rounded-lg px-2 py-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">Keep</button>
+                            <button type="button" onClick={() => remove(note)} disabled={busy} className="rounded-[10px] bg-red-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50">{busy ? 'Deleting…' : 'Delete'}</button>
+                            <button type="button" onClick={() => setConfirmDelete(null)} disabled={busy} className="rounded-[10px] px-2 py-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">Keep</button>
                           </div>
                         ) : (
                           <div className="flex shrink-0 items-center gap-1">
-                            <button type="button" onClick={() => startEdit(note)} disabled={busy} aria-label={`Edit note: ${note.title}`} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-maroon-700 disabled:opacity-50 dark:hover:bg-gray-700"><Pencil className="h-4 w-4" /></button>
-                            <button type="button" onClick={() => { setConfirmDelete(note.id); setError(''); }} disabled={busy} aria-label={`Delete note: ${note.title}`} className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-900/20"><Trash2 className="h-4 w-4" /></button>
+                            <button type="button" onClick={() => startEdit(note)} disabled={busy} aria-label={`Edit note: ${note.title}`} className="rounded-[10px] p-1.5 text-gray-400 hover:bg-gray-100 hover:text-maroon-700 disabled:opacity-50 dark:hover:bg-gray-700"><Pencil className="h-4 w-4" /></button>
+                            <button type="button" onClick={() => { setConfirmDelete(note.id); setError(''); }} disabled={busy} aria-label={`Delete note: ${note.title}`} className="rounded-[10px] p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-900/20"><Trash2 className="h-4 w-4" /></button>
                           </div>
                         )}
                       </div>
@@ -290,9 +290,9 @@ function DayNotesDialog({ dateKey, holidays, notes, onClose, onSaved, onDeleted 
             )}
           </div>
 
-          <form onSubmit={submit} className="space-y-3 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/30">
+          <form onSubmit={submit} className="space-y-3 rounded-[10px] border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/30">
             <h3 className="text-sm font-bold text-gray-900 dark:text-white">{editing ? 'Edit note' : 'Add a note'}</h3>
-            {error && <p role="alert" className="rounded-lg bg-red-50 p-2.5 text-xs font-medium text-red-700 dark:bg-red-900/20 dark:text-red-300">{error}</p>}
+            {error && <p role="alert" className="rounded-[10px] bg-red-50 p-2.5 text-xs font-medium text-red-700 dark:bg-red-900/20 dark:text-red-300">{error}</p>}
             <div>
               <label htmlFor="calendar-note-title" className="mb-1 block text-xs font-semibold text-gray-500 dark:text-gray-400">Title *</label>
               <input id="calendar-note-title" ref={titleRef} className={inputClass} maxLength={120} required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. We have a meeting" />
@@ -312,8 +312,8 @@ function DayNotesDialog({ dateKey, holidays, notes, onClose, onSaved, onDeleted 
               </div>
             </div>
             <div className="flex flex-wrap justify-end gap-2 pt-1">
-              {editing && <button type="button" onClick={resetForm} disabled={busy} className="rounded-lg px-3 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700/50">Cancel edit</button>}
-              <button type="submit" disabled={busy || !form.title.trim()} className="inline-flex items-center gap-2 rounded-lg bg-maroon-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-maroon-900 disabled:opacity-50">
+              {editing && <button type="button" onClick={resetForm} disabled={busy} className="rounded-[10px] px-3 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700/50">Cancel edit</button>}
+              <button type="submit" disabled={busy || !form.title.trim()} className="inline-flex items-center gap-2 rounded-[10px] bg-maroon-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-maroon-900 disabled:opacity-50">
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : editing ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                 {editing ? 'Save changes' : 'Add note'}
               </button>

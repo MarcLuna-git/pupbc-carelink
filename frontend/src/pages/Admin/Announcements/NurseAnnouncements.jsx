@@ -131,7 +131,7 @@ const NurseAnnouncements = () => {
 
   const resetComposer = () => { setEditingId(null); setForm({ title: '', content: '', category: 'General' }); };
   const hasDraft = Boolean(form.title || form.content);
-  const inputClass = 'w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white';
+  const inputClass = 'w-full rounded-[10px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white';
   const labelClass = 'mb-1.5 block text-xs font-semibold text-gray-500 dark:text-gray-400';
   const formatDate = (value) => value ? new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
 
@@ -146,12 +146,12 @@ const NurseAnnouncements = () => {
       <section
         ref={composerRef}
         aria-labelledby="announcement-composer-title"
-        className={`scroll-mt-4 overflow-hidden rounded-lg border bg-white dark:bg-gray-800 ${
+        className={`scroll-mt-4 overflow-hidden rounded-[10px] border bg-white dark:bg-gray-800 ${
           editingId ? 'border-maroon-200 dark:border-maroon-900/50' : 'border-gray-100 dark:border-gray-700'
         }`}
       >
         <header className="flex items-start gap-3 border-b border-gray-100 px-4 py-4 dark:border-gray-700 lg:px-6">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-maroon-50 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-400">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-maroon-50 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-400">
             {editingId ? <FilePenLine className="h-5 w-5" /> : <SquarePen className="h-5 w-5" />}
           </span>
           <div className="min-w-0">
@@ -188,13 +188,13 @@ const NurseAnnouncements = () => {
             <div className="flex flex-wrap justify-end gap-2">
               {(editingId || hasDraft) && (
                 <button type="button" onClick={resetComposer}
-                  className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50">
+                  className="inline-flex items-center gap-1.5 rounded-[10px] px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50">
                   <X className="h-4 w-4" />
                   {editingId ? 'Cancel edit' : 'Clear'}
                 </button>
               )}
               <button type="submit" disabled={saving}
-                className="inline-flex items-center gap-2 rounded-lg bg-maroon-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900 disabled:opacity-60">
+                className="inline-flex items-center gap-2 rounded-[10px] bg-maroon-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900 disabled:opacity-60">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 <span>{saving ? 'Saving...' : editingId ? 'Update' : 'Post'} Announcement</span>
               </button>
@@ -213,7 +213,7 @@ const NurseAnnouncements = () => {
             <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="search"
-              className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              className="w-full rounded-[10px] border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search announcements..."
@@ -225,7 +225,7 @@ const NurseAnnouncements = () => {
         <div className="p-3 sm:p-4">
           {filtered.length === 0 ? (
             <div className="py-14 text-center">
-              <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-50 dark:bg-gray-700/50">
+              <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[10px] bg-gray-50 dark:bg-gray-700/50">
                 <Newspaper className="h-8 w-8 text-gray-300 dark:text-gray-500" />
               </span>
               <h3 className="text-base font-semibold text-gray-600 dark:text-gray-300">{search ? 'No announcements match your search.' : 'No announcements yet.'}</h3>
@@ -234,12 +234,12 @@ const NurseAnnouncements = () => {
           ) : (
             <ul className="space-y-2">
               {filtered.map(ann => (
-                <li key={ann.id} className={`flex items-start gap-3 rounded-lg border p-4 transition-colors ${
+                <li key={ann.id} className={`flex items-start gap-3 rounded-[10px] border p-4 transition-colors ${
                   editingId === ann.id
                     ? 'border-maroon-200 bg-maroon-50/50 dark:border-maroon-900/40 dark:bg-maroon-900/10'
                     : 'border-gray-100 bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700/40'
                 }`}>
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-maroon-50 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-400">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-maroon-50 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-400">
                     <ScrollText className="h-4 w-4" />
                   </span>
                   <div className="min-w-0 flex-1">
@@ -252,11 +252,11 @@ const NurseAnnouncements = () => {
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
                     <button type="button" onClick={() => handleEdit(ann)} aria-label="Edit announcement"
-                      className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-maroon-700 dark:hover:bg-gray-700 dark:hover:text-maroon-400">
+                      className="rounded-[10px] p-2 text-gray-400 hover:bg-gray-100 hover:text-maroon-700 dark:hover:bg-gray-700 dark:hover:text-maroon-400">
                       <Edit2 className="h-4 w-4" />
                     </button>
                     <button type="button" onClick={() => handleDelete(ann.id)} disabled={deletingId === ann.id} aria-label="Delete announcement"
-                      className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-900/20">
+                      className="rounded-[10px] p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-900/20">
                       {deletingId === ann.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                     </button>
                   </div>

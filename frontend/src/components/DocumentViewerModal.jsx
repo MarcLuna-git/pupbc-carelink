@@ -26,10 +26,10 @@ const FIT_LABELS = { auto: 'Automatic', width: 'Fit to Width', page: 'Fit to Pag
 const printsFramesBadly = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (/Mac/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
 
 const ring = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon-500';
-const iconButton = `inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:bg-maroon-50 hover:text-maroon-800 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-white dark:disabled:hover:bg-gray-800 ${ring}`;
-const textButton = `inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg px-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${ring}`;
+const iconButton = `inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-gray-200 bg-white text-gray-700 transition hover:bg-maroon-50 hover:text-maroon-800 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-white dark:disabled:hover:bg-gray-800 ${ring}`;
+const textButton = `inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-[10px] px-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${ring}`;
 
-export default function DocumentViewerModal({ title, subtitle, docKey, load, onClose, details = null, detailsLabel = 'Other details' }) {
+export default function DocumentViewerModal({ title, subtitle, docKey, load, onClose, details = null, detailsLabel = 'Other details', headerExtra = null }) {
   const dialog = useRef(null);
   const scroller = useRef(null);
   const frame = useRef(null);
@@ -186,10 +186,10 @@ export default function DocumentViewerModal({ title, subtitle, docKey, load, onC
       onClose={() => { if (!dialog.current?.open) closeRef.current(); }}
       onClick={(event) => { if (event.target === dialog.current) closeRef.current(); }}
       onKeyDown={onKeyDown}
-      className="m-auto h-[calc(100dvh-1.5rem)] max-h-[60rem] w-[calc(100%-1.5rem)] max-w-6xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white p-0 text-gray-900 shadow-2xl backdrop:bg-gray-950/60 open:flex dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+      className="m-auto h-[calc(100dvh-1.5rem)] max-h-[60rem] w-[calc(100%-1.5rem)] max-w-6xl flex-col overflow-hidden rounded-[10px] border border-gray-200 bg-white p-0 text-gray-900 shadow-2xl backdrop:bg-gray-950/60 open:flex dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
     >
       <header className="flex shrink-0 items-center gap-3 border-b border-gray-200 px-4 py-3 sm:px-5 dark:border-gray-700">
-        <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-maroon-50 text-maroon-800 sm:flex dark:bg-maroon-900/30 dark:text-maroon-300">
+        <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-maroon-50 text-maroon-800 sm:flex dark:bg-maroon-900/30 dark:text-maroon-300">
           <FileText className="h-5 w-5" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
@@ -206,10 +206,11 @@ export default function DocumentViewerModal({ title, subtitle, docKey, load, onC
           </button>
         )}
         <button type="button" onClick={onClose} aria-label="Close"
-          className={`rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 ${ring}`}>
+          className={`rounded-[10px] p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 ${ring}`}>
           <X className="h-5 w-5" aria-hidden="true" />
         </button>
       </header>
+      {headerExtra}
 
       <div role="toolbar" aria-label="Document controls"
         className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-gray-200 bg-gray-50 px-3 py-2 sm:px-5 dark:border-gray-700 dark:bg-gray-900/40">
@@ -230,7 +231,7 @@ export default function DocumentViewerModal({ title, subtitle, docKey, load, onC
             <ZoomOut className="h-4 w-4" aria-hidden="true" />
           </button>
           <select value={zoom.mode === 'custom' ? String(percent) : zoom.mode} onChange={(event) => chooseZoom(event.target.value)} disabled={!ready} aria-label="Zoom"
-            className={`h-9 cursor-pointer rounded-lg border border-gray-200 bg-white px-2 text-sm font-semibold tabular-nums text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 ${ring}`}>
+            className={`h-9 cursor-pointer rounded-[10px] border border-gray-200 bg-white px-2 text-sm font-semibold tabular-nums text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 ${ring}`}>
             {Object.entries(FIT_LABELS).map(([mode, label]) => (
               <option key={mode} value={mode}>{zoom.mode === mode && ready ? `${label} (${percent}%)` : label}</option>
             ))}
@@ -269,7 +270,7 @@ export default function DocumentViewerModal({ title, subtitle, docKey, load, onC
             </p>
           )}
           {html === '' && (
-            <p role="alert" className="m-6 rounded-lg bg-red-50 p-4 text-sm font-medium text-red-800 dark:bg-red-900/20 dark:text-red-300">
+            <p role="alert" className="m-6 rounded-[10px] bg-red-50 p-4 text-sm font-medium text-red-800 dark:bg-red-900/20 dark:text-red-300">
               The document could not be loaded. Close this window and try again.
             </p>
           )}
@@ -295,7 +296,7 @@ export default function DocumentViewerModal({ title, subtitle, docKey, load, onC
             className="absolute inset-0 z-10 overflow-y-auto bg-white p-4 sm:p-5 lg:static lg:w-96 lg:shrink-0 lg:border-l lg:border-gray-200 dark:bg-gray-800 dark:lg:border-gray-700">
             <div className="mb-3 flex items-center justify-between gap-3">
               <h3 className="text-sm font-bold uppercase tracking-wide text-maroon-800 dark:text-maroon-300">{detailsLabel}</h3>
-              <button type="button" onClick={() => setShowDetails(false)} className={`rounded-lg px-2 py-1 text-sm font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 ${ring}`}>
+              <button type="button" onClick={() => setShowDetails(false)} className={`rounded-[10px] px-2 py-1 text-sm font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 ${ring}`}>
                 <span className="lg:hidden">Back to document</span><span className="hidden lg:inline">Hide</span>
               </button>
             </div>

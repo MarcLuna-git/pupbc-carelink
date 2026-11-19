@@ -12,8 +12,8 @@ import { currentMonth, dateTimeLabel, quantityLabel } from './facultyOptions';
  */
 const PER_PAGE = 10;
 const COLUMNS = 'md:grid-cols-[minmax(0,1.3fr)_minmax(0,1.5fr)_minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,1.6fr)_minmax(0,1.2fr)]';
-const control = 'h-11 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:ring-maroon-300/30';
-const dateInput = 'h-9 min-w-0 flex-1 rounded-md border-0 bg-transparent px-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-maroon-500/30 dark:text-white dark:[color-scheme:dark]';
+const control = 'h-11 rounded-[10px] border border-gray-200 bg-white text-sm text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:ring-maroon-300/30';
+const dateInput = 'h-9 min-w-0 flex-1 rounded-[10px] border-0 bg-transparent px-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-maroon-500/30 dark:text-white dark:[color-scheme:dark]';
 
 export default function DispensingHistory({ faculty, facultyId, onFacultyId }) {
   const [range, setRange] = useState(() => currentMonth());
@@ -61,7 +61,7 @@ export default function DispensingHistory({ faculty, facultyId, onFacultyId }) {
 
   const setDate = key => event => { setRange(current => ({ ...current, [key]: event.target.value })); setPage(1); };
 
-  return <section aria-label="Dispensing history" aria-busy={refreshing} className="rounded-lg border border-gray-100 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+  return <section aria-label="Dispensing history" aria-busy={refreshing} className="rounded-[10px] border border-gray-100 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
     <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-5">
       <div className="min-w-0">
         <h2 className="text-lg font-bold">Dispensing History</h2>
@@ -83,13 +83,13 @@ export default function DispensingHistory({ faculty, facultyId, onFacultyId }) {
         </div>
       </div>
     </div>
-    {backwards && <p role="alert" className="mx-4 mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800 lg:mx-5 dark:bg-amber-900/20 dark:text-amber-300">The start date is after the end date. Change one of them to see the history.</p>}
-    {error && <p role="alert" className="mx-4 mb-4 rounded-lg bg-red-50 p-3 text-center text-sm font-medium text-red-700 lg:mx-5 dark:bg-red-900/20 dark:text-red-400">{error}</p>}
+    {backwards && <p role="alert" className="mx-4 mb-4 rounded-[10px] bg-amber-50 p-3 text-sm text-amber-800 lg:mx-5 dark:bg-amber-900/20 dark:text-amber-300">The start date is after the end date. Change one of them to see the history.</p>}
+    {error && <p role="alert" className="mx-4 mb-4 rounded-[10px] bg-red-50 p-3 text-center text-sm font-medium text-red-700 lg:mx-5 dark:bg-red-900/20 dark:text-red-400">{error}</p>}
 
     {initial ? <div role="status" className="space-y-3 border-t border-gray-100 p-5 dark:border-gray-700"><span className="sr-only">Loading the dispensing history</span>{Array.from({ length: 4 }, (_, i) => <div key={i} className="h-10 animate-pulse rounded bg-gray-100 dark:bg-gray-700" />)}</div>
       : rows.length === 0 ? (
         <div className="border-t border-gray-100 py-14 text-center dark:border-gray-700">
-          <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-50 dark:bg-gray-700/50"><History className="h-8 w-8 text-gray-300 dark:text-gray-500" aria-hidden="true" /></span>
+          <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[10px] bg-gray-50 dark:bg-gray-700/50"><History className="h-8 w-8 text-gray-300 dark:text-gray-500" aria-hidden="true" /></span>
           <h3 className="text-base font-semibold text-gray-600 dark:text-gray-300">No Dispensing Records</h3>
           <p className="mt-1 text-sm text-gray-400">Nothing was dispensed to faculty in this period. Try another date range or faculty member.</p>
         </div>

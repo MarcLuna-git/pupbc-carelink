@@ -19,7 +19,7 @@
   --np-bg:#111827; --np-surface:#111827; --np-soft:#1f2937; --np-border:#1f2937; --np-outline:#374151;
   --np-text:#f3f4f6; --np-muted:#9ca3af; --np-icon:var(--np-text); --np-icon-hover:#f3f4f6;
 }
-.nurse-skip-link { position:fixed;left:12px;top:-70px;z-index:200;padding:12px 18px;background:var(--np-surface);border-radius:8px;color:var(--color-maroon-800); }
+.nurse-skip-link { position:fixed;left:12px;top:-70px;z-index:200;padding:12px 18px;background:var(--np-surface);border-radius: 10px;color:var(--color-maroon-800); }
 .nurse-skip-link:focus { top:12px; }
 
 /* Sidebar */
@@ -27,11 +27,11 @@
 .dark .nurse-sidebar { background:linear-gradient(to bottom,#1f2937,#111827);box-shadow:0 25px 50px -12px #0000004d; }
 .nurse-sidebar-brand { position:relative;padding:20px 18px;border-bottom:1px solid #ffffff1a; }
 .dark .nurse-sidebar-brand { border-bottom-color:#ffffff0d; }
-.nurse-brand-symbol { display:flex;width:34px;height:34px;flex-shrink:0;align-items:center;justify-content:center;border-radius:12px;background:#ffffff33;color:#fff; }
+.nurse-brand-symbol { display:flex;width:34px;height:34px;flex-shrink:0;align-items:center;justify-content:center;border-radius: 10px;background:#ffffff33;color:#fff; }
 .dark .nurse-brand-symbol { background:#ffffff1a; }
 .nurse-brand-symbol svg { width:19px;height:19px; }
 .nurse-sidebar-nav { position:relative;flex:1;padding:14px 12px;overflow-y:auto; }
-.nurse-nav-link { position:relative;display:flex;align-items:center;gap:12px;min-height:40px;margin-bottom:2px;padding:10px 12px;border-radius:12px;font-size:13px;font-weight:500;color:#ffffffd9;transition:background-color .2s ease,color .2s ease; }
+.nurse-nav-link { position:relative;display:flex;align-items:center;gap:12px;min-height:40px;margin-bottom:2px;padding:10px 12px;border-radius: 10px;font-size:13px;font-weight:500;color:#ffffffd9;transition:background-color .2s ease,color .2s ease; }
 .nurse-nav-link:hover { background:#ffffff1a;color:#fff; }
 .nurse-nav-link[aria-current=page] { background:#ffffff33;color:#fff;box-shadow:0 10px 15px -3px #0000001a; }
 .dark .nurse-nav-link { color:#d1d5db; }
@@ -49,7 +49,7 @@
 .dark .nurse-sidebar-campus { opacity:.08; }
 
 /* Account button (sidebar foot on tablet / desktop, header on mobile) */
-.nurse-account-button { display:flex;width:100%;align-items:center;gap:10px;min-width:0;padding:8px 10px;border:1px solid;border-radius:12px;text-align:left;cursor:pointer;transition:background-color .15s ease,border-color .15s ease; }
+.nurse-account-button { display:flex;width:100%;align-items:center;gap:10px;min-width:0;padding:8px 10px;border:1px solid;border-radius: 10px;text-align:left;cursor:pointer;transition:background-color .15s ease,border-color .15s ease; }
 .nurse-account-avatar { display:flex;flex-shrink:0;align-items:center;justify-content:center;overflow:hidden;border-radius:999px;background:#fde8e8;color:var(--color-maroon-800);font-weight:700; }
 .dark .nurse-account-avatar { background:#374151;color:#f3f4f6; }
 .nurse-account-avatar img { width:100%;height:100%;object-fit:cover; }
@@ -90,7 +90,7 @@
 .dark .nurse-header-greeting-title { color:#f3f4f6; }
 .nurse-header-greeting-note { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--np-muted); }
 .nurse-header-actions { display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto; }
-.nurse-header-icon { position:relative;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid var(--np-outline);border-radius:12px;color:var(--np-icon);cursor:pointer;transition:background-color .15s ease,color .15s ease; }
+.nurse-header-icon { position:relative;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid var(--np-outline);border-radius: 10px;color:var(--np-icon);cursor:pointer;transition:background-color .15s ease,color .15s ease; }
 .nurse-header-icon:hover, .nurse-header-icon.is-open { background:var(--np-soft);color:var(--np-icon-hover); }
 .nurse-header-icon svg { width:19px;height:19px; }
 .nurse-bell-count { position:absolute;top:-7px;right:-7px;z-index:1;display:flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;line-height:1;box-shadow:0 0 0 2px var(--np-surface);pointer-events:none; }

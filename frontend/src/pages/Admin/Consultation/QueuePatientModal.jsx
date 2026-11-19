@@ -66,7 +66,7 @@ const QueuePatientModal = ({
             initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
-            className="relative flex max-h-[90vh] w-full max-w-sm flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-gray-800"
+            className="relative flex max-h-[90vh] w-full max-w-sm flex-col overflow-hidden rounded-[10px] bg-white shadow-2xl dark:bg-gray-800"
           >
             <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 z-10 rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700">
               <X className="h-5 w-5" />
@@ -128,7 +128,7 @@ const QueuePatientModal = ({
                 </>
               ) : (
                 <>
-                  <p className="rounded-xl bg-gray-50 p-3 text-center text-sm text-gray-500 dark:bg-gray-700/50 dark:text-gray-300">
+                  <p className="rounded-[10px] bg-gray-50 p-3 text-center text-sm text-gray-500 dark:bg-gray-700/50 dark:text-gray-300">
                     Not next in line{nextName ? `: ${nextName} is called first` : ''}. Priority patients are called before others.
                   </p>
                   {/* Serve out of turn, e.g. an urgent case, straight into consultation. */}

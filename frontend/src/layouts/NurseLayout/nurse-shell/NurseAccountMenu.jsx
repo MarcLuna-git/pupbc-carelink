@@ -123,9 +123,9 @@ const NurseAccountMenu = ({
   );
 
   const itemClass =
-    'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700/60';
+    'flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700/60';
   const iconBox =
-    'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700';
+    'flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-gray-100 dark:bg-gray-700';
 
   const menu = (
     <AnimatePresence>
@@ -139,7 +139,7 @@ const NurseAccountMenu = ({
           role="menu"
           aria-label="Account menu"
           style={{ position: 'fixed', ...position }}
-          className="z-[90] max-h-[calc(100dvh-24px)] overflow-y-auto rounded-2xl border border-gray-100 bg-white shadow-2xl shadow-black/15 dark:border-gray-700 dark:bg-gray-800"
+          className="z-[90] max-h-[calc(100dvh-24px)] overflow-y-auto rounded-[10px] border border-gray-100 bg-white shadow-2xl shadow-black/15 dark:border-gray-700 dark:bg-gray-800"
         >
           <div className="border-b border-gray-100 p-4 dark:border-gray-700">
             <div className="flex items-center gap-3">
@@ -171,7 +171,7 @@ const NurseAccountMenu = ({
               </span>
             </button>
 
-            <div className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+            <div className="mt-1 flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200">
               <span className={iconBox}><BriefcaseMedical className="h-4 w-4" /></span>
               <span className="min-w-0 flex-1">
                 <span id="nurse-duty-label" className="block font-semibold">Duty status</span>
@@ -194,7 +194,7 @@ const NurseAccountMenu = ({
               </button>
             </div>
 
-            <div className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200">
+            <div className="mt-1 flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200">
               <span className={iconBox}><Palette className="h-4 w-4" /></span>
               <span className="min-w-0 flex-1">
                 <span id="nurse-appearance-label" className="block font-semibold">Appearance</span>
@@ -229,7 +229,7 @@ const NurseAccountMenu = ({
               type="button"
               role="menuitem"
               onClick={signOut}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
+              className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
             >
               <LogOut className="h-4 w-4" />
               <span>

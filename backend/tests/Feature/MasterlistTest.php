@@ -157,16 +157,10 @@ class MasterlistTest extends TestCase
         $this->actingAs($student, 'api')->getJson('/api/nurse/masterlist')->assertStatus(403);
     }
 
-    public function test_the_check_cannot_be_turned_on_without_a_list_and_the_list_cannot_be_cleared_while_on(): void
+    public function test_masterlist_check_is_always_required_and_list_can_be_cleared(): void
     {
-        $this->actingAs($this->nurse, 'api')->putJson('/api/nurse/masterlist/settings', ['required' => true])->assertStatus(422);
-
-        $this->upload('import', $this->groupedFile())->assertOk();
-        $this->actingAs($this->nurse, 'api')->putJson('/api/nurse/masterlist/settings', ['required' => true])->assertOk();
         $this->assertTrue(Masterlist::required());
-
-        $this->actingAs($this->nurse, 'api')->postJson('/api/nurse/masterlist/clear', ['academic_period_id' => $this->period->id])->assertStatus(422);
-        $this->actingAs($this->nurse, 'api')->putJson('/api/nurse/masterlist/settings', ['required' => false])->assertOk();
+        $this->upload('import', $this->groupedFile())->assertOk();
         $this->actingAs($this->nurse, 'api')->postJson('/api/nurse/masterlist/clear', ['academic_period_id' => $this->period->id])->assertOk();
         $this->assertSame(0, DB::table('student_masterlist')->where('academic_period_id', $this->period->id)->count());
     }
@@ -176,11 +170,6 @@ class MasterlistTest extends TestCase
         $this->upload('import', $this->groupedFile())->assertOk();
         $check = fn ($id) => $this->postJson('/api/auth/check-student-id', ['student_id' => $id]);
 
-        // Off: nothing is looked up.
-        $check('2090-00001-BN-0')->assertOk()->assertJsonPath('data.status', 'unchecked');
-        $this->getJson('/api/auth/registration-options')->assertJsonPath('data.masterlist_required', false);
-
-        Masterlist::setRequired(true, $this->nurse->id);
         $this->getJson('/api/auth/registration-options')->assertJsonPath('data.masterlist_required', true);
         $found = $check('2090-00001-bn-0')->assertOk()->assertJsonPath('data.status', 'found');
         $this->assertSame(['status'], array_keys($found->json('data'))); // no name, no account info
@@ -194,7 +183,7 @@ class MasterlistTest extends TestCase
         $check('2090-00002-BN-0')->assertOk()->assertJsonPath('data.status', 'registered');
     }
 
-    public function test_registration_is_limited_to_the_masterlist_when_the_check_is_on(): void
+    public function test_registration_is_strictly_limited_to_the_masterlist(): void
     {
         Mail::fake();
         $this->upload('import', $this->groupedFile())->assertOk();
@@ -207,11 +196,6 @@ class MasterlistTest extends TestCase
             }
             $this->fail('The registration was accepted.');
         };
-
-        // Off: a student who is not on the list can still register.
-        $service->requestRegistrationOtp($this->details(['student_id' => '2090-00099-BN-0']));
-
-        Masterlist::setRequired(true, $this->nurse->id);
 
         // Not on the list and wrong last name give the same message.
         $notOnList = $refused($this->details(['student_id' => '2090-00098-BN-0']));

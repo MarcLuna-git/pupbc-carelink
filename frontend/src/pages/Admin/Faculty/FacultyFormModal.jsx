@@ -11,7 +11,7 @@ import PhilippineMobileInput from '../../../components/PhilippineMobileInput';
  * Add Faculty Member / Edit Faculty Member popup: name, and an optional email and contact number
  * that show on their details. Editing also sets Active / Inactive.
  */
-const field = 'h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:ring-maroon-300/30';
+const field = 'h-11 w-full rounded-[10px] border border-gray-200 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:ring-maroon-300/30';
 const blank = { full_name: '', email: '', phone: '', status: 'active' };
 const fromMember = member => ({ full_name: member.full_name || '', email: member.email || '', phone: member.phone || '', status: member.status || 'active' });
 
@@ -51,9 +51,9 @@ export default function FacultyFormModal({ member = null, onClose, onSaved }) {
   return <Modal title={editing ? 'Edit faculty member' : 'Add faculty member'} onClose={close}>
     <form onSubmit={submit} aria-busy={saving}>
       <header className="flex items-center gap-3 px-5 pb-1 pt-5 sm:px-6">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-maroon-50 text-maroon-800 dark:bg-maroon-900/30 dark:text-maroon-300"><Users size={18} aria-hidden="true" /></span>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-maroon-50 text-maroon-800 dark:bg-maroon-900/30 dark:text-maroon-300"><Users size={18} aria-hidden="true" /></span>
         <h2 className="min-w-0 flex-1 text-lg font-bold">{editing ? 'Edit Faculty Member' : 'Add Faculty Member'}</h2>
-        <button type="button" onClick={close} aria-label="Close" className={`rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 ${focus}`}><X size={18} /></button>
+        <button type="button" onClick={close} aria-label="Close" className={`rounded-[10px] p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 ${focus}`}><X size={18} /></button>
       </header>
 
       <div className="space-y-4 px-5 pb-5 pt-3 sm:px-6">
@@ -65,12 +65,12 @@ export default function FacultyFormModal({ member = null, onClose, onSaved }) {
         {editing && <label className="block sm:max-w-xs"><Label required>Status</Label>
           <select className={`${field} cursor-pointer`} value={form.status} onChange={set('status')}><option value="active">Active</option><option value="inactive">Inactive</option></select>
         </label>}
-        {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{error}</p>}
+        {error && <p role="alert" className="rounded-[10px] bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{error}</p>}
       </div>
 
       <footer className="flex justify-end gap-3 border-t border-gray-200 bg-gray-50 px-5 py-4 sm:px-6 dark:border-gray-700 dark:bg-gray-900/30">
-        <button type="button" onClick={close} disabled={saving} className={`inline-flex h-10 items-center rounded-lg border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:bg-transparent dark:text-gray-200 dark:hover:bg-gray-700 ${focus}`}>Cancel</button>
-        <button type="submit" disabled={saving} className={`inline-flex h-10 items-center gap-2 rounded-lg bg-maroon-800 px-6 text-sm font-semibold text-white hover:bg-maroon-900 disabled:opacity-60 ${focus}`}>
+        <button type="button" onClick={close} disabled={saving} className={`inline-flex h-10 items-center rounded-[10px] border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:bg-transparent dark:text-gray-200 dark:hover:bg-gray-700 ${focus}`}>Cancel</button>
+        <button type="submit" disabled={saving} className={`inline-flex h-10 items-center gap-2 rounded-[10px] bg-maroon-800 px-6 text-sm font-semibold text-white hover:bg-maroon-900 disabled:opacity-60 ${focus}`}>
           {saving ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Save size={16} aria-hidden="true" />}{saving ? 'Saving…' : 'Save'}
         </button>
       </footer>

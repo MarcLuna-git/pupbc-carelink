@@ -66,7 +66,7 @@ const DemoPatientTools = ({ open, onChanged }) => {
   const toggle = () => { if (state.enabled) turnOff(); else { setAsking(v => !v); setError(''); } };
 
   return (
-    <div className="mt-6 rounded-2xl border border-dashed border-indigo-200 bg-indigo-50/40 p-4 dark:border-indigo-800/60 dark:bg-indigo-900/10">
+    <div className="mt-6 rounded-[10px] border border-dashed border-indigo-200 bg-indigo-50/40 p-4 dark:border-indigo-800/60 dark:bg-indigo-900/10">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="flex items-center gap-1.5 text-sm font-semibold text-gray-800 dark:text-gray-100"><FlaskConical className="h-4 w-4 text-indigo-600 dark:text-indigo-300" /> Developer tools · Demo patients</p>
@@ -85,9 +85,9 @@ const DemoPatientTools = ({ open, onChanged }) => {
         <form onSubmit={turnOn} className="mt-3 flex flex-wrap items-center gap-2">
           <input type="password" autoFocus value={password} onChange={(e) => { setPassword(e.target.value); setError(''); }}
             placeholder="Developer password" aria-label="Developer password" autoComplete="off"
-            className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+            className="min-w-0 flex-1 rounded-[10px] border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
           <button type="submit" disabled={!password || Boolean(busy)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
+            className="inline-flex items-center gap-1.5 rounded-[10px] bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
             {busy === 'on' && <Loader2 className="h-4 w-4 animate-spin" />} Turn on
           </button>
         </form>
@@ -95,7 +95,7 @@ const DemoPatientTools = ({ open, onChanged }) => {
 
       {state.enabled && (
         <button type="button" onClick={reset} disabled={Boolean(busy)}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 disabled:opacity-50 dark:border-indigo-800 dark:bg-gray-800 dark:text-indigo-300 dark:hover:bg-indigo-900/20">
+          className="mt-3 inline-flex items-center gap-1.5 rounded-[10px] border border-indigo-200 bg-white px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 disabled:opacity-50 dark:border-indigo-800 dark:bg-gray-800 dark:text-indigo-300 dark:hover:bg-indigo-900/20">
           {busy === 'reset' ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Reset demo patients
         </button>
       )}
@@ -140,7 +140,7 @@ const QueueOptionsModal = ({ open, callTimeout, onClose, onSaved, onDemoChanged 
     } finally { setSaving(false); }
   };
 
-  const field = 'w-20 rounded-lg border border-gray-200 bg-white px-3 py-2 text-center text-sm font-semibold tabular-nums text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white';
+  const field = 'w-20 rounded-[10px] border border-gray-200 bg-white px-3 py-2 text-center text-sm font-semibold tabular-nums text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white';
 
   return createPortal(
     <AnimatePresence>
@@ -155,7 +155,7 @@ const QueueOptionsModal = ({ open, callTimeout, onClose, onSaved, onDemoChanged 
             initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-h-[90vh] max-w-md overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl dark:bg-gray-800 sm:p-7"
+            className="relative w-full max-h-[90vh] max-w-md overflow-y-auto rounded-[10px] bg-white p-6 shadow-2xl dark:bg-gray-800 sm:p-7"
           >
             <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700">
               <X className="h-5 w-5" />
@@ -195,9 +195,9 @@ const QueueOptionsModal = ({ open, callTimeout, onClose, onSaved, onDemoChanged 
             <DemoPatientTools open={open} onChanged={onDemoChanged} />
 
             <div className="mt-6 flex justify-end gap-2">
-              <button type="button" onClick={onClose} className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700/50">Cancel</button>
+              <button type="button" onClick={onClose} className="rounded-[10px] border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700/50">Cancel</button>
               <button type="button" onClick={save} disabled={!valid || saving || total === callTimeout}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-maroon-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-maroon-900 disabled:opacity-50">
+                className="inline-flex items-center gap-1.5 rounded-[10px] bg-maroon-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-maroon-900 disabled:opacity-50">
                 {saving && <Loader2 className="h-4 w-4 animate-spin" />} Save
               </button>
             </div>

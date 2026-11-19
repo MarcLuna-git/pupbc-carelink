@@ -42,11 +42,11 @@ export default function BatchDocumentPicker({ documents, value, onChoose }) {
                   type="button"
                   onClick={() => onChoose(doc.key)}
                   aria-pressed={active}
-                  className={`flex items-start gap-3 rounded-xl border p-4 text-left transition ${focus} ${active
+                  className={`flex items-start gap-3 rounded-[10px] border p-4 text-left transition ${focus} ${active
                     ? 'border-maroon-800 bg-maroon-50 dark:border-maroon-400 dark:bg-maroon-900/20'
                     : 'border-gray-200 hover:border-maroon-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700/40'}`}
                 >
-                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${active ? 'bg-maroon-800 text-white' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300'}`}>
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] ${active ? 'bg-maroon-800 text-white' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300'}`}>
                     <FileText className="h-5 w-5" aria-hidden="true" />
                   </span>
                   <span className="min-w-0 flex-1">

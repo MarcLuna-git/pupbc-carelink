@@ -12,7 +12,7 @@ const descriptions = {
   section: 'Connect a section to its course and academic period.',
   period: 'Define the academic year and semester for your sections.',
 };
-export const cancelButton = `inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700/50 ${focus}`;
+export const cancelButton = `inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700/50 ${focus}`;
 
 // Centered popup with a dimmed backdrop. Escape or a backdrop click closes it unless `busy`.
 export function ModalShell({ labelledBy, onClose, busy, width, children }) {
@@ -31,7 +31,7 @@ export function ModalShell({ labelledBy, onClose, busy, width, children }) {
       <motion.div
         role="dialog" aria-modal="true" aria-labelledby={labelledBy}
         initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.18, ease: 'easeOut' }}
-        className={`relative flex max-h-full w-full ${width} flex-col overflow-hidden rounded-2xl bg-white text-gray-900 shadow-2xl dark:bg-gray-800 dark:text-gray-100`}
+        className={`relative flex max-h-full w-full ${width} flex-col overflow-hidden rounded-[10px] bg-white text-gray-900 shadow-2xl dark:bg-gray-800 dark:text-gray-100`}
       >
         {children}
       </motion.div>
@@ -70,7 +70,7 @@ export default function AcademicFormModal({ type, editing, form, onChange, onClo
 
   return <ModalShell labelledBy="academic-form-title" onClose={onClose} busy={saving} width="max-w-2xl">
     <header className="flex items-start gap-3 border-b border-gray-100 px-5 py-4 dark:border-gray-700 sm:px-6">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-maroon-50 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-400"><Icon size={20} aria-hidden="true" /></span>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-maroon-50 text-maroon-800 dark:bg-maroon-900/20 dark:text-maroon-400"><Icon size={20} aria-hidden="true" /></span>
       <div className="min-w-0 flex-1">
         <h2 id="academic-form-title" className="font-bold text-gray-900 dark:text-white">{editing ? 'Edit' : 'Add'} {academicNames[type]}</h2>
         <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{descriptions[type]}</p>
@@ -79,7 +79,7 @@ export default function AcademicFormModal({ type, editing, form, onChange, onClo
     </header>
     <form onSubmit={onSubmit} aria-busy={saving} className="flex min-h-0 flex-col">
       <div className="space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
-        {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/25 dark:text-red-300">{error}</p>}
+        {error && <p role="alert" className="rounded-[10px] bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/25 dark:text-red-300">{error}</p>}
         {type === 'course' && <div className="grid gap-4 sm:grid-cols-[180px_minmax(0,1fr)]">
           <Field name="code" label="Course abbreviation" error={errors.code} hint="For example, BSIT or BSCpE."><input {...props('code')} autoFocus required maxLength={50} autoComplete="off" placeholder="BSIT" /></Field>
           <Field name="name" label="Full course name" error={errors.name} hint="Use the complete course title."><input {...props('name')} required maxLength={150} placeholder="Bachelor of Science in Information Technology" /></Field>
@@ -95,7 +95,7 @@ export default function AcademicFormModal({ type, editing, form, onChange, onClo
           <Field name="year_level" label="Year level" error={errors.year_level} hint="The student's academic year level."><Select {...props('year_level')}>{['1st Year', '2nd Year', '3rd Year', '4th Year', ...(!['1st Year', '2nd Year', '3rd Year', '4th Year'].includes(form.year_level) ? [form.year_level] : [])].map(value => <option key={value}>{value}</option>)}</Select></Field>
           <Field name="section_code" label="Section code" error={errors.section_code} hint="For example, 1-1 or 4-1."><input {...props('section_code')} required maxLength={10} placeholder="1-1" autoComplete="off" /></Field>
         </div>}
-        <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-100 p-3 dark:border-gray-700"><input type="checkbox" checked={Boolean(form.is_active)} onChange={event => onChange('is_active', event.target.checked)} disabled={locked} className="mt-0.5 h-5 w-5 shrink-0 accent-maroon-800 dark:accent-maroon-300" /><span><span className="block text-sm font-semibold">Active {academicNames[type]}</span><span className="mt-0.5 block text-xs leading-relaxed text-gray-500 dark:text-gray-400">{type === 'course' ? 'Active courses can be chosen on the registration form and when adding sections.' : type === 'section' ? 'Active sections in an active period appear on the registration form.' : 'Sections in an active period appear on the registration form.'}</span></span></label>
+        <label className="flex cursor-pointer items-start gap-3 rounded-[10px] border border-gray-100 p-3 dark:border-gray-700"><input type="checkbox" checked={Boolean(form.is_active)} onChange={event => onChange('is_active', event.target.checked)} disabled={locked} className="mt-0.5 h-5 w-5 shrink-0 accent-maroon-800 dark:accent-maroon-300" /><span><span className="block text-sm font-semibold">Active {academicNames[type]}</span><span className="mt-0.5 block text-xs leading-relaxed text-gray-500 dark:text-gray-400">{type === 'course' ? 'Active courses can be chosen on the registration form and when adding sections.' : type === 'section' ? 'Active sections in an active period appear on the registration form.' : 'Sections in an active period appear on the registration form.'}</span></span></label>
       </div>
       <footer className="flex justify-end gap-2 border-t border-gray-100 px-5 py-4 dark:border-gray-700 sm:px-6">
         <button type="button" onClick={onClose} disabled={saving} className={cancelButton}>Cancel</button>
@@ -112,10 +112,10 @@ export function AcademicDeleteModal({ type, label, onClose, onConfirm, deleting,
       <span className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300"><AlertTriangle size={24} aria-hidden="true" /></span>
       <h2 id="academic-delete-title" className="mt-4 text-lg font-bold text-gray-900 dark:text-white">Delete {academicNames[type]}?</h2>
       <p className="mt-1 text-sm leading-relaxed text-gray-600 dark:text-gray-300"><strong className="font-semibold text-gray-900 dark:text-white">{label}</strong> will be removed permanently. It will no longer appear on the registration form.</p>
-      {error && <p role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/25 dark:text-red-300">{error}</p>}
+      {error && <p role="alert" className="mt-4 rounded-[10px] bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/25 dark:text-red-300">{error}</p>}
       <div className="mt-6 flex justify-end gap-2">
         <button type="button" onClick={onClose} disabled={deleting} className={cancelButton}>Cancel</button>
-        <button type="button" onClick={onConfirm} disabled={deleting} className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 ${focus}`}>
+        <button type="button" onClick={onConfirm} disabled={deleting} className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 ${focus}`}>
           {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}{deleting ? 'Deleting…' : 'Delete'}
         </button>
       </div>

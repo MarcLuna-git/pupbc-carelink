@@ -419,7 +419,7 @@ const lastAssistantIndex = messages.reduce(
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={{ duration: 0.16 }}
-            className="carelink-assistant-panel fixed z-50 flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-900"
+            className="carelink-assistant-panel fixed z-50 flex flex-col overflow-hidden rounded-[10px] border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-900"
           >
             {/* Header */}
             <header className="flex items-center gap-3 border-b border-gray-200 bg-gradient-to-r from-[#65111f] to-[#4f0d18] px-4 py-3 dark:border-gray-800">
@@ -437,7 +437,7 @@ const lastAssistantIndex = messages.reduce(
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Close clinic assistant"
-                className="rounded-lg p-1.5 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                className="rounded-[10px] p-1.5 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -501,7 +501,7 @@ const lastAssistantIndex = messages.reduce(
                     <Bot className="h-4 w-4" />
                   </div>
 
-                  <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm bg-gray-100 px-4 py-3 dark:bg-gray-800">
+                  <div className="flex items-center gap-1 rounded-[10px] rounded-tl-[10px] bg-gray-100 px-4 py-3 dark:bg-gray-800">
                     <span className="think-dot" />
                     <span className="think-dot think-dot-2" />
                     <span className="think-dot think-dot-3" />
@@ -512,7 +512,7 @@ const lastAssistantIndex = messages.reduce(
               {error && (
                 <p
                   role="alert"
-                  className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-300"
+                  className="rounded-[10px] bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-300"
                 >
                   {error}
                 </p>
@@ -587,14 +587,14 @@ const lastAssistantIndex = messages.reduce(
                   }}
                   maxLength={1000}
                   placeholder="Ask about the clinic…"
-                  className="max-h-24 min-h-[40px] flex-1 resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-maroon-400 focus:bg-white dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-maroon-600"
+                  className="max-h-24 min-h-[40px] flex-1 resize-none rounded-[10px] border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-maroon-400 focus:bg-white dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-maroon-600"
                 />
 
                 <button
                   type="submit"
                   disabled={!input.trim() || sending}
                   aria-label="Send message"
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-maroon-800 text-white transition-colors hover:bg-maroon-900 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-maroon-800 text-white transition-colors hover:bg-maroon-900 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {sending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

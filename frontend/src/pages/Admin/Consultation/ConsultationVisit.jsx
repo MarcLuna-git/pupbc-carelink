@@ -25,6 +25,7 @@ const EMPTY_FORM = {
   bp: '', hr: '', rr: '', temp: '', o2_sat: '',
   nursing_assessment: '', nursing_interventions: '', treatment_plan: '',
   follow_up: false, follow_up_date: '', general_remarks: '',
+  consultation_form: true,
   medical_certificate: false, medical_certificate_ref: '',
   liability_form: false, liability_activity: '',
   ojt_certificate: false, ojt_certificate_ref: '', ojt_company: '',
@@ -80,11 +81,11 @@ const ageFrom = birthday => {
 const capitalize = value => (value ? value.charAt(0).toUpperCase() + value.slice(1) : '');
 
 
-const input = 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white';
+const input = 'w-full rounded-[10px] border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white';
 const inputError = 'border-red-500 focus:border-red-500 focus:ring-red-500/20 dark:border-red-400';
 const label = 'mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-300';
-const card = 'rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:p-5';
-const btn = 'inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50';
+const card = 'rounded-[10px] border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:p-5';
+const btn = 'inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-[10px] px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50';
 const primary = `${btn} bg-maroon-800 text-white hover:bg-maroon-900`;
 const outline = `${btn} border border-maroon-200 bg-white text-maroon-800 hover:bg-maroon-50 dark:border-maroon-800/50 dark:bg-transparent dark:text-maroon-300 dark:hover:bg-maroon-900/20`;
 
@@ -480,7 +481,7 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
   // Review shows the clinic's own templates, filled in, exactly as they will print: the Consultation
   // Form first, then each additional document the nurse ticked, one page at a time.
   const reviewDocs = [
-    { kind: 'consultation', label: 'Consultation Form' },
+    form.consultation_form && { kind: 'consultation', label: 'Consultation Form' },
     form.medical_certificate && { kind: 'certificate', label: 'Medical Certificate' },
     form.sick_certificate && { kind: 'sick', label: 'Medical Certificate (Sick)' },
     form.ojt_certificate && { kind: 'ojt', label: 'Medical Certificate (OJT)' },
@@ -488,10 +489,10 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
   ].filter(Boolean);
   const signatoryVersion = useSignatoryVersion(); // redraws the preview when the signatory is switched
   const docIndex = Math.max(0, reviewDocs.findIndex(d => d.kind === previewDoc));
-  const currentDoc = reviewDocs[docIndex];
-  const previewKey = tab === 'review' ? JSON.stringify([currentDoc.kind, form, mode, prescribed, rx, attendingId, student?.id, nurses.length, signatoryVersion]) : '';
+  const currentDoc = reviewDocs[docIndex] || null;
+  const previewKey = tab === 'review' && currentDoc ? JSON.stringify([currentDoc.kind, form, mode, prescribed, rx, attendingId, student?.id, nurses.length, signatoryVersion]) : '';
   useEffect(() => {
-    if (tab !== 'review') return undefined;
+    if (tab !== 'review' || !currentDoc) return undefined;
     let active = true;
     setPreview(null);
     const { record, details } = buildDocument();
@@ -593,7 +594,7 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
           {dispenseResults.length > 0 && (
             <ul className="mx-auto mt-4 max-w-md space-y-1.5 text-left text-sm">
               {dispenseResults.map(r => (
-                <li key={r.id} className={`flex items-start gap-2 rounded-md px-3 py-2 ${r.ok ? 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-300' : 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-300'}`}>
+                <li key={r.id} className={`flex items-start gap-2 rounded-[10px] px-3 py-2 ${r.ok ? 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-300' : 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-300'}`}>
                   {r.ok ? <CheckCircle className="mt-0.5 h-4 w-4 shrink-0" /> : <XCircle className="mt-0.5 h-4 w-4 shrink-0" />}
                   <span>{r.name} ×{r.quantity} {r.ok ? 'dispensed, stock deducted.' : `not dispensed: ${r.error}. Record it from the Medicines page.`}</span>
                 </li>
@@ -601,7 +602,7 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
             </ul>
           )}
           <div className="mt-5 flex flex-wrap justify-center gap-2">
-            <button type="button" onClick={() => printRecord('consultation')} className={primary}><Printer className="h-4 w-4" /> Print Consultation Form</button>
+            {form.consultation_form && <button type="button" onClick={() => printRecord('consultation')} className={primary}><Printer className="h-4 w-4" /> Print Consultation Form</button>}
             {form.medical_certificate && <button type="button" onClick={() => printRecord('certificate')} className={outline}><FileBadge className="h-4 w-4" /> Print Medical Certificate</button>}
             {form.sick_certificate && <button type="button" onClick={() => printRecord('sick')} className={outline}><FileBadge className="h-4 w-4" /> Print Medical Certificate (Sick)</button>}
             {form.ojt_certificate && <button type="button" onClick={() => printRecord('ojt')} className={outline}><FileBadge className="h-4 w-4" /> Print Medical Certificate (OJT)</button>}
@@ -612,7 +613,7 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
           </div>
         </section>
       ) : (
-        <section aria-label="Consultation" className="overflow-hidden rounded-lg border border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
+        <section aria-label="Consultation" className="overflow-hidden rounded-[10px] border border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800">
           {/* Step process: numbered circles joined by a line; finished steps show a check. */}
           <nav aria-label="Consultation steps" className="overflow-x-auto border-b border-gray-100 px-4 py-4 dark:border-gray-700 lg:px-6">
             <ol className="flex min-w-max items-center">
@@ -707,17 +708,14 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
                   <p className="text-sm text-gray-600 dark:text-gray-300">Optional forms released with this visit. Tick only the ones the student needs; you can check them in Review.</p>
                 </div>
                 <div className="mx-auto max-w-xl space-y-4">
-                {/* Default choice: shown as selected while no extra document is ticked; ticking it clears the others. */}
-                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
+                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-[10px] border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
                   <span>
-                    <span className="block text-sm font-semibold text-gray-900 dark:text-white">Issue a Consultation Form Only <span className="font-normal text-gray-500 dark:text-gray-400">(default)</span></span>
-                    <span className="block text-xs text-gray-600 dark:text-gray-300">No additional documents. Only the consultation form is released with this visit.</span>
+                    <span className="block text-sm font-semibold text-gray-900 dark:text-white">Issue a Consultation Form</span>
+                    <span className="block text-xs text-gray-600 dark:text-gray-300">Checked by default at the start of the consultation. You can check or uncheck any documents you need.</span>
                   </span>
-                  <input type="checkbox" checked={!form.medical_certificate && !form.sick_certificate && !form.ojt_certificate && !form.liability_form}
-                    onChange={e => { if (e.target.checked) setForm(current => ({ ...current, medical_certificate: false, sick_certificate: false, ojt_certificate: false, liability_form: false })); }}
-                    className="h-5 w-5 cursor-pointer accent-maroon-800" />
+                  <input type="checkbox" name="consultation_form" checked={form.consultation_form} onChange={change} className="h-5 w-5 cursor-pointer accent-maroon-800" />
                 </label>
-                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
+                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-[10px] border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
                   <span>
                     <span className="block text-sm font-semibold text-gray-900 dark:text-white">Issue a Medical Certificate <span className="font-normal text-gray-500 dark:text-gray-400">(optional)</span></span>
                     <span className="block text-xs text-gray-600 dark:text-gray-300">Only when the student needs one. It uses the complaint and assessment from the consultation form and can be printed after saving.</span>
@@ -732,7 +730,7 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
                 )}
 
                 {/* Medical Certificate (OJT): the student is essentially normal and may undergo On the Job Training at a company. */}
-                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
+                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-[10px] border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
                   <span>
                     <span className="block text-sm font-semibold text-gray-900 dark:text-white">Issue a Medical Certificate (OJT) <span className="font-normal text-gray-500 dark:text-gray-400">(optional)</span></span>
                     <span className="block text-xs text-gray-600 dark:text-gray-300">For a student going on On the Job Training. It certifies they are essentially normal at the time of examination and can be printed after saving.</span>
@@ -760,7 +758,7 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
                 })()}
 
                 {/* Medical Certificate (Sick): examined for an illness that needs medical attendance for a number of days. */}
-                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
+                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-[10px] border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
                   <span>
                     <span className="block text-sm font-semibold text-gray-900 dark:text-white">Issue a Medical Certificate (Sick) <span className="font-normal text-gray-500 dark:text-gray-400">(optional)</span></span>
                     <span className="block text-xs text-gray-600 dark:text-gray-300">For a student who needs rest because of an illness. It uses the impression from the consultation form and the days of medical attendance, and can be printed after saving.</span>
@@ -781,7 +779,7 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
                 )}
 
                 {/* Medical Liability Form: the student declares they are fit to join an activity and signs it. */}
-                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
+                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-[10px] border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/40">
                   <span>
                     <span className="block text-sm font-semibold text-gray-900 dark:text-white">Issue a Medical Liability Form <span className="font-normal text-gray-500 dark:text-gray-400">(optional)</span></span>
                     <span className="block text-xs text-gray-600 dark:text-gray-300">For a student joining an activity (field trip, sports fest, OJT). They declare they are fit to join and sign it. It can be printed after saving.</span>
@@ -813,7 +811,7 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
                   <legend className="mb-2 font-bold text-gray-900 dark:text-white">What does the student receive?</legend>
                   <div role="radiogroup" className="grid gap-3 md:grid-cols-3">
                     {MEDICINE_MODES.map(({ key, title, note, icon: Icon }) => (
-                      <label key={key} className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${mode === key
+                      <label key={key} className={`flex cursor-pointer items-start gap-3 rounded-[10px] border p-3 transition-colors ${mode === key
                         ? 'border-maroon-800 bg-maroon-50 dark:border-maroon-400 dark:bg-maroon-900/20'
                         : 'border-gray-200 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700/40'}`}>
                         <input type="radio" name="medicine-mode" value={key} checked={mode === key} onChange={() => { setMode(key); setAdding(false); }} className="mt-1 h-4 w-4 cursor-pointer accent-maroon-800" />
@@ -836,9 +834,9 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
                     </div>
 
                     {adding && (
-                      <div className="mb-3 space-y-3 rounded-lg border border-maroon-100 bg-maroon-50/40 p-3 dark:border-maroon-900/40 dark:bg-maroon-900/10">
+                      <div className="mb-3 space-y-3 rounded-[10px] border border-maroon-100 bg-maroon-50/40 p-3 dark:border-maroon-900/40 dark:bg-maroon-900/10">
                         {item.medicine ? (
-                          <div className="flex items-center justify-between gap-2 rounded-md bg-white px-3 py-2 text-sm dark:bg-gray-800">
+                          <div className="flex items-center justify-between gap-2 rounded-[10px] bg-white px-3 py-2 text-sm dark:bg-gray-800">
                             <span><span className="font-semibold text-gray-900 dark:text-white">{item.medicine.name}</span> <span className="text-gray-600 dark:text-gray-300">· {item.medicine.quantity} {item.medicine.unit} in stock</span></span>
                             <button type="button" onClick={() => setItem(EMPTY_ITEM)} className="cursor-pointer text-xs font-semibold text-maroon-800 hover:underline dark:text-maroon-300">Change</button>
                           </div>
@@ -848,7 +846,7 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
                               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
                               <input value={medSearch} onChange={e => setMedSearch(e.target.value)} className={`${input} pl-9`} placeholder="Search the inventory…" aria-label="Search medicines" autoFocus />
                             </div>
-                            <ul className="mt-2 max-h-52 divide-y divide-gray-100 overflow-y-auto rounded-lg border border-gray-100 bg-white dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800">
+                            <ul className="mt-2 max-h-52 divide-y divide-gray-100 overflow-y-auto rounded-[10px] border border-gray-100 bg-white dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800">
                               {medLoading && <li className="p-3 text-sm text-gray-600 dark:text-gray-300">Loading medicines…</li>}
                               {!medLoading && medicines.length === 0 && <li className="p-3 text-sm text-gray-600 dark:text-gray-300">No medicines found in the inventory.</li>}
                               {!medLoading && medicines.map(m => (
@@ -872,7 +870,7 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
                       </div>
                     )}
 
-                    <div className="overflow-x-auto rounded-lg border border-gray-100 dark:border-gray-700">
+                    <div className="overflow-x-auto rounded-[10px] border border-gray-100 dark:border-gray-700">
                       <table className="w-full text-left text-sm">
                         <thead className="bg-gray-50 text-xs font-medium text-gray-600 dark:bg-gray-900/50 dark:text-gray-300">
                           <tr>{['Medicine', 'Dose / Frequency', 'Duration', 'Qty', ''].map(h => <th key={h || 'action'} scope="col" className="whitespace-nowrap px-4 py-2.5">{h || <span className="sr-only">Remove</span>}</th>)}</tr>
@@ -887,7 +885,7 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
                               <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">{p.duration || '—'}</td>
                               <td className="px-4 py-2.5 tabular-nums text-gray-900 dark:text-white">{p.quantity}</td>
                               <td className="px-4 py-2.5 text-right">
-                                <button type="button" onClick={() => setPrescribed(current => current.filter(x => x.id !== p.id))} aria-label={`Remove ${p.name}`} className="cursor-pointer rounded-md p-1.5 text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"><Trash2 className="h-4 w-4" /></button>
+                                <button type="button" onClick={() => setPrescribed(current => current.filter(x => x.id !== p.id))} aria-label={`Remove ${p.name}`} className="cursor-pointer rounded-[10px] p-1.5 text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"><Trash2 className="h-4 w-4" /></button>
                               </td>
                             </tr>
                           ))}
@@ -906,7 +904,7 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
                           {allInStock ? <CheckCircle className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}{allInStock ? 'Sufficient stock' : 'Insufficient stock'}
                         </span>
                       </div>
-                      <div className="overflow-x-auto rounded-lg border border-gray-100 dark:border-gray-700">
+                      <div className="overflow-x-auto rounded-[10px] border border-gray-100 dark:border-gray-700">
                         <table className="w-full text-left text-sm">
                           <thead className="bg-gray-50 text-xs font-medium text-gray-600 dark:bg-gray-900/50 dark:text-gray-300">
                             <tr>{['Medicine', 'In Stock', 'Needed', 'Unit', 'Status'].map(h => <th key={h} scope="col" className="whitespace-nowrap px-4 py-2.5">{h}</th>)}</tr>
@@ -932,14 +930,14 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
                 {mode === 'prescription' && (
                   <section aria-labelledby="rx-title">
                     <h3 id="rx-title" className="mb-3 font-bold text-gray-900 dark:text-white">Prescription</h3>
-                    <div className="mb-3 grid gap-3 rounded-lg border border-maroon-100 bg-maroon-50/40 p-3 dark:border-maroon-900/40 dark:bg-maroon-900/10 sm:grid-cols-[2fr_1.2fr_1fr_90px_auto] sm:items-end">
+                    <div className="mb-3 grid gap-3 rounded-[10px] border border-maroon-100 bg-maroon-50/40 p-3 dark:border-maroon-900/40 dark:bg-maroon-900/10 sm:grid-cols-[2fr_1.2fr_1fr_90px_auto] sm:items-end">
                       <label className="block"><span className={label}>Medicine *</span><input value={rxItem.name} onChange={e => setRxItem(current => ({ ...current, name: e.target.value }))} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addRx(); } }} className={input} placeholder="e.g. Paracetamol 500 mg" maxLength={120} /></label>
                       <label className="block"><span className={label}>Dose / Frequency</span><input value={rxItem.dose} onChange={e => setRxItem(current => ({ ...current, dose: e.target.value }))} className={input} placeholder="1 tab 3× a day" maxLength={60} /></label>
                       <label className="block"><span className={label}>Duration</span><input value={rxItem.duration} onChange={e => setRxItem(current => ({ ...current, duration: e.target.value }))} className={input} placeholder="3 days" maxLength={40} /></label>
                       <label className="block"><span className={label}>Qty</span><input inputMode="numeric" value={rxItem.quantity} onChange={e => setRxItem(current => ({ ...current, quantity: digitsOnly(e.target.value, 4) }))} className={input} placeholder="optional" maxLength={4} /></label>
                       <button type="button" onClick={addRx} disabled={!rxItem.name.trim()} className={`${btn} bg-maroon-800 px-3 py-2 text-white hover:bg-maroon-900`}><Plus className="h-4 w-4" /> Add</button>
                     </div>
-                    <div className="overflow-x-auto rounded-lg border border-gray-100 dark:border-gray-700">
+                    <div className="overflow-x-auto rounded-[10px] border border-gray-100 dark:border-gray-700">
                       <table className="w-full text-left text-sm">
                         <thead className="bg-gray-50 text-xs font-medium text-gray-600 dark:bg-gray-900/50 dark:text-gray-300">
                           <tr>{['Medicine', 'Dose / Frequency', 'Duration', 'Qty', ''].map(h => <th key={h || 'action'} scope="col" className="whitespace-nowrap px-4 py-2.5">{h || <span className="sr-only">Remove</span>}</th>)}</tr>
@@ -954,7 +952,7 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
                               <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">{p.duration || '—'}</td>
                               <td className="px-4 py-2.5 tabular-nums text-gray-900 dark:text-white">{p.quantity || '—'}</td>
                               <td className="px-4 py-2.5 text-right">
-                                <button type="button" onClick={() => setRx(current => current.filter(x => x.id !== p.id))} aria-label={`Remove ${p.name}`} className="cursor-pointer rounded-md p-1.5 text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"><Trash2 className="h-4 w-4" /></button>
+                                <button type="button" onClick={() => setRx(current => current.filter(x => x.id !== p.id))} aria-label={`Remove ${p.name}`} className="cursor-pointer rounded-[10px] p-1.5 text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"><Trash2 className="h-4 w-4" /></button>
                               </td>
                             </tr>
                           ))}
@@ -984,13 +982,13 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
 
                 {/* More than one document: page through them (Previous / Next, or pick one). */}
                 {reviewDocs.length > 1 && (
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-2 dark:border-gray-700 dark:bg-gray-900/40">
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-gray-100 bg-gray-50 p-2 dark:border-gray-700 dark:bg-gray-900/40">
                     <div role="tablist" aria-label="Document to preview" className="flex flex-wrap gap-1.5">
                       {reviewDocs.map((d, i) => {
                         const active = i === docIndex;
                         return (
                           <button key={d.kind} type="button" role="tab" aria-selected={active} onClick={() => setPreviewDoc(d.kind)}
-                            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition ${active
+                            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-sm font-semibold transition ${active
                               ? 'bg-maroon-800 text-white'
                               : 'text-gray-700 hover:bg-white dark:text-gray-300 dark:hover:bg-gray-800'}`}>
                             <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs ${active ? 'bg-white/20' : 'bg-gray-200 dark:bg-gray-700'}`}>{i + 1}</span>
@@ -1002,11 +1000,11 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-semibold tabular-nums text-gray-600 dark:text-gray-300">Page {docIndex + 1} of {reviewDocs.length}</span>
                       <button type="button" onClick={() => setPreviewDoc(reviewDocs[docIndex - 1].kind)} disabled={docIndex === 0} aria-label="Previous document"
-                        className="cursor-pointer rounded-md border border-gray-200 bg-white p-1.5 text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200">
+                        className="cursor-pointer rounded-[10px] border border-gray-200 bg-white p-1.5 text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200">
                         <ChevronLeft className="h-4 w-4" />
                       </button>
                       <button type="button" onClick={() => setPreviewDoc(reviewDocs[docIndex + 1].kind)} disabled={docIndex === reviewDocs.length - 1} aria-label="Next document"
-                        className="cursor-pointer rounded-md border border-gray-200 bg-white p-1.5 text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200">
+                        className="cursor-pointer rounded-[10px] border border-gray-200 bg-white p-1.5 text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200">
                         <ChevronRight className="h-4 w-4" />
                       </button>
                     </div>
@@ -1014,9 +1012,9 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
                 )}
 
                 {preview === null ? (
-                  <div role="status" className="flex items-center justify-center gap-2 rounded-lg border border-gray-100 py-16 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300"><Loader2 className="h-4 w-4 animate-spin" /> Preparing the {currentDoc.label}…</div>
+                  <div role="status" className="flex items-center justify-center gap-2 rounded-[10px] border border-gray-100 py-16 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300"><Loader2 className="h-4 w-4 animate-spin" /> Preparing the {currentDoc.label}…</div>
                 ) : preview === '' ? (
-                  <p role="alert" className="rounded-lg bg-red-50 p-4 text-sm font-medium text-red-800 dark:bg-red-900/20 dark:text-red-300">The form preview could not be loaded. You can still save the visit and print it afterwards.</p>
+                  <p role="alert" className="rounded-[10px] bg-red-50 p-4 text-sm font-medium text-red-800 dark:bg-red-900/20 dark:text-red-300">The form preview could not be loaded. You can still save the visit and print it afterwards.</p>
                 ) : (
                   <iframe
                     ref={previewFrame}
@@ -1025,7 +1023,7 @@ const ConsultationVisit = ({ visit, onBack, onDone = onBack, doneLabel = 'Back t
                     sandbox="allow-same-origin"
                     onLoad={fitPreview}
                     style={{ height: previewHeight }}
-                    className="w-full rounded-lg border border-gray-200 bg-[#f4f1f0] dark:border-gray-600"
+                    className="w-full rounded-[10px] border border-gray-200 bg-[#f4f1f0] dark:border-gray-600"
                   />
                 )}
 

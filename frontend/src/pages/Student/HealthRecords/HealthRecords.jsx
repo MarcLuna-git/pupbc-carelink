@@ -28,7 +28,7 @@ import { StudentToast } from '../../../components/StudentFeedback';
  */
 const ROUTE_LOADING_DELAY = 1600;
 
-const CARD = 'rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)]';
+const CARD = 'rounded-[10px] border border-[var(--sp-border)] bg-[var(--sp-surface)]';
 const FIELD_LABEL = 'mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-300';
 
 const RECORDS_HERO = {
@@ -175,12 +175,12 @@ const toRecord = (c, index) => {
 };
 
 const Skeleton = ({ className = '' }) => (
-  <div className={`animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 ${className}`} />
+  <div className={`animate-pulse rounded-[10px] bg-gray-200 dark:bg-gray-700 ${className}`} />
 );
 
 const StatCard = ({ icon: Icon, label, value, hint }) => (
   <div className={`${CARD} flex items-center gap-4 p-4 lg:p-5`}>
-    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-maroon-50 text-maroon-700 dark:bg-maroon-900/30 dark:text-maroon-300">
+    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[10px] bg-maroon-50 text-maroon-700 dark:bg-maroon-900/30 dark:text-maroon-300">
       <Icon className="h-7 w-7" />
     </div>
     <div className="min-w-0">
@@ -192,7 +192,7 @@ const StatCard = ({ icon: Icon, label, value, hint }) => (
 );
 
 const StatusBadge = ({ status }) => (
-  <span className="inline-flex items-center gap-1.5 rounded-lg bg-green-50 px-2.5 py-1 text-xs font-semibold capitalize text-green-700 dark:bg-green-900/20 dark:text-green-400">
+  <span className="inline-flex items-center gap-1.5 rounded-[10px] bg-green-50 px-2.5 py-1 text-xs font-semibold capitalize text-green-700 dark:bg-green-900/20 dark:text-green-400">
     <span className="h-2 w-2 rounded-full bg-green-600 dark:bg-green-400" />
     {status}
   </span>
@@ -217,7 +217,7 @@ const ViewButton = ({ onClick }) => (
   <button
     type="button"
     onClick={onClick}
-    className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-maroon-800 transition hover:bg-maroon-900 hover:text-white dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-maroon-900 dark:hover:text-white"
+    className="inline-flex items-center gap-2 whitespace-nowrap rounded-[10px] border border-gray-200 px-3 py-2 text-sm font-semibold text-maroon-800 transition hover:bg-maroon-900 hover:text-white dark:border-gray-600 dark:text-maroon-300 dark:hover:bg-maroon-900 dark:hover:text-white"
   >
     <Eye className="h-4 w-4" /> View
   </button>
@@ -227,7 +227,7 @@ const ViewButton = ({ onClick }) => (
    the viewer's side panel with the buttons that print those documents. */
 const RecordExtras = ({ record, onDocument }) => {
   const field = (label, value) => (
-    <div className="rounded-xl bg-gray-50 p-3.5 dark:bg-gray-700/30">
+    <div className="rounded-[10px] bg-gray-50 p-3.5 dark:bg-gray-700/30">
       <p className="mb-1 text-xs uppercase tracking-wider text-gray-400 dark:text-gray-500">{label}</p>
       <p className="whitespace-pre-wrap break-words text-sm font-medium text-gray-800 dark:text-gray-200">{value || 'Not recorded'}</p>
     </div>
@@ -237,7 +237,7 @@ const RecordExtras = ({ record, onDocument }) => {
       key={kind}
       type="button"
       onClick={() => onDocument(kind, record, 'print')}
-      className="inline-flex items-center justify-center gap-2 rounded-lg border border-maroon-800 px-4 py-2 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 dark:border-maroon-700 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
+      className="inline-flex items-center justify-center gap-2 rounded-[10px] border border-maroon-800 px-4 py-2 text-sm font-semibold text-maroon-800 hover:bg-maroon-50 dark:border-maroon-700 dark:text-maroon-300 dark:hover:bg-maroon-900/20"
     >
       <Printer className="h-4 w-4" /> {label}
     </button>
@@ -387,7 +387,7 @@ const HealthRecords = () => {
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[0, 1, 2, 3].map((key) => (
             <div key={key} className={`${CARD} flex items-center gap-4 p-4 lg:p-5`}>
-              <Skeleton className="h-14 w-14 shrink-0 rounded-xl" />
+              <Skeleton className="h-14 w-14 shrink-0 rounded-[10px]" />
               <div className="flex-1 space-y-2">
                 <Skeleton className="h-3.5 w-32 max-w-full" />
                 <Skeleton className="h-6 w-16" />
@@ -399,8 +399,8 @@ const HealthRecords = () => {
 
         <div className={`${CARD} p-4 lg:p-6`}>
           <Skeleton className="mb-5 h-6 w-32" />
-          <Skeleton className="mb-5 h-[4.5rem] w-full rounded-xl" />
-          <div className="space-y-px overflow-hidden rounded-xl border border-[var(--sp-border)]">
+          <Skeleton className="mb-5 h-[4.5rem] w-full rounded-[10px]" />
+          <div className="space-y-px overflow-hidden rounded-[10px] border border-[var(--sp-border)]">
             <Skeleton className="h-11 w-full rounded-none" />
             {[0, 1, 2, 3, 4].map((key) => (
               <div key={key} className="flex items-center gap-6 px-4 py-4">
@@ -408,7 +408,7 @@ const HealthRecords = () => {
                 <Skeleton className="h-4 flex-1" />
                 <Skeleton className="hidden h-4 flex-1 lg:block" />
                 <Skeleton className="hidden h-8 w-32 lg:block" />
-                <Skeleton className="h-9 w-28 rounded-lg" />
+                <Skeleton className="h-9 w-28 rounded-[10px]" />
               </div>
             ))}
           </div>
@@ -468,7 +468,7 @@ const HealthRecords = () => {
           </div>
         </div>
 
-        <div className="mb-5 grid gap-3 rounded-xl border border-[var(--sp-border)] bg-gray-50 p-3 dark:bg-gray-900/30 sm:grid-cols-2 sm:p-4 lg:grid-cols-[2fr_1fr_1fr_1fr]">
+        <div className="mb-5 grid gap-3 rounded-[10px] border border-[var(--sp-border)] bg-gray-50 p-3 dark:bg-gray-900/30 sm:grid-cols-2 sm:p-4 lg:grid-cols-[2fr_1fr_1fr_1fr]">
           <div className="min-w-0 sm:col-span-2 lg:col-span-1">
             <span className={FIELD_LABEL}>Search</span>
             <SearchField
@@ -489,7 +489,7 @@ const HealthRecords = () => {
                 <select
                   value={value}
                   onChange={(e) => onChange(e.target.value)}
-                  className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-[var(--sp-border)] bg-[var(--sp-surface)] pl-3 pr-10 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-maroon-500 dark:text-white"
+                  className="h-10 w-full cursor-pointer appearance-none rounded-[10px] border border-[var(--sp-border)] bg-[var(--sp-surface)] pl-3 pr-10 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-maroon-500 dark:text-white"
                 >
                   {options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
                 </select>
@@ -503,7 +503,7 @@ const HealthRecords = () => {
               type="button"
               onClick={resetFilters}
               disabled={!canReset}
-              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-[var(--sp-border)] bg-white text-sm font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:disabled:hover:bg-gray-800"
+              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-[10px] border border-[var(--sp-border)] bg-white text-sm font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:disabled:hover:bg-gray-800"
             >
               <RotateCcw aria-hidden="true" className="h-4 w-4 text-maroon-700 dark:text-maroon-300" />
               Reset filters
@@ -512,14 +512,14 @@ const HealthRecords = () => {
         </div>
 
         {error && (
-          <div className="mb-4 flex flex-col items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-400 sm:flex-row">
+          <div className="mb-4 flex flex-col items-center justify-between gap-3 rounded-[10px] border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-400 sm:flex-row">
             <span>{error}</span>
-            <button onClick={() => fetchRecords()} className="inline-flex items-center gap-2 rounded-md border border-red-300 px-3 py-2 font-semibold hover:bg-red-100 dark:border-red-700 dark:hover:bg-red-900/30">Retry</button>
+            <button onClick={() => fetchRecords()} className="inline-flex items-center gap-2 rounded-[10px] border border-red-300 px-3 py-2 font-semibold hover:bg-red-100 dark:border-red-700 dark:hover:bg-red-900/30">Retry</button>
           </div>
         )}
 
         {visibleRecords.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-200 py-14 text-center dark:border-gray-700">
+          <div className="rounded-[10px] border border-dashed border-gray-200 py-14 text-center dark:border-gray-700">
             <ClipboardList className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
             <h3 className="font-semibold text-gray-500 dark:text-gray-400">
               {isFiltering ? 'No matching records' : docTab ? docTab.emptyTitle : 'No health records yet'}
@@ -536,7 +536,7 @@ const HealthRecords = () => {
           <>
             {/* Desktop table */}
             {/* Scrolls sideways instead of wrapping when the screen is narrow. */}
-            <div className="hidden overflow-x-auto rounded-xl border border-[var(--sp-border)] lg:block">
+            <div className="hidden overflow-x-auto rounded-[10px] border border-[var(--sp-border)] lg:block">
               <table className="w-full min-w-[960px] text-left text-sm">
                 <thead className="whitespace-nowrap bg-gray-100 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">
                   <tr>
@@ -550,7 +550,7 @@ const HealthRecords = () => {
                       const active = columnSort?.key === key ? columnSort.dir : null;
                       return (
                         <th key={key} aria-sort={active === 'desc' ? 'descending' : active === 'asc' ? 'ascending' : 'none'}
-                          className={`px-4 py-3 font-medium${index === 0 ? ' rounded-tl-xl' : ''}`}>
+                          className={`px-4 py-3 font-medium${index === 0 ? ' rounded-tl-[10px]' : ''}`}>
                           <button type="button" onClick={() => cycleSort(key)}
                             className={`inline-flex items-center gap-1 transition hover:text-gray-900 dark:hover:text-white${active ? ' text-gray-900 dark:text-white' : ''}`}>
                             {label}<SortCaret direction={active} />
@@ -558,7 +558,7 @@ const HealthRecords = () => {
                         </th>
                       );
                     })}
-                    <th className="rounded-tr-xl px-4 py-3 font-medium">Actions</th>
+                    <th className="rounded-tr-[10px] px-4 py-3 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--sp-border)]">
@@ -596,7 +596,7 @@ const HealthRecords = () => {
             {/* Mobile / tablet cards */}
             <div className="space-y-3 lg:hidden">
               {pagedRecords.map((record) => (
-                <div key={record.id} className="rounded-xl border border-[var(--sp-border)] p-4">
+                <div key={record.id} className="rounded-[10px] border border-[var(--sp-border)] p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-semibold text-gray-900 dark:text-white">
@@ -631,11 +631,11 @@ const HealthRecords = () => {
               aria-label="Previous page"
               disabled={currentPage === 1}
               onClick={() => setPage(currentPage - 1)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--sp-border)] text-gray-700 transition hover:bg-maroon-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent dark:text-gray-300 dark:hover:bg-maroon-900/20"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] border border-[var(--sp-border)] text-gray-700 transition hover:bg-maroon-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent dark:text-gray-300 dark:hover:bg-maroon-900/20"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <span aria-current="page" className="inline-flex h-9 min-w-9 items-center justify-center rounded-lg bg-maroon-800 px-3 text-sm font-semibold text-white">
+            <span aria-current="page" className="inline-flex h-9 min-w-9 items-center justify-center rounded-[10px] bg-maroon-800 px-3 text-sm font-semibold text-white">
               {currentPage}
             </span>
             <button
@@ -643,7 +643,7 @@ const HealthRecords = () => {
               aria-label="Next page"
               disabled={currentPage === pageCount}
               onClick={() => setPage(currentPage + 1)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--sp-border)] text-gray-700 transition hover:bg-maroon-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent dark:text-gray-300 dark:hover:bg-maroon-900/20"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] border border-[var(--sp-border)] text-gray-700 transition hover:bg-maroon-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent dark:text-gray-300 dark:hover:bg-maroon-900/20"
             >
               <ChevronRight className="h-4 w-4" />
             </button>

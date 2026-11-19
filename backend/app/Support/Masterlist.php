@@ -39,8 +39,7 @@ class Masterlist
 
     public static function required(): bool
     {
-        if (!Schema::hasTable('clinic_settings')) return false;
-        return DB::table('clinic_settings')->where('key', self::SETTING_KEY)->value('value') === '1';
+        return Schema::hasTable('student_masterlist');
     }
 
     public static function setRequired(bool $on, ?string $userId): void

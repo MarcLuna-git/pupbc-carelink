@@ -34,7 +34,7 @@ const BatchPreview = forwardRef(function BatchPreview({ html, title, autoPrint =
       sandbox="allow-same-origin allow-modals"
       onLoad={loaded}
       style={{ height }}
-      className="w-full rounded-lg border border-gray-200 bg-[#f4f1f0] dark:border-gray-600"
+      className="w-full rounded-[10px] border border-gray-200 bg-[#f4f1f0] dark:border-gray-600"
     />
   );
 });

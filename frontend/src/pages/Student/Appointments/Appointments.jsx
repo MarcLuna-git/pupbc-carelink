@@ -47,7 +47,7 @@ const ROUTE_LOADING_DELAY = 1600;
 const isSunday = (value) => !isTimeGuardBypassed() && isClinicSunday(value);
 
 const Skeleton = ({ className = '' }) => (
-  <div className={`animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 ${className}`} />
+  <div className={`animate-pulse rounded-[10px] bg-gray-200 dark:bg-gray-700 ${className}`} />
 );
 
 /* Ghost of the Upcoming Appointment card — reuses the real 5-column grid so
@@ -55,16 +55,16 @@ const Skeleton = ({ className = '' }) => (
 const SkeletonUpcoming = () => (
   <section className="ap-card ap-upcoming">
     <div className="ap-section-heading ap-upcoming-heading">
-      <Skeleton className="h-5 w-5 shrink-0 rounded-md" />
+      <Skeleton className="h-5 w-5 shrink-0 rounded-[10px]" />
       <Skeleton className="h-4 w-44" />
-      <Skeleton className="h-5 w-20 rounded-md" />
+      <Skeleton className="h-5 w-20 rounded-[10px]" />
     </div>
     <div className="ap-upcoming-content">
-      <Skeleton className="h-16 w-full rounded-lg" />
-      <Skeleton className="h-12 w-full rounded-lg" />
-      <Skeleton className="h-12 w-full rounded-lg" />
-      <Skeleton className="h-14 w-full rounded-lg" />
-      <Skeleton className="h-9 w-full rounded-lg" />
+      <Skeleton className="h-16 w-full rounded-[10px]" />
+      <Skeleton className="h-12 w-full rounded-[10px]" />
+      <Skeleton className="h-12 w-full rounded-[10px]" />
+      <Skeleton className="h-14 w-full rounded-[10px]" />
+      <Skeleton className="h-9 w-full rounded-[10px]" />
     </div>
   </section>
 );
@@ -74,7 +74,7 @@ const SkeletonUpcoming = () => (
 const SkeletonBooking = () => (
   <section className="ap-card ap-booking">
     <div className="ap-section-heading">
-      <Skeleton className="h-5 w-5 shrink-0 rounded-md" />
+      <Skeleton className="h-5 w-5 shrink-0 rounded-[10px]" />
       <div className="min-w-0 flex-1 space-y-1.5">
         <Skeleton className="h-4 w-44" />
         <Skeleton className="h-3 w-64 max-w-full" />
@@ -85,21 +85,21 @@ const SkeletonBooking = () => (
         <li className="ap-booking-step is-active">
           <header className="ap-step-heading"><span className="ap-step-marker">1</span><Skeleton className="h-3.5 w-20" /></header>
           <section className="ap-booking-column"><div className="ap-step-body grid grid-cols-7 gap-1.5">
-            {[...Array(28)].map((_, i) => <Skeleton key={i} className="h-7 w-full rounded-md" />)}
+            {[...Array(28)].map((_, i) => <Skeleton key={i} className="h-7 w-full rounded-[10px]" />)}
           </div></section>
         </li>
         <li className="ap-booking-step">
           <header className="ap-step-heading"><span className="ap-step-marker">2</span><Skeleton className="h-3.5 w-32" /></header>
           <section className="ap-booking-column"><div className="ap-step-body">
             <div className="ap-time-grid">
-              {[...Array(16)].map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
+              {[...Array(16)].map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-[10px]" />)}
             </div>
           </div></section>
         </li>
         <li className="ap-booking-step">
           <header className="ap-step-heading"><span className="ap-step-marker">3</span><Skeleton className="h-3.5 w-24" /></header>
           <section className="ap-booking-column"><div className="ap-service-list">
-            {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}
+            {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-[10px]" />)}
           </div></section>
         </li>
       </ol>
@@ -111,17 +111,17 @@ const SkeletonBooking = () => (
 const SkeletonHistory = () => (
   <section className="ap-card ap-history">
     <div className="ap-section-heading">
-      <Skeleton className="h-5 w-5 shrink-0 rounded-md" />
+      <Skeleton className="h-5 w-5 shrink-0 rounded-[10px]" />
       <div className="min-w-0 flex-1 space-y-1.5">
         <Skeleton className="h-4 w-40" />
         <Skeleton className="h-3 w-56 max-w-full" />
       </div>
-      <Skeleton className="h-9 w-40 shrink-0 rounded-lg" />
+      <Skeleton className="h-9 w-40 shrink-0 rounded-[10px]" />
     </div>
     <div className="ap-history-list">
       {[...Array(3)].map((_, i) => (
         <div key={i} className="ap-history-item">
-          <Skeleton className="h-14 w-14 shrink-0 rounded-lg" />
+          <Skeleton className="h-14 w-14 shrink-0 rounded-[10px]" />
           <div className="ap-history-info space-y-1.5">
             <Skeleton className="h-3.5 w-36 max-w-full" />
             <Skeleton className="h-3 w-48 max-w-full" />
@@ -843,7 +843,7 @@ const Appointments = () => {
               transition={{
                 duration: 0.2,
               }}
-              className="flex w-full max-w-md flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-gray-800"
+              className="flex w-full max-w-md flex-col overflow-hidden rounded-[10px] bg-white shadow-2xl dark:bg-gray-800"
               style={{
                 maxHeight: '90vh',
               }}
@@ -860,7 +860,7 @@ const Appointments = () => {
               >
                 {selectedAppointment.status ===
                   'pending' && (
-                  <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/20 rounded-2xl p-4 mb-4">
+                  <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/20 rounded-[10px] p-4 mb-4">
                     <div className="flex items-start gap-2">
                       <div>
                         <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-400">
@@ -878,7 +878,7 @@ const Appointments = () => {
                 {selectedAppointment.status ===
                   'approved' && (
                   <>
-                    <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/20 rounded-2xl p-4 mb-3">
+                    <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/20 rounded-[10px] p-4 mb-3">
                       <div className="flex items-start gap-2">
                         <div>
                           <p className="text-sm font-semibold text-green-800 dark:text-green-400">
@@ -969,7 +969,7 @@ const Appointments = () => {
 
                 {selectedAppointment.status ===
                   'cancelled' && (
-                  <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/20 rounded-2xl p-4 mb-4">
+                  <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/20 rounded-[10px] p-4 mb-4">
                     <div className="flex items-start gap-2">
                       <div>
                         <p className="text-sm font-semibold text-red-800 dark:text-red-400">
@@ -986,7 +986,7 @@ const Appointments = () => {
 
                 {selectedAppointment.status ===
                   'rejected' && (
-                  <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/20 rounded-2xl p-4 mb-4">
+                  <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/20 rounded-[10px] p-4 mb-4">
                     <div className="flex items-start gap-2">
                       <div>
                         <p className="text-sm font-semibold text-red-800 dark:text-red-400">
@@ -1001,7 +1001,7 @@ const Appointments = () => {
                   </div>
                 )}
 
-                <div className="bg-gray-50 dark:bg-gray-700/30 rounded-2xl p-4 space-y-3 mb-4">
+                <div className="bg-gray-50 dark:bg-gray-700/30 rounded-[10px] p-4 space-y-3 mb-4">
                   <div className="flex items-center gap-3">
                     <Stethoscope className="w-4 h-4 text-gray-400 flex-shrink-0" />
 
@@ -1089,7 +1089,7 @@ const Appointments = () => {
                             selectedAppointment
                           )
                         }
-                        className="px-5 py-2.5 bg-maroon-800 text-white font-semibold rounded-xl hover:bg-maroon-900 transition flex items-center justify-center gap-1.5 text-sm"
+                        className="px-5 py-2.5 bg-maroon-800 text-white font-semibold rounded-[10px] hover:bg-maroon-900 transition flex items-center justify-center gap-1.5 text-sm"
                       >
                         <Edit3 className="w-4 h-4" />
                         Edit Appointment
@@ -1105,7 +1105,7 @@ const Appointments = () => {
                             null
                           );
                         }}
-                        className="px-5 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition text-sm border border-red-200 dark:border-red-800/20"
+                        className="px-5 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold rounded-[10px] hover:bg-red-100 dark:hover:bg-red-900/30 transition text-sm border border-red-200 dark:border-red-800/20"
                       >
                         Cancel Appointment
                       </button>
@@ -1118,7 +1118,7 @@ const Appointments = () => {
                         null
                       )
                     }
-                    className="px-5 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
+                    className="px-5 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-[10px] hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
                   >
                     Close
                   </button>
@@ -1164,12 +1164,12 @@ const Appointments = () => {
               transition={{
                 duration: 0.2,
               }}
-              className="bg-white dark:bg-gray-800 rounded-3xl w-full max-w-sm shadow-2xl p-6 text-center"
+              className="bg-white dark:bg-gray-800 rounded-[10px] w-full max-w-sm shadow-2xl p-6 text-center"
               onClick={(e) =>
                 e.stopPropagation()
               }
             >
-              <div className="w-14 h-14 bg-red-100 dark:bg-red-900/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-14 h-14 bg-red-100 dark:bg-red-900/20 rounded-[10px] flex items-center justify-center mx-auto mb-4">
                 <AlertCircle className="w-7 h-7 text-red-500" />
               </div>
 
@@ -1190,7 +1190,7 @@ const Appointments = () => {
                     )
                   }
                   disabled={cancelling}
-                  className="flex-1 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex-1 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-[10px] hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Keep
                 </button>
@@ -1201,7 +1201,7 @@ const Appointments = () => {
                     handleCancel
                   }
                   disabled={cancelling}
-                  className="flex-1 py-3 bg-red-500 text-white font-semibold rounded-2xl hover:bg-red-600 transition text-sm flex items-center justify-center gap-2 disabled:cursor-wait disabled:opacity-80"
+                  className="flex-1 py-3 bg-red-500 text-white font-semibold rounded-[10px] hover:bg-red-600 transition text-sm flex items-center justify-center gap-2 disabled:cursor-wait disabled:opacity-80"
                 >
                   {cancelling ? <><Loader2 className="w-4 h-4 animate-spin" />Cancelling…</> : 'Cancel'}
                 </button>

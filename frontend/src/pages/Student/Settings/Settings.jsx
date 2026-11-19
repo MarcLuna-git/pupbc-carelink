@@ -23,9 +23,9 @@ const SETTINGS_HERO = {
  * no custom stylesheet) so it matches the rest of the Settings card styling.
  */
 const ToggleSwitch = ({ checked, onChange, label, description, icon: Icon }) => (
-  <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 p-4">
+  <div className="flex items-center justify-between gap-4 rounded-[10px] border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 p-4">
     <div className="flex min-w-0 items-start gap-3">
-      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-maroon-800 shadow-sm dark:bg-gray-800 dark:text-maroon-300">
+      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-white text-maroon-800 shadow-sm dark:bg-gray-800 dark:text-maroon-300">
         <Icon className="h-4 w-4" />
       </span>
       <div className="min-w-0">
@@ -57,14 +57,14 @@ const ToggleSwitch = ({ checked, onChange, label, description, icon: Icon }) => 
  * `animate-pulse` pattern the Alerts / Dashboard pages use.
  */
 const Skeleton = ({ className = '' }) => (
-  <div className={`animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 ${className}`} />
+  <div className={`animate-pulse rounded-[10px] bg-gray-200 dark:bg-gray-700 ${className}`} />
 );
 
 /* Ghost of a ToggleSwitch row — mirrors the real switch's exact layout. */
 const SkeletonToggle = () => (
-  <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/50">
+  <div className="flex items-center justify-between gap-4 rounded-[10px] border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/50">
     <div className="flex min-w-0 items-start gap-3">
-      <Skeleton className="h-9 w-9 shrink-0 rounded-lg" />
+      <Skeleton className="h-9 w-9 shrink-0 rounded-[10px]" />
       <div className="min-w-0 flex-1 space-y-2 pt-1">
         <Skeleton className="h-3 w-32" />
         <Skeleton className="h-2.5 w-48 max-w-full" />
@@ -77,7 +77,7 @@ const SkeletonToggle = () => (
 /* Ghost of a section heading (icon + label). */
 const SkeletonHeading = () => (
   <div className="flex items-center gap-2">
-    <Skeleton className="h-5 w-5 rounded-md" />
+    <Skeleton className="h-5 w-5 rounded-[10px]" />
     <Skeleton className="h-4 w-24" />
   </div>
 );
@@ -376,10 +376,10 @@ const Settings = () => {
                 type={showCurrentPassword ? 'text' : 'password'}
                 value={passwordForm.current_password}
                 onChange={(e) => setPasswordForm({...passwordForm, current_password: e.target.value})}
-                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg pl-10 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500"
+                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-[10px] pl-10 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500"
                 placeholder="Enter current password" required />
               <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600">
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1.5 rounded-[10px] hover:bg-gray-100 dark:hover:bg-gray-600">
                 {showCurrentPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               </button>
             </div>
@@ -393,10 +393,10 @@ const Settings = () => {
                 type={showNewPassword ? 'text' : 'password'}
                 value={passwordForm.new_password}
                 onChange={(e) => setPasswordForm({...passwordForm, new_password: e.target.value})}
-                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg pl-10 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500"
+                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-[10px] pl-10 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500"
                 placeholder="Min 8 characters" required />
               <button type="button" onClick={() => setShowNewPassword(!showNewPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600">
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1.5 rounded-[10px] hover:bg-gray-100 dark:hover:bg-gray-600">
                 {showNewPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               </button>
             </div>
@@ -410,18 +410,18 @@ const Settings = () => {
                 type={showConfirmPassword ? 'text' : 'password'}
                 value={passwordForm.new_password_confirmation}
                 onChange={(e) => setPasswordForm({...passwordForm, new_password_confirmation: e.target.value})}
-                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg pl-10 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500"
+                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-[10px] pl-10 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500"
                 placeholder="Re-enter new password" required />
               <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600">
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1.5 rounded-[10px] hover:bg-gray-100 dark:hover:bg-gray-600">
                 {showConfirmPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               </button>
             </div>
           </div>
 
           <button type="submit" disabled={loading}
-            className="w-full py-3 bg-maroon-800 text-white font-semibold rounded-lg hover:bg-maroon-900 transition flex items-center justify-center space-x-2 disabled:opacity-50">
+            className="w-full py-3 bg-maroon-800 text-white font-semibold rounded-[10px] hover:bg-maroon-900 transition flex items-center justify-center space-x-2 disabled:opacity-50">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>{loading ? 'Saving...' : 'Update Password'}</span>
           </button>
@@ -439,7 +439,7 @@ const Settings = () => {
           <div>
             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5">Current Email</label>
             <input type="email" value={user.email || ''} disabled
-              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 text-sm bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed" />
+              className="w-full border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 py-3 text-sm bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed" />
           </div>
           {emailStep === 'details' ? <>
             <div>
@@ -447,17 +447,17 @@ const Settings = () => {
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
                 <input id="settings-new-email" type="email" value={emailForm.new_email} onChange={(e) => setEmailForm({...emailForm, new_email: e.target.value})}
-                  className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
+                  className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-[10px] pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
               </div>
             </div>
             <div>
               <label htmlFor="settings-email-password" className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5">Confirm Password</label>
               <div className="relative">
                 <input id="settings-email-password" type={showEmailPassword ? 'text' : 'password'} value={emailForm.password} onChange={(e) => setEmailForm({...emailForm, password: e.target.value})}
-                  className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg pl-4 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
+                  className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-[10px] pl-4 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
                 <button type="button" onClick={() => setShowEmailPassword(!showEmailPassword)}
                   aria-label={showEmailPassword ? 'Hide password' : 'Show password'}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600">
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1.5 rounded-[10px] hover:bg-gray-100 dark:hover:bg-gray-600">
                   {showEmailPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                 </button>
               </div>
@@ -466,11 +466,11 @@ const Settings = () => {
             <label htmlFor="settings-email-otp" className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1.5">Verification Code</label>
             <input id="settings-email-otp" type="text" inputMode="numeric" autoComplete="off" maxLength={6} pattern="\d{6}" value={emailForm.otp}
               onChange={(e) => setEmailForm({...emailForm, otp: e.target.value.replace(/\D/g, '').slice(0, 6)})} autoFocus placeholder="000000"
-              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-4 py-3 text-center text-lg tracking-[0.4em] focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
+              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-[10px] px-4 py-3 text-center text-lg tracking-[0.4em] focus:outline-none focus:ring-2 focus:ring-maroon-500" required />
             <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">Enter the 6-digit code we sent to <strong className="text-gray-700 dark:text-gray-200">{emailForm.new_email}</strong>. <button type="button" onClick={restartEmailChange} disabled={loading} className="font-semibold text-maroon-800 hover:underline dark:text-maroon-300">Change email or resend code</button></p>
           </div>}
           <button type="submit" disabled={loading || (emailStep === 'otp' && emailForm.otp.length !== 6)}
-            className="w-full py-3 bg-maroon-800 text-white font-semibold rounded-lg hover:bg-maroon-900 transition flex items-center justify-center space-x-2 disabled:opacity-50">
+            className="w-full py-3 bg-maroon-800 text-white font-semibold rounded-[10px] hover:bg-maroon-900 transition flex items-center justify-center space-x-2 disabled:opacity-50">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : emailStep === 'details' ? <Mail className="w-4 h-4" /> : <Save className="w-4 h-4" />}
             <span>{loading ? (emailStep === 'details' ? 'Sending code...' : 'Saving...') : emailStep === 'details' ? 'Send Verification Code' : 'Verify & Update Email'}</span>
           </button>
@@ -486,15 +486,15 @@ const Settings = () => {
             <span>Privacy & Data</span>
           </h3>
           <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
-            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-[10px] p-4">
               <p className="font-semibold text-gray-800 dark:text-white mb-1">Medical Records</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">Only authorized clinic staff can access your records.</p>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-[10px] p-4">
               <p className="font-semibold text-gray-800 dark:text-white mb-1">Data Request</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">Contact the clinic administrator to request your data.</p>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-[10px] p-4">
               <p className="font-semibold text-gray-800 dark:text-white mb-1">Data Privacy Act</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">Your data is protected under RA 10173 (Data Privacy Act of 2012).</p>
             </div>
@@ -515,7 +515,7 @@ const Settings = () => {
           </p>
 
           {!devToolsAvailable ? (
-            <p className="rounded-lg bg-gray-50 p-4 text-sm text-gray-500 dark:bg-gray-700/50 dark:text-gray-400">
+            <p className="rounded-[10px] bg-gray-50 p-4 text-sm text-gray-500 dark:bg-gray-700/50 dark:text-gray-400">
               Developer Tools are turned off on this server.
             </p>
           ) : (
@@ -536,7 +536,7 @@ const Settings = () => {
               />
 
               {showDevPassword && !timeGuardOff && (
-                <form onSubmit={confirmTimeGuardBypass} className="space-y-3 rounded-lg border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
+                <form onSubmit={confirmTimeGuardBypass} className="space-y-3 rounded-[10px] border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
                   <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
                     Enter the developer password to remove the time guard.
                   </p>
@@ -548,7 +548,7 @@ const Settings = () => {
                       autoFocus
                       value={devPassword}
                       onChange={(e) => { setDevPassword(e.target.value); setDevError(''); }}
-                      className="w-full border border-amber-200 dark:border-amber-900/60 dark:bg-gray-700 dark:text-white rounded-lg pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500"
+                      className="w-full border border-amber-200 dark:border-amber-900/60 dark:bg-gray-700 dark:text-white rounded-[10px] pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-maroon-500"
                       placeholder="Developer password"
                       aria-label="Developer password"
                       required
@@ -557,13 +557,13 @@ const Settings = () => {
                   {devError && <p role="alert" className="text-xs text-red-600 dark:text-red-400">{devError}</p>}
                   <div className="flex flex-wrap gap-2">
                     <button type="submit" disabled={devSaving || !devPassword}
-                      className="inline-flex items-center space-x-2 rounded-lg bg-maroon-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900 disabled:opacity-50">
+                      className="inline-flex items-center space-x-2 rounded-[10px] bg-maroon-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-maroon-900 disabled:opacity-50">
                       {devSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wrench className="w-4 h-4" />}
                       <span>{devSaving ? 'Checking...' : 'Remove time guard'}</span>
                     </button>
                     <button type="button" disabled={devSaving}
                       onClick={() => { setShowDevPassword(false); setDevPassword(''); setDevError(''); }}
-                      className="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700/50">
+                      className="rounded-[10px] px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700/50">
                       Cancel
                     </button>
                   </div>
@@ -587,7 +587,7 @@ const Settings = () => {
             />
 
             {showResetConfirm && (
-              <form onSubmit={handleResetData} className="space-y-3 rounded-lg border border-red-200 bg-red-50/60 p-4 dark:border-red-900/60 dark:bg-red-950/20">
+              <form onSubmit={handleResetData} className="space-y-3 rounded-[10px] border border-red-200 bg-red-50/60 p-4 dark:border-red-900/60 dark:bg-red-950/20">
                 <p className="text-xs font-semibold text-red-700 dark:text-red-300">
                   This cannot be undone. Enter the developer password to confirm.
                 </p>
@@ -597,18 +597,18 @@ const Settings = () => {
                     type="password"
                     value={resetPassword}
                     onChange={(e) => setResetPassword(e.target.value)}
-                    className="w-full border border-red-200 dark:border-red-900/60 dark:bg-gray-700 dark:text-white rounded-lg pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full border border-red-200 dark:border-red-900/60 dark:bg-gray-700 dark:text-white rounded-[10px] pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                     placeholder="Developer password" aria-label="Developer password" autoComplete="off" required />
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button type="submit" disabled={loading}
-                    className="inline-flex items-center space-x-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50">
+                    className="inline-flex items-center space-x-2 rounded-[10px] bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                     <span>{loading ? 'Resetting...' : 'Confirm reset'}</span>
                   </button>
                   <button type="button" disabled={loading}
                     onClick={() => { setShowResetConfirm(false); setResetPassword(''); }}
-                    className="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700/50">
+                    className="rounded-[10px] px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700/50">
                     Cancel
                   </button>
                 </div>
@@ -633,7 +633,7 @@ const Settings = () => {
 
         <StudentPageHero {...SETTINGS_HERO} loading />
 
-        <div className="rounded-lg border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
+        <div className="rounded-[10px] border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 lg:p-6">
           {/* Content-card ghost — mirrors the loaded layout 1:1 (same grid,
               same DOM order, same General-tab stack) so the reveal is
               seamless with no layout jump. */}
@@ -641,13 +641,13 @@ const Settings = () => {
             {/* Ghost of the mobile accordion (hidden on md+, like the real one) */}
             <div className="space-y-2 md:hidden">
               {desktopTabs.map((tab) => (
-                <div key={tab.id} className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                <div key={tab.id} className="overflow-hidden rounded-[10px] border border-gray-200 dark:border-gray-700">
                   <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
                     <span className="flex items-center gap-3">
-                      <Skeleton className="h-4 w-4 rounded-md" />
+                      <Skeleton className="h-4 w-4 rounded-[10px]" />
                       <Skeleton className="h-3 w-24" />
                     </span>
-                    <Skeleton className="h-4 w-4 rounded-md" />
+                    <Skeleton className="h-4 w-4 rounded-[10px]" />
                   </div>
                 </div>
               ))}
@@ -658,8 +658,8 @@ const Settings = () => {
               {desktopTabs.map((tab, index) => {
                 const active = index === 0;
                 return (
-                  <div key={tab.id} className={`flex w-full items-center gap-3 rounded-lg border-b border-gray-100 px-4 py-3 last:border-b-0 dark:border-gray-700 ${active ? 'bg-maroon-800' : ''}`}>
-                    <Skeleton className={`h-4 w-4 shrink-0 rounded-md ${active ? 'bg-white/40' : ''}`} />
+                  <div key={tab.id} className={`flex w-full items-center gap-3 rounded-[10px] border-b border-gray-100 px-4 py-3 last:border-b-0 dark:border-gray-700 ${active ? 'bg-maroon-800' : ''}`}>
+                    <Skeleton className={`h-4 w-4 shrink-0 rounded-[10px] ${active ? 'bg-white/40' : ''}`} />
                     <Skeleton className={`h-3 w-24 ${active ? 'bg-white/40' : ''}`} />
                   </div>
                 );
@@ -701,7 +701,7 @@ const Settings = () => {
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: 'easeOut' }}
-        className="bg-white dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 p-4 lg:p-6"
+        className="bg-white dark:bg-gray-800 rounded-[10px] border border-gray-100 dark:border-gray-700 p-4 lg:p-6"
       >
         <div className="grid gap-5 md:grid-cols-[220px_minmax(0,1fr)]">
           {/* Mobile: accordion — tapping a section slides its panel open beneath it */}
@@ -709,7 +709,7 @@ const Settings = () => {
             {tabs.map(tab => {
               const isOpen = activeTab === tab.id;
               return (
-                <div key={tab.id} className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                <div key={tab.id} className="overflow-hidden rounded-[10px] border border-gray-200 dark:border-gray-700">
                   <button
                     type="button"
                     onClick={() => setActiveTab(isOpen ? '' : tab.id)}
@@ -754,7 +754,7 @@ const Settings = () => {
             {tabs.map(tab => (
               <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)}
                 aria-current={activeTab === tab.id ? 'page' : undefined}
-                className={`flex w-full items-center gap-3 rounded-lg border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold transition-colors last:border-b-0 dark:border-gray-700 ${
+                className={`flex w-full items-center gap-3 rounded-[10px] border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold transition-colors last:border-b-0 dark:border-gray-700 ${
                   activeTab === tab.id ? 'bg-maroon-800 text-white' : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700/50'
                 }`}>
                 <tab.icon className="w-4 h-4 shrink-0" />
