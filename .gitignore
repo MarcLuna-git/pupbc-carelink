@@ -53,3 +53,4 @@ temp/
 
 # Local Supabase database backups (contain user PII / password hashes; never commit)
 /database/supabase_backup_*.json
+CareLink_Demo_Test_Data.docx
