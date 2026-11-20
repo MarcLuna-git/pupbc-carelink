@@ -50,3 +50,6 @@ mydocs - chapter 4 and 5/
 
 # Agent temp/working files (scripts, dumps, scratch) — keep on disk, never in Git
 temp/
+
+# Local Supabase database backups (contain user PII / password hashes; never commit)
+/database/supabase_backup_*.json
